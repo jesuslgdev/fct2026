@@ -2,3 +2,7 @@
 frontend/node_modules/
 .env
 .DS_Store
+
+# Firebase
+.firebase/
+firebase-debug.log
