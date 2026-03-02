@@ -1,4 +1,14 @@
+import asyncio
+import selectors
+import sys
 from contextlib import asynccontextmanager
+
+# psycopg async requires SelectorEventLoop; Windows defaults to ProactorEventLoop
+# which is incompatible. This patch is only needed when running outside Docker (Linux).
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(
+        asyncio.WindowsSelectorEventLoopPolicy()  # type: ignore[attr-defined]
+    )
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,13 +16,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from composition.router_registry import register_routers
-from shared.infrastructure.database.connection import engine
+from shared.infrastructure.database.connection import AsyncSessionLocal, engine
+from shared.infrastructure.database.seed import seed
 from shared.infrastructure.security.firebase_service import init_firebase_app
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_firebase_app()
+    async with AsyncSessionLocal() as session:
+        await seed(session)
     yield
 
 
