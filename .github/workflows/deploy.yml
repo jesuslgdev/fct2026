@@ -1,0 +1,29 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [development]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - run: pip install poetry && poetry install
+      - run: poetry run ruff check .
+      - run: poetry run ruff format --check .
+      - run: poetry run pytest --cov
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+      SUPERADMIN_EMAIL: ${{ secrets.SUPERADMIN_EMAIL }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Trigger Render deploy
+        run: |
+          curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
