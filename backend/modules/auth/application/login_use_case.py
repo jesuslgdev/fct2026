@@ -1,12 +1,12 @@
 from fastapi import HTTPException, status
 
 from modules.auth.domain.interfaces.i_auth_repository import IAuthRepository
-from modules.auth.domain.interfaces.i_auth_use_cases import IAuthUseCases
+from modules.auth.domain.interfaces.i_auth_use_cases import ILoginUseCase
 from modules.auth.infrastructure.http.schemas.login_response import LoginResponseDTO
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
 
 
-class LoginUseCase(IAuthUseCases):
+class LoginUseCase(ILoginUseCase):
     def __init__(self, auth_repository: IAuthRepository) -> None:
         self._repo = auth_repository
 
