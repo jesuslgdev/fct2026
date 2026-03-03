@@ -7,7 +7,5 @@ from shared.config import settings
 
 
 def init_firebase_app() -> None:
-    cred = credentials.Certificate(
-        json.loads(settings.firebase_credentials_json)
-    )
+    cred = credentials.Certificate(json.loads(settings.firebase_credentials_json))
     firebase_admin.initialize_app(cred)

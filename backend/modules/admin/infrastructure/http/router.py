@@ -1,9 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 
 from composition.dependencies import (
+    get_create_department_use_case,
     get_current_user,
     get_get_department_use_case,
     get_list_departments_use_case,
+)
+from modules.admin.domain.interfaces.i_create_department_use_case import (
+    ICreateDepartmentUseCase,
 )
 from modules.admin.domain.interfaces.i_get_department_use_case import (
     IGetDepartmentUseCase,
@@ -11,7 +16,7 @@ from modules.admin.domain.interfaces.i_get_department_use_case import (
 from modules.admin.domain.interfaces.i_list_departments_use_case import (
     IListDepartmentsUseCase,
 )
-from modules.admin.infrastructure.http.schemas import DepartmentDTO
+from modules.admin.infrastructure.http.schemas import CreateDepartmentDTO, DepartmentDTO
 
 router = APIRouter(prefix="/admin", tags=["Admin - Departments"])
 
@@ -22,6 +27,18 @@ async def list_departments(
     _: dict = Depends(get_current_user),
 ):
     return await use_case.execute()
+
+
+@router.post("/departments", response_model=DepartmentDTO, status_code=201)
+async def create_department(
+    body: CreateDepartmentDTO,
+    use_case: ICreateDepartmentUseCase = Depends(get_create_department_use_case),
+    _: dict = Depends(get_current_user),
+):
+    try:
+        return await use_case.execute(body.name)
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Department name already exists")
 
 
 @router.get("/departments/{department_id}", response_model=DepartmentDTO)

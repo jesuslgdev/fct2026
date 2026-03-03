@@ -22,7 +22,11 @@ class DepartmentRepository(IDepartmentRepository):
         return result.scalar_one_or_none()
 
     async def create(self, name: str) -> Department:
-        raise NotImplementedError
+        dept = Department(name=name)
+        self._db.add(dept)
+        await self._db.flush()
+        await self._db.refresh(dept)
+        return dept
 
     async def update(self, department_id: int, name: str) -> Department:
         raise NotImplementedError

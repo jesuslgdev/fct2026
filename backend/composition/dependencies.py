@@ -2,8 +2,12 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.admin.application.create_department_use_case import CreateDepartmentUseCase
 from modules.admin.application.get_department_use_case import GetDepartmentUseCase
 from modules.admin.application.list_departments_use_case import ListDepartmentsUseCase
+from modules.admin.domain.interfaces.i_create_department_use_case import (
+    ICreateDepartmentUseCase,
+)
 from modules.admin.domain.interfaces.i_get_department_use_case import (
     IGetDepartmentUseCase,
 )
@@ -31,6 +35,12 @@ async def get_current_user(
         )
     # TODO: look up user in DB and return domain entity
     return claims
+
+
+async def get_create_department_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ICreateDepartmentUseCase:
+    return CreateDepartmentUseCase(DepartmentRepository(db))
 
 
 async def get_list_departments_use_case(
