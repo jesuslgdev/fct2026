@@ -3,5 +3,5 @@ from shared.infrastructure.security.firebase_auth_provider import revoke_firebas
 
 
 class LogoutUseCase(ILogoutUseCase):
-    async def logout(self, firebase_uid: str) -> None:
+    def logout(self, firebase_uid: str) -> None:
         revoke_firebase_tokens(firebase_uid)

@@ -10,6 +10,7 @@ from modules.auth.infrastructure.http.schemas.login_response import LoginRespons
 from modules.auth.infrastructure.repos.auth_repository import AuthRepository
 from shared.infrastructure.database.connection import get_db
 
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -25,7 +26,5 @@ async def login(
 @router.post("/logout", status_code=204)
 async def logout(
     current_user: UserSession = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ) -> None:
-    use_case = LogoutUseCase()
-    await use_case.logout(current_user.firebase_uid)
+    LogoutUseCase().logout(current_user.firebase_uid)
