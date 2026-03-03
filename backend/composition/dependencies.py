@@ -1,6 +1,15 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.admin.application.list_departments_use_case import ListDepartmentsUseCase
+from modules.admin.domain.interfaces.i_list_departments_use_case import (
+    IListDepartmentsUseCase,
+)
+from modules.admin.infrastructure.repos.department_repository import (
+    DepartmentRepository,
+)
+from shared.infrastructure.database.connection import get_db
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
 
 _bearer = HTTPBearer()
@@ -18,3 +27,9 @@ async def get_current_user(
         )
     # TODO: look up user in DB and return domain entity
     return claims
+
+
+async def get_list_departments_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListDepartmentsUseCase:
+    return ListDepartmentsUseCase(DepartmentRepository(db))

@@ -3,18 +3,18 @@
 # (e.g. `alembic upgrade head`, `alembic revision --autogenerate`).
 # It wires together the app's settings, the SQLAlchemy metadata, and the
 # async engine so migrations work with the async psycopg3 driver.
-from logging.config import fileConfig
-
 import asyncio
 import selectors
+from logging.config import fileConfig
+
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import modules.admin.domain.entities.department  # noqa: F401
+import shared.domain.entities.user  # noqa: F401 — register model with Base.metadata
 from alembic import context
-
 from shared.config import settings
 from shared.infrastructure.database.base_model import Base
-import shared.domain.entities.usuario  # noqa: F401 — register model with Base.metadata
 
 # Alembic Config object — provides access to values in alembic.ini
 config = context.config
@@ -72,4 +72,7 @@ if context.is_offline_mode():
 else:
     # SelectorEventLoop is required on Windows to avoid compatibility issues
     # with asyncio and the psycopg3 async driver
-    asyncio.run(run_migrations_online(), loop_factory=lambda: asyncio.SelectorEventLoop(selectors.SelectSelector()))
+    asyncio.run(
+        run_migrations_online(),
+        loop_factory=lambda: asyncio.SelectorEventLoop(selectors.SelectSelector()),
+    )
