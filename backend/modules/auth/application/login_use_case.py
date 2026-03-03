@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 
 from modules.auth.domain.interfaces.i_auth_repository import IAuthRepository
 from modules.auth.domain.interfaces.i_auth_use_cases import IAuthUseCases
-from modules.auth.infrastructure.http.schemas import LoginResponseDTO
+from modules.auth.infrastructure.http.schemas.login_response import LoginResponseDTO
 from shared.infrastructure.security.firebase_service import verify_firebase_token
 
 

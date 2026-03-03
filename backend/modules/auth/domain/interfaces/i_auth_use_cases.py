@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from modules.auth.infrastructure.http.schemas import LoginResponseDTO
+    from modules.auth.infrastructure.http.schemas.login_response import LoginResponseDTO
 
 
 class IAuthUseCases(ABC):
