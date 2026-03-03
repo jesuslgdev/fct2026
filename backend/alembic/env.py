@@ -14,7 +14,7 @@ from alembic import context
 
 from shared.config import settings
 from shared.infrastructure.database.base_model import Base
-import shared.domain.entities.usuario  # noqa: F401 — register model with Base.metadata
+import shared.domain.entities.user  # noqa: F401 — register model with Base.metadata
 
 # Alembic Config object — provides access to values in alembic.ini
 config = context.config
