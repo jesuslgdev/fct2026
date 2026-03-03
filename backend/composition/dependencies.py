@@ -3,11 +3,15 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.admin.application.create_department_use_case import CreateDepartmentUseCase
+from modules.admin.application.delete_department_use_case import DeleteDepartmentUseCase
 from modules.admin.application.get_department_use_case import GetDepartmentUseCase
 from modules.admin.application.list_departments_use_case import ListDepartmentsUseCase
 from modules.admin.application.update_department_use_case import UpdateDepartmentUseCase
 from modules.admin.domain.interfaces.i_create_department_use_case import (
     ICreateDepartmentUseCase,
+)
+from modules.admin.domain.interfaces.i_delete_department_use_case import (
+    IDeleteDepartmentUseCase,
 )
 from modules.admin.domain.interfaces.i_get_department_use_case import (
     IGetDepartmentUseCase,
@@ -63,3 +67,9 @@ async def get_update_department_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IUpdateDepartmentUseCase:
     return UpdateDepartmentUseCase(DepartmentRepository(db))
+
+
+async def get_delete_department_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IDeleteDepartmentUseCase:
+    return DeleteDepartmentUseCase(DepartmentRepository(db))

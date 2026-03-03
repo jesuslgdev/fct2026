@@ -5,6 +5,7 @@ from modules.admin.domain.entities.department import Department
 from modules.admin.domain.interfaces.i_department_repository import (
     IDepartmentRepository,
 )
+from shared.domain.entities.user import User
 
 
 class DepartmentRepository(IDepartmentRepository):
@@ -38,7 +39,13 @@ class DepartmentRepository(IDepartmentRepository):
         return dept
 
     async def delete(self, department_id: int) -> None:
-        raise NotImplementedError
+        dept = await self.get_by_id(department_id)
+        if dept is not None:
+            await self._db.delete(dept)
+            await self._db.flush()
 
     async def has_users(self, department_id: int) -> bool:
-        raise NotImplementedError
+        result = await self._db.execute(
+            select(User).where(User.department_id == department_id)
+        )
+        return result.scalar_one_or_none() is not None

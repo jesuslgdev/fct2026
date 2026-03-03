@@ -4,12 +4,16 @@ from sqlalchemy.exc import IntegrityError
 from composition.dependencies import (
     get_create_department_use_case,
     get_current_user,
+    get_delete_department_use_case,
     get_get_department_use_case,
     get_list_departments_use_case,
     get_update_department_use_case,
 )
 from modules.admin.domain.interfaces.i_create_department_use_case import (
     ICreateDepartmentUseCase,
+)
+from modules.admin.domain.interfaces.i_delete_department_use_case import (
+    IDeleteDepartmentUseCase,
 )
 from modules.admin.domain.interfaces.i_get_department_use_case import (
     IGetDepartmentUseCase,
@@ -62,6 +66,20 @@ async def update_department(
         raise HTTPException(status_code=404, detail="Department not found")
     except IntegrityError:
         raise HTTPException(status_code=409, detail="Department name already exists")
+
+
+@router.delete("/departments/{department_id}", status_code=204)
+async def delete_department(
+    department_id: int,
+    use_case: IDeleteDepartmentUseCase = Depends(get_delete_department_use_case),
+    _: dict = Depends(get_current_user),
+):
+    try:
+        await use_case.execute(department_id)
+    except ValueError as e:
+        detail = str(e)
+        status_code = 404 if "not found" in detail else 409
+        raise HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/departments/{department_id}", response_model=DepartmentDTO)
