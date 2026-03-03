@@ -1,0 +1,159 @@
+name: CI/CD — Angular + Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/frontend_initial_structure_github-actions-firebase
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Test
+        run: npm run test:ci
+        working-directory: frontend
+
+  deploy-dev:
+    name: Deploy → DEV
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feature/frontend_initial_structure_github-actions-firebase' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Generate environment (dev)
+        working-directory: frontend
+        run: |
+          mkdir -p src/environments
+          cat > src/environments/environment.ts << 'EOF'
+          export const environment = {
+            production: false,
+            firebase: {
+              apiKey: '${{ secrets.FIREBASE_API_KEY_DEV }}',
+              authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN_DEV }}',
+              projectId: '${{ secrets.FIREBASE_PROJECT_ID_DEV }}',
+              storageBucket: '${{ secrets.FIREBASE_STORAGE_BUCKET_DEV }}',
+              messagingSenderId: '${{ secrets.FIREBASE_MESSAGING_SENDER_ID_DEV }}',
+              appId: '${{ secrets.FIREBASE_APP_ID_DEV }}',
+              measurementId: '${{ secrets.FIREBASE_MEASUREMENT_ID_DEV }}',
+            },
+          };
+          EOF
+
+      - name: Build (dev)
+        run: npm run build:dev
+        working-directory: frontend
+
+      - name: Deploy to Firebase DEV
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
+          projectId: practicasmobiverydev
+          channelId: live
+
+  deploy-prod:
+    name: Deploy → PROD
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Generate environments (prod)
+        working-directory: frontend
+        run: |
+          mkdir -p src/environments
+          cat > src/environments/environment.ts << 'EOF'
+          export const environment = {
+            production: false,
+            firebase: {
+              apiKey: '${{ secrets.FIREBASE_API_KEY_DEV }}',
+              authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN_DEV }}',
+              projectId: '${{ secrets.FIREBASE_PROJECT_ID_DEV }}',
+              storageBucket: '${{ secrets.FIREBASE_STORAGE_BUCKET_DEV }}',
+              messagingSenderId: '${{ secrets.FIREBASE_MESSAGING_SENDER_ID_DEV }}',
+              appId: '${{ secrets.FIREBASE_APP_ID_DEV }}',
+              measurementId: '${{ secrets.FIREBASE_MEASUREMENT_ID_DEV }}',
+            },
+          };
+          EOF
+
+          cat > src/environments/environment.prod.ts << 'EOF'
+          export const environment = {
+            production: true,
+            firebase: {
+              apiKey: '${{ secrets.FIREBASE_API_KEY_PROD }}',
+              authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN_PROD }}',
+              projectId: '${{ secrets.FIREBASE_PROJECT_ID_PROD }}',
+              storageBucket: '${{ secrets.FIREBASE_STORAGE_BUCKET_PROD }}',
+              messagingSenderId: '${{ secrets.FIREBASE_MESSAGING_SENDER_ID_PROD }}',
+              appId: '${{ secrets.FIREBASE_APP_ID_PROD }}',
+              measurementId: '${{ secrets.FIREBASE_MEASUREMENT_ID_PROD }}',
+            },
+          };
+          EOF
+
+      - name: Build (prod)
+        run: npm run build:prod
+        working-directory: frontend
+
+      - name: Deploy to Firebase PROD
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}
+          projectId: practicasmobiveryprod
+          channelId: live
