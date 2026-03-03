@@ -38,7 +38,8 @@ async def list_departments(
     use_case: IListDepartmentsUseCase = Depends(get_list_departments_use_case),
     _: dict = Depends(get_current_user),
 ):
-    return await use_case.execute()
+    results = await use_case.execute()
+    return [DepartmentDTO(department_id=d.department_id, name=d.name) for d in results]
 
 
 @router.post("/departments", response_model=DepartmentDTO, status_code=201)
@@ -48,7 +49,8 @@ async def create_department(
     _: dict = Depends(get_current_user),
 ):
     try:
-        return await use_case.execute(body.name)
+        result = await use_case.execute(body.name)
+        return DepartmentDTO(department_id=result.department_id, name=result.name)
     except IntegrityError:
         raise HTTPException(status_code=409, detail="Department name already exists")
 
@@ -61,7 +63,8 @@ async def update_department(
     _: dict = Depends(get_current_user),
 ):
     try:
-        return await use_case.execute(department_id, body.name)
+        result = await use_case.execute(department_id, body.name)
+        return DepartmentDTO(department_id=result.department_id, name=result.name)
     except ValueError:
         raise HTTPException(status_code=404, detail="Department not found")
     except IntegrityError:
@@ -88,7 +91,7 @@ async def get_department(
     use_case: IGetDepartmentUseCase = Depends(get_get_department_use_case),
     _: dict = Depends(get_current_user),
 ):
-    department = await use_case.execute(department_id)
-    if department is None:
+    result = await use_case.execute(department_id)
+    if result is None:
         raise HTTPException(status_code=404, detail="Department not found")
-    return department
+    return DepartmentDTO(department_id=result.department_id, name=result.name)
