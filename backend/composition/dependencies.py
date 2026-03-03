@@ -2,7 +2,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.admin.application.get_department_use_case import GetDepartmentUseCase
 from modules.admin.application.list_departments_use_case import ListDepartmentsUseCase
+from modules.admin.domain.interfaces.i_get_department_use_case import (
+    IGetDepartmentUseCase,
+)
 from modules.admin.domain.interfaces.i_list_departments_use_case import (
     IListDepartmentsUseCase,
 )
@@ -33,3 +37,9 @@ async def get_list_departments_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IListDepartmentsUseCase:
     return ListDepartmentsUseCase(DepartmentRepository(db))
+
+
+async def get_get_department_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetDepartmentUseCase:
+    return GetDepartmentUseCase(DepartmentRepository(db))

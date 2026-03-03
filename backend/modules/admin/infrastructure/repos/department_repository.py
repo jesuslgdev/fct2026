@@ -16,7 +16,10 @@ class DepartmentRepository(IDepartmentRepository):
         return list(result.scalars().all())
 
     async def get_by_id(self, department_id: int) -> Department | None:
-        raise NotImplementedError
+        result = await self._db.execute(
+            select(Department).where(Department.department_id == department_id)
+        )
+        return result.scalar_one_or_none()
 
     async def create(self, name: str) -> Department:
         raise NotImplementedError
