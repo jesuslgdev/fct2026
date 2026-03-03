@@ -1,0 +1,14 @@
+{
+    "meta" : {
+        "info": "Localizable created with localio. DO NOT MODIFY.",
+        "language": "en"
+    },
+    "translations": {
+      "___comment___": "Common",
+      "common_app_name_text": "",
+      "common_app_name_pre_text": "",
+      "common_language_code": "en",
+      "common_ejemplo_text": "Example"
+
+    }
+}

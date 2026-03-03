@@ -1,0 +1,8 @@
+job:
+  format: json
+  output_path: ./src/assets/i18n
+  source:
+    path: translations.xlsx
+    sheet: 0
+  key_format: none
+  default_language: es
