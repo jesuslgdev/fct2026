@@ -29,7 +29,13 @@ class DepartmentRepository(IDepartmentRepository):
         return dept
 
     async def update(self, department_id: int, name: str) -> Department:
-        raise NotImplementedError
+        dept = await self.get_by_id(department_id)
+        if dept is None:
+            raise ValueError("Department not found")
+        dept.name = name
+        await self._db.flush()
+        await self._db.refresh(dept)
+        return dept
 
     async def delete(self, department_id: int) -> None:
         raise NotImplementedError

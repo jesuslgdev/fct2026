@@ -6,6 +6,7 @@ from composition.dependencies import (
     get_current_user,
     get_get_department_use_case,
     get_list_departments_use_case,
+    get_update_department_use_case,
 )
 from modules.admin.domain.interfaces.i_create_department_use_case import (
     ICreateDepartmentUseCase,
@@ -16,7 +17,14 @@ from modules.admin.domain.interfaces.i_get_department_use_case import (
 from modules.admin.domain.interfaces.i_list_departments_use_case import (
     IListDepartmentsUseCase,
 )
-from modules.admin.infrastructure.http.schemas import CreateDepartmentDTO, DepartmentDTO
+from modules.admin.domain.interfaces.i_update_department_use_case import (
+    IUpdateDepartmentUseCase,
+)
+from modules.admin.infrastructure.http.schemas import (
+    CreateDepartmentDTO,
+    DepartmentDTO,
+    UpdateDepartmentDTO,
+)
 
 router = APIRouter(prefix="/admin", tags=["Admin - Departments"])
 
@@ -37,6 +45,21 @@ async def create_department(
 ):
     try:
         return await use_case.execute(body.name)
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail="Department name already exists")
+
+
+@router.put("/departments/{department_id}", response_model=DepartmentDTO)
+async def update_department(
+    department_id: int,
+    body: UpdateDepartmentDTO,
+    use_case: IUpdateDepartmentUseCase = Depends(get_update_department_use_case),
+    _: dict = Depends(get_current_user),
+):
+    try:
+        return await use_case.execute(department_id, body.name)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Department not found")
     except IntegrityError:
         raise HTTPException(status_code=409, detail="Department name already exists")
 
