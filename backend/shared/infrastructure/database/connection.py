@@ -7,8 +7,11 @@ from sqlalchemy.orm import sessionmaker
 from shared.config import settings
 
 # Async engine built from the DATABASE_URL env variable.
-# echo=True logs all generated SQL statements — disable in production.
-engine = create_async_engine(settings.database_url, echo=True)
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,
+    pool_pre_ping=True,
+)
 
 # Session factory that produces AsyncSession instances.
 # expire_on_commit=False keeps ORM objects usable after a commit
