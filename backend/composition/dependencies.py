@@ -1,6 +1,10 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.auth.domain.entities.user_session import UserSession
+from modules.auth.infrastructure.repos.auth_repository import AuthRepository
+from shared.infrastructure.database.connection import get_db
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
 
 _bearer = HTTPBearer()
@@ -8,7 +12,8 @@ _bearer = HTTPBearer()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(_bearer),
-) -> dict:
+    db: AsyncSession = Depends(get_db),
+) -> UserSession:
     try:
         claims = verify_firebase_token(credentials.credentials)
     except Exception:
@@ -16,5 +21,18 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
         )
-    # TODO: look up user in DB and return domain entity
-    return claims
+
+    user = await AuthRepository(db).find_active_user_by_email(claims["email"])
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+        )
+
+    return UserSession(
+        email=user.email,
+        role=user.role,
+        department_id=user.department_id,
+        firebase_uid=claims["uid"],
+    )

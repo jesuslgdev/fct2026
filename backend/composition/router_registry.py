@@ -5,10 +5,9 @@ Import and include module routers here to keep main.py clean.
 
 from fastapi import FastAPI
 
+from modules.auth.infrastructure.http.router import router as auth_router
+
 
 def register_routers(app: FastAPI) -> None:
     """Register all module routers onto the FastAPI application."""
-    # Example:
-    # from modules.users.infrastructure.api.router import router as users_router
-    # app.include_router(users_router, prefix="/api/v1")
-    pass
+    app.include_router(auth_router, prefix="/api/v1")
