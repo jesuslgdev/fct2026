@@ -1,0 +1,261 @@
+/* ============================================================================
+   GLOBAL BASE
+============================================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  font-family: Inter, sans-serif;
+}
+
+/* ============================================================================
+   SEMANTIC TOKENS
+   Abstraction layer between primitives and components
+============================================================================ */
+
+:root {
+
+  /* Surfaces */
+  --color-bg-page: var(--color-neutral-50);
+  --color-bg-surface: #ffffff;
+  --color-bg-sidebar: var(--color-neutral-100);
+  --color-bg-subtle: var(--color-neutral-100);
+
+  --color-border-default: var(--color-neutral-200);
+  --color-border-input: var(--color-neutral-200);
+
+  /* Text */
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-muted: var(--color-neutral-500);
+  --color-text-subtle: var(--color-neutral-400);
+  --color-text-disabled: var(--color-neutral-300);
+  --color-text-inverse: #ffffff;
+
+  /* States */
+  --color-state-error: var(--color-red-600);
+  --color-state-success: var(--color-emerald-700);
+  --color-state-warning: var(--color-amber-700);
+  --color-state-info: var(--color-blue-700);
+
+  /* Badge semantic tokens */
+  --badge-pending-bg: var(--color-amber-50);
+  --badge-pending-text: var(--color-amber-700);
+  --badge-pending-border: var(--color-amber-200);
+
+  --badge-success-bg: var(--color-emerald-50);
+  --badge-success-text: var(--color-emerald-700);
+  --badge-success-border: var(--color-emerald-200);
+
+  --badge-error-bg: var(--color-red-50);
+  --badge-error-text: var(--color-red-700);
+  --badge-error-border: var(--color-red-200);
+
+  --badge-info-bg: var(--color-blue-50);
+  --badge-info-text: var(--color-blue-700);
+  --badge-info-border: var(--color-blue-200);
+
+  /* Layout */
+  --layout-sidebar-width: 256px;
+  --layout-sidebar-width-collapsed: 48px;
+  --layout-topbar-height: 56px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+}
+/* ============================================================================
+   SEMANTIC TOKENS
+   Abstraction layer between primitives and components
+============================================================================ */
+
+:root {
+
+  /* Surfaces */
+  --color-bg-page: var(--color-neutral-50);
+  --color-bg-surface: #ffffff;
+  --color-bg-sidebar: var(--color-neutral-100);
+  --color-bg-subtle: var(--color-neutral-100);
+
+  --color-border-default: var(--color-neutral-200);
+  --color-border-input: var(--color-neutral-200);
+
+  /* Text */
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-muted: var(--color-neutral-500);
+  --color-text-subtle: var(--color-neutral-400);
+  --color-text-disabled: var(--color-neutral-300);
+  --color-text-inverse: #ffffff;
+
+  /* States */
+  --color-state-error: var(--color-red-600);
+  --color-state-success: var(--color-emerald-700);
+  --color-state-warning: var(--color-amber-700);
+  --color-state-info: var(--color-blue-700);
+
+  /* Badge semantic tokens */
+  --badge-pending-bg: var(--color-amber-50);
+  --badge-pending-text: var(--color-amber-700);
+  --badge-pending-border: var(--color-amber-200);
+
+  --badge-success-bg: var(--color-emerald-50);
+  --badge-success-text: var(--color-emerald-700);
+  --badge-success-border: var(--color-emerald-200);
+
+  --badge-error-bg: var(--color-red-50);
+  --badge-error-text: var(--color-red-700);
+  --badge-error-border: var(--color-red-200);
+
+  --badge-info-bg: var(--color-blue-50);
+  --badge-info-text: var(--color-blue-700);
+  --badge-info-border: var(--color-blue-200);
+
+  /* Layout */
+  --layout-sidebar-width: 256px;
+  --layout-sidebar-width-collapsed: 48px;
+  --layout-topbar-height: 56px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* ============================================================================
+   PRIMENG ENTERPRISE OVERRIDES
+============================================================================ */
+
+/* Inputs */
+.p-inputtext,
+.p-dropdown,
+.p-inputtextarea {
+  border-radius: 6px;
+  border: 1px solid var(--color-border-input);
+  transition: var(--transition-fast);
+}
+
+.p-inputtext:hover:not(:disabled),
+.p-dropdown:hover:not(.p-disabled) {
+  border-color: var(--color-neutral-400);
+}
+
+.p-inputtext:focus,
+.p-dropdown.p-focus {
+  border-color: var(--color-text-primary);
+  box-shadow: none;
+}
+
+/* Buttons */
+.p-button {
+  border-radius: 6px;
+  transition: var(--transition-fast);
+}
+
+/* DataTable */
+.p-datatable {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.p-datatable thead th {
+  background: var(--color-neutral-100);
+  color: var(--color-text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.p-datatable tbody tr {
+  transition: var(--transition-fast);
+}
+
+.p-datatable tbody tr:hover {
+  background: var(--color-neutral-50);
+}
+
+/* Toast */
+.p-toast-message {
+  border-radius: 8px;
+  border-left-width: 4px;
+}
+
+.p-toast-message-success {
+  border-left-color: var(--color-state-success);
+}
+
+.p-toast-message-error {
+  border-left-color: var(--color-state-error);
+}
+
+.p-toast-message-warn {
+  border-left-color: var(--color-state-warning);
+}
+
+.p-toast-message-info {
+  border-left-color: var(--color-state-info);
+}
+/* ============================================================================
+   STATUS BADGES
+   Domain must provide status in English only
+============================================================================ */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.status-badge--pending {
+  background: var(--badge-pending-bg);
+  color: var(--badge-pending-text);
+  border-color: var(--badge-pending-border);
+}
+
+.status-badge--success,
+.status-badge--approved,
+.status-badge--active {
+  background: var(--badge-success-bg);
+  color: var(--badge-success-text);
+  border-color: var(--badge-success-border);
+}
+
+.status-badge--error,
+.status-badge--cancelled,
+.status-badge--inactive {
+  background: var(--badge-error-bg);
+  color: var(--badge-error-text);
+  border-color: var(--badge-error-border);
+}
+
+.status-badge--info,
+.status-badge--in-progress,
+.status-badge--sent,
+.status-badge--received {
+  background: var(--badge-info-bg);
+  color: var(--badge-info-text);
+  border-color: var(--badge-info-border);
+}
+/* ============================================================================
+   SCROLLBAR
+============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400);
+}
