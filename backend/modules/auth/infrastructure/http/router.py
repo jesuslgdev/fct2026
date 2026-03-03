@@ -6,7 +6,7 @@ from modules.auth.application.login_use_case import LoginUseCase
 from modules.auth.application.logout_use_case import LogoutUseCase
 from modules.auth.domain.entities.user_session import UserSession
 from modules.auth.infrastructure.http.schemas.login_request import LoginRequestDTO
-from modules.auth.application.dtos.login_response_dto import LoginResponseDTO
+from modules.auth.infrastructure.http.schemas.login_response import LoginResponseDTO
 from modules.auth.infrastructure.repos.auth_repository import AuthRepository
 from shared.infrastructure.database.connection import get_db
 
@@ -19,8 +19,12 @@ async def login(
     body: LoginRequestDTO,
     db: AsyncSession = Depends(get_db),
 ) -> LoginResponseDTO:
-    use_case = LoginUseCase(AuthRepository(db))
-    return await use_case.login(body.firebase_id_token)
+    session = await LoginUseCase(AuthRepository(db)).login(body.firebase_id_token)
+    return LoginResponseDTO(
+        role=session.role,
+        department_id=session.department_id,
+        name=session.name,
+    )
 
 
 @router.post("/logout", status_code=204)

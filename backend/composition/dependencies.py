@@ -35,4 +35,5 @@ async def get_current_user(
         role=user.role,
         department_id=user.department_id,
         firebase_uid=claims["uid"],
+        name=f"{user.first_name} {user.last_name}",
     )

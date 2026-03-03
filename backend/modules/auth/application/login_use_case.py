@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 
+from modules.auth.domain.entities.user_session import UserSession
 from modules.auth.domain.interfaces.i_auth_repository import IAuthRepository
 from modules.auth.domain.interfaces.i_login_use_case import ILoginUseCase
-from modules.auth.application.dtos.login_response_dto import LoginResponseDTO
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
 
 
@@ -10,7 +10,7 @@ class LoginUseCase(ILoginUseCase):
     def __init__(self, auth_repository: IAuthRepository) -> None:
         self._repo = auth_repository
 
-    async def login(self, firebase_id_token: str) -> LoginResponseDTO:
+    async def login(self, firebase_id_token: str) -> UserSession:
         try:
             claims = verify_firebase_token(firebase_id_token)
         except Exception:
@@ -28,8 +28,10 @@ class LoginUseCase(ILoginUseCase):
                 detail="User not found or inactive",
             )
 
-        return LoginResponseDTO(
+        return UserSession(
+            email=user.email,
             role=user.role,
             department_id=user.department_id,
+            firebase_uid=claims["uid"],
             name=f"{user.first_name} {user.last_name}",
         )

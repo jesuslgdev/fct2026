@@ -1,12 +1,8 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from modules.auth.application.dtos.login_response_dto import LoginResponseDTO
+from modules.auth.domain.entities.user_session import UserSession
 
 
 class ILoginUseCase(ABC):
     @abstractmethod
-    async def login(self, firebase_id_token: str) -> "LoginResponseDTO": ...
+    async def login(self, firebase_id_token: str) -> UserSession: ...
