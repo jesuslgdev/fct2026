@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from shared.infrastructure.security.firebase_service import verify_firebase_token
+from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
 
 _bearer = HTTPBearer()
 
