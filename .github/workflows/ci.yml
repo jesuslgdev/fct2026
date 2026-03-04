@@ -3,6 +3,7 @@ name: CI
 on:
   pull_request:
     branches: [main, development]
+  workflow_call:
 
 jobs:
   lint:
@@ -13,14 +14,6 @@ jobs:
         with: { python-version: "3.13" }
       - run: pip install poetry && poetry install
       - run: poetry run ruff check .
-
-  format:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.13" }
-      - run: pip install poetry && poetry install
       - run: poetry run ruff format --check .
 
   test:
@@ -35,3 +28,10 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
       SUPERADMIN_EMAIL: ${{ secrets.SUPERADMIN_EMAIL }}
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker build backend/
