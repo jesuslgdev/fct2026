@@ -6,14 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from composition.router_registry import register_routers
-from shared.infrastructure.security.firebase_client import init_firebase_app
 from shared.infrastructure.database.connection import engine
+from shared.infrastructure.security.firebase_client import init_firebase_app
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_firebase_app()
     yield
-
 
 app = FastAPI(
     title="FCT2026 ERP API",
