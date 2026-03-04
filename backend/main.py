@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from composition.router_registry import register_routers
-from shared.infrastructure.security.firebase_service import init_firebase_app
+from shared.infrastructure.security.firebase_client import init_firebase_app
 
 init_firebase_app()
 
