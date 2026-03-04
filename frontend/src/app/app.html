@@ -1,1 +1,206 @@
-<router-outlet></router-outlet>
+<!-- Prueba de ui-button -->
+<div class="erp-shell">
+  <div class="erp-main" style="margin-left: 0">
+    <header class="erp-topbar">
+      <span class="text-sm font-semibold" style="color: var(--p-text-color)">ui-button — Prueba de componente</span>
+    </header>
+
+    <main class="erp-content max-w-3xl mx-auto">
+
+      <!-- VARIANTES -->
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">Variantes</h2>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <ui-button label="Default"     variant="default"     />
+          <ui-button label="Secondary"   variant="secondary"   />
+          <ui-button label="Destructive" variant="destructive" />
+          <ui-button label="Outline"     variant="outline"     />
+          <ui-button label="Ghost"       variant="ghost"       />
+          <ui-button label="Link"        variant="link"        />
+        </div>
+      </section>
+
+      <!-- TAMAÑOS -->
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">Tamaños</h2>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <ui-button label="Large"   size="lg" />
+          <ui-button label="Default" size="default" />
+          <ui-button label="Small"   size="sm" />
+          <ui-button icon="pi pi-plus" size="icon" [rounded]="true" />
+        </div>
+      </section>
+
+      <!-- CON ICONOS -->
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">Con iconos</h2>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <ui-button label="Nueva compra"  icon="pi pi-plus"        iconPos="left"  />
+          <ui-button label="Exportar"      icon="pi pi-download"    iconPos="left"  variant="outline"   />
+          <ui-button label="Siguiente"     icon="pi pi-arrow-right" iconPos="right" variant="secondary" />
+          <ui-button label="Eliminar"      icon="pi pi-trash"       variant="destructive" />
+          <ui-button icon="pi pi-pencil"   size="icon" variant="ghost" />
+          <ui-button icon="pi pi-eye"      size="icon" variant="ghost" />
+          <ui-button icon="pi pi-trash"    size="icon" variant="ghost" />
+        </div>
+      </section>
+
+      <!-- ESTADOS -->
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">Estados</h2>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <ui-button label="Normal"    />
+          <ui-button label="Disabled"  [disabled]="true" />
+          <ui-button label="Loading..."  [loading]="true" />
+          <ui-button label="Disabled outline"   variant="outline"   [disabled]="true" />
+          <ui-button label="Loading secondary"  variant="secondary" [loading]="true"  />
+        </div>
+      </section>
+
+      <!-- INTERACTIVO -->
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">Interactivo — output (clicked)</h2>
+        </div>
+        <div class="flex flex-wrap gap-3 mb-4">
+          <ui-button label="Guardar"  icon="pi pi-check" (clicked)="onSave()"   />
+          <ui-button label="Cancelar" variant="secondary"    (clicked)="onCancel()" />
+          <ui-button label="Eliminar" variant="destructive"  (clicked)="onDelete()" />
+        </div>
+        @if (lastAction()) {
+          <p class="text-sm px-3 py-2 rounded" style="background: var(--p-surface-100); color: var(--p-text-color-secondary)">
+            Último evento: <strong style="color: var(--p-text-color)">{{ lastAction() }}</strong>
+          </p>
+        }
+      </section>
+
+      <!-- ════════════════════════════════════════════════════ -->
+      <!-- ui-input showcase                                      -->
+      <!-- ════════════════════════════════════════════════════ -->
+
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">ui-input — Variantes</h2>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Default (outlined)</label>
+            <ui-input placeholder="Escribe algo..." [(ngModel)]="inputDefault" />
+            <p class="text-xs mt-1" style="color: var(--p-text-color-secondary)">Valor: {{ inputDefault() }}</p>
+          </div>
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Filled</label>
+            <ui-input placeholder="Relleno..." variant="filled" [(ngModel)]="inputFilled" />
+            <p class="text-xs mt-1" style="color: var(--p-text-color-secondary)">Valor: {{ inputFilled() }}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">ui-input — Tamaños</h2>
+        </div>
+        <div class="flex flex-col gap-4">
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Large</label>
+            <ui-input placeholder="Large..." size="lg" [(ngModel)]="inputLg" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Default</label>
+            <ui-input placeholder="Default..." [(ngModel)]="inputDefault" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Small</label>
+            <ui-input placeholder="Small..." size="sm" [(ngModel)]="inputSm" />
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">ui-input — Estados y tipos</h2>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Disabled</label>
+            <ui-input [disabled]="true" [(ngModel)]="inputDisabled" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Password</label>
+            <ui-input type="password" placeholder="Contraseña..." [(ngModel)]="inputDefault" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Number</label>
+            <ui-input type="number" placeholder="0" [(ngModel)]="inputDefault" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Icono izquierda</label>
+            <ui-input placeholder="Buscar..." icon="pi pi-search" iconPosition="left" [(ngModel)]="inputSearch" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1" style="color: var(--p-text-color-secondary)">Icono derecha</label>
+            <ui-input placeholder="usuario@empresa.com" icon="pi pi-envelope" iconPosition="right" [(ngModel)]="inputDefault" />
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">ui-input — En contexto ERP (formulario de compra)</h2>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium mb-1" style="color: var(--p-text-color)">Proveedor</label>
+            <ui-input placeholder="Nombre del proveedor" [(ngModel)]="inputDefault" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" style="color: var(--p-text-color)">CIF / NIF</label>
+            <ui-input placeholder="B12345678" size="sm" [(ngModel)]="inputSm" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium mb-1" style="color: var(--p-text-color)">Dirección</label>
+            <ui-input placeholder="Calle, número, ciudad..." variant="filled" [(ngModel)]="inputFilled" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-4">
+          <ui-button label="Cancelar" variant="secondary" size="sm" />
+          <ui-button label="Guardar"  icon="pi pi-check"  size="sm" />
+        </div>
+      </section>
+
+      <!-- EN CONTEXTO ERP -->
+      <section class="rounded-lg p-6 mb-6" style="background: var(--p-surface-0); border: 1px solid var(--p-surface-200)">
+        <div class="section-header">
+          <h2 class="section-header__title">En contexto — page header y acciones de tabla</h2>
+        </div>
+        <div class="page-header mb-4">
+          <div>
+            <h1 class="page-header__title">Compras</h1>
+            <p class="page-header__sub">Gestión de órdenes de compra</p>
+          </div>
+          <div class="page-header__actions">
+            <ui-button label="Exportar"     variant="outline" icon="pi pi-download" size="sm" />
+            <ui-button label="Nueva compra" icon="pi pi-plus" size="sm" />
+          </div>
+        </div>
+        <div class="flex items-center gap-2 p-3 rounded" style="background: var(--p-surface-50); border: 1px solid var(--p-surface-200)">
+          <span class="text-sm flex-1" style="color: var(--p-text-color)">CO-2026-001 · MobilTech España</span>
+          <ui-button icon="pi pi-eye"    size="icon" variant="ghost" />
+          <ui-button icon="pi pi-pencil" size="icon" variant="ghost" />
+          <ui-button icon="pi pi-trash"  size="icon" variant="ghost" />
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<p-toast />

@@ -1,231 +1,26 @@
-@import "tailwindcss";
-@plugin "tailwindcss-primeui";
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+@import "tailwindcss-primeui";
+@import "primeicons/primeicons.css";
+@layer tailwind-base, primeng, tailwind-utilities;
 
-/* ============================================================================
-   SEMANTIC TOKENS — Fuente de verdad: ErpPreset → --p-* → Tailwind utilities
-   Nunca definir colores hardcodeados aquí: cambiar ErpPreset propaga a todo.
-============================================================================ */
-@theme inline {
-  /* Tipografía */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-  /* Colores base mapeados desde PrimeNG (ErpPreset) */
-  --color-background:             var(--p-surface-0);
-  --color-foreground:             var(--p-surface-900);
-
-  --color-card:                   var(--p-surface-0);
-  --color-card-foreground:        var(--p-surface-900);
-
-  --color-popover:                var(--p-surface-0);
-  --color-popover-foreground:     var(--p-surface-900);
-
-  --color-primary:                var(--p-primary-color);
-  --color-primary-foreground:     var(--p-primary-inverse-color);
-
-  --color-secondary:              var(--p-surface-100);
-  --color-secondary-foreground:   var(--p-surface-700);
-
-  --color-muted:                  var(--p-surface-100);
-  --color-muted-foreground:       var(--p-surface-500);
-
-  --color-accent:                 var(--p-surface-100);
-  --color-accent-foreground:      var(--p-surface-700);
-
-  /* Estados — no existen en ErpPreset, se definen aquí como excepción */
-  --color-destructive:            oklch(0.577 0.245 27.325);
-  --color-destructive-foreground: oklch(0.985 0 0);
-
-  --color-success:                oklch(0.723 0.219 149.579);
-  --color-success-foreground:     oklch(0.985 0 0);
-
-  --color-warning:                oklch(0.795 0.184 86.047);
-  --color-warning-foreground:     oklch(0.145 0 0);
-
-  --color-info:                   oklch(0.623 0.214 259.815);
-  --color-info-foreground:        oklch(0.985 0 0);
-
-  /* Bordes e inputs */
-  --color-border:                 var(--p-surface-200);
-  --color-input:                  var(--p-surface-200);
-  --color-ring:                   var(--p-primary-color);
-
-  /* Radios desde PrimeNG */
-  --radius-sm:  calc(var(--p-border-radius-md, 0.375rem) - 2px);
-  --radius-md:  var(--p-border-radius-md, 0.375rem);
-  --radius-lg:  calc(var(--p-border-radius-md, 0.375rem) + 2px);
-  --radius-xl:  calc(var(--p-border-radius-md, 0.375rem) + 6px);
-
-  /* Sidebar */
-  --color-sidebar:                    var(--p-surface-50);
-  --color-sidebar-foreground:         var(--p-surface-900);
-  --color-sidebar-primary:            var(--p-primary-color);
-  --color-sidebar-primary-foreground: var(--p-primary-inverse-color);
-  --color-sidebar-accent:             var(--p-surface-100);
-  --color-sidebar-accent-foreground:  var(--p-surface-700);
-  --color-sidebar-border:             var(--p-surface-200);
-  --color-sidebar-ring:               var(--p-primary-color);
+@layer tailwind-base {
+  @import "tailwindcss/preflight";
 }
 
-/* ============================================================================
-   TOKENS DE LAYOUT Y TIEMPO (sin equivalente en PrimeNG)
-============================================================================ */
-:root {
-  --layout-sidebar-width:           256px;
-  --layout-sidebar-width-collapsed: 48px;
-  --layout-topbar-height:           56px;
-
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Tokens de badge — estados de dominio */
-  --badge-pending-bg:     oklch(0.987 0.026 102.212);
-  --badge-pending-text:   oklch(0.554 0.135 66.442);
-  --badge-pending-border: oklch(0.905 0.075 92.267);
-
-  --badge-success-bg:     oklch(0.980 0.021 166.113);
-  --badge-success-text:   oklch(0.508 0.118 165.612);
-  --badge-success-border: oklch(0.901 0.058 163.225);
-
-  --badge-error-bg:       oklch(0.971 0.013 17.38);
-  --badge-error-text:     oklch(0.505 0.213 27.518);
-  --badge-error-border:   oklch(0.885 0.062 18.334);
-
-  --badge-info-bg:        oklch(0.970 0.014 254.604);
-  --badge-info-text:      oklch(0.488 0.243 264.376);
-  --badge-info-border:    oklch(0.881 0.054 254.604);
-}
-/* ============================================================================
-   BASE STYLES
-============================================================================ */
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-    box-sizing: border-box;
-  }
-
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    margin: 0;
-  }
-
-  h1 { @apply text-4xl font-bold tracking-tight; }
-  h2 { @apply text-3xl font-semibold tracking-tight; }
-  h3 { @apply text-2xl font-semibold; }
-  h4 { @apply text-xl font-semibold; }
-  h5 { @apply text-lg font-medium; }
-  h6 { @apply text-base font-medium; }
-
-  :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
-  }
-
-  ::-webkit-scrollbar       { @apply w-2 h-2; }
-  ::-webkit-scrollbar-track { @apply bg-muted; }
-  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground; }
+@layer tailwind-utilities {
+  @import "tailwindcss/utilities";
 }
 
-/* ============================================================================
-   PRIMENG OVERRIDES — consumen tokens --p-* del ErpPreset
-============================================================================ */
-.p-inputtext,
-.p-dropdown,
-.p-inputtextarea {
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  transition: var(--transition-fast);
+
+/* Font for all web */
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
-.p-inputtext:hover:not(:disabled),
-.p-dropdown:hover:not(.p-disabled) {
-  border-color: var(--p-surface-400);
-}
-
-.p-inputtext:focus,
-.p-dropdown.p-focus {
-  border-color: var(--p-primary-color);
-  box-shadow: none;
-}
-
+/* Settings for buttons */
 .p-button {
-  border-radius: var(--radius-md);
-  transition: var(--transition-fast);
-}
-
-.p-datatable {
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.p-datatable thead th {
-  background: var(--p-surface-100);
-  color: var(--p-surface-500);
+  font-size: rem;
   font-weight: 500;
-  border-bottom: 1px solid var(--color-border);
+  margin: 8px;
 }
 
-.p-datatable tbody tr { transition: var(--transition-fast); }
-.p-datatable tbody tr:hover { background: var(--p-surface-50); }
-
-.p-toast-message {
-  border-radius: var(--radius-lg);
-  border-left-width: 4px;
-}
-
-.p-toast-message-success { border-left-color: var(--color-success); }
-.p-toast-message-error   { border-left-color: var(--color-destructive); }
-.p-toast-message-warn    { border-left-color: var(--color-warning); }
-.p-toast-message-info    { border-left-color: var(--color-info); }
-
-/* ============================================================================
-   COMPONENTES REUTILIZABLES
-============================================================================ */
-@layer components {
-  /* Contenedor de página */
-  .page-container {
-    @apply mx-auto w-full max-w-screen-xl px-4 sm:px-6 lg:px-8;
-  }
-
-  /* Card */
-  .card {
-    @apply rounded-lg border border-border bg-card text-card-foreground shadow-sm;
-  }
-
-  /* Input */
-  .input-base {
-    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2
-           text-sm placeholder:text-muted-foreground
-           focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-ring focus-visible:ring-offset-2
-           disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  /* Label */
-  .label-base {
-    @apply text-sm font-medium leading-none
-           peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
-  }
-
-  /* Status badges — el dominio provee el status en inglés */
-  .badge-base {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5
-           text-xs font-semibold border border-transparent;
-  }
-
-  .badge-pending   { background: var(--badge-pending-bg);  color: var(--badge-pending-text);  border-color: var(--badge-pending-border); }
-
-  .badge-success,
-  .badge-approved,
-  .badge-active    { background: var(--badge-success-bg);  color: var(--badge-success-text);  border-color: var(--badge-success-border); }
-
-  .badge-error,
-  .badge-cancelled,
-  .badge-inactive  { background: var(--badge-error-bg);    color: var(--badge-error-text);    border-color: var(--badge-error-border); }
-
-  .badge-info,
-  .badge-in-progress,
-  .badge-sent,
-  .badge-received  { background: var(--badge-info-bg);     color: var(--badge-info-text);     border-color: var(--badge-info-border); }
-}
