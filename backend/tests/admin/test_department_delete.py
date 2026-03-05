@@ -44,4 +44,4 @@ async def test_delete_department_has_users(
 
 async def test_delete_department_unauthorized(unauthenticated_client: AsyncClient):
     response = await unauthenticated_client.delete("/api/v1/admin/departments/1")
-    assert response.status_code == 403
+    assert response.status_code == 401

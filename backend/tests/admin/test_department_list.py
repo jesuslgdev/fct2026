@@ -29,4 +29,4 @@ async def test_list_departments_returns_data(
 
 async def test_list_departments_unauthorized(unauthenticated_client: AsyncClient):
     response = await unauthenticated_client.get("/api/v1/admin/departments")
-    assert response.status_code == 403
+    assert response.status_code == 401

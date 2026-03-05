@@ -26,4 +26,4 @@ async def test_get_department_not_found(client: AsyncClient, db_session: AsyncSe
 
 async def test_get_department_unauthorized(unauthenticated_client: AsyncClient):
     response = await unauthenticated_client.get("/api/v1/admin/departments/1")
-    assert response.status_code == 403
+    assert response.status_code == 401

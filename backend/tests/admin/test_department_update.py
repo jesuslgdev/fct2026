@@ -59,4 +59,4 @@ async def test_update_department_unauthorized(unauthenticated_client: AsyncClien
     response = await unauthenticated_client.put(
         "/api/v1/admin/departments/1", json={"name": "Unauthorized"}
     )
-    assert response.status_code == 403
+    assert response.status_code == 401

@@ -19,6 +19,7 @@ async def lifespan(app: FastAPI):
         await seed(session)
     yield
 
+
 app = FastAPI(
     title="FCT2026 ERP API",
     version="0.1.0",

@@ -35,4 +35,4 @@ async def test_create_department_unauthorized(unauthenticated_client: AsyncClien
     response = await unauthenticated_client.post(
         "/api/v1/admin/departments", json={"name": "HR"}
     )
-    assert response.status_code == 403
+    assert response.status_code == 401

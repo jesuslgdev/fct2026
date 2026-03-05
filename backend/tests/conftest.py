@@ -31,12 +31,16 @@ async def client(db_session: AsyncSession):
     ) as ac:
         yield ac
 
-    app.dependency_overrides.clear()
+    del app.dependency_overrides[get_db]
+    del app.dependency_overrides[get_current_user]
 
 
 @pytest_asyncio.fixture
 async def unauthenticated_client():
+    saved = app.dependency_overrides.pop(get_current_user, None)
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
         yield ac
+    if saved is not None:
+        app.dependency_overrides[get_current_user] = saved
