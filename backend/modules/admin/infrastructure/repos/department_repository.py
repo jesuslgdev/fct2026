@@ -2,7 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.admin.domain.entities.department import Department
-from modules.admin.domain.interfaces.i_department_repository import (
+from modules.admin.domain.interfaces.repositories.i_department_repository import (
     IDepartmentRepository,
 )
 from shared.domain.entities.user import User

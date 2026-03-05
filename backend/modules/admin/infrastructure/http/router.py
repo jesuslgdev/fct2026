@@ -9,19 +9,19 @@ from composition.dependencies import (
     get_update_department_use_case,
 )
 from composition.security import get_current_user
-from modules.admin.domain.interfaces.i_create_department_use_case import (
+from modules.admin.domain.interfaces.use_cases.departments.i_create_department_use_case import (
     ICreateDepartmentUseCase,
 )
-from modules.admin.domain.interfaces.i_delete_department_use_case import (
+from modules.admin.domain.interfaces.use_cases.departments.i_delete_department_use_case import (
     IDeleteDepartmentUseCase,
 )
-from modules.admin.domain.interfaces.i_get_department_use_case import (
+from modules.admin.domain.interfaces.use_cases.departments.i_get_department_use_case import (
     IGetDepartmentUseCase,
 )
-from modules.admin.domain.interfaces.i_list_departments_use_case import (
+from modules.admin.domain.interfaces.use_cases.departments.i_list_departments_use_case import (
     IListDepartmentsUseCase,
 )
-from modules.admin.domain.interfaces.i_update_department_use_case import (
+from modules.admin.domain.interfaces.use_cases.departments.i_update_department_use_case import (
     IUpdateDepartmentUseCase,
 )
 from modules.admin.infrastructure.http.schemas import (

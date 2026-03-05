@@ -1,7 +1,7 @@
-from modules.admin.domain.interfaces.i_delete_department_use_case import (
+from modules.admin.domain.interfaces.use_cases.departments.i_delete_department_use_case import (
     IDeleteDepartmentUseCase,
 )
-from modules.admin.domain.interfaces.i_department_repository import (
+from modules.admin.domain.interfaces.repositories.i_department_repository import (
     IDepartmentRepository,
 )
 
