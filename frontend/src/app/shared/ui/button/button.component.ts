@@ -1,12 +1,3 @@
-// src/app/shared/components/button/button.component.ts
-// ================================================================
-// Wrapper de p-button de PrimeNG.
-//
-// Por qué un wrapper y no usar p-button directamente:
-//   - Mantiene la misma API que el componente anterior (variant, size)
-//   - Centraliza el mapeo de variantes a severities de PrimeNG
-//   - Si mañana cambia PrimeNG, solo se toca este archivo
-// ================================================================
 
 import {
   ChangeDetectionStrategy,
@@ -39,7 +30,7 @@ const SIZE_MAP: Record<ButtonSize, 'small' | 'large' | undefined> = {
   default: undefined,
   sm:      'small',
   lg:      'large',
-  icon:    'small',   // icon usa small + clase extra para forzar cuadrado
+  icon:    'small',  
 };
 
 @Component({

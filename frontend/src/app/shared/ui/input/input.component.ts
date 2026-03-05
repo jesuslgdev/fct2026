@@ -1,16 +1,3 @@
-// src/app/shared/components/input/input.component.ts
-// ================================================================
-// Wrapper de [pInputText] de PrimeNG.
-//
-// Por qué un wrapper y no usar [pInputText] directamente:
-//   - Mantiene la misma API coherente con el resto de ui-components
-//   - Centraliza el mapeo de variantes y tamaños de PrimeNG
-//   - Si mañana cambia PrimeNG, solo se toca este archivo
-//
-// Nota: En PrimeNG v21 InputText es una DIRECTIVA ([pInputText]),
-//   no un componente. Para iconos dentro del input se usan los
-//   componentes p-iconfield y p-inputicon.
-// ================================================================
 
 import {
   ChangeDetectionStrategy,
@@ -29,7 +16,7 @@ import { InputIcon } from 'primeng/inputicon';
 export type InputVariant = 'default' | 'filled';
 export type InputSize    = 'default' | 'sm' | 'lg';
 
-// Mapa de variantes propias → opciones de PrimeNG
+
 const VARIANT_MAP: Record<InputVariant, { variant: 'outlined' | 'filled' }> = {
   default: { variant: 'outlined' },
   filled:  { variant: 'filled'   },
@@ -75,7 +62,7 @@ const SIZE_MAP: Record<InputSize, 'small' | 'large' | undefined> = {
   `,
 })
 export class InputComponent implements ControlValueAccessor {
-  // ── Inputs ──
+
   type         = input<string>('text');
   placeholder  = input<string>('');
   disabled     = input<boolean>(false);
