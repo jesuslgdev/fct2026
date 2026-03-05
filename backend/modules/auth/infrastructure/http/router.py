@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from composition.dependencies import get_current_user
 from modules.auth.application.login_use_case import LoginUseCase
 from modules.auth.application.logout_use_case import LogoutUseCase
-from modules.auth.domain.entities.user_session import UserSession
+from shared.domain.entities.user_session import UserSession
 from modules.auth.infrastructure.http.schemas.login_request import LoginRequestDTO
 from modules.auth.infrastructure.http.schemas.login_response import LoginResponseDTO
 from modules.auth.infrastructure.repos.auth_repository import AuthRepository

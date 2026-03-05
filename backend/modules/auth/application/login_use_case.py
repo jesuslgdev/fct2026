@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 
-from modules.auth.domain.entities.user_session import UserSession
+from shared.domain.entities.user_session import UserSession
 from modules.auth.domain.interfaces.i_auth_repository import IAuthRepository
 from modules.auth.domain.interfaces.i_login_use_case import ILoginUseCase
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token

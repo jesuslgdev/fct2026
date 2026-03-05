@@ -25,7 +25,7 @@ from modules.admin.domain.interfaces.i_update_department_use_case import (
 from modules.admin.infrastructure.repos.department_repository import (
     DepartmentRepository,
 )
-from modules.auth.domain.entities.user_session import UserSession
+from shared.domain.entities.user_session import UserSession
 from modules.auth.infrastructure.repos.auth_repository import AuthRepository
 from shared.infrastructure.database.connection import get_db
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
