@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.auth.domain.interfaces.i_auth_repository import IAuthRepository
+from modules.auth.domain.interfaces.repositories.i_auth_repository import IAuthRepository
 from shared.domain.entities.user import User
 
 

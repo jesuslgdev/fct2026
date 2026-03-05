@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 
-from modules.auth.domain.interfaces.i_logout_use_case import ILogoutUseCase
+from modules.auth.domain.interfaces.use_cases.i_logout_use_case import ILogoutUseCase
 from shared.infrastructure.security.firebase_auth_provider import revoke_firebase_tokens
 
 
