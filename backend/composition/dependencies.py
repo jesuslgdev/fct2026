@@ -34,7 +34,22 @@ from modules.admin.domain.interfaces.use_cases.departments.i_update_department_u
 from modules.admin.infrastructure.repos.department_repository import (
     DepartmentRepository,
 )
+from modules.auth.application.login_use_case import LoginUseCase
+from modules.auth.application.logout_use_case import LogoutUseCase
+from modules.auth.domain.interfaces.use_cases.i_login_use_case import ILoginUseCase
+from modules.auth.domain.interfaces.use_cases.i_logout_use_case import ILogoutUseCase
+from modules.auth.infrastructure.repos.auth_repository import AuthRepository
 from shared.infrastructure.database.connection import get_db
+
+
+async def get_login_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ILoginUseCase:
+    return LoginUseCase(AuthRepository(db))
+
+
+def get_logout_use_case() -> ILogoutUseCase:
+    return LogoutUseCase()
 
 
 async def get_create_department_use_case(
