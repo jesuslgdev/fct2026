@@ -1,11 +1,21 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.admin.application.create_department_use_case import CreateDepartmentUseCase
-from modules.admin.application.delete_department_use_case import DeleteDepartmentUseCase
-from modules.admin.application.get_department_use_case import GetDepartmentUseCase
-from modules.admin.application.list_departments_use_case import ListDepartmentsUseCase
-from modules.admin.application.update_department_use_case import UpdateDepartmentUseCase
+from modules.admin.application.departments.create_department_use_case import (
+    CreateDepartmentUseCase,
+)
+from modules.admin.application.departments.delete_department_use_case import (
+    DeleteDepartmentUseCase,
+)
+from modules.admin.application.departments.get_department_use_case import (
+    GetDepartmentUseCase,
+)
+from modules.admin.application.departments.list_departments_use_case import (
+    ListDepartmentsUseCase,
+)
+from modules.admin.application.departments.update_department_use_case import (
+    UpdateDepartmentUseCase,
+)
 from modules.admin.domain.interfaces.use_cases.departments.i_create_department_use_case import (
     ICreateDepartmentUseCase,
 )

@@ -4,12 +4,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from composition.security import get_current_user
 from composition.router_registry import register_routers
+from composition.security import get_current_user
 from shared.config import settings
 from shared.infrastructure.database.connection import AsyncSessionLocal, engine
 from shared.infrastructure.database.seed import seed
 from shared.infrastructure.security.firebase_client import init_firebase_app
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

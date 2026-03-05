@@ -1,9 +1,9 @@
 from modules.admin.domain.entities.department import Department
-from modules.admin.domain.interfaces.use_cases.departments.i_create_department_use_case import (
-    ICreateDepartmentUseCase,
-)
 from modules.admin.domain.interfaces.repositories.i_department_repository import (
     IDepartmentRepository,
+)
+from modules.admin.domain.interfaces.use_cases.departments.i_create_department_use_case import (
+    ICreateDepartmentUseCase,
 )
 
 
