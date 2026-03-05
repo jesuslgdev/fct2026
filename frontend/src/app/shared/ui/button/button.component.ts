@@ -8,29 +8,39 @@ import {
 } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
-export type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
-export type ButtonSize    = 'default' | 'sm' | 'lg' | 'icon';
+// Button variant types
+export type ButtonVariant =
+  | 'default'
+  | 'destructive'
+  | 'outline'
+  | 'secondary'
+  | 'ghost'
+  | 'link';
 
-// Mapa de variantes propias → opciones de PrimeNG
+// Button size types
+export type ButtonSize = 'default' | 'sm' | 'lg' | 'icon';
+
+// Variant mapping to PrimeNG options
 const VARIANT_MAP: Record<ButtonVariant, {
   severity?: 'secondary' | 'success' | 'info' | 'warn' | 'danger' | 'contrast';
   outlined?: boolean;
-  text?:     boolean;
-  link?:     boolean;
+  text?: boolean;
+  link?: boolean;
 }> = {
-  default:     {},
+  default: {},
   destructive: { severity: 'danger' },
-  outline:     { outlined: true },
-  secondary:   { severity: 'secondary' },
-  ghost:       { text: true },
-  link:        { link: true },
+  outline: { outlined: true },
+  secondary: { severity: 'secondary' },
+  ghost: { text: true },
+  link: { link: true },
 };
 
+// Size mapping to PrimeNG options
 const SIZE_MAP: Record<ButtonSize, 'small' | 'large' | undefined> = {
   default: undefined,
-  sm:      'small',
-  lg:      'large',
-  icon:    'small',  
+  sm: 'small',
+  lg: 'large',
+  icon: 'small',
 };
 
 @Component({
@@ -38,42 +48,25 @@ const SIZE_MAP: Record<ButtonSize, 'small' | 'large' | undefined> = {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonModule],
-  template: `
-    <p-button
-      [label]="label()"
-      [icon]="icon()"
-      [iconPos]="iconPos()"
-      [type]="type()"
-      [disabled]="disabled()"
-      [loading]="loading()"
-      [severity]="options().severity"
-      [outlined]="options().outlined ?? false"
-      [text]="options().text ?? false"
-      [link]="options().link ?? false"
-      [size]="resolvedSize()"
-      [rounded]="rounded()"
-      [styleClass]="styleClass()"
-      (onClick)="clicked.emit($event)"
-    />
-  `,
+  templateUrl: './button.component.html',
 })
 export class ButtonComponent {
-  // ── Inputs ──
-  label    = input<string>('');
-  icon     = input<string>('');
-  iconPos  = input<'left' | 'right' | 'top' | 'bottom'>('left');
-  variant  = input<ButtonVariant>('default');
-  size     = input<ButtonSize>('default');
-  type     = input<'button' | 'submit' | 'reset'>('button');
-  disabled = input<boolean>(false);
-  loading  = input<boolean>(false);
-  rounded  = input<boolean>(false);
-  styleClass = input<string>('');
+  // Inputs
+  label = input<string>(''); // Button label
+  icon = input<string>(''); // Icon class
+  iconPos = input<'left' | 'right' | 'top' | 'bottom'>('left'); // Icon position
+  variant = input<ButtonVariant>('default'); // Button variant
+  size = input<ButtonSize>('default'); // Button size
+  type = input<'button' | 'submit' | 'reset'>('button'); // Button type
+  disabled = input<boolean>(false); // Disabled state
+  loading = input<boolean>(false); // Loading state
+  rounded = input<boolean>(false); // Rounded corners
+  styleClass = input<string>(''); // Custom style class
 
-  // ── Output ──
-  clicked = output<MouseEvent>();
+  // Output
+  clicked = output<MouseEvent>(); // Emits click event
 
-  // ── Computed ──
-  options      = computed(() => VARIANT_MAP[this.variant()]);
-  resolvedSize = computed(() => SIZE_MAP[this.size()]);
+  // Computed properties
+  options = computed(() => VARIANT_MAP[this.variant()]); // PrimeNG options for variant
+  resolvedSize = computed(() => SIZE_MAP[this.size()]); // PrimeNG size option
 }
