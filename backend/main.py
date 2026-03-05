@@ -2,13 +2,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from sqlalchemy import text
 
+from composition.dependencies import get_current_user
 from composition.router_registry import register_routers
-from shared.infrastructure.security.firebase_client import init_firebase_app
+from shared.config import settings
 from shared.infrastructure.database.connection import AsyncSessionLocal, engine
 from shared.infrastructure.database.seed import seed
+from shared.infrastructure.security.firebase_client import init_firebase_app
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,6 +33,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if settings.disable_auth:
+
+    async def _mock_user() -> dict:
+        return {"uid": "dev-user", "email": "dev@local.dev"}
+
+    app.dependency_overrides[get_current_user] = _mock_user
 
 register_routers(app)
 

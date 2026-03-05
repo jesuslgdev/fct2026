@@ -3,6 +3,7 @@
 # and validate their types at startup.
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     # Full async-compatible PostgreSQL connection string (psycopg3 driver)
     database_url: str
@@ -12,8 +13,11 @@ class Settings(BaseSettings):
     environment: str = "development"
     # Email address used to seed the initial superadmin account
     superadmin_email: str
+    # Set to True locally to bypass Firebase auth (never set this on Render)
+    disable_auth: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
 
 # Singleton instance imported throughout the application
 settings = Settings()

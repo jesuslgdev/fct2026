@@ -9,3 +9,9 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+#Claude
+CLAUDE.md
+
+#proyect structure
+backend/FinalStructure.md

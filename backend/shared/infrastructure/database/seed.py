@@ -13,8 +13,7 @@ async def seed(session: AsyncSession) -> None:
     if result.scalar_one_or_none() is not None:
         return
 
-    # TODO: department_id omitted — assign a real department once the
-    # departments table and admin module are implemented.
+    # TODO: department_id omitted — assign once the admin module creates departments.
     admin = User(
         first_name="Admin",
         last_name="System",
