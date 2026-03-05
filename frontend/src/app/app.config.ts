@@ -34,17 +34,5 @@ export const appConfig: ApplicationConfig = {
       },
     }),
 
-   
-    MessageService,       // <p-toast>
-    ConfirmationService,  // <p-confirmDialog>
-
-    // ──Infraestructure ──
-    // When backend is ready, replace mocks with real repositories:
-    //   { provide: PurchaseRepository, useClass: PurchaseRepositoryHttp },
-    //
-    //   mocks:
-    //   { provide: PurchaseRepository, useClass: PurchaseRepositoryMock },
-    //
-    // TODO add base url for API REST
   ],
 };
