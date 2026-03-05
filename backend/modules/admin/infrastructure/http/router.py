@@ -3,12 +3,12 @@ from sqlalchemy.exc import IntegrityError
 
 from composition.dependencies import (
     get_create_department_use_case,
-    get_current_user,
     get_delete_department_use_case,
     get_get_department_use_case,
     get_list_departments_use_case,
     get_update_department_use_case,
 )
+from composition.security import get_current_user
 from modules.admin.domain.interfaces.i_create_department_use_case import (
     ICreateDepartmentUseCase,
 )

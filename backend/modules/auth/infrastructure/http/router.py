@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from composition.dependencies import get_current_user
+from composition.security import get_current_user
 from modules.auth.application.login_use_case import LoginUseCase
 from modules.auth.application.logout_use_case import LogoutUseCase
 from shared.domain.entities.user_session import UserSession

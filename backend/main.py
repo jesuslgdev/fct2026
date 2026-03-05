@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from composition.dependencies import get_current_user
+from composition.security import get_current_user
 from composition.router_registry import register_routers
 from shared.config import settings
 from shared.infrastructure.database.connection import AsyncSessionLocal, engine
