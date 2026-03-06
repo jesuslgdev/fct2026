@@ -1,0 +1,60 @@
+<!-- Dialog wrapper around PrimeNG p-dialog -->
+<p-dialog
+  [(visible)]="visible"
+  [modal]="modal()"
+  [closable]="closable()"
+  [closeOnEscape]="closeOnEscape()"
+  [dismissableMask]="dismissable()"
+  [draggable]="draggable()"
+  [resizable]="resizable()"
+  [style]="dialogStyle()"
+  [styleClass]="styleClass()"
+  (onHide)="onHide()"
+>
+  <!-- ── Custom header with variant icon ── -->
+  <ng-template pTemplate="header">
+    <span class="flex items-center gap-2">
+      @if (variantOptions().icon) {
+        <i [class]="variantOptions().icon + ' text-lg ' + variantOptions().headerClass"></i>
+      }
+      <span class="font-semibold text-base" [class]="variantOptions().headerClass">
+        {{ header() }}
+      </span>
+    </span>
+    <!-- Slot for completely custom header content -->
+    <ng-content select="[dialog-header]" />
+  </ng-template>
+
+  <!-- ── Body content (default slot) ── -->
+  <ng-content />
+
+  <!-- ── Footer: convenience actions OR custom slot ── -->
+  @if (hasFooterActions()) {
+    <ng-template pTemplate="footer">
+      <!-- Custom footer slot takes precedence -->
+      <ng-content select="[dialog-footer]" />
+
+      <!-- Built-in action buttons -->
+      @if (cancelLabel()) {
+        <ui-button
+          [label]="cancelLabel()"
+          variant="outline"
+          (clicked)="onCancel()"
+        />
+      }
+      @if (confirmLabel()) {
+        <ui-button
+          [label]="confirmLabel()"
+          [loading]="confirmLoading()"
+          [disabled]="confirmDisabled()"
+          (clicked)="onConfirm()"
+        />
+      }
+    </ng-template>
+  } @else {
+    <!-- Allow a fully custom footer without built-in buttons -->
+    <ng-template pTemplate="footer">
+      <ng-content select="[dialog-footer]" />
+    </ng-template>
+  }
+</p-dialog>
