@@ -1,0 +1,50 @@
+<p-card
+  [header]="header()"
+  [subheader]="subheader()"
+  [style]="style()"
+  [styleClass]="styleClass()"
+>
+  <!-- Plantilla header personalizada -->
+  @if (headerTemplate()) {
+    <ng-template pTemplate="header">
+      <ng-container
+        [ngTemplateOutlet]="headerTemplate()!"
+        [ngTemplateOutletInjector]="injector"
+      />
+    </ng-template>
+  }
+
+  <!-- Plantilla title personalizada -->
+  @if (titleTemplate()) {
+    <ng-template pTemplate="title">
+      <ng-container
+        [ngTemplateOutlet]="titleTemplate()!"
+        [ngTemplateOutletInjector]="injector"
+      />
+    </ng-template>
+  }
+
+  <!-- Plantilla subtitle personalizada -->
+  @if (subtitleTemplate()) {
+    <ng-template pTemplate="subtitle">
+      <ng-container
+        [ngTemplateOutlet]="subtitleTemplate()!"
+        [ngTemplateOutletInjector]="injector"
+      />
+    </ng-template>
+  }
+
+  <!-- Contenido principal proyectado directamente -->
+  <ng-content></ng-content>
+
+  <!-- Plantilla footer personalizada -->
+  @if (footerTemplate()) {
+    <ng-template pTemplate="footer">
+      <ng-container
+        [ngTemplateOutlet]="footerTemplate()!"
+        [ngTemplateOutletInjector]="injector"
+      />
+    </ng-template>
+  }
+</p-card>
+

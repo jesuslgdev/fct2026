@@ -2,6 +2,12 @@
 frontend/node_modules/
 .env
 .DS_Store
+# Claude Code (asistente IA)
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Firebase
 .firebase/
