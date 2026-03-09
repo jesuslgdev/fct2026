@@ -1,0 +1,145 @@
+<!-- TOP NAVBAR -->
+<header class="app-navbar">
+  <ui-button
+    icon="pi pi-bars"
+    variant="secondary"
+    [rounded]="true"
+    styleClass="w-9 h-9"
+    aria-label="Abrir menú lateral"
+    (clicked)="sidebarVisible = true"
+    pTooltip="Abrir menú"
+    tooltipPosition="right"
+  />
+
+  <span class="app-navbar-title">{{ pageTitle() }}</span>
+
+  <div class="ml-auto flex items-center gap-2">
+    <p-avatar
+      image="https://primefaces.org/cdn/primeng/images/demo/avatar/amyelsner.png"
+      shape="circle"
+      styleClass="w-8 h-8 cursor-pointer"
+    />
+  </div>
+</header>
+
+<!-- PAGE CONTENT -->
+<main class="min-h-[calc(100vh-56px)] bg-surface-50">
+  <router-outlet />
+</main>
+
+<!-- SIDEBAR DRAWER -->
+<p-drawer
+  #drawerRef
+  [(visible)]="sidebarVisible"
+  [modal]="true"
+  position="left"
+  styleClass="!p-0 !w-72"
+>
+  <ng-template #headless>
+    <div class="flex flex-col h-full bg-surface-0">
+
+      <!-- ── LOGO / BRAND ────────────────────── -->
+      <div class="flex items-center justify-between px-4 py-4 border-b border-surface-100">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-8 h-8 rounded-lg flex items-center justify-center bg-primary"
+          >
+            <i class="pi pi-bolt text-white text-sm"></i>
+          </div>
+          <span
+            class="font-semibold text-surface-900 app-brand-name"
+          >
+            ERP System
+          </span>
+        </div>
+
+        <!-- Close button removed – drawer now closes when clicking on the backdrop -->
+      </div>
+
+      <!-- ── NAV SECTIONS (scrollable) ─────────── -->
+      <nav class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+
+        @for (section of navSections; track section.title) {
+          <div>
+            <p class="nav-section-title">{{ section.title }}</p>
+            <ul class="space-y-0.5 list-none p-0 m-0">
+              @for (item of section.items; track item.label) {
+                <li>
+                  @if (!item.children?.length) {
+                    <!-- Simple nav item -->
+                    <a
+                      pRipple
+                      [routerLink]="item.route"
+                      routerLinkActive="active"
+                      class="nav-link p-ripple"
+                    >
+                      <i [class]="item.icon + ' text-surface-500 w-4 text-center' "></i>
+                      <span>{{ item.label }}</span>
+                      @if (item.badge) {
+                        <span class="badge-count">{{ item.badge }}</span>
+                      }
+                    </a>
+                  } @else {
+                    <!-- Accordion nav item -->
+                    <div>
+                      <a
+                        pRipple
+                        pStyleClass="@next"
+                        enterFromClass="hidden"
+                        enterActiveClass="animate-slidedown"
+                        leaveToClass="hidden"
+                        leaveActiveClass="animate-slideup"
+                        class="nav-link p-ripple cursor-pointer"
+                      >
+                        <i [class]="item.icon + ' text-surface-500 w-4 text-center' "></i>
+                        <span>{{ item.label }}</span>
+                        <i class="pi pi-chevron-down ml-auto text-surface-400 text-[0.7rem]"></i>
+                      </a>
+                      <!-- Children -->
+                      <ul class="list-none hidden overflow-y-hidden transition-all duration-300 ease-in-out pl-3 mt-0.5 space-y-0.5">
+                        @for (child of item.children; track child.label) {
+                          <li>
+                            <a
+                              pRipple
+                              [routerLink]="child.route"
+                              routerLinkActive="active"
+                              class="nav-link p-ripple"
+                            >
+                              <i [class]="child.icon + ' text-surface-400 w-4 text-center text-[0.8125rem]' "></i>
+                              <span class="text-surface-600">{{ child.label }}</span>
+                              @if (child.badge) {
+                                <span class="badge-count">{{ child.badge }}</span>
+                              }
+                            </a>
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+      </nav>
+
+      <!-- ── USER PROFILE ────────────────────── -->
+      <div class="sidebar-user-section">
+        <div class="user-card" pRipple>
+          <p-avatar
+            image="https://primefaces.org/cdn/primeng/images/demo/avatar/amyelsner.png"
+            shape="circle"
+            styleClass="w-9 h-9 shrink-0"
+          />
+          <div class="min-w-0 flex-1">
+            <p class="user-info-name m-0 truncate">Amy Elsner</p>
+            <p class="user-info-role m-0 truncate">Administrador</p>
+          </div>
+          <i class="pi pi-ellipsis-v text-surface-400 text-[0.875rem]"></i>
+        </div>
+      </div>
+
+    </div>
+  </ng-template>
+</p-drawer>
