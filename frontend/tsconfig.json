@@ -1,8 +1,8 @@
-/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
-/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "outDir": "./dist/out-tsc",
+
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -10,10 +10,32 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": false,
+
     "experimentalDecorators": true,
+    "moduleResolution": "bundler",
     "importHelpers": true,
+
     "target": "ES2022",
-    "module": "preserve"
+    "module": "ES2022",
+    "useDefineForClassFields": false,
+    "lib": ["ES2022", "dom"],
+
+    // ── Alias de paths — arquitectura explícita ──
+    // Evita rutas relativas profundas: '../../../../core/...'
+    // Uso: import { AuthGuard } from '@core/guards/auth.guard'
+    "baseUrl": "src",
+    "paths": {
+      "@core/*":           ["app/core/*"],
+      "@domain/*":         ["app/domain/*"],
+      "@infrastructure/*": ["app/infrastructure/*"],
+      "@features/*":       ["app/features/*"],
+      "@shared/*":         ["app/shared/*"],
+      "@theme/*":          ["theme/*"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
