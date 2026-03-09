@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "practicasmobiveryprod",
+    "prod": "practicasmobiveryprod",
+    "dev": "practicasmobiverydev"
+  }
+}
