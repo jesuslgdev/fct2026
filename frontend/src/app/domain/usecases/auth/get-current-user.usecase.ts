@@ -2,10 +2,10 @@ import { inject } from '@angular/core';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { AuthUser } from '@domain/models/auth-user.model';
 
-export class SignInWithGoogleUseCase {
+export class GetCurrentUserUseCase {
   private authRepository = inject(AuthRepository);
 
-  execute(): Promise<AuthUser> {
-    return this.authRepository.signInWithGoogle();
+  execute(): Promise<AuthUser | null> {
+    return this.authRepository.getCurrentUser();
   }
 }
