@@ -15,9 +15,16 @@
 
   <div class="ml-auto flex items-center gap-2">
     <p-avatar
-      image="https://primefaces.org/cdn/primeng/images/demo/avatar/amyelsner.png"
+      [image]="user()?.photoURL || undefined"
+      [label]="(user()?.displayName || user()?.email || '').charAt(0).toUpperCase()"
       shape="circle"
       styleClass="w-8 h-8 cursor-pointer"
+    />
+    <ui-button
+      icon="pi pi-sign-out"
+      variant="destructive"
+      title="Cerrar sesión"
+      (clicked)="logout()"
     />
   </div>
 </header>
@@ -53,7 +60,6 @@
           </span>
         </div>
 
-        <!-- Close button removed – drawer now closes when clicking on the backdrop -->
       </div>
 
       <!-- ── NAV SECTIONS (scrollable) ─────────── -->
@@ -128,16 +134,24 @@
       <div class="sidebar-user-section">
         <div class="user-card" pRipple>
           <p-avatar
-            image="https://primefaces.org/cdn/primeng/images/demo/avatar/amyelsner.png"
+            [image]="user()?.photoURL || undefined"
+            [label]="(user()?.displayName || user()?.email || '').charAt(0).toUpperCase()"
             shape="circle"
             styleClass="w-9 h-9 shrink-0"
           />
           <div class="min-w-0 flex-1">
-            <p class="user-info-name m-0 truncate">Amy Elsner</p>
-            <p class="user-info-role m-0 truncate">Administrador</p>
+            <p class="user-info-name m-0 truncate">{{ user()?.displayName || user()?.email }}</p>
+            <p class="user-info-role m-0 truncate">Usuario</p>
           </div>
           <i class="pi pi-ellipsis-v text-surface-400 text-[0.875rem]"></i>
         </div>
+        <ui-button
+          label="Cerrar sesión"
+          icon="pi pi-sign-out"
+          variant="destructive"
+          styleClass="w-full mt-2"
+          (clicked)="logout()"
+        ></ui-button>
       </div>
 
     </div>
