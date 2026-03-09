@@ -1,14 +1,12 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { ToastModule } from 'primeng/toast';
-import { ButtonComponent, InputComponent } from './shared/ui';
-import { Button } from "primeng/button";
+
+import { AppShellComponent } from "@shared/ui/app-shell/app-shell.component";
 
 @Component({
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [AppShellComponent],
   templateUrl: './app.html',
 })
 export class AppComponent {
