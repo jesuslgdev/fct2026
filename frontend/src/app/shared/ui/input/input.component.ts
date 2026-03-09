@@ -80,8 +80,10 @@ export class InputComponent implements ControlValueAccessor {
   readonly value = signal<string>('');
 
   // ControlValueAccessor callbacks
+  /* eslint-disable @typescript-eslint/no-empty-function */
   private onChange: (value: unknown) => void = () => {};
   onTouched: () => void = () => {};
+  /* eslint-enable @typescript-eslint/no-empty-function */
 
   // Computed properties
   options = computed(() => VARIANT_MAP[this.variant()]); // PrimeNG options for variant

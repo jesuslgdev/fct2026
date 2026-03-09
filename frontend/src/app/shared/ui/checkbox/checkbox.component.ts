@@ -38,8 +38,10 @@ export class CheckboxComponent implements ControlValueAccessor {
   private readonly _disabledState = signal<boolean>(false);
 
   // CVA callbacks
+  /* eslint-disable @typescript-eslint/no-empty-function */
   private onChange: (value: boolean) => void = () => {};
   onTouched: () => void = () => {};
+  /* eslint-enable @typescript-eslint/no-empty-function */
 
   isDisabled() {
     return this.disabled() || this._disabledState();
