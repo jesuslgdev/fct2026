@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-      - develop
+      - development
   pull_request:
     branches:
       - main
-      - develop
+      - development
 
 jobs:
   lint-and-test:
@@ -42,7 +42,7 @@ jobs:
     name: Deploy → DEV
     needs: lint-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/development' && github.event_name == 'push'
 
     steps:
       - name: Checkout
