@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "i18n": "bundle exec localize", 
+    "start": "npm run i18n && ng serve",
+    "build": "npm run i18n && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
