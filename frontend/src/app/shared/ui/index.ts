@@ -11,3 +11,9 @@ export { TableComponent } from './table/table.component';
 
 export { DialogComponent } from './dialog/dialog.component';
 export type { DialogVariant, DialogSize } from './dialog/dialog.component';
+
+export { BadgeComponent } from './badge/badge.component';
+export type { BadgeVariant, BadgeSize } from './badge/badge.component';
+
+export { CheckboxComponent } from './checkbox/checkbox.component';
+export type { CheckboxVariant } from './checkbox/checkbox.component';
