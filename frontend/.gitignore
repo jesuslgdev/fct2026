@@ -42,3 +42,13 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Environments (generados en CI/CD)
+src/environments/environment.ts
+src/environments/environment.prod.ts
+# Excel temp files
+~$*
