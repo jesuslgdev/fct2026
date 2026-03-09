@@ -4,20 +4,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.admin.domain.entities.department import Department
 
 
-async def test_list_departments_empty(client: AsyncClient, db_session: AsyncSession):
-    response = await client.get("/api/v1/admin/departments")
+async def test_list_departments_empty(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    response = await admin_client.get("/api/v1/admin/departments")
     assert response.status_code == 200
     assert response.json() == []
 
 
 async def test_list_departments_returns_data(
-    client: AsyncClient, db_session: AsyncSession
+    admin_client: AsyncClient, db_session: AsyncSession
 ):
     db_session.add(Department(name="Accounting"))
     db_session.add(Department(name="Warehouse"))
     await db_session.flush()
 
-    response = await client.get("/api/v1/admin/departments")
+    response = await admin_client.get("/api/v1/admin/departments")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
@@ -30,3 +32,8 @@ async def test_list_departments_returns_data(
 async def test_list_departments_unauthorized(unauthenticated_client: AsyncClient):
     response = await unauthenticated_client.get("/api/v1/admin/departments")
     assert response.status_code == 401
+
+
+async def test_list_departments_forbidden(non_admin_client: AsyncClient):
+    response = await non_admin_client.get("/api/v1/admin/departments")
+    assert response.status_code == 403

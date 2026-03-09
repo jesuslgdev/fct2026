@@ -4,8 +4,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shared.domain.entities.user import User
 
 
-async def test_list_users_response_structure(admin_client: AsyncClient):
-    # The DB may contain pre-seeded users; verify response shape, not exact count.
+async def test_list_users_response_structure(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    user = User(
+        first_name="Struct",
+        last_name="Test",
+        email="struct@example.com",
+        role="Employee",
+    )
+    db_session.add(user)
+    await db_session.flush()
+
     response = await admin_client.get("/api/v1/admin/users")
     assert response.status_code == 200
     data = response.json()
@@ -13,8 +23,14 @@ async def test_list_users_response_structure(admin_client: AsyncClient):
     assert "total" in data
     assert "page" in data
     assert "page_size" in data
-    assert isinstance(data["items"], list)
-    assert isinstance(data["total"], int)
+
+    match = next((u for u in data["items"] if u["user_id"] == user.user_id), None)
+    assert match is not None
+    assert match["first_name"] == "Struct"
+    assert match["last_name"] == "Test"
+    assert match["email"] == "struct@example.com"
+    assert match["role"] == "Employee"
+    assert match["is_active"] is True
 
 
 async def test_list_users_returns_data(

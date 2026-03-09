@@ -13,7 +13,7 @@ from composition.dependencies import (
     get_update_department_use_case,
     get_update_user_use_case,
 )
-from composition.security import get_current_user, require_admin
+from composition.security import require_admin
 from modules.admin.domain.interfaces.use_cases.departments.i_create_department_use_case import (
     ICreateDepartmentUseCase,
 )
@@ -74,7 +74,7 @@ def _to_user_dto(user: User) -> UserDTO:
 @router.get("/departments", response_model=list[DepartmentDTO])
 async def list_departments(
     use_case: IListDepartmentsUseCase = Depends(get_list_departments_use_case),
-    _: dict = Depends(get_current_user),
+    _: dict = Depends(require_admin),
 ):
     results = await use_case.execute()
     return [DepartmentDTO(department_id=d.department_id, name=d.name) for d in results]
@@ -84,7 +84,7 @@ async def list_departments(
 async def create_department(
     body: CreateDepartmentDTO,
     use_case: ICreateDepartmentUseCase = Depends(get_create_department_use_case),
-    _: dict = Depends(get_current_user),
+    _: dict = Depends(require_admin),
 ):
     try:
         result = await use_case.execute(body.name)
@@ -98,7 +98,7 @@ async def update_department(
     department_id: int,
     body: UpdateDepartmentDTO,
     use_case: IUpdateDepartmentUseCase = Depends(get_update_department_use_case),
-    _: dict = Depends(get_current_user),
+    _: dict = Depends(require_admin),
 ):
     try:
         result = await use_case.execute(department_id, body.name)
@@ -113,7 +113,7 @@ async def update_department(
 async def delete_department(
     department_id: int,
     use_case: IDeleteDepartmentUseCase = Depends(get_delete_department_use_case),
-    _: dict = Depends(get_current_user),
+    _: dict = Depends(require_admin),
 ):
     try:
         await use_case.execute(department_id)
@@ -127,7 +127,7 @@ async def delete_department(
 async def get_department(
     department_id: int,
     use_case: IGetDepartmentUseCase = Depends(get_get_department_use_case),
-    _: dict = Depends(get_current_user),
+    _: dict = Depends(require_admin),
 ):
     result = await use_case.execute(department_id)
     if result is None:

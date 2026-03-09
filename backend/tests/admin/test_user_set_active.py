@@ -21,6 +21,10 @@ async def test_set_user_active(admin_client: AsyncClient, db_session: AsyncSessi
     )
     assert response.status_code == 204
 
+    get_response = await admin_client.get(f"/api/v1/admin/users/{user.user_id}")
+    assert get_response.status_code == 200
+    assert get_response.json()["is_active"] is True
+
 
 async def test_set_user_inactive(admin_client: AsyncClient, db_session: AsyncSession):
     user = User(
@@ -38,6 +42,10 @@ async def test_set_user_inactive(admin_client: AsyncClient, db_session: AsyncSes
         json={"is_active": False},
     )
     assert response.status_code == 204
+
+    get_response = await admin_client.get(f"/api/v1/admin/users/{user.user_id}")
+    assert get_response.status_code == 200
+    assert get_response.json()["is_active"] is False
 
 
 async def test_set_user_active_not_found(admin_client: AsyncClient):

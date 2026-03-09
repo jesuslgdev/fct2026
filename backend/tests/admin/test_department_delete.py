@@ -5,24 +5,28 @@ from modules.admin.domain.entities.department import Department
 from shared.domain.entities.user import User
 
 
-async def test_delete_department_success(client: AsyncClient, db_session: AsyncSession):
+async def test_delete_department_success(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
     dept = Department(name="ToDelete")
     db_session.add(dept)
     await db_session.flush()
 
-    response = await client.delete(f"/api/v1/admin/departments/{dept.department_id}")
+    response = await admin_client.delete(
+        f"/api/v1/admin/departments/{dept.department_id}"
+    )
     assert response.status_code == 204
 
 
 async def test_delete_department_not_found(
-    client: AsyncClient, db_session: AsyncSession
+    admin_client: AsyncClient, db_session: AsyncSession
 ):
-    response = await client.delete("/api/v1/admin/departments/99999")
+    response = await admin_client.delete("/api/v1/admin/departments/99999")
     assert response.status_code == 404
 
 
 async def test_delete_department_has_users(
-    client: AsyncClient, db_session: AsyncSession
+    admin_client: AsyncClient, db_session: AsyncSession
 ):
     dept = Department(name="DeptWithUsers")
     db_session.add(dept)
@@ -38,10 +42,17 @@ async def test_delete_department_has_users(
     db_session.add(user)
     await db_session.flush()
 
-    response = await client.delete(f"/api/v1/admin/departments/{dept.department_id}")
+    response = await admin_client.delete(
+        f"/api/v1/admin/departments/{dept.department_id}"
+    )
     assert response.status_code == 409
 
 
 async def test_delete_department_unauthorized(unauthenticated_client: AsyncClient):
     response = await unauthenticated_client.delete("/api/v1/admin/departments/1")
     assert response.status_code == 401
+
+
+async def test_delete_department_forbidden(non_admin_client: AsyncClient):
+    response = await non_admin_client.delete("/api/v1/admin/departments/1")
+    assert response.status_code == 403

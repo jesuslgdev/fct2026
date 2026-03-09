@@ -38,7 +38,7 @@ class UserDTO(BaseModel):
 class CreateUserDTO(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=150)
-    email: str = Field(..., max_length=255)
+    email: str = Field(..., max_length=255, pattern=r"^[^@]+@mobivery\.com$")
     role: str = Field(..., pattern="^(Administrator|Manager|Employee)$")
     department_id: int | None = None
 
