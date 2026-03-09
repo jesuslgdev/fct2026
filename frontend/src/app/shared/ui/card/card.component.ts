@@ -21,8 +21,8 @@ export class CardComponent {
   styleClass = input<string>('');
 
   // Inputs para plantillas personalizadas (TemplateRefs)
-  headerTemplate = input<TemplateRef<any>>();
-  titleTemplate = input<TemplateRef<any>>();
-  subtitleTemplate = input<TemplateRef<any>>();
-  footerTemplate = input<TemplateRef<any>>();
+  headerTemplate = input<TemplateRef<unknown>>();
+  titleTemplate = input<TemplateRef<unknown>>();
+  subtitleTemplate = input<TemplateRef<unknown>>();
+  footerTemplate = input<TemplateRef<unknown>>();
 }

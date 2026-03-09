@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 import { AppShellComponent } from "@shared/ui/app-shell/app-shell.component";
 

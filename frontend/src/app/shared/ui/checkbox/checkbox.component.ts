@@ -38,8 +38,8 @@ export class CheckboxComponent implements ControlValueAccessor {
   private readonly _disabledState = signal<boolean>(false);
 
   // CVA callbacks
-  private onChange = (_: boolean) => {};
-  onTouched = () => {};
+  private onChange: (value: boolean) => void = () => {};
+  onTouched: () => void = () => {};
 
   isDisabled() {
     return this.disabled() || this._disabledState();

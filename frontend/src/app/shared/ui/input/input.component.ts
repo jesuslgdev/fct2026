@@ -80,8 +80,8 @@ export class InputComponent implements ControlValueAccessor {
   readonly value = signal<string>('');
 
   // ControlValueAccessor callbacks
-  private onChange = (_: unknown) => {};
-  onTouched = () => {};
+  private onChange: (value: unknown) => void = () => {};
+  onTouched: () => void = () => {};
 
   // Computed properties
   options = computed(() => VARIANT_MAP[this.variant()]); // PrimeNG options for variant
