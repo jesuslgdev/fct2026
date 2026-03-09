@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, ViewChild } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { AuthRepository } from '@domain/repositories/auth.repository';
+import { AuthStore } from '@core/auth/auth.store';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
@@ -62,6 +64,10 @@ export class AppShellComponent {
   @ViewChild('drawerRef') drawerRef!: Drawer;
 
   private readonly router = inject(Router);
+  private readonly authRepo = inject(AuthRepository);
+  private readonly authStore = inject(AuthStore);
+
+  readonly user = this.authStore.user;
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -72,6 +78,13 @@ export class AppShellComponent {
   );
 
   readonly pageTitle = computed(() => PAGE_TITLES[this.currentUrl()] ?? 'ERP System');
+
+  async logout(): Promise<void> {
+    await this.authRepo.signOut();
+    // ensure store resets (mock repo's observable is static)
+    this.authStore.setUser(null);
+    await this.router.navigate(['/auth/login']);
+  }
 
   sidebarVisible = false;
 

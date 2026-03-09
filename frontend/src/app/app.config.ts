@@ -10,10 +10,10 @@ import { getAuth } from 'firebase/auth';
 
 import { routes } from './app.routes';
 import { ErpPreset } from '@theme/erp.preset';
-import { environment } from '../environments/environment';
 import { FIREBASE_AUTH, FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
+import { environment } from 'environments/enviroment';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
