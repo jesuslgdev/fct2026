@@ -9,6 +9,7 @@ const MOCK_SESSION: Session = {
     email: 'dev@example.com',
     displayName: 'Dev User',
     photoURL: 'https://gravatar.com/avatar/dcf2ac25f9a965f613793050b981afa1?s=400&d=wavatar&r=x',
+    role: 'Administrator',
   },
 };
 
@@ -23,3 +24,4 @@ export class MockAuthRepository implements AuthRepository {
     return Promise.resolve();
   }
 }
+
