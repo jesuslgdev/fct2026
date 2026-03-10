@@ -35,12 +35,12 @@ const SIZE_MAP: Record<InputSize, 'small' | 'large' | undefined> = {
   lg: 'large',
 };
 
-// Icon color mapping by state
+// Icon color mapping by state (uses semantic tokens from styles.css and tailwindcss-primeui)
 const STATE_ICON_COLOR: Record<InputState, string> = {
-  default: 'text-neutral-900', // base icon color: black
-  error: 'text-red-500',      // error state: red
-  success: 'text-green-500',  // success state: green
-  disabled: 'text-neutral-400', // disabled state: gray
+  default: 'text-surface-900',
+  error: 'text-danger',
+  success: 'text-success-icon',
+  disabled: 'text-surface-400',
 };
 
 @Component({
@@ -92,9 +92,9 @@ export class InputComponent implements ControlValueAccessor {
   iconColorClass = computed(() => STATE_ICON_COLOR[this.state()]); // Icon color class by state
   inputClass = computed(() => [
     this.styleClass(),
-    this.state() === 'error' ? 'border-red-500 focus:border-red-600 focus:ring-red-200' : '',
-    this.state() === 'success' ? 'border-green-500 focus:border-green-600 focus:ring-green-200' : '',
-    this.state() === 'disabled' ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed' : '',
+    this.state() === 'error' ? 'input-error' : '',
+    this.state() === 'success' ? 'input-success' : '',
+    this.state() === 'disabled' ? 'input-disabled' : '',
   ].filter(Boolean).join(' '));
 
   // Input event handler

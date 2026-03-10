@@ -33,11 +33,17 @@ export const ErpPreset = definePreset(Aura, {
       950: '#0a1120',     // casi negro
     },
     blue: {
+      50: '#eff6ff',     // lightest blue
+      100: '#dbeafe',
+      200: '#bfdbfe',
       300: '#60a5fa',    // azul claro
       400: '#3b82f6',
       500: '#2563eb',    // azul corporativo
       600: '#1d4ed8',
       700: '#1e40af',    // azul profundo
+      800: '#1e3a8a',
+      900: '#1e3163',
+      950: '#172554',    // casi negro azulado
     },
     green: {
       500: '#22c55e',    // verde éxito
@@ -65,17 +71,17 @@ export const ErpPreset = definePreset(Aura, {
   semantic: {
     // Primary = azul corporativo
     primary: {
-      50: '{blue.300}',
-      100: '{blue.400}',
-      200: '{blue.500}',
-      300: '{blue.600}',
-      400: '{blue.700}',
-      500: '{neutral.500}',
-      600: '{neutral.600}',
-      700: '{neutral.700}',
-      800: '{neutral.800}',
-      900: '{neutral.900}',
-      950: '{neutral.950}',
+      50: '{blue.50}',
+      100: '{blue.100}',
+      200: '{blue.200}',
+      300: '{blue.300}',
+      400: '{blue.400}',
+      500: '{blue.500}',
+      600: '{blue.600}',
+      700: '{blue.700}',
+      800: '{blue.800}',
+      900: '{blue.900}',
+      950: '{blue.950}',
     },
 
     colorScheme: {

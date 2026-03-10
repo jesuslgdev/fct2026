@@ -55,7 +55,6 @@ const PAGE_TITLES: Record<string, string> = {
     TooltipModule,
     ButtonComponent,
   ],
-  styleUrls: ['./app-shell.component.css'],
   templateUrl: './app-shell.component.html',
 })
 export class AppShellComponent {
