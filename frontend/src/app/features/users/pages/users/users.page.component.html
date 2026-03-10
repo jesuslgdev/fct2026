@@ -1,9 +1,8 @@
-<section class="page">
+<section class="flex flex-col gap-4 p-6">
 
   <!-- ── Header ───────────────────────────────────────────────────────────── -->
-  <div class="page-header">
-    <!-- título semántico definido en styles.css -->
-    <h1 class="text-style-title">Usuarios</h1>
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-surface-900">Usuarios</h1>
     @if (store.canEdit()) {
       <ui-button
         label="Nuevo usuario"
@@ -13,12 +12,8 @@
     }
   </div>
 
-  @if (store.error(); as errorMessage) {
-    <p class="warning-text" role="alert">{{ errorMessage }}</p>
-  }
-
   <!-- ── Filters ──────────────────────────────────────────────────────────── -->
-  <div class="filters-row">
+  <div class="flex flex-wrap gap-3">
     <ui-input
       type="text"
       placeholder="Buscar por nombre o correo…"
@@ -48,13 +43,12 @@
 
   <!-- ── Table ────────────────────────────────────────────────────────────── -->
   <ui-table
-    [value]="store.usersView()"
+    [value]="store.users()"
     [loading]="store.loading()"
     [paginator]="true"
     [rows]="store.pageSize()"
     [totalRecords]="store.total()"
-    [rowsPerPageOptions]="[10, 20, 50]"
-    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    [rowsPerPageOptions]="[20, 50, 100]"
     dataKey="id"
     (page)="store.onPageChange($event)"
   >
@@ -66,15 +60,15 @@
         <th>Departamento</th>
         <th>Estado</th>
         @if (store.canEdit()) {
-          <th>Acciones</th>
+          <th class="w-32">Acciones</th>
         }
       </tr>
     </ng-template>
 
     <ng-template #body let-user>
-      <tr>
+      <tr [class.opacity-50]="!user.active">
         <td>{{ user.firstName }} {{ user.lastName }}</td>
-        <td>{{ user.email }}</td>
+        <td class="text-surface-600">{{ user.email }}</td>
         <td>{{ getRoleLabel(user.role) }}</td>
         <td>{{ user.departmentName }}</td>
         <td>
@@ -82,7 +76,7 @@
         </td>
         @if (store.canEdit()) {
           <td>
-            <div>
+            <div class="flex gap-2">
               <ui-button
                 icon="pi pi-pencil"
                 variant="ghost"
@@ -103,7 +97,7 @@
 
     <ng-template #emptymessage>
       <tr>
-        <td [attr.colspan]="store.canEdit() ? 6 : 5" class="empty-state">
+        <td [attr.colspan]="store.canEdit() ? 6 : 5" class="text-center text-surface-500 py-8">
           No se encontraron usuarios.
         </td>
       </tr>
@@ -111,9 +105,6 @@
   </ui-table>
 
 </section>
-
-<!-- ── Create / Edit user dialog ────────────────────────────────────────── -->
-<app-user-form-dialog />
 
 <!-- ── Confirm toggle status dialog ─────────────────────────────────────── -->
 <ui-dialog
@@ -128,8 +119,7 @@
   (cancelled)="store.cancelToggleStatus()"
 >
   @if (store.userToToggle(); as user) {
-    <!-- párrafo de advertencia con clase global -->
-    <p class="warning-text">
+    <p class="text-surface-700">
       @if (user.active) {
         ¿Está seguro de que desea desactivar
         <strong>{{ user.firstName }} {{ user.lastName }}</strong>?
@@ -141,3 +131,4 @@
     </p>
   }
 </ui-dialog>
+

@@ -7,7 +7,6 @@ import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { InputComponent } from '@shared/ui/input/input.component';
 import { UsersStore } from '@features/users/state/users.store';
 import { UserStatusBadgeComponent } from '@features/users/components/user-status-badge/user-status-badge.component';
-import { UserFormDialogComponent } from '@features/users/components/user-form-dialog/user-form-dialog.component';
 import { USER_ROLES, UserRole } from '@domain/enums/user-role.enum';
 import { User } from '@domain/models/user.model';
 
@@ -27,7 +26,6 @@ interface RoleOption   { label: string; value: UserRole | null; }
     ButtonComponent,
     DialogComponent,
     UserStatusBadgeComponent,
-    UserFormDialogComponent,
   ],
   templateUrl: './users.page.component.html',
 })
@@ -53,9 +51,10 @@ export class UsersPageComponent implements OnInit {
     this.store.loadDepartments();
   }
 
-  trackById(_: number, user: User): number {
+  trackById(_: number, user: User): string {
     return user.id;
   }
+
   
   getRoleLabel(role: User['role']): string {
     switch (role) {
@@ -70,3 +69,4 @@ export class UsersPageComponent implements OnInit {
     }
   }
 }
+
