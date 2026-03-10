@@ -2,6 +2,8 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
+from shared.constants import ROLE_PATTERN
+
 T = TypeVar("T")
 
 
@@ -38,15 +40,15 @@ class UserDTO(BaseModel):
 class CreateUserDTO(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=150)
-    email: str = Field(..., max_length=255, pattern=r"^[^@]+@mobivery\.com$")
-    role: str = Field(..., pattern="^(Administrator|Manager|Employee)$")
+    email: str = Field(..., max_length=255)
+    role: str = Field(..., pattern=ROLE_PATTERN)
     department_id: int | None = None
 
 
 class UpdateUserDTO(BaseModel):
     first_name: str | None = Field(None, min_length=1, max_length=100)
     last_name: str | None = Field(None, min_length=1, max_length=150)
-    role: str | None = Field(None, pattern="^(Administrator|Manager|Employee)$")
+    role: str | None = Field(None, pattern=ROLE_PATTERN)
     department_id: int | None = None
 
 
