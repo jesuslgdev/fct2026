@@ -1,6 +1,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.admin.domain.exceptions import AdminException, AdminExceptionInfo
 from modules.admin.domain.interfaces.repositories.i_user_repository import (
     IUserRepository,
 )
@@ -64,7 +65,7 @@ class UserRepository(IUserRepository):
     ) -> User:
         user = await self.get_by_id(user_id)
         if user is None:
-            raise ValueError("User not found")
+            raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
         if first_name is not None:
             user.first_name = first_name
         if last_name is not None:
@@ -80,6 +81,6 @@ class UserRepository(IUserRepository):
     async def set_active(self, user_id: int, is_active: bool) -> None:
         user = await self.get_by_id(user_id)
         if user is None:
-            raise ValueError("User not found")
+            raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
         user.is_active = is_active
         await self._db.flush()

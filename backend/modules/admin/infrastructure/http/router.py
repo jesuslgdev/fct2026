@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Depends, Query, Response
 
 from composition.dependencies import (
     get_create_department_use_case,
@@ -86,41 +85,8 @@ async def create_department(
     use_case: ICreateDepartmentUseCase = Depends(get_create_department_use_case),
     _: dict = Depends(require_admin),
 ):
-    try:
-        result = await use_case.execute(body.name)
-        return DepartmentDTO(department_id=result.department_id, name=result.name)
-    except IntegrityError:
-        raise HTTPException(status_code=409, detail="Department name already exists")
-
-
-@router.put("/departments/{department_id}", response_model=DepartmentDTO)
-async def update_department(
-    department_id: int,
-    body: UpdateDepartmentDTO,
-    use_case: IUpdateDepartmentUseCase = Depends(get_update_department_use_case),
-    _: dict = Depends(require_admin),
-):
-    try:
-        result = await use_case.execute(department_id, body.name)
-        return DepartmentDTO(department_id=result.department_id, name=result.name)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Department not found")
-    except IntegrityError:
-        raise HTTPException(status_code=409, detail="Department name already exists")
-
-
-@router.delete("/departments/{department_id}", status_code=204)
-async def delete_department(
-    department_id: int,
-    use_case: IDeleteDepartmentUseCase = Depends(get_delete_department_use_case),
-    _: dict = Depends(require_admin),
-):
-    try:
-        await use_case.execute(department_id)
-    except ValueError as e:
-        detail = str(e)
-        status_code = 404 if "not found" in detail else 409
-        raise HTTPException(status_code=status_code, detail=detail)
+    result = await use_case.execute(body.name)
+    return DepartmentDTO(department_id=result.department_id, name=result.name)
 
 
 @router.get("/departments/{department_id}", response_model=DepartmentDTO)
@@ -130,9 +96,27 @@ async def get_department(
     _: dict = Depends(require_admin),
 ):
     result = await use_case.execute(department_id)
-    if result is None:
-        raise HTTPException(status_code=404, detail="Department not found")
     return DepartmentDTO(department_id=result.department_id, name=result.name)
+
+
+@router.put("/departments/{department_id}", response_model=DepartmentDTO)
+async def update_department(
+    department_id: int,
+    body: UpdateDepartmentDTO,
+    use_case: IUpdateDepartmentUseCase = Depends(get_update_department_use_case),
+    _: dict = Depends(require_admin),
+):
+    result = await use_case.execute(department_id, body.name)
+    return DepartmentDTO(department_id=result.department_id, name=result.name)
+
+
+@router.delete("/departments/{department_id}", status_code=204)
+async def delete_department(
+    department_id: int,
+    use_case: IDeleteDepartmentUseCase = Depends(get_delete_department_use_case),
+    _: dict = Depends(require_admin),
+):
+    await use_case.execute(department_id)
 
 
 @router.get("/users", response_model=PaginatedResponse[UserDTO], tags=["Admin - Users"])
@@ -158,8 +142,6 @@ async def get_user(
     _: dict = Depends(require_admin),
 ):
     result = await use_case.execute(user_id)
-    if result is None:
-        raise HTTPException(status_code=404, detail="User not found")
     return _to_user_dto(result)
 
 
@@ -169,15 +151,10 @@ async def create_user(
     use_case: ICreateUserUseCase = Depends(get_create_user_use_case),
     _: dict = Depends(require_admin),
 ):
-    try:
-        result = await use_case.execute(
-            body.first_name, body.last_name, body.email, body.role, body.department_id
-        )
-        return _to_user_dto(result)
-    except ValueError as e:
-        detail = str(e)
-        status_code = 409 if "Email" in detail else 404
-        raise HTTPException(status_code=status_code, detail=detail)
+    result = await use_case.execute(
+        body.first_name, body.last_name, body.email, body.role, body.department_id
+    )
+    return _to_user_dto(result)
 
 
 @router.put("/users/{user_id}", response_model=UserDTO, tags=["Admin - Users"])
@@ -187,13 +164,10 @@ async def update_user(
     use_case: IUpdateUserUseCase = Depends(get_update_user_use_case),
     _: dict = Depends(require_admin),
 ):
-    try:
-        result = await use_case.execute(
-            user_id, body.first_name, body.last_name, body.role, body.department_id
-        )
-        return _to_user_dto(result)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    result = await use_case.execute(
+        user_id, body.first_name, body.last_name, body.role, body.department_id
+    )
+    return _to_user_dto(result)
 
 
 @router.patch("/users/{user_id}/active", status_code=204, tags=["Admin - Users"])
@@ -203,8 +177,5 @@ async def set_user_active(
     use_case: ISetUserActiveUseCase = Depends(get_set_user_active_use_case),
     _: dict = Depends(require_admin),
 ):
-    try:
-        await use_case.execute(user_id, body.is_active)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    await use_case.execute(user_id, body.is_active)
     return Response(status_code=204)

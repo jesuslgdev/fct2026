@@ -1,3 +1,4 @@
+from modules.admin.domain.exceptions import AdminException, AdminExceptionInfo
 from modules.admin.domain.interfaces.repositories.i_department_repository import (
     IDepartmentRepository,
 )
@@ -28,11 +29,11 @@ class CreateUserUseCase(ICreateUserUseCase):
         department_id: int | None,
     ) -> User:
         if await self.user_repo.get_by_email(email) is not None:
-            raise ValueError("Email already exists")
+            raise AdminException(AdminExceptionInfo.USER_ALREADY_EXISTS)
 
         if department_id is not None:
             if await self.department_repo.get_by_id(department_id) is None:
-                raise ValueError("Department not found")
+                raise AdminException(AdminExceptionInfo.USER_DEPARTMENT_NOT_FOUND)
 
         return await self.user_repo.create(
             first_name, last_name, email, role, department_id

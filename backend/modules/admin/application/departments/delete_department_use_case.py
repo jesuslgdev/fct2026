@@ -1,3 +1,4 @@
+from modules.admin.domain.exceptions import AdminException, AdminExceptionInfo
 from modules.admin.domain.interfaces.repositories.i_department_repository import (
     IDepartmentRepository,
 )
@@ -13,7 +14,7 @@ class DeleteDepartmentUseCase(IDeleteDepartmentUseCase):
     async def execute(self, department_id: int) -> None:
         dept = await self._repo.get_by_id(department_id)
         if dept is None:
-            raise ValueError("Department not found")
+            raise AdminException(AdminExceptionInfo.DEPARTMENT_NOT_FOUND)
         if await self._repo.has_users(department_id):
-            raise ValueError("Department has associated users")
+            raise AdminException(AdminExceptionInfo.DEPARTMENT_HAS_USERS)
         await self._repo.delete(department_id)
