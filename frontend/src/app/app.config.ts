@@ -13,6 +13,8 @@ import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { AuthService } from '@core/services/auth.service';
+import { DepartmentRepository } from '@domain/repositories/department.repository';
+import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
