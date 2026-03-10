@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, ViewChild } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthRepository } from '@domain/repositories/auth.repository';
-import { AuthStore } from '@core/auth/auth.store';
+import { AuthService } from '@core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
@@ -64,9 +64,9 @@ export class AppShellComponent {
 
   private readonly router = inject(Router);
   private readonly authRepo = inject(AuthRepository);
-  private readonly authStore = inject(AuthStore);
+  private readonly authService = inject(AuthService);
 
-  readonly user = this.authStore.user;
+  readonly user = this.authService.user;
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -80,8 +80,7 @@ export class AppShellComponent {
 
   async logout(): Promise<void> {
     await this.authRepo.signOut();
-    // ensure store resets (mock repo's observable is static)
-    this.authStore.setUser(null);
+    this.authService.setSession(null);
     await this.router.navigate(['/auth/login']);
   }
 

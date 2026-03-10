@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NgIf } from '@angular/common';
 import { AppShellComponent } from '@shared/ui/app-shell/app-shell.component';
-import { AuthStore } from '@core/auth/auth.store';
+import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -12,6 +12,5 @@ import { AuthStore } from '@core/auth/auth.store';
   templateUrl: './app.html',
 })
 export class AppComponent {
-  private readonly authStore = inject(AuthStore);
-  readonly isAuthenticated = this.authStore.isAuthenticated;
+  readonly isAuthenticated = inject(AuthService).isLoggedIn;
 }

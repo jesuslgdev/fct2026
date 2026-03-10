@@ -5,18 +5,12 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { providePrimeNG } from 'primeng/config';
 import { MessageService, ConfirmationService } from 'primeng/api';
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-
 import { routes } from './app.routes';
 import { ErpPreset } from '@theme/erp.preset';
-import { FIREBASE_AUTH, FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
+import { MockAuthRepository } from '@infrastructure/repositories/mock/auth.repository.mock';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
-import { environment } from 'environments/enviroment';
-
-const firebaseApp = initializeApp(environment.firebase);
-const firebaseAuth = getAuth(firebaseApp);
+// TODO: switch to FirebaseAuthRepository when backend is ready
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -28,8 +22,7 @@ export const appConfig: ApplicationConfig = {
         authInterceptor,
       ])
     ),
-    { provide: FIREBASE_AUTH, useValue: firebaseAuth },
-    { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    { provide: AuthRepository, useClass: MockAuthRepository },
     providePrimeNG({
       ripple: true,
       theme: {
