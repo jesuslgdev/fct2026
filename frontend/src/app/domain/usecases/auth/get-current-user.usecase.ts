@@ -1,11 +1,11 @@
 import { inject } from '@angular/core';
-import { AuthRepository } from '@domain/repositories/auth.repository';
+import { AuthService } from '@core/services/auth.service';
 import { AuthUser } from '@domain/models/auth-user.model';
 
 export class GetCurrentUserUseCase {
-  private authRepository = inject(AuthRepository);
+  private readonly authService = inject(AuthService);
 
-  execute(): Promise<AuthUser | null> {
-    return this.authRepository.getCurrentUser();
+  execute(): AuthUser | null {
+    return this.authService.user();
   }
 }

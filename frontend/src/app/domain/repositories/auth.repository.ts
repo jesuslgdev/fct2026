@@ -1,9 +1,6 @@
-import { Observable } from 'rxjs';
-import { AuthUser } from '@domain/models/auth-user.model';
+import { Session } from '@domain/models/session.model';
 
 export abstract class AuthRepository {
-  abstract signInWithGoogle(): Promise<AuthUser>;
+  abstract signInWithGoogle(): Promise<Session>;
   abstract signOut(): Promise<void>;
-  abstract getCurrentUser(): Promise<AuthUser | null>;
-  abstract authStateChanges(): Observable<AuthUser | null>;
 }

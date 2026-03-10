@@ -1,50 +1,62 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
   Auth,
   GoogleAuthProvider,
-  onAuthStateChanged,
+  getIdToken,
   signInWithPopup,
   signOut,
 } from 'firebase/auth';
-import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { AuthRepository } from '@domain/repositories/auth.repository';
-import { AuthUser } from '@domain/models/auth-user.model';
+import { Session } from '@domain/models/session.model';
+import { AccessDeniedError } from '@domain/models/auth-errors';
 
 export const FIREBASE_AUTH = new InjectionToken<Auth>('FIREBASE_AUTH');
 
+interface VerifyResponse {
+  token: string;
+  user: {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+  };
+}
+
 @Injectable()
 export class FirebaseAuthRepository implements AuthRepository {
-  private auth = inject(FIREBASE_AUTH);
+  private readonly auth = inject(FIREBASE_AUTH);
+  private readonly http = inject(HttpClient);
 
-  async signInWithGoogle(): Promise<AuthUser> {
+  async signInWithGoogle(): Promise<Session> {
     const provider = new GoogleAuthProvider();
     const credential = await signInWithPopup(this.auth, provider);
-    const { uid, email, displayName, photoURL } = credential.user;
-    return { uid, email, displayName, photoURL };
+    const idToken = await getIdToken(credential.user);
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<VerifyResponse>('/api/auth/verify', { idToken }),
+      );
+      return {
+        token: response.token,
+        user: {
+          uid: response.user.uid,
+          email: response.user.email,
+          displayName: response.user.displayName,
+          photoURL: response.user.photoURL,
+        },
+      };
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 403) {
+        await signOut(this.auth);
+        throw new AccessDeniedError();
+      }
+      throw err;
+    }
   }
 
   async signOut(): Promise<void> {
     await signOut(this.auth);
-  }
-
-  async getCurrentUser(): Promise<AuthUser | null> {
-    const user = this.auth.currentUser;
-    if (!user) return null;
-    const { uid, email, displayName, photoURL } = user;
-    return { uid, email, displayName, photoURL };
-  }
-
-  authStateChanges(): Observable<AuthUser | null> {
-    return new Observable((observer) => {
-      const unsubscribe = onAuthStateChanged(this.auth, (user) => {
-        if (user) {
-          const { uid, email, displayName, photoURL } = user;
-          observer.next({ uid, email, displayName, photoURL });
-        } else {
-          observer.next(null);
-        }
-      });
-      return () => unsubscribe();
-    });
   }
 }

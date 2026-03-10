@@ -6,8 +6,9 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '@shared/ui/button/button.component';
-import { AuthStore } from '@core/auth/auth.store';
+import { AuthService } from '@core/services/auth.service';
 import { AuthRepository } from '@domain/repositories/auth.repository';
+import { AccessDeniedError } from '@domain/models/auth-errors';
 
 @Component({
   selector: 'auth-login-page',
@@ -19,30 +20,30 @@ import { AuthRepository } from '@domain/repositories/auth.repository';
 export class LoginPage {
   private readonly router = inject(Router);
   private readonly authRepo = inject(AuthRepository);
-  private readonly store = inject(AuthStore);
+  private readonly authService = inject(AuthService);
 
   readonly loading = signal(false);
   readonly error = signal('');
 
-  readonly isAuthenticated = this.store.isAuthenticated;
-
   constructor() {
-    // redirect immediately if user already signed in
-    if (this.isAuthenticated()) {
+    if (this.authService.isLoggedIn()) {
       this.router.navigate(['/dashboard']);
     }
   }
 
-  async loginWithGoogle() {
+  async loginWithGoogle(): Promise<void> {
     this.error.set('');
     this.loading.set(true);
     try {
-      const user = await this.authRepo.signInWithGoogle();
-      this.store.setUser(user); // ensure store reflects state when using mock
+      const session = await this.authRepo.signInWithGoogle();
+      this.authService.setSession(session);
       await this.router.navigate(['/dashboard']);
     } catch (err) {
-      console.error(err);
-      this.error.set('Error al iniciar sesión');
+      if (err instanceof AccessDeniedError) {
+        this.error.set('Acceso denegado. Tu cuenta no tiene permiso para acceder.');
+      } else {
+        this.error.set('Error al iniciar sesión. Inténtalo de nuevo.');
+      }
     } finally {
       this.loading.set(false);
     }
