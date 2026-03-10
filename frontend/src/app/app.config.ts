@@ -10,6 +10,8 @@ import { ErpPreset } from '@theme/erp.preset';
 import { MockAuthRepository } from '@infrastructure/repositories/mock/auth.repository.mock';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
+import { MockUserRepository } from '@infrastructure/repositories/mock/user.repository.mock';
+import { UserRepository } from '@domain/repositories/user.repository';
 // TODO: switch to FirebaseAuthRepository when backend is ready
 
 export const appConfig: ApplicationConfig = {
@@ -23,6 +25,8 @@ export const appConfig: ApplicationConfig = {
       ])
     ),
     { provide: AuthRepository, useClass: MockAuthRepository },
+    { provide: UserRepository, useClass: MockUserRepository },
+    // TODO: switch to HttpUserRepository when backend is ready
     providePrimeNG({
       ripple: true,
       theme: {
