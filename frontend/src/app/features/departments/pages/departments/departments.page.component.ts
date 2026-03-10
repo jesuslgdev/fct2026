@@ -34,7 +34,7 @@ import { DepartmentHasUsersError, DepartmentNameDuplicateError } from '@domain/m
     TooltipModule,
   ],
   templateUrl: './departments.page.component.html',
-  styleUrls: ['./departments.page.component.css'],
+  styleUrls: [],
 })
 export class DepartmentsPageComponent implements OnInit {
   readonly store = inject(DepartmentsStore);
