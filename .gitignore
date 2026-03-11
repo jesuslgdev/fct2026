@@ -3,11 +3,9 @@ frontend/node_modules/
 frontend/environments
 .env
 .DS_Store
+
 # Claude Code (asistente IA)
 .claude/
-# Claude Code
-.claude/
-CLAUDE.md
 
 # Node
 package-lock.json
@@ -32,4 +30,5 @@ firebase-debug.log
 **/copilot-instruccions.md
 
 # Estructura interna
-backend/FinalStructure.md
+FinalStructure.md
+**/FinalStructure.md
