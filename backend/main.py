@@ -1,12 +1,14 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from composition.router_registry import register_routers
 from composition.security import get_current_user
 from shared.config import settings
+from shared.exceptions import AppException
 from shared.infrastructure.database.connection import AsyncSessionLocal, engine
 from shared.infrastructure.database.seed import seed
 from shared.infrastructure.security.firebase_client import init_firebase_app
@@ -44,6 +46,14 @@ if settings.disable_auth:
     app.dependency_overrides[get_current_user] = _mock_user
 
 register_routers(app)
+
+
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.info.http_status,
+        content={"error_code": exc.info.code, "detail": exc.info.message},
+    )
 
 
 @app.get("/health")

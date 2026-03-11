@@ -4,8 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.admin.domain.entities.department import Department
 
 
-async def test_create_department_success(client: AsyncClient, db_session: AsyncSession):
-    response = await client.post(
+async def test_create_department_success(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    response = await admin_client.post(
         "/api/v1/admin/departments", json={"name": "Engineering"}
     )
     assert response.status_code == 201
@@ -15,19 +17,21 @@ async def test_create_department_success(client: AsyncClient, db_session: AsyncS
 
 
 async def test_create_department_duplicate_name(
-    client: AsyncClient, db_session: AsyncSession
+    admin_client: AsyncClient, db_session: AsyncSession
 ):
     db_session.add(Department(name="Finance"))
     await db_session.flush()
 
-    response = await client.post("/api/v1/admin/departments", json={"name": "Finance"})
+    response = await admin_client.post(
+        "/api/v1/admin/departments", json={"name": "Finance"}
+    )
     assert response.status_code == 409
 
 
 async def test_create_department_empty_name(
-    client: AsyncClient, db_session: AsyncSession
+    admin_client: AsyncClient, db_session: AsyncSession
 ):
-    response = await client.post("/api/v1/admin/departments", json={"name": ""})
+    response = await admin_client.post("/api/v1/admin/departments", json={"name": ""})
     assert response.status_code == 422
 
 
@@ -36,3 +40,10 @@ async def test_create_department_unauthorized(unauthenticated_client: AsyncClien
         "/api/v1/admin/departments", json={"name": "HR"}
     )
     assert response.status_code == 401
+
+
+async def test_create_department_forbidden(non_admin_client: AsyncClient):
+    response = await non_admin_client.post(
+        "/api/v1/admin/departments", json={"name": "HR"}
+    )
+    assert response.status_code == 403

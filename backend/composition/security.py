@@ -37,3 +37,14 @@ async def get_current_user(
         firebase_uid=claims["uid"],
         name=f"{user.first_name} {user.last_name}",
     )
+
+
+async def require_admin(
+    current_user: UserSession = Depends(get_current_user),
+) -> UserSession:
+    if current_user.role != "Administrator":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator role required",
+        )
+    return current_user
