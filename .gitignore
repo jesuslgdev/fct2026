@@ -1,10 +1,10 @@
 # Root level
 frontend/node_modules/
+frontend/environments
 .env
 .DS_Store
 # Claude Code (asistente IA)
 .claude/
-
 # OS
 .DS_Store
 Thumbs.db
