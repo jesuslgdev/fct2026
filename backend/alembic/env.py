@@ -11,6 +11,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 import modules.admin.domain.entities.department  # noqa: F401
+import modules.suppliers.domain.entities.supplier  # noqa: F401
 import shared.domain.entities.user  # noqa: F401 — register model with Base.metadata
 from alembic import context
 from shared.config import settings
