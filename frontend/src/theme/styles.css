@@ -63,8 +63,20 @@
   color: var(--p-red-500);
 }
 
+@utility text-success {
+  color: var(--p-green-600);
+}
+
 @utility text-success-icon {
   color: var(--p-green-500);
+}
+
+@utility text-warning {
+  color: var(--p-amber-500, #f59e0b);
+}
+
+@utility text-info {
+  color: var(--p-sky-600, #0284c7);
 }
 
 /* ── 6. App Shell Layout ── */

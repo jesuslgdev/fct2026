@@ -26,11 +26,11 @@ const SIZE_WIDTH_MAP: Record<DialogSize, string> = {
 
 // Variant → icon + header accent class
 const VARIANT_MAP: Record<DialogVariant, { icon: string; headerClass: string }> = {
-  default: { icon: '',                  headerClass: '' },
-  info:    { icon: 'pi pi-info-circle', headerClass: 'text-sky-600' },
-  success: { icon: 'pi pi-check-circle',headerClass: 'text-green-600' },
-  warning: { icon: 'pi pi-exclamation-triangle', headerClass: 'text-amber-500' },
-  danger:  { icon: 'pi pi-times-circle',headerClass: 'text-red-600' },
+  default: { icon: '',                           headerClass: '' },
+  info:    { icon: 'pi pi-info-circle',          headerClass: 'text-info' },
+  success: { icon: 'pi pi-check-circle',         headerClass: 'text-success' },
+  warning: { icon: 'pi pi-exclamation-triangle', headerClass: 'text-warning' },
+  danger:  { icon: 'pi pi-times-circle',         headerClass: 'text-danger' },
 };
 
 @Component({
