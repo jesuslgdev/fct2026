@@ -4,10 +4,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { AuthService } from '@core/services/auth.service';
-import { AuthRepository } from '@domain/repositories/auth.repository';
+import { SignInWithGoogleUseCase } from '@domain/usecases/auth/sign-in-with-google.usecase';
 import { AccessDeniedError } from '@domain/models/auth-errors';
 
 @Component({
@@ -19,25 +19,22 @@ import { AccessDeniedError } from '@domain/models/auth-errors';
 })
 export class LoginPage {
   private readonly router = inject(Router);
-  private readonly authRepo = inject(AuthRepository);
+  private readonly route = inject(ActivatedRoute);
+  private readonly signInWithGoogle = inject(SignInWithGoogleUseCase);
   private readonly authService = inject(AuthService);
 
   readonly loading = signal(false);
   readonly error = signal('');
 
-  constructor() {
-    if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/legal/terms']);
-    }
-  }
-
   async loginWithGoogle(): Promise<void> {
     this.error.set('');
     this.loading.set(true);
     try {
-      const session = await this.authRepo.signInWithGoogle();
+      const session = await this.signInWithGoogle.execute();
       this.authService.setSession(session);
-      await this.router.navigate(['/legal/terms']);
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+      const safeUrl = returnUrl?.startsWith('/') ? returnUrl : '/';
+      await this.router.navigateByUrl(safeUrl);
     } catch (err) {
       if (err instanceof AccessDeniedError) {
         this.error.set('Acceso denegado. Tu cuenta no tiene permiso para acceder.');

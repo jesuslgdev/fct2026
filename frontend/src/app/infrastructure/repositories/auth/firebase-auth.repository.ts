@@ -1,7 +1,6 @@
-import { Injectable, InjectionToken, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
-  Auth,
   GoogleAuthProvider,
   getIdToken,
   signInWithPopup,
@@ -11,17 +10,12 @@ import { firstValueFrom } from 'rxjs';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { Session } from '@domain/models/session.model';
 import { AccessDeniedError } from '@domain/models/auth-errors';
+import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
+import { environment } from 'environments/environment';
 
-export const FIREBASE_AUTH = new InjectionToken<Auth>('FIREBASE_AUTH');
-
-interface VerifyResponse {
-  token: string;
-  user: {
-    uid: string;
-    email: string | null;
-    displayName: string | null;
-    photoURL: string | null;
-  };
+interface LoginResponse {
+  role: string;
+  name: string;
 }
 
 @Injectable()
@@ -32,23 +26,27 @@ export class FirebaseAuthRepository implements AuthRepository {
   async signInWithGoogle(): Promise<Session> {
     const provider = new GoogleAuthProvider();
     const credential = await signInWithPopup(this.auth, provider);
-    const idToken = await getIdToken(credential.user);
+    const firebaseToken = await getIdToken(credential.user);
 
     try {
       const response = await firstValueFrom(
-        this.http.post<VerifyResponse>('/api/auth/verify', { idToken }),
+        this.http.post<LoginResponse>(
+          `${environment.apiUrl}/api/v1/auth/login`,
+          { firebase_id_token: firebaseToken },
+        ),
       );
       return {
-        token: response.token,
+        token: firebaseToken,
         user: {
-          uid: response.user.uid,
-          email: response.user.email,
-          displayName: response.user.displayName,
-          photoURL: response.user.photoURL,
+          uid: credential.user.uid,
+          email: credential.user.email,
+          displayName: response.name || credential.user.displayName,
+          photoURL: credential.user.photoURL,
+          role: response.role,
         },
       };
     } catch (err) {
-      if (err instanceof HttpErrorResponse && err.status === 403) {
+      if (err instanceof HttpErrorResponse && (err.status === 401 || err.status === 403)) {
         await signOut(this.auth);
         throw new AccessDeniedError();
       }
@@ -57,6 +55,14 @@ export class FirebaseAuthRepository implements AuthRepository {
   }
 
   async signOut(): Promise<void> {
-    await signOut(this.auth);
+    try {
+      await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/api/v1/auth/logout`, {}),
+      );
+    } catch {
+      // logout is best-effort
+    } finally {
+      await signOut(this.auth);
+    }
   }
 }

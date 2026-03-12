@@ -1,7 +1,8 @@
-import { inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { Session } from '@domain/models/session.model';
 
+@Injectable({ providedIn: 'root' })
 export class SignInWithGoogleUseCase {
   private authRepository = inject(AuthRepository);
 

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, ViewChild } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
-import { AuthRepository } from '@domain/repositories/auth.repository';
+import { SignOutUseCase } from '@domain/usecases/auth/sign-out.usecase';
 import { AuthService } from '@core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
@@ -63,7 +63,7 @@ export class AppShellComponent {
   @ViewChild('drawerRef') drawerRef!: Drawer;
 
   private readonly router = inject(Router);
-  private readonly authRepo = inject(AuthRepository);
+  private readonly signOut = inject(SignOutUseCase);
   private readonly authService = inject(AuthService);
 
   readonly user = this.authService.user;
@@ -79,7 +79,7 @@ export class AppShellComponent {
   readonly pageTitle = computed(() => PAGE_TITLES[this.currentUrl()] ?? 'ERP System');
 
   async logout(): Promise<void> {
-    await this.authRepo.signOut();
+    await this.signOut.execute();
     this.authService.setSession(null);
     await this.router.navigate(['/auth/login']);
   }
