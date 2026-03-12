@@ -55,7 +55,26 @@ class ProductRepository(IProductRepository):
         result = await self._db.execute(query)
         return result.scalar_one_or_none()
 
-    async def create(self, product: Product) -> Product:
+    async def create(
+        self,
+        product_code: str,
+        name: str,
+        description: str | None,
+        category_id: int,
+        price: Decimal,
+        stock_current: int,
+        stock_min: int,
+    ) -> Product:
+        product = Product(
+            product_code=product_code,
+            name=name,
+            description=description,
+            category_id=category_id,
+            price=price,
+            stock_current=stock_current,
+            stock_min=stock_min,
+            is_active=True,
+        )
         self._db.add(product)
         await self._db.flush()
         await self._db.refresh(product, ["category"])
@@ -64,17 +83,19 @@ class ProductRepository(IProductRepository):
     async def update(
         self,
         product_id: int,
+        product_code: str | None = None,
         name: str | None = None,
         description: str | None = None,
         category_id: int | None = None,
         price: Decimal | None = None,
         stock_min: int | None = None,
-        product_code: str | None = None,
     ) -> Product:
         product = await self.get_by_id(product_id)
         if product is None:
             raise CatalogException(CatalogExceptionInfo.PRODUCT_NOT_FOUND)
 
+        if product_code is not None:
+            product.product_code = product_code
         if name is not None:
             product.name = name
         if description is not None:
@@ -85,8 +106,6 @@ class ProductRepository(IProductRepository):
             product.price = price
         if stock_min is not None:
             product.stock_min = stock_min
-        if product_code is not None:
-            product.product_code = product_code
 
         await self._db.flush()
         await self._db.refresh(product)

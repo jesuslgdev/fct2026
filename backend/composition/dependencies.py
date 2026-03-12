@@ -77,6 +77,21 @@ from modules.catalog.application.categories.list_categories_use_case import (
 from modules.catalog.application.categories.update_category_use_case import (
     UpdateCategoryUseCase,
 )
+from modules.catalog.application.products.create_product_use_case import (
+    CreateProductUseCase,
+)
+from modules.catalog.application.products.get_product_use_case import (
+    GetProductUseCase,
+)
+from modules.catalog.application.products.list_products_use_case import (
+    ListProductsUseCase,
+)
+from modules.catalog.application.products.set_product_active_use_case import (
+    SetProductActiveUseCase,
+)
+from modules.catalog.application.products.update_product_use_case import (
+    UpdateProductUseCase,
+)
 from modules.catalog.domain.interfaces.use_cases.categories.i_create_category_use_case import (
     ICreateCategoryUseCase,
 )
@@ -92,7 +107,23 @@ from modules.catalog.domain.interfaces.use_cases.categories.i_list_categories_us
 from modules.catalog.domain.interfaces.use_cases.categories.i_update_category_use_case import (
     IUpdateCategoryUseCase,
 )
+from modules.catalog.domain.interfaces.use_cases.products.i_create_product_use_case import (
+    ICreateProductUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.products.i_get_product_use_case import (
+    IGetProductUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.products.i_list_products_use_case import (
+    IListProductsUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.products.i_set_product_active_use_case import (
+    ISetProductActiveUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.products.i_update_product_use_case import (
+    IUpdateProductUseCase,
+)
 from modules.catalog.infrastructure.repos.category_repository import CategoryRepository
+from modules.catalog.infrastructure.repos.product_repository import ProductRepository
 from modules.clients.application.create_client_use_case import CreateClientUseCase
 from modules.clients.application.get_client_use_case import GetClientUseCase
 from modules.clients.application.list_clients_use_case import ListClientsUseCase
@@ -256,6 +287,36 @@ async def get_delete_category_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IDeleteCategoryUseCase:
     return DeleteCategoryUseCase(CategoryRepository(db))
+
+
+async def get_create_product_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ICreateProductUseCase:
+    return CreateProductUseCase(ProductRepository(db), CategoryRepository(db))
+
+
+async def get_update_product_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IUpdateProductUseCase:
+    return UpdateProductUseCase(ProductRepository(db), CategoryRepository(db))
+
+
+async def get_get_product_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetProductUseCase:
+    return GetProductUseCase(ProductRepository(db))
+
+
+async def get_list_products_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListProductsUseCase:
+    return ListProductsUseCase(ProductRepository(db))
+
+
+async def get_set_product_active_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ISetProductActiveUseCase:
+    return SetProductActiveUseCase(ProductRepository(db))
 
 
 async def get_create_supplier_use_case(
