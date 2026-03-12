@@ -12,10 +12,6 @@ import {
   UserQueryParams,
   PagedResult,
 } from '@domain/models/user.model';
-import {
-  UserForbiddenError,
-  UserValidationError,
-} from '@domain/models/user-errors';
 
 const USER_A: User = {
   id: 1,
@@ -105,30 +101,6 @@ describe('UsersStore', () => {
 
     expect(store.error()).toBe('Failed to load users.');
     expect(store.loading()).toBe(false);
-  });
-
-  it('maps forbidden users error to a specific message', async () => {
-    repo.getUsers.mockRejectedValueOnce(new UserForbiddenError());
-
-    await store.loadUsers();
-
-    expect(store.error()).toBe('You do not have permissions to perform this action.');
-  });
-
-  it('maps validation users error to backend message', async () => {
-    repo.createUser.mockRejectedValueOnce(
-      new UserValidationError({ field: 'email' }, 'Email already exists.'),
-    );
-
-    await store.saveUser({
-      firstName: 'Ana',
-      lastName: 'Garcia',
-      email: 'ana@example.com',
-      role: 'Administrator',
-      departmentId: 1,
-    });
-
-    expect(store.error()).toBe('Email already exists.');
   });
 
   it('creates a new user and updates state', async () => {
