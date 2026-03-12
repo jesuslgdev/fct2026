@@ -27,7 +27,7 @@ export class LoginPage {
 
   constructor() {
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/legal/terms']);
+      this.router.navigate(['/dashboard']);
     }
   }
 
@@ -37,7 +37,7 @@ export class LoginPage {
     try {
       const session = await this.authRepo.signInWithGoogle();
       this.authService.setSession(session);
-      await this.router.navigate(['/legal/terms']);
+      await this.router.navigate(['/dashboard']);
     } catch (err) {
       if (err instanceof AccessDeniedError) {
         this.error.set('Acceso denegado. Tu cuenta no tiene permiso para acceder.');
