@@ -82,8 +82,6 @@ export class UsersStore {
     return fallback;
   }
 
-
-
   // ── Data loading ───────────────────────────────────────────────────────────
   async loadUsers(): Promise<void> {
     this.loading.set(true);
