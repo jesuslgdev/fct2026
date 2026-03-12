@@ -13,6 +13,10 @@
     }
   </div>
 
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
   <!-- ── Filters ──────────────────────────────────────────────────────────── -->
   <div class="filters-row">
     <ui-input
