@@ -5,7 +5,7 @@ import { User, UpdateUserPayload } from '@domain/models/user.model';
 export class UpdateUserUseCase {
   private readonly userRepository = inject(UserRepository);
 
-  execute(id: string, payload: UpdateUserPayload): Promise<User> {
+  execute(id: number, payload: UpdateUserPayload): Promise<User> {
     return this.userRepository.updateUser(id, payload);
   }
 }

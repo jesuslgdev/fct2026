@@ -9,9 +9,9 @@ import {
 
 export abstract class UserRepository {
   abstract getUsers(params: UserQueryParams): Promise<PagedResult<User>>;
-  abstract getUserById(id: string): Promise<User>;
+  abstract getUserById(id: number): Promise<User>;
   abstract createUser(payload: CreateUserPayload): Promise<User>;
-  abstract updateUser(id: string, payload: UpdateUserPayload): Promise<User>;
-  abstract toggleUserStatus(id: string, active: boolean): Promise<User>;
+  abstract updateUser(id: number, payload: UpdateUserPayload): Promise<User>;
+  abstract toggleUserStatus(id: number, active: boolean): Promise<void>;
   abstract getDepartments(): Promise<Department[]>;
 }
