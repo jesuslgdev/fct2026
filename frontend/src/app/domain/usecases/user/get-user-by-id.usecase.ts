@@ -5,7 +5,7 @@ import { User } from '@domain/models/user.model';
 export class GetUserByIdUseCase {
   private readonly userRepository = inject(UserRepository);
 
-  execute(id: string): Promise<User> {
+  execute(id: number): Promise<User> {
     return this.userRepository.getUserById(id);
   }
 }
