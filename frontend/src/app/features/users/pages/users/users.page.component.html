@@ -1,4 +1,139 @@
-<section class="p-6">
-  <h1 class="text-2xl font-bold mb-4">Users</h1>
-  <p>Welcome to the users page.</p>
+<section class="page">
+
+  <!-- ── Header ───────────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <!-- título semántico definido en styles.css -->
+    <h1 class="text-style-title">Usuarios</h1>
+    @if (store.canEdit()) {
+      <ui-button
+        label="Nuevo usuario"
+        icon="pi pi-plus"
+        (clicked)="store.openCreateDialog()"
+      />
+    }
+  </div>
+
+  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <div class="filters-row">
+    <ui-input
+      type="text"
+      placeholder="Buscar por nombre o correo…"
+      styleClass="flex-1 min-w-64"
+      [ngModel]="store.searchQuery()"
+      (valueChange)="store.onSearch($event)"
+    />
+    <p-select
+      [options]="roleOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los roles"
+      class="min-w-40"
+      [ngModel]="store.roleFilter()"
+      (ngModelChange)="store.onRoleFilterChange($event)"
+    />
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los estados"
+      class="min-w-44"
+      [ngModel]="store.statusFilter()"
+      (ngModelChange)="store.onStatusFilterChange($event)"
+    />
+  </div>
+
+  <!-- ── Table ────────────────────────────────────────────────────────────── -->
+  <ui-table
+    [value]="store.users()"
+    [loading]="store.loading()"
+    [paginator]="true"
+    [rows]="store.pageSize()"
+    [totalRecords]="store.total()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="id"
+    (page)="store.onPageChange($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Nombre completo</th>
+        <th>Correo</th>
+        <th>Rol</th>
+        <th>Departamento</th>
+        <th>Estado</th>
+        @if (store.canEdit()) {
+          <th class="w-32">Acciones</th>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-user>
+      <tr [class.opacity-50]="!user.active">
+        <td>{{ user.firstName }} {{ user.lastName }}</td>
+        <td class="text-style-subtitle text-surface-600">{{ user.email }}</td>
+        <td>{{ getRoleLabel(user.role) }}</td>
+        <td>{{ user.departmentName }}</td>
+        <td>
+          <ui-user-status-badge [active]="user.active" />
+        </td>
+        @if (store.canEdit()) {
+          <td>
+            <div class="flex gap-2">
+              <ui-button
+                icon="pi pi-pencil"
+                variant="ghost"
+                size="sm"
+                (clicked)="store.openEditDialog(user)"
+              />
+              <ui-button
+                [icon]="user.active ? 'pi pi-ban' : 'pi pi-check-circle'"
+                [variant]="user.active ? 'destructive' : 'secondary'"
+                size="sm"
+                (clicked)="store.requestToggleStatus(user)"
+              />
+            </div>
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td [attr.colspan]="store.canEdit() ? 6 : 5" class="empty-state">
+          No se encontraron usuarios.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+
 </section>
+
+<!-- ── Create / Edit user dialog ────────────────────────────────────────── -->
+<app-user-form-dialog />
+
+<!-- ── Confirm toggle status dialog ─────────────────────────────────────── -->
+<ui-dialog
+  [(visible)]="store.confirmDialogVisible"
+  [header]="store.userToToggle()?.active ? 'Desactivar usuario' : 'Activar usuario'"
+  variant="warning"
+  size="sm"
+  confirmLabel="Confirm"
+  cancelLabel="Cancel"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmToggleStatus()"
+  (cancelled)="store.cancelToggleStatus()"
+>
+  @if (store.userToToggle(); as user) {
+    <!-- párrafo de advertencia con clase global -->
+    <p class="warning-text">
+      @if (user.active) {
+        ¿Está seguro de que desea desactivar
+        <strong>{{ user.firstName }} {{ user.lastName }}</strong>?
+        Sus sesiones activas serán invalidadas.
+      } @else {
+        ¿Está seguro de que desea reactivar
+        <strong>{{ user.firstName }} {{ user.lastName }}</strong>?
+      }
+    </p>
+  }
+</ui-dialog>
