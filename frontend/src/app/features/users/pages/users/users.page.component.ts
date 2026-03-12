@@ -53,7 +53,7 @@ export class UsersPageComponent implements OnInit {
     this.store.loadDepartments();
   }
 
-  trackById(_: number, user: User): string {
+  trackById(_: number, user: User): number {
     return user.id;
   }
   

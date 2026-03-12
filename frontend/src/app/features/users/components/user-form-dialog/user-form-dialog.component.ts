@@ -26,7 +26,7 @@ export class UserFormDialogComponent {
     lastName:     ['', Validators.required],
     email:        ['', [Validators.required, Validators.email]],
     role:         [null as UserRole | null, Validators.required],
-    departmentId: ['', Validators.required],
+    departmentId: [null as number | null, Validators.required],
   });
 
   readonly roleOptions: RoleOption[] = [
