@@ -1,0 +1,78 @@
+<p-table
+  [value]="value()"
+  [columns]="columns()"
+  [paginator]="paginator()"
+  [rows]="rows()"
+  [totalRecords]="totalRecords()"
+  [rowsPerPageOptions]="rowsPerPageOptions()"
+  [loading]="loading()"
+  [selection]="selection()"
+  [selectionMode]="selectionMode()"
+  [scrollable]="scrollable()"
+  [scrollHeight]="scrollHeight()"
+  [resizableColumns]="resizableColumns()"
+  [showGridlines]="showGridlines()"
+  [tableStyle]="tableStyle()"
+  [styleClass]="tableClass()"
+  [dataKey]="dataKey()"
+  (selectionChange)="selectionChange.emit($event)"
+  (onRowSelect)="rowSelect.emit($event)"
+  (onRowUnselect)="rowUnselect.emit($event)"
+  (onPage)="page.emit($event)"
+  (onSort)="sort.emit($event)"
+>
+  @if (captionTpl) {
+    <ng-template pTemplate="caption">
+      <ng-container
+        [ngTemplateOutlet]="captionTpl"
+        [ngTemplateOutletInjector]="tableInjector"
+      />
+    </ng-template>
+  }
+
+  @if (headerTpl) {
+    <ng-template pTemplate="header" let-columns>
+      <ng-container
+        [ngTemplateOutlet]="headerTpl"
+        [ngTemplateOutletContext]="{ $implicit: columns }"
+        [ngTemplateOutletInjector]="tableInjector"
+      />
+    </ng-template>
+  }
+
+  @if (bodyTpl) {
+    <ng-template
+      pTemplate="body"
+      let-row
+      let-columns="columns"
+      let-rowIndex="rowIndex"
+      let-editing="editing"
+      let-expanded="expanded"
+    >
+      <ng-container
+        [ngTemplateOutlet]="bodyTpl"
+        [ngTemplateOutletContext]="{ $implicit: row, columns, rowIndex, editing, expanded }"
+        [ngTemplateOutletInjector]="tableInjector"
+      />
+    </ng-template>
+  }
+
+  @if (footerTpl) {
+    <ng-template pTemplate="footer" let-columns>
+      <ng-container
+        [ngTemplateOutlet]="footerTpl"
+        [ngTemplateOutletContext]="{ $implicit: columns }"
+        [ngTemplateOutletInjector]="tableInjector"
+      />
+    </ng-template>
+  }
+
+  @if (emptyTpl) {
+    <ng-template pTemplate="emptymessage">
+      <ng-container
+        [ngTemplateOutlet]="emptyTpl"
+        [ngTemplateOutletInjector]="tableInjector"
+      />
+    </ng-template>
+  }
+</p-table>

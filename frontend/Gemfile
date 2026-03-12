@@ -1,0 +1,5 @@
+source "https://rubygems.org"
+
+gem 'localio',
+    git: 'https://bitbucket.org/mobivery-public/localio',
+    branch: 'main'

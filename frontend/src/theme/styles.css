@@ -1,0 +1,184 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
+@import "primeicons/primeicons.css";
+
+/* ── 2. Tailwind + PrimeUI ── */
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+
+/* ── 3. Semantic Typography ── */
+@layer components {
+  .text-style-hero {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--p-surface-900);
+  }
+
+  .text-style-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--p-surface-900);
+    margin-bottom: 1rem;
+  }
+
+  .text-style-subtitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--p-surface-700);
+  }
+}
+
+/* ── 4. Input State Utilities ── */
+@layer components {
+  .input-error {
+    border-color: var(--p-red-500);
+
+    &:focus {
+      border-color: var(--p-red-600);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-red-500) 20%, transparent);
+    }
+  }
+
+  .input-success {
+    border-color: var(--p-green-500);
+
+    &:focus {
+      border-color: var(--p-green-600);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-green-500) 20%, transparent);
+    }
+  }
+
+  .input-disabled {
+    background-color: var(--p-surface-100);
+    color: var(--p-surface-400);
+    cursor: not-allowed;
+  }
+}
+
+/* ── 5. Semantic Color Utilities ── */
+@utility text-danger {
+  color: var(--p-red-500);
+}
+
+@utility text-success-icon {
+  color: var(--p-green-500);
+}
+
+/* ── 6. App Shell Layout ── */
+@layer components {
+  .nav-link {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--p-border-radius-md, 6px);
+    color: var(--p-surface-700);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 150ms ease, color 150ms ease;
+    gap: 0.625rem;
+    text-decoration: none;
+    user-select: none;
+  }
+
+  .nav-link:hover {
+    background-color: var(--p-surface-100);
+    color: var(--p-surface-900);
+  }
+
+  .nav-link.active {
+    background-color: var(--p-primary-50, #E6EEF7);
+    color: var(--p-primary-color);
+    font-weight: 600;
+  }
+
+  .nav-link.active i {
+    color: var(--p-primary-color);
+  }
+
+  .nav-section-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--p-surface-400);
+    padding: 0.5rem 0.75rem 0.375rem;
+  }
+
+  .app-navbar {
+    height: 56px;
+    background-color: var(--p-surface-0);
+    border-bottom: 1px solid var(--p-surface-100);
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .app-navbar-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--p-surface-800);
+    letter-spacing: -0.01em;
+  }
+
+  .sidebar-user-section {
+    border-top: 1px solid var(--p-surface-100);
+    padding: 0.75rem;
+  }
+
+  .user-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--p-border-radius-md, 6px);
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .user-card:hover {
+    background-color: var(--p-surface-100);
+  }
+
+  .user-info-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--p-surface-800);
+    line-height: 1.2;
+  }
+
+  .user-info-role {
+    font-size: 0.75rem;
+    color: var(--p-surface-500);
+    line-height: 1.2;
+  }
+
+  .badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.3rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    background-color: var(--p-primary-color);
+    color: var(--p-primary-contrast-color);
+    margin-left: auto;
+  }
+
+  .app-brand-name {
+    font-size: 0.9375rem;
+    letter-spacing: -0.02em;
+  }
+}
+
