@@ -13,108 +13,84 @@ import {
 // When the Departments feature is implemented, getDepartments() will
 // consume that repository. For now they are kept here as support data.
 const MOCK_DEPARTMENTS: Department[] = [
-  { id: 'dept-1', name: 'Tecnología' },
-  { id: 'dept-2', name: 'Recursos Humanos' },
-  { id: 'dept-3', name: 'Ventas' },
-  { id: 'dept-4', name: 'Administración' },
+  { id: 1, name: 'Tecnologia' },
+  { id: 2, name: 'Recursos Humanos' },
+  { id: 3, name: 'Ventas' },
+  { id: 4, name: 'Administracion' },
 ];
 
 let MOCK_USERS: User[] = [
   {
-    id: 'user-1',
+    id: 1,
     firstName: 'Ana',
-    lastName: 'García',
+    lastName: 'Garcia',
     email: 'ana.garcia@empresa.com',
     role: 'Administrator',
-    departmentId: 'dept-4',
-    departmentName: 'Administración',
+    departmentId: 4,
     active: true,
-    createdAt: '2025-01-10T08:00:00Z',
-    updatedAt: '2025-01-10T08:00:00Z',
   },
   {
-    id: 'user-2',
+    id: 2,
     firstName: 'Carlos',
-    lastName: 'Martínez',
+    lastName: 'Martinez',
     email: 'carlos.martinez@empresa.com',
     role: 'Manager',
-    departmentId: 'dept-1',
-    departmentName: 'Tecnología',
+    departmentId: 1,
     active: true,
-    createdAt: '2025-02-01T09:00:00Z',
-    updatedAt: '2025-02-01T09:00:00Z',
   },
   {
-    id: 'user-3',
+    id: 3,
     firstName: 'Laura',
-    lastName: 'Sánchez',
+    lastName: 'Sanchez',
     email: 'laura.sanchez@gmail.com',
     role: 'Employee',
-    departmentId: 'dept-2',
-    departmentName: 'Recursos Humanos',
+    departmentId: 2,
     active: true,
-    createdAt: '2025-02-15T10:00:00Z',
-    updatedAt: '2025-02-15T10:00:00Z',
   },
   {
-    id: 'user-4',
+    id: 4,
     firstName: 'Pedro',
-    lastName: 'López',
+    lastName: 'Lopez',
     email: 'pedro.lopez@empresa.com',
     role: 'Employee',
-    departmentId: 'dept-3',
-    departmentName: 'Ventas',
+    departmentId: 3,
     active: true,
-    createdAt: '2025-03-01T11:00:00Z',
-    updatedAt: '2025-03-01T11:00:00Z',
   },
   {
-    id: 'user-5',
-    firstName: 'María',
-    lastName: 'Fernández',
+    id: 5,
+    firstName: 'Maria',
+    lastName: 'Fernandez',
     email: 'maria.fernandez@empresa.com',
     role: 'Employee',
-    departmentId: 'dept-3',
-    departmentName: 'Ventas',
+    departmentId: 3,
     active: false,
-    createdAt: '2025-01-20T08:30:00Z',
-    updatedAt: '2025-04-10T14:00:00Z',
   },
   {
-    id: 'user-6',
+    id: 6,
     firstName: 'Javier',
     lastName: 'Ruiz',
     email: 'javier.ruiz@empresa.com',
     role: 'Manager',
-    departmentId: 'dept-2',
-    departmentName: 'Recursos Humanos',
+    departmentId: 2,
     active: true,
-    createdAt: '2025-03-10T09:00:00Z',
-    updatedAt: '2025-03-10T09:00:00Z',
   },
   {
-    id: 'user-7',
-    firstName: 'Sofía',
+    id: 7,
+    firstName: 'Sofia',
     lastName: 'Torres',
     email: 'sofia.torres@gmail.com',
     role: 'Employee',
-    departmentId: 'dept-1',
-    departmentName: 'Tecnología',
+    departmentId: 1,
     active: true,
-    createdAt: '2025-04-01T10:00:00Z',
-    updatedAt: '2025-04-01T10:00:00Z',
   },
   {
-    id: 'user-8',
+    id: 8,
     firstName: 'Diego',
     lastName: 'Morales',
     email: 'diego.morales@empresa.com',
     role: 'Employee',
-    departmentId: 'dept-1',
-    departmentName: 'Tecnología',
+    departmentId: 1,
     active: false,
-    createdAt: '2025-01-05T08:00:00Z',
-    updatedAt: '2025-05-01T16:00:00Z',
   },
 ];
 
@@ -148,68 +124,52 @@ export class MockUserRepository implements UserRepository {
     return { data, total, page: params.page, pageSize: params.pageSize };
   }
 
-  async getUserById(id: string): Promise<User> {
+  async getUserById(id: number): Promise<User> {
     const user = MOCK_USERS.find((u) => u.id === id);
     if (!user) throw new Error(`Usuario con id "${id}" no encontrado`);
     return { ...user };
   }
 
   async createUser(payload: CreateUserPayload): Promise<User> {
-    const dept = MOCK_DEPARTMENTS.find((d) => d.id === payload.departmentId);
-    const now = new Date().toISOString();
+    const nextId = Math.max(0, ...MOCK_USERS.map((u) => u.id)) + 1;
     const newUser: User = {
-      id: `user-${Date.now()}`,
+      id: nextId,
       firstName: payload.firstName,
       lastName: payload.lastName,
       email: payload.email,
       role: payload.role,
       departmentId: payload.departmentId,
-      departmentName: dept?.name ?? '',
       active: true,
-      createdAt: now,
-      updatedAt: now,
     };
     MOCK_USERS = [...MOCK_USERS, newUser];
     return { ...newUser };
   }
 
-  async updateUser(id: string, payload: UpdateUserPayload): Promise<User> {
+  async updateUser(id: number, payload: UpdateUserPayload): Promise<User> {
     const index = MOCK_USERS.findIndex((u) => u.id === id);
     if (index === -1) throw new Error(`Usuario con id "${id}" no encontrado`);
 
-    const dept =
-      payload.departmentId !== undefined
-        ? MOCK_DEPARTMENTS.find((d) => d.id === payload.departmentId)
-        : undefined;
-
     const updated: User = {
       ...MOCK_USERS[index],
-      ...(payload.firstName !== undefined && { firstName: payload.firstName }),
-      ...(payload.lastName !== undefined && { lastName: payload.lastName }),
-      ...(payload.role !== undefined && { role: payload.role }),
-      ...(payload.departmentId !== undefined && {
-        departmentId: payload.departmentId,
-        departmentName: dept?.name ?? MOCK_USERS[index].departmentName,
+      ...(payload.firstName !== undefined && {
+        firstName: payload.firstName ?? MOCK_USERS[index].firstName,
       }),
-      updatedAt: new Date().toISOString(),
+      ...(payload.lastName !== undefined && {
+        lastName: payload.lastName ?? MOCK_USERS[index].lastName,
+      }),
+      ...(payload.role !== undefined && { role: payload.role ?? MOCK_USERS[index].role }),
+      ...(payload.departmentId !== undefined && { departmentId: payload.departmentId }),
     };
 
     MOCK_USERS = MOCK_USERS.map((u) => (u.id === id ? updated : u));
     return { ...updated };
   }
 
-  async toggleUserStatus(id: string, active: boolean): Promise<User> {
+  async toggleUserStatus(id: number, active: boolean): Promise<void> {
     const index = MOCK_USERS.findIndex((u) => u.id === id);
     if (index === -1) throw new Error(`Usuario con id "${id}" no encontrado`);
 
-    const updated: User = {
-      ...MOCK_USERS[index],
-      active,
-      updatedAt: new Date().toISOString(),
-    };
-
-    MOCK_USERS = MOCK_USERS.map((u) => (u.id === id ? updated : u));
-    return { ...updated };
+    MOCK_USERS = MOCK_USERS.map((u) => (u.id === id ? { ...u, active } : u));
   }
 
   async getDepartments(): Promise<Department[]> {
