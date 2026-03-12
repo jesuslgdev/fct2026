@@ -186,3 +186,4 @@ export class MockUserRepository implements UserRepository {
     return INITIAL_MOCK_DEPARTMENTS.map((d) => ({ ...d }));
   }
 }
+
