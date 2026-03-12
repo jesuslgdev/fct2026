@@ -39,7 +39,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/movements': 'Movimientos',
   '/departments': 'Departamentos',
   '/users': 'Usuarios',
-  '/legal/terms': 'Terms and Conditions',
+  '/legal/terms': 'Términos y Condiciones',
 };
 
 @Component({
@@ -136,7 +136,7 @@ export class AppShellComponent {
     {
       title: 'Legal',
       items: [
-        { label: 'Terms & Conditions', icon: 'pi pi-file', route: '/legal/terms' },
+        { label: 'Términos y Condiciones', icon: 'pi pi-file', route: '/legal/terms' },
       ],
     },
   ];
