@@ -96,12 +96,12 @@
         </p>
       }
 
-      <div class="space-y-1">
-        <label for="department-name" class="block font-semibold text-sm text-surface-700">
-          Nombre <span class="text-red-500">*</span>
+      <div class="flex flex-col gap-1.5">
+        <label for="dept-name" class="text-sm font-medium text-surface-700">
+          Nombre <span class="text-danger">*</span>
         </label>
         <ui-input
-          id="department-name"
+          id="dept-name"
           formControlName="name"
           placeholder="Ej. Tecnología"
           [state]="form.controls.name.invalid && form.controls.name.touched ? 'error' : 'default'"

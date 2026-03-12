@@ -15,6 +15,10 @@ export const routes: Routes = [
 		canActivate: [authGuard],
 		children: [
 			{
+				path: 'departments',
+				loadChildren: () => import('@features/departments/departments.routes').then(m => m.DEPARTMENTS_ROUTES),
+			},
+			{
 				path: 'legal',
 				loadChildren: () => import('@features/legal/legal.routes').then(m => m.LEGAL_ROUTES),
 			},

@@ -31,19 +31,19 @@ describe('adminGuard', () => {
 
   it('permite si el rol es admin', async () => {
     mockAuth.setUser({ role: 'admin' });
-    const result = await TestBed.runInInjectionContext(() => adminGuard({} as any, {} as any));
+    const result = await TestBed.runInInjectionContext(() => adminGuard({} as never, {} as never));
     expect(result).toBe(true);
   });
 
   it('permite si el rol es Administrator', async () => {
     mockAuth.setUser({ role: 'Administrator' });
-    const result = await TestBed.runInInjectionContext(() => adminGuard({} as any, {} as any));
+    const result = await TestBed.runInInjectionContext(() => adminGuard({} as never, {} as never));
     expect(result).toBe(true);
   });
 
   it('redirige cuando no es admin', async () => {
     mockAuth.setUser({ role: 'user' });
-    const result = await TestBed.runInInjectionContext(() => adminGuard({} as any, {} as any));
+    const result = await TestBed.runInInjectionContext(() => adminGuard({} as never, {} as never));
     expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/dashboard']);
     expect(result).toBe('/dashboard');
   });
