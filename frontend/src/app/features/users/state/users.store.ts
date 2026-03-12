@@ -82,6 +82,8 @@ export class UsersStore {
     return fallback;
   }
 
+
+
   // ── Data loading ───────────────────────────────────────────────────────────
   async loadUsers(): Promise<void> {
     this.loading.set(true);
@@ -208,6 +210,5 @@ export class UsersStore {
   onPageChange(event: { first: number; rows: number }): void {
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
-    this.loadUsers();
   }
 }
