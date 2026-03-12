@@ -11,7 +11,7 @@ import { AuthRepository } from '@domain/repositories/auth.repository';
 import { AccessDeniedError } from '@domain/models/auth-errors';
 
 @Component({
-  selector: 'auth-login-page',
+  selector: 'app-login-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonComponent],

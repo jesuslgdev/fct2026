@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app';
 import { AuthService } from '@core/services/auth.service';
 import { AuthRepository } from '@domain/repositories/auth.repository';
-import { AuthUser } from '@domain/models/auth-user.model';
 import { Session } from '@domain/models/session.model';
 import { signal } from '@angular/core';
 

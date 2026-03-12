@@ -1,9 +1,9 @@
 <div class="flex items-center justify-center min-h-screen bg-surface-50">
   <div class="max-w-sm w-full p-6 bg-white shadow-lg rounded-lg">
-    <h2 class="text-2xl font-semibold mb-6 text-center">Iniciar sesión</h2>
+    <h2 class="text-style-title mb-6 text-center">Iniciar sesión</h2>
 
     @if (error()) {
-      <p class="text-red-500 text-sm mb-4">{{ error() }}</p>
+      <p class="text-danger text-sm mb-4">{{ error() }}</p>
     }
 
     <ui-button
