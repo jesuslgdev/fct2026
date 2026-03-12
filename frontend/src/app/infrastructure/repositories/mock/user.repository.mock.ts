@@ -128,8 +128,9 @@ export class MockUserRepository implements UserRepository {
   }
 
   async createUser(payload: CreateUserPayload): Promise<User> {
+    const nextId = Math.max(0, ...MOCK_USERS.map((u) => u.id)) + 1;
     const newUser: User = {
-      id: (Math.max(0, ...MOCK_USERS.map((u) => u.id)) + 1),
+      id: nextId,
       firstName: payload.firstName,
       lastName: payload.lastName,
       email: payload.email,
@@ -147,9 +148,13 @@ export class MockUserRepository implements UserRepository {
 
     const updated: User = {
       ...MOCK_USERS[index],
-      ...(payload.firstName !== undefined && payload.firstName !== null && { firstName: payload.firstName }),
-      ...(payload.lastName !== undefined && payload.lastName !== null && { lastName: payload.lastName }),
-      ...(payload.role !== undefined && payload.role !== null && { role: payload.role }),
+      ...(payload.firstName !== undefined && {
+        firstName: payload.firstName ?? MOCK_USERS[index].firstName,
+      }),
+      ...(payload.lastName !== undefined && {
+        lastName: payload.lastName ?? MOCK_USERS[index].lastName,
+      }),
+      ...(payload.role !== undefined && { role: payload.role ?? MOCK_USERS[index].role }),
       ...(payload.departmentId !== undefined && { departmentId: payload.departmentId }),
     };
 
@@ -161,12 +166,7 @@ export class MockUserRepository implements UserRepository {
     const index = MOCK_USERS.findIndex((u) => u.id === id);
     if (index === -1) throw new Error(`Usuario con id "${id}" no encontrado`);
 
-    const updated: User = {
-      ...MOCK_USERS[index],
-      active,
-    };
-
-    MOCK_USERS = MOCK_USERS.map((u) => (u.id === id ? updated : u));
+    MOCK_USERS = MOCK_USERS.map((u) => (u.id === id ? { ...u, active } : u));
   }
 
   async getDepartments(): Promise<Department[]> {

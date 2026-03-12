@@ -1,16 +1,33 @@
-import { User, CreateUserPayload, UpdateUserPayload } from '@domain/models/user.model';
-import { UserDto, CreateUserDto, UpdateUserDto } from '@infrastructure/dtos/user.dto';
+import {
+  User,
+  Department,
+  CreateUserPayload,
+  UpdateUserPayload,
+} from '@domain/models/user.model';
+import {
+  UserDto,
+  CreateUserDto,
+  UpdateUserDto,
+  DepartmentDto,
+} from '@infrastructure/dtos/user.dto';
 
 export class UserMapper {
   static fromDto(dto: UserDto): User {
     return {
-      id: dto.id,
+      id: dto.user_id,
       firstName: dto.first_name,
       lastName: dto.last_name,
       email: dto.email,
       role: dto.role,
       departmentId: dto.department_id,
-      active: dto.active,
+      active: dto.is_active,
+    };
+  }
+
+  static departmentFromDto(dto: DepartmentDto): Department {
+    return {
+      id: dto.department_id,
+      name: dto.name,
     };
   }
 
@@ -29,7 +46,9 @@ export class UserMapper {
       ...(payload.firstName !== undefined && { first_name: payload.firstName }),
       ...(payload.lastName !== undefined && { last_name: payload.lastName }),
       ...(payload.role !== undefined && { role: payload.role }),
-      ...(payload.departmentId !== undefined && { department_id: payload.departmentId }),
+      ...(payload.departmentId !== undefined && {
+        department_id: payload.departmentId,
+      }),
     };
   }
 }
