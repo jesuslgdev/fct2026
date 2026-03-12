@@ -8,6 +8,13 @@ import { CreateUserUseCase } from '@domain/usecases/user/create-user.usecase';
 import { UpdateUserUseCase } from '@domain/usecases/user/update-user.usecase';
 import { ToggleUserStatusUseCase } from '@domain/usecases/user/toggle-user-status.usecase';
 import { UserRepository } from '@domain/repositories/user.repository';
+import {
+  UserApiError,
+  UserForbiddenError,
+  UserNotFoundError,
+  UserUnauthorizedError,
+  UserValidationError,
+} from '@domain/models/user-errors';
 
 export type DialogMode = 'create' | 'edit';
 
@@ -43,6 +50,30 @@ export class UsersStore {
   readonly canEdit = computed(() => this.authService.user()?.role === 'Administrator');
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
 
+  private resolveErrorMessage(err: unknown, fallback: string): string {
+    if (err instanceof UserValidationError) {
+      return err.message || 'Please check the submitted data.';
+    }
+
+    if (err instanceof UserUnauthorizedError) {
+      return 'Your session has expired. Please sign in again.';
+    }
+
+    if (err instanceof UserForbiddenError) {
+      return 'You do not have permissions to perform this action.';
+    }
+
+    if (err instanceof UserNotFoundError) {
+      return 'The selected user no longer exists.';
+    }
+
+    if (err instanceof UserApiError) {
+      return err.message || fallback;
+    }
+
+    return fallback;
+  }
+
   // ── Data loading ───────────────────────────────────────────────────────────
   async loadUsers(): Promise<void> {
     this.loading.set(true);
@@ -58,8 +89,8 @@ export class UsersStore {
       const result = await this.getUsersUseCase.execute(params);
       this.users.set(result.data);
       this.total.set(result.total);
-    } catch {
-      this.error.set('Failed to load users.');
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load users.'));
     } finally {
       this.loading.set(false);
     }
@@ -69,8 +100,8 @@ export class UsersStore {
     try {
       const result = await this.userRepository.getDepartments();
       this.departments.set(result);
-    } catch {
-      this.error.set('Failed to load departments.');
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load departments.'));
     }
   }
 
@@ -120,8 +151,8 @@ export class UsersStore {
         this.total.update((t) => t + 1);
       }
       this.closeDialog();
-    } catch {
-      this.error.set('Failed to save user.');
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Failed to save user.'));
     } finally {
       this.loading.set(false);
     }
@@ -140,8 +171,8 @@ export class UsersStore {
       );
       this.confirmDialogVisible.set(false);
       this.userToToggle.set(null);
-    } catch {
-      this.error.set('Failed to update user status.');
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Failed to update user status.'));
     } finally {
       this.loading.set(false);
     }
@@ -169,6 +200,5 @@ export class UsersStore {
   onPageChange(event: { first: number; rows: number }): void {
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
-    this.loadUsers();
   }
 }
