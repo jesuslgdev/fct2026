@@ -133,8 +133,11 @@ export class UsersStore {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const updated = await this.toggleUserStatusUseCase.execute(user.id, !user.active);
-      this.users.update((list) => list.map((u) => (u.id === updated.id ? updated : u)));
+      const nextActive = !user.active;
+      await this.toggleUserStatusUseCase.execute(user.id, nextActive);
+      this.users.update((list) =>
+        list.map((u) => (u.id === user.id ? { ...u, active: nextActive } : u)),
+      );
       this.confirmDialogVisible.set(false);
       this.userToToggle.set(null);
     } catch {
