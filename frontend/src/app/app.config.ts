@@ -32,7 +32,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([
         authInterceptor,
       ])
-    ),
+    ), 
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
