@@ -62,15 +62,15 @@
         <th>Departamento</th>
         <th>Estado</th>
         @if (store.canEdit()) {
-          <th class="w-32">Acciones</th>
+          <th>Acciones</th>
         }
       </tr>
     </ng-template>
 
     <ng-template #body let-user>
-      <tr [class.opacity-50]="!user.active">
+      <tr>
         <td>{{ user.firstName }} {{ user.lastName }}</td>
-        <td class="text-style-subtitle text-surface-600">{{ user.email }}</td>
+        <td>{{ user.email }}</td>
         <td>{{ getRoleLabel(user.role) }}</td>
         <td>{{ user.departmentName }}</td>
         <td>
@@ -78,7 +78,7 @@
         </td>
         @if (store.canEdit()) {
           <td>
-            <div class="flex gap-2">
+            <div>
               <ui-button
                 icon="pi pi-pencil"
                 variant="ghost"
