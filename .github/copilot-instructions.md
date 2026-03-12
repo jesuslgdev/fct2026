@@ -90,3 +90,12 @@ Use aliases from `frontend/tsconfig.json`; avoid deep relative imports:
 5. Implement feature store/facade with signals.
 6. Apply design tokens and Tailwind utilities.
 7. Add unit tests for use cases, store, and key components.
+
+## Code Review & Linting Guidelines
+- Always run `ng lint` and address reported errors before merging.
+- Inspect offending files with `read_file` when lint issues arise.
+- Irregular whitespace (non‑breaking spaces) often triggers `no-irregular-whitespace`; remove them and standardize indentation.
+- Use `multi_replace_string_in_file` for batch fixes to maintain efficiency.
+- After edits, re-run lint/tests to confirm issues are resolved.
+- Keep PR messages concise: show what was changed and why.
+- Record common lessons in session memory for future troubleshooting.

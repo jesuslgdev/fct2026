@@ -1,12 +1,12 @@
 // src/theme/erp.preset.ts
 // ================================================================
-// Fuente única de verdad (SSoT) del design system.
-// Toda customización visual va aquí — mínimo CSS externo.
+// Single source of truth (SSoT) for the design system.
+// All visual customization lives here — minimal external CSS.
 //
-// Jerarquía:
-//   1. primitive  → paleta de valores raw
-//   2. semantic   → significado contextual, referencias a primitivos
-//   3. components → tokens por componente, referencias a semánticos
+// Hierarchy:
+//   1. primitive  → raw value palette
+//   2. semantic   → contextual meaning, references to primitives
+//   3. components → component tokens, references to semantics
 // ================================================================
 
 import { definePreset } from '@primeuix/themes';
@@ -14,13 +14,13 @@ import Aura from '@primeuix/themes/aura';
 
 export const ErpPreset = definePreset(Aura, {
 
-  // ── 1. PRIMITIVE — paleta raw ────────────────────────────────
-  // Valores de color sin significado semántico.
-  // Todos los niveles superiores referencian estos valores con {neutral.X}.
-  // Si cambia un color, solo se cambia aquí.
+  // ── 1. PRIMITIVE — raw palette ───────────────────────────────
+  // Color values without semantic meaning.
+  // All higher layers reference these values via {neutral.X}.
+  // If a color changes, update only here.
   primitive: {
     neutral: {
-      50: '#f8fafc',      // gris más claro
+      50: '#f8fafc',      // lightest gray
       100: '#f1f5f9',
       200: '#e2e8f0',
       300: '#cbd5e1',
@@ -29,33 +29,39 @@ export const ErpPreset = definePreset(Aura, {
       600: '#475569',
       700: '#334155',
       800: '#1e293b',
-      900: '#0f172a',     // azul grisáceo oscuro
-      950: '#0a1120',     // casi negro
+      900: '#0f172a',     // dark bluish gray
+      950: '#0a1120',     // almost black
     },
     blue: {
-      300: '#60a5fa',    // azul claro
+      50: '#eff6ff',     // lightest blue
+      100: '#dbeafe',
+      200: '#bfdbfe',
+      300: '#60a5fa',    // light blue
       400: '#3b82f6',
-      500: '#2563eb',    // azul corporativo
+      500: '#2563eb',    // corporate blue
       600: '#1d4ed8',
-      700: '#1e40af',    // azul profundo
+      700: '#1e40af',    // deep blue
+      800: '#1e3a8a',
+      900: '#1e3163',
+      950: '#172554',    // almost navy
     },
     green: {
-      500: '#22c55e',    // verde éxito
+      500: '#22c55e',    // success green
       600: '#16a34a',
       700: '#166534',
     },
     red: {
-      500: '#ef4444',    // rojo error
+      500: '#ef4444',    // error red
       600: '#dc2626',
       700: '#991b1b',
     },
     gold: {
-      500: '#fbbf24',    // dorado advertencia
+      500: '#fbbf24',    // warning gold
       600: '#f59e0b',
       700: '#b45309',
     },
     accent: {
-      500: '#38bdf8',    // azul acento
+      500: '#38bdf8',    // accent blue
       600: '#0ea5e9',
       700: '#0369a1',
     },
@@ -63,19 +69,19 @@ export const ErpPreset = definePreset(Aura, {
 
   // ── 2. SEMANTIC — significado contextual ─────────────────────
   semantic: {
-    // Primary = azul corporativo
+    // Primary = corporate blue
     primary: {
-      50: '{blue.300}',
-      100: '{blue.400}',
-      200: '{blue.500}',
-      300: '{blue.600}',
-      400: '{blue.700}',
-      500: '{neutral.500}',
-      600: '{neutral.600}',
-      700: '{neutral.700}',
-      800: '{neutral.800}',
-      900: '{neutral.900}',
-      950: '{neutral.950}',
+      50: '{blue.50}',
+      100: '{blue.100}',
+      200: '{blue.200}',
+      300: '{blue.300}',
+      400: '{blue.400}',
+      500: '{blue.500}',
+      600: '{blue.600}',
+      700: '{blue.700}',
+      800: '{blue.800}',
+      900: '{blue.900}',
+      950: '{blue.950}',
     },
 
     colorScheme: {
@@ -109,7 +115,7 @@ export const ErpPreset = definePreset(Aura, {
         },
       },
 
-      // Sin dark mode — mismos valores que light
+      // No dark mode — same values as light
       dark: {
         primary: {
           color: '{neutral.900}',
@@ -143,9 +149,9 @@ export const ErpPreset = definePreset(Aura, {
   },
 
   // ── 3. COMPONENTS — tokens por componente ────────────────────
-  // Método recomendado para customizar componentes de PrimeNG.
-  // Evita overrides CSS externos — toda la lógica de color vive aquí.
-  // El wrapper `root` es obligatorio en PrimeNG v19+.
+  // Recommended way to customize PrimeNG components.
+  // Avoid external CSS overrides — all color logic lives here.
+  // The `root` wrapper is mandatory in PrimeNG v19+.
   components: {
 
     button: {
@@ -168,7 +174,7 @@ export const ErpPreset = definePreset(Aura, {
       colorScheme: {
         light: {
           root: {
-            // Primary — azul corporativo
+            // Primary — corporate blue
             primary: {
               background: '{blue.500}',
               hoverBackground: '{blue.600}',
@@ -180,7 +186,7 @@ export const ErpPreset = definePreset(Aura, {
               hoverColor: '#ffffff',
               activeColor: '#ffffff',
             },
-            // Secondary — gris oscuro
+            // Secondary — dark gray
             secondary: {
               background: '{neutral.700}',
               hoverBackground: '{neutral.800}',
@@ -204,7 +210,7 @@ export const ErpPreset = definePreset(Aura, {
               hoverColor: '#ffffff',
               activeColor: '#ffffff',
             },
-            // Success — verde
+            // Success — green
             success: {
               background: '{green.500}',
               hoverBackground: '{green.600}',
@@ -216,7 +222,7 @@ export const ErpPreset = definePreset(Aura, {
               hoverColor: '#ffffff',
               activeColor: '#ffffff',
             },
-            // Warn — dorado
+            // Warn — gold
             warn: {
               background: '{gold.500}',
               hoverBackground: '{gold.600}',
@@ -228,7 +234,7 @@ export const ErpPreset = definePreset(Aura, {
               hoverColor: '{neutral.900}',
               activeColor: '{neutral.900}',
             },
-            // Info — azul acento
+            // Info — accent blue
             info: {
               background: '{accent.500}',
               hoverBackground: '{accent.600}',
@@ -240,7 +246,7 @@ export const ErpPreset = definePreset(Aura, {
               hoverColor: '#ffffff',
               activeColor: '#ffffff',
             },
-            // Contrast — blanco
+            // Contrast — white
             contrast: {
               background: '#ffffff',
               hoverBackground: '{neutral.100}',
