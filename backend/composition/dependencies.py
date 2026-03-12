@@ -406,6 +406,7 @@ async def get_create_supplier_use_case(
     return CreateSupplierUseCase(SupplierRepository(db))
 
 
+
 def get_download_supplier_template_use_case() -> IDownloadSupplierTemplateUseCase:
     return DownloadSupplierTemplateUseCase()
 
