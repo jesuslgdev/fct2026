@@ -9,12 +9,9 @@ import {
   PagedResult,
 } from '@domain/models/user.model';
 
-<<<<<<< HEAD
-=======
 // Minimal departments needed for the user form selector.
 // When the Departments feature is implemented, getDepartments() will
 // consume that repository. For now they are kept here as support data.
->>>>>>> 8cb614a7ba0b2f4debaf6013311a20ae47bd4897
 const MOCK_DEPARTMENTS: Department[] = [
   { id: 1, name: 'Tecnologia' },
   { id: 2, name: 'Recursos Humanos' },
@@ -176,13 +173,7 @@ export class MockUserRepository implements UserRepository {
   }
 
   async getDepartments(): Promise<Department[]> {
-<<<<<<< HEAD
-    return [...MOCK_DEPARTMENTS];
-  }
-}
-=======
     // TODO: replace with DepartmentRepository when Departments feature becomes available
     return [...MOCK_DEPARTMENTS];
   }
 }
->>>>>>> 8cb614a7ba0b2f4debaf6013311a20ae47bd4897
