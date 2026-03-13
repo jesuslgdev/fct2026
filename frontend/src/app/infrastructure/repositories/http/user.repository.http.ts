@@ -126,9 +126,25 @@ export class HttpUserRepository implements UserRepository {
   }
 
   async updateUser(id: number, payload: UpdateUserPayload): Promise<User> {
+    // Uses PUT to update the user. This is the current backend contract and
+    // matches the OpenAPI spec (PUT /api/v1/admin/users/{user_id}).
+    //
+    // If the backend is later changed to support PATCH for partial updates,
+    // use `updateUserPartial()` instead.
     return this.withErrorMapping(async () => {
       const dto = await firstValueFrom(
         this.http.put<UserDto>(`${BASE_URL}/${id}`, UserMapper.toUpdateDto(payload)),
+      );
+      return UserMapper.fromDto(dto);
+    });
+  }
+
+  async updateUserPartial(id: number, payload: UpdateUserPayload): Promise<User> {
+    // Prepared for a future endpoint that supports partial updates.
+    // This sends only the fields present in `payload` using PATCH.
+    return this.withErrorMapping(async () => {
+      const dto = await firstValueFrom(
+        this.http.patch<UserDto>(`${BASE_URL}/${id}`, UserMapper.toUpdateDto(payload)),
       );
       return UserMapper.fromDto(dto);
     });
