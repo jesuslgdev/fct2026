@@ -38,7 +38,9 @@ describe('authGuard', () => {
   it('redirects to /auth/login when no user is authenticated', async () => {
     mockAuth.setLogged(false);
     const result = await TestBed.runInInjectionContext(() => authGuard({} as never, {} as never));
-    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
+    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/auth/login'], {
+      queryParams: { returnUrl: undefined },
+    });
     expect(result).toBe('/auth/login');
   });
 });
