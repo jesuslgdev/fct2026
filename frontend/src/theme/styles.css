@@ -63,8 +63,32 @@
   color: var(--p-red-500);
 }
 
+@utility text-success {
+  color: var(--p-green-600);
+}
+
 @utility text-success-icon {
   color: var(--p-green-500);
+}
+
+@utility text-warning {
+  color: var(--p-amber-500, #f59e0b);
+}
+
+@utility text-info {
+  color: var(--p-sky-600, #0284c7);
+}
+
+@utility text-subtitle-base {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@utility page-max-width {
+  max-width: 1200px;
+  width: 100%;
+  margin-inline: auto;
 }
 
 /* ── 6. App Shell Layout ── */
@@ -179,6 +203,77 @@
   .app-brand-name {
     font-size: 0.9375rem;
     letter-spacing: -0.02em;
+  }
+
+  /* ── layout utilities for pages ─────────────────────────────────── */
+  .page {
+    @apply flex flex-col gap-4 p-4 md:p-6 page-max-width;
+  }
+
+  .page-header {
+    @apply flex items-center justify-between;
+  }
+
+  .filters-row {
+    @apply flex flex-wrap gap-3;
+  }
+
+  /* table empty state */
+  .empty-state {
+    @apply text-center text-subtitle-base text-surface-500 py-8;
+  }
+
+  /* warning text inside dialogs */
+  .warning-text {
+    @apply text-subtitle-base text-surface-700;
+  }
+
+  .ui-table-base .p-datatable-table {
+    width: 100%;
+  }
+
+  .ui-table-compact .p-datatable-thead > tr > th {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--p-surface-600);
+    line-height: 1.25;
+  }
+
+  .ui-table-compact .p-datatable-tbody > tr > td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    color: var(--p-surface-700);
+    vertical-align: middle;
+  }
+
+  .ui-table-compact .p-datatable-tbody > tr {
+    height: 2.75rem;
+  }
+
+  .ui-table-compact .p-paginator {
+    padding: 0.5rem;
+  }
+
+  .dialog-form {
+    @apply flex flex-col gap-4 pt-2;
+  }
+
+  .dialog-form-grid {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2;
+  }
+
+  .dialog-field {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .dialog-field-label {
+    @apply text-sm font-medium text-surface-700;
+  }
+
+  .dialog-field-error {
+    @apply text-xs text-danger;
   }
 }
 

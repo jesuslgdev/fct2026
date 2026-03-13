@@ -5,6 +5,7 @@
 /tmp
 /out-tsc
 /bazel-out
+/enviroments
 
 # Node
 /node_modules
@@ -50,5 +51,6 @@ firebase-debug.log
 # Environments (generados en CI/CD)
 src/environments/environment.ts
 src/environments/environment.prod.ts
+src/environments/enviroment.ts
 # Excel temp files
 ~$*

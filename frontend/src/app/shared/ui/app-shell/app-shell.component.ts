@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, ViewChild } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { SignOutUseCase } from '@domain/usecases/auth/sign-out.usecase';
+import { AuthService } from '@core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
@@ -37,7 +39,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/movements': 'Movimientos',
   '/departments': 'Departamentos',
   '/users': 'Usuarios',
-  '/legal/terms': 'Terms and Conditions',
+  '/legal/terms': 'Términos y Condiciones',
 };
 
 @Component({
@@ -61,6 +63,10 @@ export class AppShellComponent {
   @ViewChild('drawerRef') drawerRef!: Drawer;
 
   private readonly router = inject(Router);
+  private readonly signOut = inject(SignOutUseCase);
+  private readonly authService = inject(AuthService);
+
+  readonly user = this.authService.user;
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -71,6 +77,12 @@ export class AppShellComponent {
   );
 
   readonly pageTitle = computed(() => PAGE_TITLES[this.currentUrl()] ?? 'ERP System');
+
+  async logout(): Promise<void> {
+    await this.signOut.execute();
+    this.authService.setSession(null);
+    await this.router.navigate(['/auth/login']);
+  }
 
   sidebarVisible = false;
 
@@ -124,7 +136,7 @@ export class AppShellComponent {
     {
       title: 'Legal',
       items: [
-        { label: 'Terms & Conditions', icon: 'pi pi-file', route: '/legal/terms' },
+        { label: 'Términos y Condiciones', icon: 'pi pi-file', route: '/legal/terms' },
       ],
     },
   ];

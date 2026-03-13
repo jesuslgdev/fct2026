@@ -1,0 +1,68 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import {
+  GoogleAuthProvider,
+  getIdToken,
+  signInWithPopup,
+  signOut,
+} from 'firebase/auth';
+import { firstValueFrom } from 'rxjs';
+import { AuthRepository } from '@domain/repositories/auth.repository';
+import { Session } from '@domain/models/session.model';
+import { AccessDeniedError } from '@domain/models/auth-errors';
+import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
+import { environment } from 'environments/environment';
+
+interface LoginResponse {
+  role: string;
+  name: string;
+}
+
+@Injectable()
+export class FirebaseAuthRepository implements AuthRepository {
+  private readonly auth = inject(FIREBASE_AUTH);
+  private readonly http = inject(HttpClient);
+
+  async signInWithGoogle(): Promise<Session> {
+    const provider = new GoogleAuthProvider();
+    const credential = await signInWithPopup(this.auth, provider);
+    const firebaseToken = await getIdToken(credential.user);
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<LoginResponse>(
+          `${environment.apiUrl}/api/v1/auth/login`,
+          { firebase_id_token: firebaseToken },
+        ),
+      );
+      return {
+        token: firebaseToken,
+        user: {
+          uid: credential.user.uid,
+          email: credential.user.email,
+          displayName: response.name || credential.user.displayName,
+          photoURL: credential.user.photoURL,
+          role: response.role,
+        },
+      };
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && (err.status === 401 || err.status === 403)) {
+        await signOut(this.auth);
+        throw new AccessDeniedError();
+      }
+      throw err;
+    }
+  }
+
+  async signOut(): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/api/v1/auth/logout`, {}),
+      );
+    } catch {
+      // logout is best-effort
+    } finally {
+      await signOut(this.auth);
+    }
+  }
+}
