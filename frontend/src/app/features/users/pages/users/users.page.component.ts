@@ -37,7 +37,7 @@ export class UsersPageComponent implements OnInit {
   readonly roleOptions: RoleOption[] = [
     { label: 'Todos los roles', value: null },
     ...USER_ROLES.map((r) => ({
-      label: r === 'Employee' ? 'Empleado' : r === 'Manager' ? 'Gerente' : r === 'Administrator' ? 'Administrador' : r,
+      label: this.getRoleLabel(r),
       value: r,
     })),
   ];
@@ -53,9 +53,6 @@ export class UsersPageComponent implements OnInit {
     this.store.loadDepartments();
   }
 
-  trackById(_: number, user: User): number {
-    return user.id;
-  }
   
   getRoleLabel(role: User['role']): string {
     switch (role) {
