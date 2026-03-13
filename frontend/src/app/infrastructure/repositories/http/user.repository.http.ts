@@ -26,8 +26,8 @@ import {
 import { UserMapper } from '@infrastructure/mappers/user.mapper';
 import { environment } from 'environments/environment';
 
-const BASE_URL = `${environment.apiBaseUrl}/api/v1/admin/users`;
-const DEPARTMENTS_URL = `${environment.apiBaseUrl}/api/v1/admin/departments`;
+const BASE_URL = `${environment.apiUrl}/api/v1/admin/users`;
+const DEPARTMENTS_URL = `${environment.apiUrl}/api/v1/admin/departments`;
 
 @Injectable()
 export class HttpUserRepository implements UserRepository {
