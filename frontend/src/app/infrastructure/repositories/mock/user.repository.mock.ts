@@ -12,14 +12,14 @@ import {
 // Minimal departments needed for the user form selector.
 // When the Departments feature is implemented, getDepartments() will
 // consume that repository. For now they are kept here as support data.
-const MOCK_DEPARTMENTS: Department[] = [
+const INITIAL_MOCK_DEPARTMENTS: Department[] = [
   { id: 1, name: 'Tecnologia' },
   { id: 2, name: 'Recursos Humanos' },
   { id: 3, name: 'Ventas' },
   { id: 4, name: 'Administracion' },
 ];
 
-let MOCK_USERS: User[] = [
+const INITIAL_MOCK_USERS: User[] = [
   {
     id: 1,
     firstName: 'Ana',
@@ -96,8 +96,21 @@ let MOCK_USERS: User[] = [
 
 @Injectable()
 export class MockUserRepository implements UserRepository {
+  private users: User[];
+
+  constructor() {
+  
+    this.users = INITIAL_MOCK_USERS.map((u) => ({ ...u }));
+  }
+
+  private getUserByIdOrThrow(id: number): User {
+    const user = this.users.find((u) => u.id === id);
+    if (!user) throw new Error(`Usuario con id "${id}" no encontrado`);
+    return user;
+  }
+
   async getUsers(params: UserQueryParams): Promise<PagedResult<User>> {
-    let filtered = [...MOCK_USERS];
+    let filtered = [...this.users];
 
     if (params.search) {
       const term = params.search.toLowerCase();
@@ -125,13 +138,12 @@ export class MockUserRepository implements UserRepository {
   }
 
   async getUserById(id: number): Promise<User> {
-    const user = MOCK_USERS.find((u) => u.id === id);
-    if (!user) throw new Error(`Usuario con id "${id}" no encontrado`);
+    const user = this.getUserByIdOrThrow(id);
     return { ...user };
   }
 
   async createUser(payload: CreateUserPayload): Promise<User> {
-    const nextId = Math.max(0, ...MOCK_USERS.map((u) => u.id)) + 1;
+    const nextId = Math.max(0, ...this.users.map((u) => u.id)) + 1;
     const newUser: User = {
       id: nextId,
       firstName: payload.firstName,
@@ -141,39 +153,36 @@ export class MockUserRepository implements UserRepository {
       departmentId: payload.departmentId,
       active: true,
     };
-    MOCK_USERS = [...MOCK_USERS, newUser];
+    this.users = [...this.users, newUser];
     return { ...newUser };
   }
 
   async updateUser(id: number, payload: UpdateUserPayload): Promise<User> {
-    const index = MOCK_USERS.findIndex((u) => u.id === id);
-    if (index === -1) throw new Error(`Usuario con id "${id}" no encontrado`);
+    const existing = this.getUserByIdOrThrow(id);
 
     const updated: User = {
-      ...MOCK_USERS[index],
+      ...existing,
       ...(payload.firstName !== undefined && {
-        firstName: payload.firstName ?? MOCK_USERS[index].firstName,
+        firstName: payload.firstName ?? existing.firstName,
       }),
       ...(payload.lastName !== undefined && {
-        lastName: payload.lastName ?? MOCK_USERS[index].lastName,
+        lastName: payload.lastName ?? existing.lastName,
       }),
-      ...(payload.role !== undefined && { role: payload.role ?? MOCK_USERS[index].role }),
+      ...(payload.role !== undefined && { role: payload.role ?? existing.role }),
       ...(payload.departmentId !== undefined && { departmentId: payload.departmentId }),
     };
 
-    MOCK_USERS = MOCK_USERS.map((u) => (u.id === id ? updated : u));
+    this.users = this.users.map((u) => (u.id === id ? updated : u));
     return { ...updated };
   }
 
   async toggleUserStatus(id: number, active: boolean): Promise<void> {
-    const index = MOCK_USERS.findIndex((u) => u.id === id);
-    if (index === -1) throw new Error(`Usuario con id "${id}" no encontrado`);
-
-    MOCK_USERS = MOCK_USERS.map((u) => (u.id === id ? { ...u, active } : u));
+    this.getUserByIdOrThrow(id);
+    this.users = this.users.map((u) => (u.id === id ? { ...u, active } : u));
   }
 
   async getDepartments(): Promise<Department[]> {
     // TODO: replace with DepartmentRepository when Departments feature becomes available
-    return [...MOCK_DEPARTMENTS];
+    return INITIAL_MOCK_DEPARTMENTS.map((d) => ({ ...d }));
   }
 }
