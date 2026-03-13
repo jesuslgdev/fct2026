@@ -13,12 +13,18 @@ import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
+<<<<<<< HEAD
 import { environment } from 'environments/environment';
 import { MockUserRepository } from '@infrastructure/repositories/mock/user.repository.mock';
 import { UserRepository } from '@domain/repositories/user.repository';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
+=======
+import { MockUserRepository } from '@infrastructure/repositories/mock/user.repository.mock';
+import { UserRepository } from '@domain/repositories/user.repository';
+// TODO: switch to FirebaseAuthRepository when backend is ready
+>>>>>>> 8cb614a7ba0b2f4debaf6013311a20ae47bd4897
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,10 +36,16 @@ export const appConfig: ApplicationConfig = {
         authInterceptor,
       ])
     ),
+<<<<<<< HEAD
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: UserRepository, useClass: MockUserRepository },
     // TODO(api_connect): switch to HttpUserRepository when backend is ready
+=======
+    { provide: AuthRepository, useClass: MockAuthRepository },
+    { provide: UserRepository, useClass: MockUserRepository },
+    // TODO: switch to HttpUserRepository when backend is ready
+>>>>>>> 8cb614a7ba0b2f4debaf6013311a20ae47bd4897
     providePrimeNG({
       ripple: true,
       theme: {
