@@ -1,10 +1,10 @@
-<div class="p-6 space-y-6">
+<main class="page">
 
   <!-- ── Header ──────────────────────────────────────────── -->
-  <div class="flex items-center justify-between">
+  <header class="page-header">
     <div>
-      <h1 class="text-2xl font-semibold text-surface-900">Departamentos</h1>
-      <p class="text-sm text-surface-500 mt-1">Gestiona la estructura de la organización</p>
+      <h1 class="text-style-title">Departamentos</h1>
+      <p class="text-style-subtitle">Gestiona la estructura de la organización</p>
     </div>
     @if (isAdmin()) {
       <ui-button
@@ -13,27 +13,28 @@
         (clicked)="openCreate()"
       />
     }
-  </div>
+  </header>
 
   <!-- ── Table ────────────────────────────────────────────── -->
-  <ui-table
-    [value]="store.departments()"
-    [loading]="store.loading()"
-    dataKey="id"
-  >
+  <section aria-label="Departamentos">
+    <ui-table
+      [value]="store.departments()"
+      [loading]="store.loading()"
+      dataKey="id"
+    >
     <ng-template #header>
       <tr>
         <th>Nombre</th>
-        <th class="text-center w-32">Usuarios</th>
+        <th class="text-center">Usuarios</th>
         @if (isAdmin()) {
-          <th class="text-right w-28">Acciones</th>
+          <th class="text-right">Acciones</th>
         }
       </tr>
     </ng-template>
 
     <ng-template #body let-dept>
       <tr>
-        <td class="font-medium text-surface-900">{{ dept.name }}</td>
+        <td class="font-semibold">{{ dept.name }}</td>
         <td class="text-center">
           <ui-badge
             [label]="dept.userCount.toString()"
@@ -42,7 +43,7 @@
         </td>
         @if (isAdmin()) {
           <td class="text-right">
-            <div class="flex items-center justify-end gap-1">
+            <div class="flex items-center justify-end gap-2">
               <ui-button
                 icon="pi pi-pencil"
                 variant="ghost"
@@ -67,13 +68,14 @@
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="3" class="py-12 text-center text-surface-400">
-          <i class="pi pi-building block text-4xl mb-3 text-surface-200"></i>
+        <td colspan="3" class="text-center py-10 text-surface-500">
+          <i class="pi pi-building text-4xl text-surface-400 mb-2"></i>
           No hay departamentos registrados
         </td>
       </tr>
     </ng-template>
   </ui-table>
+  </section>
 
   <!-- ── Create / Edit dialog ─────────────────────────────── -->
   <ui-dialog
@@ -87,26 +89,27 @@
     (confirmed)="onSave()"
     (cancelled)="formVisible.set(false)"
   >
-    <form [formGroup]="form" class="space-y-4 pt-2">
+    <form [formGroup]="form" class="space-y-4">
       @if (formError()) {
-        <p class="flex items-center gap-1.5 text-sm text-red-600">
+        <p class="text-danger">
           <i class="pi pi-exclamation-circle"></i>{{ formError() }}
         </p>
       }
 
-      <div class="flex flex-col gap-1.5">
-        <label class="text-sm font-medium text-surface-700">
+      <div class="space-y-1">
+        <label for="department-name" class="block font-semibold text-sm text-surface-700">
           Nombre <span class="text-red-500">*</span>
         </label>
         <ui-input
+          id="department-name"
           formControlName="name"
           placeholder="Ej. Tecnología"
           [state]="form.controls.name.invalid && form.controls.name.touched ? 'error' : 'default'"
         />
         @if (form.controls.name.hasError('required') && form.controls.name.touched) {
-          <p class="text-xs text-red-500">El nombre es obligatorio.</p>
+          <p class="text-danger text-sm">El nombre es obligatorio.</p>
         } @else if (form.controls.name.hasError('maxlength') && form.controls.name.touched) {
-          <p class="text-xs text-red-500">Máximo 100 caracteres.</p>
+          <p class="text-danger text-sm">Máximo 100 caracteres.</p>
         }
       </div>
     </form>
@@ -147,4 +150,4 @@
     </div>
   </ui-dialog>
 
-</div>
+</main>
