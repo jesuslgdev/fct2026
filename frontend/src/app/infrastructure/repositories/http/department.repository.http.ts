@@ -6,7 +6,7 @@ import { Department } from '@domain/models/department.model';
 import { DepartmentHasUsersError, DepartmentNameDuplicateError } from '@domain/models/department-errors';
 import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 import { DepartmentMapper } from '@infrastructure/mappers/department.mapper';
-import { environment } from 'environments/enviroment';
+import { environment } from 'environments/environment';
 
 @Injectable()
 export class HttpDepartmentRepository implements DepartmentRepository {
