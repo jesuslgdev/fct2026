@@ -3,11 +3,10 @@ import { AuthService } from '@core/services/auth.service';
 import { User, Department, CreateUserPayload, UpdateUserPayload, UserQueryParams } from '@domain/models/user.model';
 import { UserRole } from '@domain/enums/user-role.enum';
 import { GetUsersUseCase } from '@domain/usecases/user/get-users.usecase';
-import { GetUserByIdUseCase } from '@domain/usecases/user/get-user-by-id.usecase';
 import { CreateUserUseCase } from '@domain/usecases/user/create-user.usecase';
 import { UpdateUserUseCase } from '@domain/usecases/user/update-user.usecase';
 import { ToggleUserStatusUseCase } from '@domain/usecases/user/toggle-user-status.usecase';
-import { UserRepository } from '@domain/repositories/user.repository';
+import { GetDepartmentsUseCase } from '@domain/usecases/user/get-departments.usecase';
 import {
   UserApiError,
   UserForbiddenError,
@@ -22,13 +21,12 @@ type UserView = User & { departmentName: string };
 @Injectable()
 export class UsersStore {
   private readonly authService = inject(AuthService);
-  private readonly userRepository = inject(UserRepository);
+  private readonly getDepartmentsUseCase = inject(GetDepartmentsUseCase);
 
-  private readonly getUsersUseCase = new GetUsersUseCase();
-  private readonly getUserByIdUseCase = new GetUserByIdUseCase();
-  private readonly createUserUseCase = new CreateUserUseCase();
-  private readonly updateUserUseCase = new UpdateUserUseCase();
-  private readonly toggleUserStatusUseCase = new ToggleUserStatusUseCase();
+  private readonly getUsersUseCase = inject(GetUsersUseCase);
+  private readonly createUserUseCase = inject(CreateUserUseCase);
+  private readonly updateUserUseCase = inject(UpdateUserUseCase);
+  private readonly toggleUserStatusUseCase = inject(ToggleUserStatusUseCase);
 
   // ── State ──────────────────────────────────────────────────────────────────
   readonly users = signal<User[]>([]);
@@ -108,7 +106,7 @@ export class UsersStore {
 
   async loadDepartments(): Promise<void> {
     try {
-      const result = await this.userRepository.getDepartments();
+      const result = await this.getDepartmentsUseCase.execute();
       this.departments.set(result);
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Failed to load departments.'));
@@ -210,5 +208,6 @@ export class UsersStore {
   onPageChange(event: { first: number; rows: number }): void {
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
+    this.loadUsers();
   }
 }
