@@ -17,6 +17,7 @@ import {
 } from '@domain/models/user-errors';
 
 export type DialogMode = 'create' | 'edit';
+type UserView = User & { departmentName: string };
 
 @Injectable()
 export class UsersStore {
@@ -49,6 +50,15 @@ export class UsersStore {
   // ── Computed ───────────────────────────────────────────────────────────────
   readonly canEdit = computed(() => this.authService.user()?.role === 'Administrator');
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
+  readonly usersView = computed<UserView[]>(() =>
+    this.users().map((user) => ({
+      ...user,
+      departmentName:
+        user.departmentId === null
+          ? '-'
+          : (this.departments().find((d) => d.id === user.departmentId)?.name ?? '-'),
+    })),
+  );
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof UserValidationError) {
