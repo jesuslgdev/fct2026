@@ -19,7 +19,7 @@ import {
   ClientValidationError,
 } from '@domain/models/client-errors';
 
-export type DialogMode = 'create' | 'edit';
+export type DialogMode = 'create' | 'edit' | 'view';
 
 @Injectable()
 export class ClientsStore {
@@ -115,9 +115,45 @@ export class ClientsStore {
   }
 
   openEditDialog(client: Client): void {
-    this.selectedClient.set(client);
-    this.dialogMode.set('edit');
-    this.dialogVisible.set(true);
+    this.loadClientForEdit(client.clientId);
+  }
+
+  private async loadClientForEdit(clientId: number): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    try {
+      const clientData = await this.getClientByIdUseCase.execute(clientId);
+      this.selectedClient.set(clientData);
+      this.dialogMode.set('edit');
+      this.dialogVisible.set(true);
+    } catch (err) {
+      this.error.set('Error al cargar los datos del cliente');
+      console.error('Error loading client for edit:', err);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  openViewDialog(client: Client): void {
+    this.loadClientForView(client.clientId);
+  }
+
+  private async loadClientForView(clientId: number): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+
+    try {
+      const clientData = await this.getClientByIdUseCase.execute(clientId);
+      this.selectedClient.set(clientData);
+      this.dialogMode.set('view');
+      this.dialogVisible.set(true);
+    } catch (err) {
+      this.error.set('Error al cargar los datos del cliente');
+      console.error('Error loading client for view:', err);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   closeDialog(): void {
