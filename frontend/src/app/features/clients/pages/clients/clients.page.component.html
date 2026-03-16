@@ -53,16 +53,9 @@
       <tr>
         <th>Nombre</th>
         <th>Tax ID</th>
-        <th>Dirección</th>
         <th>Ciudad</th>
-        <th>Provincia</th>
-        <th>C.P.</th>
-        <th>Teléfono</th>
-        <th>Email</th>
         <th>Estado</th>
-        @if (store.canEdit()) {
-          <th>Acciones</th>
-        }
+        <th>Acciones</th>
       </tr>
     </ng-template>
 
@@ -70,39 +63,43 @@
       <tr>
         <td>{{ client.name }}</td>
         <td>{{ client.taxId }}</td>
-        <td>{{ client.address }}</td>
         <td>{{ client.city }}</td>
-        <td>{{ client.province }}</td>
-        <td>{{ client.postalCode }}</td>
-        <td>{{ client.phone }}</td>
-        <td>{{ client.email }}</td>
         <td>
           <ui-client-status-badge [isActive]="client.isActive" />
         </td>
-        @if (store.canEdit()) {
-          <td>
-            <div class="table-actions">
+        <td>
+          <div class="table-actions">
+            <!-- Icono de ojo para todos los usuarios -->
+            <ui-button
+              icon="pi pi-eye"
+              variant="ghost"
+              size="sm"
+              (clicked)="store.openViewDialog(client)"
+            />
+            @if (store.canEdit()) {
+              <!-- Botón de editar solo para admin/sales manager -->
               <ui-button
                 icon="pi pi-pencil"
                 variant="ghost"
                 size="sm"
                 (clicked)="store.openEditDialog(client)"
               />
+              <!-- Botón de activar/desactivar -->
               <ui-button
                 [icon]="client.isActive ? 'pi pi-ban' : 'pi pi-check-circle'"
                 [variant]="client.isActive ? 'destructive' : 'secondary'"
                 size="sm"
                 (clicked)="store.requestToggleStatus(client)"
               />
-            </div>
-          </td>
-        }
+            }
+          </div>
+        </td>
       </tr>
     </ng-template>
 
     <ng-template #emptymessage>
       <tr>
-        <td [attr.colspan]="store.canEdit() ? 10 : 9" class="empty-state">
+        <td colspan="5" class="empty-state">
           No se encontraron clientes.
         </td>
       </tr>
