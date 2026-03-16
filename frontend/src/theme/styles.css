@@ -292,5 +292,16 @@
   .table-actions {
     @apply flex gap-1;
   }
+
+  .ui-table-compact .p-datatable-tbody > tr > td:last-child {
+    padding-right: 0.5rem;
+    width: 1%;
+    white-space: nowrap;
+  }
+
+  .ui-table-compact .p-datatable-thead > tr > th:last-child {
+    width: 1%;
+    white-space: nowrap;
+  }
 }
 
