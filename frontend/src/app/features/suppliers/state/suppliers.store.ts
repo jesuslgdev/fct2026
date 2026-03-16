@@ -290,8 +290,8 @@ export class SuppliersStore {
     let page: number;
     
     if (event.page !== undefined) {
-      // Use page directly if provided (1-based)
-      page = event.page;
+      // PrimeNG emits `page` as 0-based index; convert to 1-based.
+      page = event.page + 1;
     } else {
       // Calculate from first offset (convert 0-based to 1-based)
       page = Math.floor((event.first ?? 0) / rows) + 1;
