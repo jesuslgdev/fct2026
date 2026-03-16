@@ -25,10 +25,11 @@ export class ProviderMapper {
 
   // DTO -> Domain (list)
   static fromDto(dto: ProviderDto): Provider {
+      const isActive = dto.is_active ?? false;
     return {
       id: ProviderMapper.resolveProviderId(dto),
-      name: dto.name,
-      taxId: dto.tax_id,
+      name: dto.name ?? '',
+      taxId: dto.tax_id ?? '',
       email: dto.email ?? '',
       phone: dto.phone ?? undefined,
       address: dto.address ?? undefined,
@@ -36,10 +37,10 @@ export class ProviderMapper {
       province: dto.province ?? undefined,
       postalCode: dto.postal_code ?? undefined,
       contactPerson: dto.contact_person ?? undefined,
-      isActive: dto.is_active,
-      status: dto.status ?? (dto.is_active ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE),
-      createdAt: dto.created_at ? new Date(dto.created_at) : new Date(),
-      updatedAt: dto.updated_at ? new Date(dto.updated_at) : new Date(),
+    isActive,
+    status: dto.status ?? (isActive ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE),
+    createdAt: dto.created_at ? new Date(dto.created_at) : new Date(),
+    updatedAt: dto.updated_at ? new Date(dto.updated_at) : new Date(),
     };
   }
 
@@ -67,13 +68,13 @@ export class ProviderMapper {
   // Helper entity DTO → Domain
   static productFromDto(dto: ProviderProductDto): ProviderProduct {
     return {
-      id: dto.id.toString(),
-      productId: dto.product_id.toString(),
-      productName: dto.product_name,
-      providerId: dto.provider_id.toString(),
-      specificPrice: dto.specific_price,
-      createdAt: new Date(dto.created_at),
-      updatedAt: new Date(dto.updated_at),
+      id: dto.id?.toString() ?? '',
+      productId: dto.product_id?.toString() ?? '',
+      productName: dto.product_name ?? '',
+      providerId: dto.provider_id?.toString() ?? '',
+      specificPrice: dto.specific_price ?? 0,
+      createdAt: new Date(dto.created_at ?? new Date()),
+      updatedAt: new Date(dto.updated_at ?? new Date()),
     };
   }
 

@@ -116,20 +116,32 @@ export class HttpProviderRepository implements ProviderRepository {
   async activateProvider(id: string): Promise<Provider> {
     return this.withErrorMapping(async () => {
       const body: SetSupplierActiveDto = ProviderMapper.toSetActiveDto(true);
-      const dto = await firstValueFrom(
-        this.http.patch<ProviderDetailDto>(`${BASE_URL}/${id}/active`, body),
+      const response = await firstValueFrom(
+        this.http.patch<ProviderDetailDto | null>(`${BASE_URL}/${id}/active`, body),
       );
-      return ProviderMapper.fromDetailDto(dto);
+      
+      // If backend returns 204 No Content, reload provider details.
+      if (!response) {
+        return await this.getProviderById(id);
+      }
+      
+      return ProviderMapper.fromDetailDto(response);
     });
   }
 
   async deactivateProvider(id: string): Promise<Provider> {
     return this.withErrorMapping(async () => {
       const body: SetSupplierActiveDto = ProviderMapper.toSetActiveDto(false);
-      const dto = await firstValueFrom(
-        this.http.patch<ProviderDetailDto>(`${BASE_URL}/${id}/active`, body),
+      const response = await firstValueFrom(
+        this.http.patch<ProviderDetailDto | null>(`${BASE_URL}/${id}/active`, body),
       );
-      return ProviderMapper.fromDetailDto(dto);
+      
+      // If backend returns 204 No Content, reload provider details.
+      if (!response) {
+        return await this.getProviderById(id);
+      }
+      
+      return ProviderMapper.fromDetailDto(response);
     });
   }
 
