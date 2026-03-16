@@ -50,6 +50,9 @@ export class ClientsStore {
   });
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
+  
+  // Computed view for table - allows wrapping/enriching data without triggering pagination
+  readonly clientsView = computed(() => this.clients());
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof ClientValidationError) {
@@ -229,8 +232,10 @@ export class ClientsStore {
   }
 
   onPageChange(event: { first: number; rows: number }): void {
+    // Don't call loadClients() here: p-table resets its internal `first` when
+    // `[value]` changes, which retriggers onPage with first=0 and forces page=1.
+    // We update page/pageSize here, and let callers (search/filter) invoke loadClients().
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
-    this.loadClients();
   }
 }

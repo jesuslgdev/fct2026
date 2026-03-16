@@ -271,14 +271,15 @@ describe('ClientsStore', () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 
-  it('page change triggers load with new parameters', () => {
+  it('page change updates pagination parameters without loading', () => {
     const spy = vi.spyOn(store, 'loadClients').mockResolvedValue();
 
     store.onPageChange({ first: 20, rows: 10 });
 
     expect(store.page()).toBe(3);
     expect(store.pageSize()).toBe(10);
-    expect(spy).toHaveBeenCalledOnce();
+    // onPageChange should NOT call loadClients() to avoid pagination loops
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it('open create dialog sets correct state', () => {

@@ -1,0 +1,127 @@
+<ui-dialog
+  [(visible)]="store.dialogVisible"
+  [header]="store.dialogMode() === 'create' ? 'Nuevo cliente' : 'Editar cliente'"
+  confirmLabel="Guardar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  [confirmDisabled]="form.invalid"
+  size="default"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+>
+  <form [formGroup]="form" class="dialog-form">
+
+    <!-- Nombre + Tax ID -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <span class="dialog-field-label">Nombre</span>
+        <ui-input
+          formControlName="name"
+          [state]="name.invalid && name.touched ? 'error' : 'default'"
+        />
+        @if (name.invalid && name.touched) {
+          <span class="dialog-field-error">
+            @if (name.hasError('required')) { El nombre es obligatorio. }
+            @else { El nombre debe tener al menos 3 caracteres. }
+          </span>
+        }
+      </div>
+      <div class="dialog-field">
+        <span class="dialog-field-label">Tax ID</span>
+        <ui-input
+          formControlName="taxId"
+          [state]="taxId.invalid && taxId.touched ? 'error' : 'default'"
+        />
+        @if (taxId.invalid && taxId.touched) {
+          <span class="dialog-field-error">
+            @if (taxId.hasError('required')) { El Tax ID es obligatorio. }
+            @else { Formato de Tax ID inválido. }
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Dirección -->
+    <div class="dialog-field">
+      <span class="dialog-field-label">Dirección</span>
+      <ui-input
+        formControlName="address"
+        [state]="address.invalid && address.touched ? 'error' : 'default'"
+      />
+      @if (address.invalid && address.touched) {
+        <span class="dialog-field-error">La dirección es obligatoria.</span>
+      }
+    </div>
+
+    <!-- Ciudad + Provincia -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <span class="dialog-field-label">Ciudad</span>
+        <ui-input
+          formControlName="city"
+          [state]="city.invalid && city.touched ? 'error' : 'default'"
+        />
+        @if (city.invalid && city.touched) {
+          <span class="dialog-field-error">La ciudad es obligatoria.</span>
+        }
+      </div>
+      <div class="dialog-field">
+        <span class="dialog-field-label">Provincia</span>
+        <ui-input
+          formControlName="province"
+          [state]="province.invalid && province.touched ? 'error' : 'default'"
+        />
+        @if (province.invalid && province.touched) {
+          <span class="dialog-field-error">La provincia es obligatoria.</span>
+        }
+      </div>
+    </div>
+
+    <!-- Código Postal + Teléfono -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <span class="dialog-field-label">Código Postal</span>
+        <ui-input
+          formControlName="postalCode"
+          [state]="postalCode.invalid && postalCode.touched ? 'error' : 'default'"
+        />
+        @if (postalCode.invalid && postalCode.touched) {
+          <span class="dialog-field-error">
+            @if (postalCode.hasError('required')) { El código postal es obligatorio. }
+            @else { Formato de código postal inválido. }
+          </span>
+        }
+      </div>
+      <div class="dialog-field">
+        <span class="dialog-field-label">Teléfono</span>
+        <ui-input
+          formControlName="phone"
+          [state]="phone.invalid && phone.touched ? 'error' : 'default'"
+        />
+        @if (phone.invalid && phone.touched) {
+          <span class="dialog-field-error">
+            @if (phone.hasError('required')) { El teléfono es obligatorio. }
+            @else { Formato de teléfono inválido. }
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="dialog-field">
+      <span class="dialog-field-label">Email</span>
+      <ui-input
+        formControlName="email"
+        type="email"
+        [state]="email.invalid && email.touched ? 'error' : 'default'"
+      />
+      @if (email.invalid && email.touched) {
+        <span class="dialog-field-error">
+          @if (email.hasError('required')) { El email es obligatorio. }
+          @else { Introduce un email válido. }
+        </span>
+      }
+    </div>
+
+  </form>
+</ui-dialog>
