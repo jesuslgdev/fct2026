@@ -1,5 +1,6 @@
 export * from './get-providers.usecase';
 export * from './get-provider-by-id.usecase';
+export * from './create-provider.usecase';
 export * from './update-provider.usecase';
 export * from './activate-provider.usecase';
 export * from './deactivate-provider.usecase';
