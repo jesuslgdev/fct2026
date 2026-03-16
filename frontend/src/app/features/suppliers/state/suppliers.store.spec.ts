@@ -332,16 +332,11 @@ describe('SuppliersStore', () => {
         email: 'new@test.com',
       };
       mockCreateProviderUseCase.execute.mockResolvedValue(MOCK_PROVIDER);
-      mockGetProvidersUseCase.execute.mockResolvedValue({
-        data: [MOCK_PROVIDER],
-        total: 1,
-      });
 
       store.dialogMode.set('create');
       await store.saveProvider(createPayload);
 
       expect(mockCreateProviderUseCase.execute).toHaveBeenCalledWith(createPayload);
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalled();
       expect(store.providers()).toContain(MOCK_PROVIDER);
       expect(store.total()).toBe(1);
       expect(store.dialogVisible()).toBe(false);
@@ -377,17 +372,12 @@ describe('SuppliersStore', () => {
       const activeProvider = { ...MOCK_PROVIDER, isActive: true, status: ProviderStatus.ACTIVE };
       const inactiveProvider = { ...MOCK_PROVIDER, isActive: false, status: ProviderStatus.INACTIVE };
       mockDeactivateProviderUseCase.execute.mockResolvedValue(inactiveProvider);
-      mockGetProvidersUseCase.execute.mockResolvedValue({
-        data: [inactiveProvider],
-        total: 1,
-      });
       store.providers.set([activeProvider]);
       store.providerToToggle.set(activeProvider);
 
       await store.confirmToggleStatus();
 
       expect(mockDeactivateProviderUseCase.execute).toHaveBeenCalledWith('1');
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalled();
       expect(store.providers()[0].isActive).toBe(false);
       expect(store.confirmDialogVisible()).toBe(false);
       expect(store.providerToToggle()).toBe(null);
@@ -397,17 +387,12 @@ describe('SuppliersStore', () => {
       const inactiveProvider = { ...MOCK_PROVIDER, isActive: false, status: ProviderStatus.INACTIVE };
       const activeProvider = { ...MOCK_PROVIDER, isActive: true, status: ProviderStatus.ACTIVE };
       mockActivateProviderUseCase.execute.mockResolvedValue(activeProvider);
-      mockGetProvidersUseCase.execute.mockResolvedValue({
-        data: [activeProvider],
-        total: 1,
-      });
       store.providers.set([inactiveProvider]);
       store.providerToToggle.set(inactiveProvider);
 
       await store.confirmToggleStatus();
 
       expect(mockActivateProviderUseCase.execute).toHaveBeenCalledWith('1');
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalled();
       expect(store.providers()[0].isActive).toBe(true);
       expect(store.confirmDialogVisible()).toBe(false);
       expect(store.providerToToggle()).toBe(null);
@@ -456,7 +441,7 @@ describe('SuppliersStore', () => {
 
       store.onPageChange(pageEvent);
 
-      expect(store.page()).toBe(2); // PrimeNG base 0 + 1 = store base 1
+      expect(store.page()).toBe(2);
       expect(store.pageSize()).toBe(10);
       expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ page: 2, rows: 10 });
     });
