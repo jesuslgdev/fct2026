@@ -19,6 +19,13 @@ class CategoryDTO(BaseModel):
     description: str
 
 
+class ProductSupplierDTO(BaseModel):
+    supplier_id: int
+    supplier_name: str
+    tax_id: str
+    supplier_price: Decimal
+
+
 class ProductDTO(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -19,7 +19,19 @@ class ImportResultDTO(BaseModel):
 
 class SupplierProductDTO(BaseModel):
     product_id: int
+    product_name: str | None = None
+    product_code: str | None = None
+    category_name: str | None = None
     supplier_price: Decimal
+
+
+class AddSupplierProductRequest(BaseModel):
+    product_id: int = Field(..., gt=0)
+    supplier_price: Decimal = Field(..., gt=0, decimal_places=2)
+
+
+class UpdateSupplierProductPriceRequest(BaseModel):
+    supplier_price: Decimal = Field(..., gt=0, decimal_places=2)
 
 
 class SupplierDTO(BaseModel):

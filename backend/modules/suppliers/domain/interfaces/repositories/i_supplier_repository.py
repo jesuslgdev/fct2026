@@ -1,8 +1,14 @@
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
+from modules.suppliers.domain.entities.product_supplier_detail import (
+    ProductSupplierDetail,
+)
 from modules.suppliers.domain.entities.supplier import Supplier
 from modules.suppliers.domain.entities.supplier_product import SupplierProduct
+from modules.suppliers.domain.entities.supplier_product_detail import (
+    SupplierProductDetail,
+)
 from shared.domain.paginated_result import PaginatedResult
 
 
@@ -86,11 +92,16 @@ class ISupplierRepository(ABC):
     ) -> list[SupplierProduct]: ...
 
     @abstractmethod
+    async def get_products_by_supplier_detailed(
+        self, supplier_id: int
+    ) -> list[SupplierProductDetail]: ...
+
+    @abstractmethod
     async def get_products_by_supplier_paginated(
         self, supplier_id: int, page: int, page_size: int
-    ) -> PaginatedResult[SupplierProduct]: ...
+    ) -> PaginatedResult[SupplierProductDetail]: ...
 
     @abstractmethod
     async def get_suppliers_by_product_paginated(
         self, product_id: int, page: int, page_size: int
-    ) -> PaginatedResult[SupplierProduct]: ...
+    ) -> PaginatedResult[ProductSupplierDetail]: ...

@@ -147,6 +147,9 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.repos.client_repository import ClientRepository
+from modules.suppliers.application.add_product_to_supplier_use_case import (
+    AddProductToSupplierUseCase,
+)
 from modules.suppliers.application.create_supplier_use_case import (
     CreateSupplierUseCase,
 )
@@ -157,11 +160,26 @@ from modules.suppliers.application.get_supplier_use_case import GetSupplierUseCa
 from modules.suppliers.application.import_suppliers_use_case import (
     ImportSuppliersUseCase,
 )
+from modules.suppliers.application.list_product_suppliers_use_case import (
+    ListProductSuppliersUseCase,
+)
+from modules.suppliers.application.list_supplier_products_use_case import (
+    ListSupplierProductsUseCase,
+)
 from modules.suppliers.application.list_suppliers_use_case import ListSuppliersUseCase
+from modules.suppliers.application.remove_product_from_supplier_use_case import (
+    RemoveProductFromSupplierUseCase,
+)
 from modules.suppliers.application.set_supplier_active_use_case import (
     SetSupplierActiveUseCase,
 )
+from modules.suppliers.application.update_supplier_product_price_use_case import (
+    UpdateSupplierProductPriceUseCase,
+)
 from modules.suppliers.application.update_supplier_use_case import UpdateSupplierUseCase
+from modules.suppliers.domain.interfaces.use_cases.i_add_product_to_supplier_use_case import (
+    IAddProductToSupplierUseCase,
+)
 from modules.suppliers.domain.interfaces.use_cases.i_create_supplier_use_case import (
     ICreateSupplierUseCase,
 )
@@ -174,11 +192,23 @@ from modules.suppliers.domain.interfaces.use_cases.i_get_supplier_use_case impor
 from modules.suppliers.domain.interfaces.use_cases.i_import_suppliers_use_case import (
     IImportSuppliersUseCase,
 )
+from modules.suppliers.domain.interfaces.use_cases.i_list_product_suppliers_use_case import (
+    IListProductSuppliersUseCase,
+)
+from modules.suppliers.domain.interfaces.use_cases.i_list_supplier_products_use_case import (
+    IListSupplierProductsUseCase,
+)
 from modules.suppliers.domain.interfaces.use_cases.i_list_suppliers_use_case import (
     IListSuppliersUseCase,
 )
+from modules.suppliers.domain.interfaces.use_cases.i_remove_product_from_supplier_use_case import (
+    IRemoveProductFromSupplierUseCase,
+)
 from modules.suppliers.domain.interfaces.use_cases.i_set_supplier_active_use_case import (
     ISetSupplierActiveUseCase,
+)
+from modules.suppliers.domain.interfaces.use_cases.i_update_supplier_product_price_use_case import (
+    IUpdateSupplierProductPriceUseCase,
 )
 from modules.suppliers.domain.interfaces.use_cases.i_update_supplier_use_case import (
     IUpdateSupplierUseCase,
@@ -387,3 +417,33 @@ async def get_set_client_active_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ISetClientActiveUseCase:
     return SetClientActiveUseCase(ClientRepository(db))
+
+
+async def get_add_product_to_supplier_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IAddProductToSupplierUseCase:
+    return AddProductToSupplierUseCase(SupplierRepository(db), ProductRepository(db))
+
+
+async def get_update_supplier_product_price_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IUpdateSupplierProductPriceUseCase:
+    return UpdateSupplierProductPriceUseCase(SupplierRepository(db))
+
+
+async def get_remove_product_from_supplier_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IRemoveProductFromSupplierUseCase:
+    return RemoveProductFromSupplierUseCase(SupplierRepository(db))
+
+
+async def get_list_supplier_products_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListSupplierProductsUseCase:
+    return ListSupplierProductsUseCase(SupplierRepository(db))
+
+
+async def get_list_product_suppliers_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListProductSuppliersUseCase:
+    return ListProductSuppliersUseCase(SupplierRepository(db))

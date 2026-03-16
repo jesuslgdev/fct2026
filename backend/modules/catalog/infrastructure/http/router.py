@@ -7,6 +7,7 @@ from composition.dependencies import (
     get_get_category_use_case,
     get_get_product_use_case,
     get_list_categories_use_case,
+    get_list_product_suppliers_use_case,
     get_list_products_use_case,
     get_set_product_active_use_case,
     get_update_category_use_case,
@@ -54,9 +55,16 @@ from modules.catalog.infrastructure.http.schemas import (
     CreateCategoryRequest,
     CreateProductRequest,
     ProductDTO,
+    ProductSupplierDTO,
     SetProductActiveRequest,
     UpdateCategoryRequest,
     UpdateProductRequest,
+)
+from modules.suppliers.domain.entities.product_supplier_detail import (
+    ProductSupplierDetail,
+)
+from modules.suppliers.domain.interfaces.use_cases.i_list_product_suppliers_use_case import (
+    IListProductSuppliersUseCase,
 )
 from shared.domain.entities.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
@@ -255,3 +263,35 @@ async def set_product_active(
     _: UserSession = Depends(require_purchases_manager_or_admin),
 ):
     await use_case.execute(product_id, body.is_active)
+
+
+def _to_product_supplier_dto(detail: ProductSupplierDetail) -> ProductSupplierDTO:
+    return ProductSupplierDTO(
+        supplier_id=detail.supplier_id,
+        supplier_name=detail.supplier_name,
+        tax_id=detail.tax_id,
+        supplier_price=detail.supplier_price,
+    )
+
+
+@router.get(
+    "/products/{product_id}/suppliers",
+    response_model=PaginatedResponse[ProductSupplierDTO],
+    tags=["Catalog - Products"],
+)
+async def list_product_suppliers(
+    product_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    use_case: IListProductSuppliersUseCase = Depends(
+        get_list_product_suppliers_use_case
+    ),
+    _: UserSession = Depends(get_current_user),
+):
+    result = await use_case.execute(product_id, page, page_size)
+    return PaginatedResponse(
+        items=[_to_product_supplier_dto(s) for s in result.items],
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+    )
