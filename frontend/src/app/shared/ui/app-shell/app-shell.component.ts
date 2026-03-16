@@ -33,6 +33,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/products': 'Productos',
   '/categories': 'Categorías',
   '/customers': 'Clientes',
+  '/clients': 'Clientes',
   '/suppliers': 'Proveedores',
   '/warehouses': 'Almacenes',
   '/stock-by-warehouse': 'Stock por almacén',
@@ -114,7 +115,7 @@ export class AppShellComponent {
     {
       title: 'Terceros',
       items: [
-        { label: 'Clientes', icon: 'pi pi-users', route: '/customers' },
+        { label: 'Clientes', icon: 'pi pi-users', route: '/clients' },
         { label: 'Proveedores', icon: 'pi pi-truck', route: '/suppliers' },
       ],
     },
