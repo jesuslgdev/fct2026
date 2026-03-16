@@ -9,7 +9,6 @@ import {
 } from '@domain/models/provider.model';
 import { PageEvent } from '@domain/models/page-event.model';
 import {
-  ProviderDto,
   ProviderDetailDto,
   SetSupplierActiveDto,
   ProvidersPageDto,
@@ -77,7 +76,7 @@ export class HttpProviderRepository implements ProviderRepository {
     return this.withErrorMapping(async () => {
       const query: Record<string, string | number | boolean> = {};
       
-      // Backend usa page_size en lugar de rows
+      // Backend uses page_size instead of rows.
       if (pageEvent?.page !== undefined) query['page'] = pageEvent.page;
       if (pageEvent?.rows !== undefined) query['page_size'] = pageEvent.rows;
 
