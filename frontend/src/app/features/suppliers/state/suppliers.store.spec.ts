@@ -433,7 +433,7 @@ describe('SuppliersStore', () => {
     });
 
     it('should handle page change', () => {
-      const pageEvent: PageEvent = { first: 10, rows: 10, page: 2 };
+      const pageEvent: PageEvent = { first: 10, rows: 10, page: 1 };
       mockGetProvidersUseCase.execute.mockResolvedValue({
         data: [],
         total: 0,
@@ -441,9 +441,10 @@ describe('SuppliersStore', () => {
 
       store.onPageChange(pageEvent);
 
-      expect(store.page()).toBe(2);
+      expect(store.page()).toBe(2); // PrimeNG base 0 + 1 = store base 1
       expect(store.pageSize()).toBe(10);
       expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ page: 2, rows: 10 });
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ ...pageEvent, page: 2 });
     });
   });
 

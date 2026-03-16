@@ -67,6 +67,7 @@ export class SuppliersStore {
     })),
   );
 
+<<<<<<< HEAD
   // Filtered providers for UI (display only, not for pagination)
   readonly filteredProviders = computed(() => {
     // In lazy mode, data comes filtered from server
@@ -75,6 +76,16 @@ export class SuppliersStore {
       let filtered = [...this.providers()];
       
       // Search filter (if backend doesn't support it)
+=======
+  // Proveedores filtrados para UI (solo para display, no para paginación)
+  readonly filteredProviders = computed(() => {
+    // En modo lazy, los datos ya vienen filtrados del servidor
+    // Solo aplicamos filtros locales si no estamos en modo lazy o para búsqueda rápida
+    if (this.searchQuery() || this.statusFilter()) {
+      let filtered = [...this.providers()];
+      
+      // Filtro por búsqueda (si el backend no lo soporta)
+>>>>>>> 98b531fd (fix: resolve pagination issues in suppliers feature)
       const search = this.searchQuery().toLowerCase();
       if (search) {
         filtered = filtered.filter(
@@ -86,7 +97,11 @@ export class SuppliersStore {
         );
       }
 
+<<<<<<< HEAD
       // Status filter (if backend doesn't support it)
+=======
+      // Filtro por estado (si el backend no lo soporta)
+>>>>>>> 98b531fd (fix: resolve pagination issues in suppliers feature)
       const statusFilter = this.statusFilter();
       if (statusFilter) {
         filtered = filtered.filter((provider) => provider.status === statusFilter);
@@ -95,7 +110,11 @@ export class SuppliersStore {
       return filtered;
     }
     
+<<<<<<< HEAD
     // If no local filters, return server data
+=======
+    // Si no hay filtros locales, devolver los datos del servidor
+>>>>>>> 98b531fd (fix: resolve pagination issues in suppliers feature)
     return this.providers();
   });
 
@@ -284,30 +303,19 @@ export class SuppliersStore {
   }
 
   onPageChange(event: PageEvent): void {
-    // PrimeNG pagination emits `first` (offset 0-based) and `rows`, and optionally `page`.
-    // Backend only needs page and page_size, not first.
+    // PrimeNG emits `first` and `rows`, and optionally `page` (0-based).
+    // Normalize values so store state remains 1-based and backend payload is consistent.
     const rows = event.rows ?? this.pageSize();
-    let page: number;
-    
-    if (event.page !== undefined) {
-      // PrimeNG emits `page` as 0-based index; convert to 1-based.
-      page = event.page + 1;
-    } else {
-      // Calculate from first offset (convert 0-based to 1-based)
-      page = Math.floor((event.first ?? 0) / rows) + 1;
-    }
-    
-    // Create PageEvent with only parameters backend needs
-    const updatedPageEvent: PageEvent = {
-      page,
-      rows
-    };
-    
+    const pageIndex = event.page ?? Math.floor((event.first ?? 0) / rows);
+    const first = event.first ?? pageIndex * rows;
+    const page = pageIndex + 1;
+
+    // Keep store page in 1-based format.
     this.page.set(page);
     this.pageSize.set(rows);
     
-    // Load data from server with new pagination
-    this.loadProviders(updatedPageEvent);
+    // Load server data using normalized pagination values.
+    this.loadProviders({ ...event, page, first, rows });
   }
 
   // ── Utilities ───────────────────────────────────────────────────────────
