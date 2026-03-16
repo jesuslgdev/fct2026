@@ -6,8 +6,10 @@ from fastapi.responses import StreamingResponse
 from composition.dependencies import (
     get_add_product_to_supplier_use_case,
     get_create_supplier_use_case,
+    get_download_supplier_product_template_use_case,
     get_download_supplier_template_use_case,
     get_get_supplier_use_case,
+    get_import_supplier_products_use_case,
     get_import_suppliers_use_case,
     get_list_product_suppliers_use_case,
     get_list_supplier_products_use_case,
@@ -31,11 +33,17 @@ from modules.suppliers.domain.interfaces.use_cases.i_add_product_to_supplier_use
 from modules.suppliers.domain.interfaces.use_cases.i_create_supplier_use_case import (
     ICreateSupplierUseCase,
 )
+from modules.suppliers.domain.interfaces.use_cases.i_download_supplier_product_template_use_case import (
+    IDownloadSupplierProductTemplateUseCase,
+)
 from modules.suppliers.domain.interfaces.use_cases.i_download_supplier_template_use_case import (
     IDownloadSupplierTemplateUseCase,
 )
 from modules.suppliers.domain.interfaces.use_cases.i_get_supplier_use_case import (
     IGetSupplierUseCase,
+)
+from modules.suppliers.domain.interfaces.use_cases.i_import_supplier_products_use_case import (
+    IImportSupplierProductsUseCase,
 )
 from modules.suppliers.domain.interfaces.use_cases.i_import_suppliers_use_case import (
     IImportSuppliersUseCase,
@@ -227,6 +235,45 @@ async def set_supplier_active(
 ):
     await use_case.execute(supplier_id, body.is_active)
     return Response(status_code=204)
+
+
+@router.get("/{supplier_id}/products/template")
+def download_products_template(
+    supplier_id: int,
+    _: UserSession = Depends(require_purchases_manager_or_admin),
+    use_case: IDownloadSupplierProductTemplateUseCase = Depends(
+        get_download_supplier_product_template_use_case
+    ),
+):
+    content = use_case.execute()
+    return StreamingResponse(
+        BytesIO(content),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename=supplier_{supplier_id}_products_template.xlsx"
+        },
+    )
+
+
+@router.post("/{supplier_id}/products/import", response_model=ImportResultDTO)
+async def import_supplier_products(
+    supplier_id: int,
+    file: UploadFile = File(...),
+    _: UserSession = Depends(require_purchases_manager_or_admin),
+    use_case: IImportSupplierProductsUseCase = Depends(
+        get_import_supplier_products_use_case
+    ),
+):
+    content = await file.read()
+    result = await use_case.execute(supplier_id, content)
+    return ImportResultDTO(
+        total=result.total,
+        created=result.created,
+        errors=len(result.errors),
+        error_detail=[
+            ImportErrorDTO(row=e.row, reason=e.reason) for e in result.errors
+        ],
+    )
 
 
 @router.post(

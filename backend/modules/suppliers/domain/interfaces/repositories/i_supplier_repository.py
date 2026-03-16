@@ -105,3 +105,8 @@ class ISupplierRepository(ABC):
     async def get_suppliers_by_product_paginated(
         self, product_id: int, page: int, page_size: int
     ) -> PaginatedResult[ProductSupplierDetail]: ...
+
+    @abstractmethod
+    async def bulk_create_products(
+        self, associations: list[SupplierProduct]
+    ) -> int: ...

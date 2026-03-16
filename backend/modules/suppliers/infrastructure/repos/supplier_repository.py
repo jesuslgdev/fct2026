@@ -313,3 +313,8 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         ]
 
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
+
+    async def bulk_create_products(self, associations: list[SupplierProduct]) -> int:
+        self._db.add_all(associations)
+        await self._db.flush()
+        return len(associations)

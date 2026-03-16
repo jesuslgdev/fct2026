@@ -153,10 +153,16 @@ from modules.suppliers.application.add_product_to_supplier_use_case import (
 from modules.suppliers.application.create_supplier_use_case import (
     CreateSupplierUseCase,
 )
+from modules.suppliers.application.download_supplier_product_template_use_case import (
+    DownloadSupplierProductTemplateUseCase,
+)
 from modules.suppliers.application.download_supplier_template_use_case import (
     DownloadSupplierTemplateUseCase,
 )
 from modules.suppliers.application.get_supplier_use_case import GetSupplierUseCase
+from modules.suppliers.application.import_supplier_products_use_case import (
+    ImportSupplierProductsUseCase,
+)
 from modules.suppliers.application.import_suppliers_use_case import (
     ImportSuppliersUseCase,
 )
@@ -183,11 +189,17 @@ from modules.suppliers.domain.interfaces.use_cases.i_add_product_to_supplier_use
 from modules.suppliers.domain.interfaces.use_cases.i_create_supplier_use_case import (
     ICreateSupplierUseCase,
 )
+from modules.suppliers.domain.interfaces.use_cases.i_download_supplier_product_template_use_case import (
+    IDownloadSupplierProductTemplateUseCase,
+)
 from modules.suppliers.domain.interfaces.use_cases.i_download_supplier_template_use_case import (
     IDownloadSupplierTemplateUseCase,
 )
 from modules.suppliers.domain.interfaces.use_cases.i_get_supplier_use_case import (
     IGetSupplierUseCase,
+)
+from modules.suppliers.domain.interfaces.use_cases.i_import_supplier_products_use_case import (
+    IImportSupplierProductsUseCase,
 )
 from modules.suppliers.domain.interfaces.use_cases.i_import_suppliers_use_case import (
     IImportSuppliersUseCase,
@@ -447,3 +459,15 @@ async def get_list_product_suppliers_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IListProductSuppliersUseCase:
     return ListProductSuppliersUseCase(SupplierRepository(db))
+
+
+def get_download_supplier_product_template_use_case() -> (
+    IDownloadSupplierProductTemplateUseCase
+):
+    return DownloadSupplierProductTemplateUseCase()
+
+
+async def get_import_supplier_products_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IImportSupplierProductsUseCase:
+    return ImportSupplierProductsUseCase(SupplierRepository(db), ProductRepository(db))
