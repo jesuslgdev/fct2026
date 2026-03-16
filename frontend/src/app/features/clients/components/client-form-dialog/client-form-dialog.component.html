@@ -1,10 +1,10 @@
 <ui-dialog
   [(visible)]="store.dialogVisible"
-  [header]="store.dialogMode() === 'create' ? 'Nuevo cliente' : 'Editar cliente'"
-  confirmLabel="Guardar"
-  cancelLabel="Cancelar"
+  [header]="getDialogTitle()"
+  [confirmLabel]="isViewMode() ? 'Cerrar' : 'Guardar'"
+  [cancelLabel]="isViewMode() ? '' : 'Cancelar'"
   [confirmLoading]="store.loading()"
-  [confirmDisabled]="form.invalid"
+  [confirmDisabled]="form.invalid && !isViewMode()"
   size="default"
   (confirmed)="onConfirm()"
   (cancelled)="onCancel()"
@@ -18,9 +18,10 @@
         <ui-input
           formControlName="name"
           placeholder="Ej: Juan Pérez"
-          [state]="name.invalid && name.touched ? 'error' : 'default'"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && name.invalid && name.touched ? 'error' : 'default'"
         />
-        @if (name.invalid && name.touched) {
+        @if (!isViewMode() && name.invalid && name.touched) {
           <span class="dialog-field-error">
             @if (name.hasError('required')) { El nombre es obligatorio. }
             @else { El nombre debe tener al menos 3 caracteres. }
@@ -32,9 +33,10 @@
         <ui-input
           formControlName="taxId"
           placeholder="Ej: 12345678A"
-          [state]="taxId.invalid && taxId.touched ? 'error' : 'default'"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && taxId.invalid && taxId.touched ? 'error' : 'default'"
         />
-        @if (taxId.invalid && taxId.touched) {
+        @if (!isViewMode() && taxId.invalid && taxId.touched) {
           <span class="dialog-field-error">
             @if (taxId.hasError('required')) { El Tax ID es obligatorio. }
             @else { Formato de Tax ID inválido. }
@@ -49,9 +51,10 @@
       <ui-input
         formControlName="address"
         placeholder="Ej: Calle Mayor, 123"
-        [state]="address.invalid && address.touched ? 'error' : 'default'"
+        [disabled]="isViewMode()"
+        [state]="!isViewMode() && address.invalid && address.touched ? 'error' : 'default'"
       />
-      @if (address.invalid && address.touched) {
+      @if (!isViewMode() && address.invalid && address.touched) {
         <span class="dialog-field-error">La dirección es obligatoria.</span>
       }
     </div>
@@ -63,9 +66,10 @@
         <ui-input
           formControlName="city"
           placeholder="Ej: Madrid"
-          [state]="city.invalid && city.touched ? 'error' : 'default'"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && city.invalid && city.touched ? 'error' : 'default'"
         />
-        @if (city.invalid && city.touched) {
+        @if (!isViewMode() && city.invalid && city.touched) {
           <span class="dialog-field-error">La ciudad es obligatoria.</span>
         }
       </div>
@@ -74,9 +78,10 @@
         <ui-input
           formControlName="province"
           placeholder="Ej: Madrid"
-          [state]="province.invalid && province.touched ? 'error' : 'default'"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && province.invalid && province.touched ? 'error' : 'default'"
         />
-        @if (province.invalid && province.touched) {
+        @if (!isViewMode() && province.invalid && province.touched) {
           <span class="dialog-field-error">La provincia es obligatoria.</span>
         }
       </div>
@@ -89,9 +94,10 @@
         <ui-input
           formControlName="postalCode"
           placeholder="Ej: 28001"
-          [state]="postalCode.invalid && postalCode.touched ? 'error' : 'default'"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && postalCode.invalid && postalCode.touched ? 'error' : 'default'"
         />
-        @if (postalCode.invalid && postalCode.touched) {
+        @if (!isViewMode() && postalCode.invalid && postalCode.touched) {
           <span class="dialog-field-error">
             @if (postalCode.hasError('required')) { El código postal es obligatorio. }
             @else { Formato de código postal inválido. }
@@ -103,9 +109,10 @@
         <ui-input
           formControlName="phone"
           placeholder="Ej: 600000001"
-          [state]="phone.invalid && phone.touched ? 'error' : 'default'"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && phone.invalid && phone.touched ? 'error' : 'default'"
         />
-        @if (phone.invalid && phone.touched) {
+        @if (!isViewMode() && phone.invalid && phone.touched) {
           <span class="dialog-field-error">
             @if (phone.hasError('required')) { El teléfono es obligatorio. }
             @else { Formato de teléfono inválido. }
@@ -121,9 +128,10 @@
         formControlName="email"
         type="email"
         placeholder="Ej: cliente@empresa.com"
-        [state]="email.invalid && email.touched ? 'error' : 'default'"
+        [disabled]="isViewMode()"
+        [state]="!isViewMode() && email.invalid && email.touched ? 'error' : 'default'"
       />
-      @if (email.invalid && email.touched) {
+      @if (!isViewMode() && email.invalid && email.touched) {
         <span class="dialog-field-error">
           @if (email.hasError('required')) { El email es obligatorio. }
           @else { Introduce un email válido. }
