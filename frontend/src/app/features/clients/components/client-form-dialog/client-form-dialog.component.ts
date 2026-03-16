@@ -28,6 +28,15 @@ export class ClientFormDialogComponent {
     email: ['', [Validators.required, Validators.email]],
   });
 
+  readonly isViewMode = computed(() => this.store.dialogMode() === 'view');
+
+  getDialogTitle(): string {
+    const mode = this.store.dialogMode();
+    if (mode === 'create') return 'Nuevo cliente';
+    if (mode === 'edit') return 'Editar cliente';
+    return 'Detalles del cliente';
+  }
+
   get name() { return this.form.controls.name; }
   get taxId() { return this.form.controls.taxId; }
   get address() { return this.form.controls.address; }
