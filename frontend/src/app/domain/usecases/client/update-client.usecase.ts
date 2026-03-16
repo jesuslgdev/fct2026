@@ -16,7 +16,7 @@ export class UpdateClientUseCase {
 
     try {
       return await this.clientRepository.updateClient(id, payload);
-    } catch (error) {
+    } catch {
       throw new ClientNotFoundError(`Client with ID ${id} not found.`);
     }
   }

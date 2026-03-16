@@ -15,7 +15,7 @@ export class ToggleClientStatusUseCase {
 
     try {
       await this.clientRepository.toggleClientStatus(id, isActive);
-    } catch (error) {
+    } catch {
       throw new ClientNotFoundError(`Client with ID ${id} not found.`);
     }
   }

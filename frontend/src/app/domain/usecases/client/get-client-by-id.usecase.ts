@@ -12,7 +12,7 @@ export class GetClientByIdUseCase {
   async execute(id: number): Promise<Client> {
     try {
       return await this.clientRepository.getClientById(id);
-    } catch (error) {
+    } catch {
       throw new ClientNotFoundError(`Client with ID ${id} not found.`);
     }
   }

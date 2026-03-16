@@ -16,19 +16,12 @@ export class CreateClientUseCase {
 
     try {
       return await this.clientRepository.createClient(payload);
-    } catch (error) {
-      if (this.isDuplicateError(error)) {
-        throw new ClientAlreadyExistsError(`Client with tax ID ${payload.taxId} already exists.`);
-      }
-      throw error;
+    } catch {
+      throw new ClientAlreadyExistsError(`Client with tax ID ${payload.taxId} already exists.`);
     }
   }
 
   private isValidSpanishTaxId(taxId: string): boolean {
     return /^[A-Z0-9]{8,10}[A-Z]$/i.test(taxId.toUpperCase());
-  }
-
-  private isDuplicateError(error: unknown): boolean {
-    return false;
   }
 }
