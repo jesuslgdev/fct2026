@@ -14,6 +14,8 @@ import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/fireba
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
+import { MockProviderRepository } from '@infrastructure/repositories/mock/provider.repository.mock';
+import { ProviderRepository } from '@domain/repositories/provider.repository';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -30,6 +32,12 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    
+    // Provider repository configuration
+    // During development with mocks:
+    { provide: ProviderRepository, useClass: MockProviderRepository },
+    // In production / with real API:
+    // { provide: ProviderRepository, useClass: HttpProviderRepository },
     providePrimeNG({
       ripple: true,
       theme: {
