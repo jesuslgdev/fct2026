@@ -17,6 +17,7 @@
         <span class="dialog-field-label">Nombre</span>
         <ui-input
           formControlName="name"
+          placeholder="Ej: Juan Pérez"
           [state]="name.invalid && name.touched ? 'error' : 'default'"
         />
         @if (name.invalid && name.touched) {
@@ -30,6 +31,7 @@
         <span class="dialog-field-label">Tax ID</span>
         <ui-input
           formControlName="taxId"
+          placeholder="Ej: 12345678A"
           [state]="taxId.invalid && taxId.touched ? 'error' : 'default'"
         />
         @if (taxId.invalid && taxId.touched) {
@@ -46,6 +48,7 @@
       <span class="dialog-field-label">Dirección</span>
       <ui-input
         formControlName="address"
+        placeholder="Ej: Calle Mayor, 123"
         [state]="address.invalid && address.touched ? 'error' : 'default'"
       />
       @if (address.invalid && address.touched) {
@@ -59,6 +62,7 @@
         <span class="dialog-field-label">Ciudad</span>
         <ui-input
           formControlName="city"
+          placeholder="Ej: Madrid"
           [state]="city.invalid && city.touched ? 'error' : 'default'"
         />
         @if (city.invalid && city.touched) {
@@ -69,6 +73,7 @@
         <span class="dialog-field-label">Provincia</span>
         <ui-input
           formControlName="province"
+          placeholder="Ej: Madrid"
           [state]="province.invalid && province.touched ? 'error' : 'default'"
         />
         @if (province.invalid && province.touched) {
@@ -83,6 +88,7 @@
         <span class="dialog-field-label">Código Postal</span>
         <ui-input
           formControlName="postalCode"
+          placeholder="Ej: 28001"
           [state]="postalCode.invalid && postalCode.touched ? 'error' : 'default'"
         />
         @if (postalCode.invalid && postalCode.touched) {
@@ -96,6 +102,7 @@
         <span class="dialog-field-label">Teléfono</span>
         <ui-input
           formControlName="phone"
+          placeholder="Ej: 600000001"
           [state]="phone.invalid && phone.touched ? 'error' : 'default'"
         />
         @if (phone.invalid && phone.touched) {
@@ -113,6 +120,7 @@
       <ui-input
         formControlName="email"
         type="email"
+        placeholder="Ej: cliente@empresa.com"
         [state]="email.invalid && email.touched ? 'error' : 'default'"
       />
       @if (email.invalid && email.touched) {
