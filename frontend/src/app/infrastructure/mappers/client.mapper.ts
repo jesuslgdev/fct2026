@@ -89,7 +89,7 @@ export class ClientMapper {
     }
     
     if (params.isActive !== undefined) {
-      query['is_active'] = params.isActive;
+      query['active'] = params.isActive;
     }
     
     return query;

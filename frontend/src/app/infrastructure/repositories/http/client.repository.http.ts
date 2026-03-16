@@ -17,9 +17,9 @@ import {
   PagedResult,
 } from '@domain/models/client.model';
 import {
-  ClientDto,
   SetClientActiveDto,
   ClientsPageDto,
+  ClientDetailDto,
 } from '@infrastructure/dtos/client.dto';
 import { ClientMapper } from '@infrastructure/mappers/client.mapper';
 import { environment } from 'environments/environment';
@@ -88,26 +88,26 @@ export class HttpClientRepository implements ClientRepository {
 
   async getClientById(id: number): Promise<Client> {
     return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(this.http.get<ClientDto>(`${BASE_URL}/${id}`));
-      return ClientMapper.fromDto(dto);
+      const dto = await firstValueFrom(this.http.get<ClientDetailDto>(`${BASE_URL}/${id}`));
+      return ClientMapper.fromDetailDto(dto);
     });
   }
 
   async createClient(payload: CreateClientPayload): Promise<Client> {
     return this.withErrorMapping(async () => {
       const dto = await firstValueFrom(
-        this.http.post<ClientDto>(BASE_URL, ClientMapper.toCreateDto(payload)),
+        this.http.post<ClientDetailDto>(BASE_URL, ClientMapper.toCreateDto(payload)),
       );
-      return ClientMapper.fromDto(dto);
+      return ClientMapper.fromDetailDto(dto);
     });
   }
 
   async updateClient(id: number, payload: UpdateClientPayload): Promise<Client> {
     return this.withErrorMapping(async () => {
       const dto = await firstValueFrom(
-        this.http.patch<ClientDto>(`${BASE_URL}/${id}`, ClientMapper.toUpdateDto(payload)),
+        this.http.put<ClientDetailDto>(`${BASE_URL}/${id}`, ClientMapper.toUpdateDto(payload)),
       );
-      return ClientMapper.fromDto(dto);
+      return ClientMapper.fromDetailDto(dto);
     });
   }
 
