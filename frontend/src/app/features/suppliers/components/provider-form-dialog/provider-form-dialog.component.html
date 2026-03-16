@@ -56,6 +56,14 @@
     <!-- Grid de 2 columnas para campos opcionales -->
     <div class="dialog-form-grid">
       <div class="dialog-field">
+        <label for="city" class="dialog-field-label">Ciudad</label>
+        <ui-input id="city" formControlName="city" placeholder="Madrid"
+          [state]="city.invalid && city.touched ? 'error' : 'default'" />
+        @if (city.invalid && city.touched) {
+          <span class="dialog-field-error">La ciudad no es válida.</span>
+        }
+      </div>
+      <div class="dialog-field">
         <label for="province" class="dialog-field-label">Provincia</label>
         <ui-input id="province" formControlName="province" placeholder="Madrid"
           [state]="province.invalid && province.touched ? 'error' : 'default'" />
@@ -63,6 +71,10 @@
           <span class="dialog-field-error">La provincia no es válida.</span>
         }
       </div>
+    </div>
+
+    <!-- Grid de 2 columnas para campos opcionales -->
+    <div class="dialog-form-grid">
       <div class="dialog-field">
         <label for="postalCode" class="dialog-field-label">Código Postal</label>
         <ui-input id="postalCode" formControlName="postalCode" placeholder="28001"
@@ -71,10 +83,6 @@
           <span class="dialog-field-error">El código postal no es válido.</span>
         }
       </div>
-    </div>
-
-    <!-- Grid de 2 columnas para campos opcionales -->
-    <div class="dialog-form-grid">
       <div class="dialog-field">
         <label for="phone" class="dialog-field-label">Teléfono</label>
         <ui-input id="phone" formControlName="phone" placeholder="+34 900 123 456"
@@ -83,6 +91,10 @@
           <span class="dialog-field-error">Formato de teléfono no válido.</span>
         }
       </div>
+    </div>
+
+    <!-- Grid de 2 columnas para campos opcionales -->
+    <div class="dialog-form-grid">
       <div class="dialog-field">
         <label for="contactPerson" class="dialog-field-label">Persona de contacto</label>
         <ui-input id="contactPerson" formControlName="contactPerson" placeholder="Nombre del contacto"

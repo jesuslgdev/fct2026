@@ -32,6 +32,7 @@ export class ProviderMapper {
       email: dto.email ?? '',
       phone: dto.phone ?? undefined,
       address: dto.address ?? undefined,
+      city: dto.city ?? undefined,
       province: dto.province ?? undefined,
       postalCode: dto.postal_code ?? undefined,
       contactPerson: dto.contact_person ?? undefined,
@@ -85,7 +86,7 @@ export class ProviderMapper {
       phone: payload.phone ?? '',
       address: payload.address ?? '',
       province: payload.province ?? '',
-      city: '', // Backend requires city but UI does not currently expose it
+      city: payload.city ?? '',
       postal_code: payload.postalCode ?? '',
     };
   }
@@ -97,6 +98,7 @@ export class ProviderMapper {
       ...(payload.email !== undefined && { email: payload.email }),
       ...(payload.phone !== undefined && { phone: payload.phone }),
       ...(payload.address !== undefined && { address: payload.address }),
+      ...(payload.city !== undefined && { city: payload.city }),
       ...(payload.province !== undefined && { province: payload.province }),
       ...(payload.postalCode !== undefined && { postal_code: payload.postalCode }),
       // Note: Backend does not allow tax_id updates

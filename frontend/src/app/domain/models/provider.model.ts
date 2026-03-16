@@ -8,6 +8,7 @@ export interface Provider {
   email: string;
   phone?: string;
   address?: string;
+  city?: string;
   province?: string;
   postalCode?: string;
   contactPerson?: string;
@@ -24,11 +25,21 @@ export interface CreateProviderRequest {
   email: string;
   phone?: string;
   address?: string;
+  city?: string;
   province?: string;
   postalCode?: string;
   contactPerson?: string;
 }
 
-export interface UpdateProviderRequest extends Partial<CreateProviderRequest> {
+export interface UpdateProviderRequest {
+  name?: string;
+  taxId?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  contactPerson?: string;
   isActive?: boolean;
 }
