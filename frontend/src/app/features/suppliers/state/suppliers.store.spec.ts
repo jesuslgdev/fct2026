@@ -441,7 +441,7 @@ describe('SuppliersStore', () => {
 
       store.onPageChange(pageEvent);
 
-      expect(store.page()).toBe(2);
+      expect(store.page()).toBe(2); // PrimeNG base 0 + 1 = store base 1
       expect(store.pageSize()).toBe(10);
       expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ page: 2, rows: 10 });
     });
