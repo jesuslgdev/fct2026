@@ -49,6 +49,8 @@
       [value]="store.filteredProviders()"
       [loading]="store.loading()"
       [paginator]="true"
+      [lazy]="true"
+      [first]="(store.page() - 1) * store.pageSize()"
       [rows]="store.pageSize()"
       [totalRecords]="store.total()"
       [rowsPerPageOptions]="[10, 20, 50]"

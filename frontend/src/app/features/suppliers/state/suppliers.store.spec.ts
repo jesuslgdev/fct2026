@@ -191,13 +191,13 @@ describe('SuppliersStore', () => {
 
     it('should load providers with pagination', async () => {
       const mockResult = { data: [MOCK_PROVIDER], total: 1 };
-      const pageEvent: PageEvent = { page: 2, rows: 10 };
+      const pageEvent: PageEvent = { page: 1, rows: 10 };
       mockGetProvidersUseCase.execute.mockResolvedValue(mockResult);
 
       await store.loadProviders(pageEvent);
 
       expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith(pageEvent);
-      expect(store.page()).toBe(2);
+      expect(store.page()).toBe(1); // page se establece desde el evento
       expect(store.pageSize()).toBe(10);
     });
 
@@ -441,9 +441,10 @@ describe('SuppliersStore', () => {
 
       store.onPageChange(pageEvent);
 
-      expect(store.page()).toBe(2);
+      expect(store.page()).toBe(2); // PrimeNG base 0 + 1 = store base 1
       expect(store.pageSize()).toBe(10);
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ page: 2, rows: 10 });
+      // El evento se modifica para incluir page: 2 (base 1 del store)
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ ...pageEvent, page: 2 });
     });
   });
 
