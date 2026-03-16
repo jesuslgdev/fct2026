@@ -10,15 +10,15 @@ import {
 import { PageEvent } from '@domain/models/page-event.model';
 import {
   ProviderDto,
-  SetProviderActiveDto,
+  ProviderDetailDto,
+  SetSupplierActiveDto,
   ProvidersPageDto,
   ProviderProductsDto,
 } from '@infrastructure/dtos/provider.dto';
 import { ProviderMapper } from '@infrastructure/mappers/provider.mapper';
 import { environment } from 'environments/environment';
 
-// TODO add base url for API REST
-const BASE_URL = `${environment.apiUrl}/api/v1/providers`;
+const BASE_URL = `${environment.apiUrl}/api/v1/suppliers`;
 
 @Injectable()
 export class HttpProviderRepository implements ProviderRepository {
@@ -77,9 +77,9 @@ export class HttpProviderRepository implements ProviderRepository {
     return this.withErrorMapping(async () => {
       const query: Record<string, string | number | boolean> = {};
       
-      if (pageEvent?.first !== undefined) query['first'] = pageEvent.first;
-      if (pageEvent?.rows !== undefined) query['rows'] = pageEvent.rows;
+      // Backend usa page_size en lugar de rows
       if (pageEvent?.page !== undefined) query['page'] = pageEvent.page;
+      if (pageEvent?.rows !== undefined) query['page_size'] = pageEvent.rows;
 
       const response = await firstValueFrom(
         this.http.get<ProvidersPageDto>(BASE_URL, { params: query }),
@@ -91,66 +91,76 @@ export class HttpProviderRepository implements ProviderRepository {
 
   async getProviderById(id: string): Promise<Provider> {
     return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(this.http.get<ProviderDto>(`${BASE_URL}/${id}`));
-      return ProviderMapper.fromDto(dto);
+      const dto = await firstValueFrom(this.http.get<ProviderDetailDto>(`${BASE_URL}/${id}`));
+      return ProviderMapper.fromDetailDto(dto);
     });
   }
 
   async createProvider(provider: CreateProviderRequest): Promise<Provider> {
     return this.withErrorMapping(async () => {
       const dto = await firstValueFrom(
-        this.http.post<ProviderDto>(BASE_URL, ProviderMapper.toCreateDto(provider)),
+        this.http.post<ProviderDetailDto>(BASE_URL, ProviderMapper.toCreateDto(provider)),
       );
-      return ProviderMapper.fromDto(dto);
+      return ProviderMapper.fromDetailDto(dto);
     });
   }
 
   async updateProvider(id: string, provider: UpdateProviderRequest): Promise<Provider> {
     return this.withErrorMapping(async () => {
       const dto = await firstValueFrom(
-        this.http.patch<ProviderDto>(`${BASE_URL}/${id}`, ProviderMapper.toUpdateDto(provider)),
+        this.http.put<ProviderDetailDto>(`${BASE_URL}/${id}`, ProviderMapper.toUpdateDto(provider)),
       );
-      return ProviderMapper.fromDto(dto);
+      return ProviderMapper.fromDetailDto(dto);
     });
   }
 
   async activateProvider(id: string): Promise<Provider> {
     return this.withErrorMapping(async () => {
-      const body: SetProviderActiveDto = ProviderMapper.toSetActiveDto(true);
+      const body: SetSupplierActiveDto = ProviderMapper.toSetActiveDto(true);
       const dto = await firstValueFrom(
-        this.http.patch<ProviderDto>(`${BASE_URL}/${id}/activate`, body),
+        this.http.patch<ProviderDetailDto>(`${BASE_URL}/${id}/active`, body),
       );
-      return ProviderMapper.fromDto(dto);
+      return ProviderMapper.fromDetailDto(dto);
     });
   }
 
   async deactivateProvider(id: string): Promise<Provider> {
     return this.withErrorMapping(async () => {
-      const body: SetProviderActiveDto = ProviderMapper.toSetActiveDto(false);
+      const body: SetSupplierActiveDto = ProviderMapper.toSetActiveDto(false);
       const dto = await firstValueFrom(
-        this.http.patch<ProviderDto>(`${BASE_URL}/${id}/deactivate`, body),
+        this.http.patch<ProviderDetailDto>(`${BASE_URL}/${id}/active`, body),
       );
-      return ProviderMapper.fromDto(dto);
+      return ProviderMapper.fromDetailDto(dto);
     });
   }
 
   async getProviderProducts(providerId: string): Promise<Provider[]> {
     return this.withErrorMapping(async () => {
-      // TODO: replace with ProductRepository when Products feature becomes available
-      const dto = await firstValueFrom(
-        this.http.get<ProviderProductsDto>(`${BASE_URL}/${providerId}/products`),
+      // The detail endpoint may already include products depending on backend version.
+      const detailDto = await firstValueFrom(
+        this.http.get<ProviderDetailDto>(`${BASE_URL}/${providerId}`),
       );
-      
-      // For now, return the provider with products attached
-      const provider = await firstValueFrom(
-        this.http.get<ProviderDto>(`${BASE_URL}/${providerId}`),
-      );
-      const providerWithProducts = {
-        ...ProviderMapper.fromDto(provider),
-        products: ProviderMapper.fromProductsDto(dto),
-      };
-      
-      return [providerWithProducts];
+
+      const providerFromDetail = ProviderMapper.fromDetailDto(detailDto);
+      if ((providerFromDetail.products?.length ?? 0) > 0) {
+        return [providerFromDetail];
+      }
+
+      // Backward compatibility: older backend versions expose products in /products.
+      try {
+        const productsDto = await firstValueFrom(
+          this.http.get<ProviderProductsDto>(`${BASE_URL}/${providerId}/products`),
+        );
+
+        return [
+          {
+            ...providerFromDetail,
+            products: ProviderMapper.fromProductsDto(productsDto),
+          },
+        ];
+      } catch {
+        return [providerFromDetail];
+      }
     });
   }
 }

@@ -11,37 +11,46 @@ export interface ProviderDto {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
+  province?: string | null;
+  postal_code?: string | null;
   contact_person?: string | null;
   status?: ProviderStatus;
   created_at?: string;
   updated_at?: string;
 }
 
+export interface ProviderDetailDto extends ProviderDto {
+  products?: SupplierProductDto[];
+}
+
 // Create DTO (payload sent to the API to create a provider)
 export interface CreateProviderDto {
   name: string;
   tax_id: string;
+  address: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  phone: string;
   email: string;
-  phone?: string | null;
-  address?: string | null;
-  contact_person?: string | null;
 }
 
 // Update DTO
 export interface UpdateProviderDto {
   name?: string | null;
-  tax_id?: string | null;
-  email?: string | null;
-  phone?: string | null;
   address?: string | null;
-  contact_person?: string | null;
-  is_active?: boolean | null;
+  city?: string | null;
+  province?: string | null;
+  postal_code?: string | null;
+  phone?: string | null;
+  email?: string | null;
 }
 
-// Helper DTOs
-export interface SetProviderActiveDto {
+export interface SetSupplierActiveDto {
   is_active: boolean;
 }
+
+export type UpdateSupplierDto = UpdateProviderDto;
 
 export interface ProvidersPageDto {
   items: ProviderDto[];
@@ -50,7 +59,16 @@ export interface ProvidersPageDto {
   page_size: number;
 }
 
-// DTOs for provider products
+export interface SupplierProductDto {
+  id?: number;
+  product_id: number;
+  product_name?: string;
+  provider_id?: number;
+  supplier_price: string | number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ProviderProductDto {
   id: number;
   product_id: number;

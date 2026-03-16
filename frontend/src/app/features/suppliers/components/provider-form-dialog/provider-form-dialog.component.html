@@ -43,6 +43,36 @@
       }
     </div>
 
+    <!-- Campo de dirección -->
+    <div class="dialog-field">
+      <label for="address" class="dialog-field-label">Dirección</label>
+      <ui-input id="address" formControlName="address" placeholder="Calle Principal 123"
+        [state]="address.invalid && address.touched ? 'error' : 'default'" />
+      @if (address.invalid && address.touched) {
+        <span class="dialog-field-error">La dirección no es válida.</span>
+      }
+    </div>
+
+    <!-- Grid de 2 columnas para campos opcionales -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <label for="province" class="dialog-field-label">Provincia</label>
+        <ui-input id="province" formControlName="province" placeholder="Madrid"
+          [state]="province.invalid && province.touched ? 'error' : 'default'" />
+        @if (province.invalid && province.touched) {
+          <span class="dialog-field-error">La provincia no es válida.</span>
+        }
+      </div>
+      <div class="dialog-field">
+        <label for="postalCode" class="dialog-field-label">Código Postal</label>
+        <ui-input id="postalCode" formControlName="postalCode" placeholder="28001"
+          [state]="postalCode.invalid && postalCode.touched ? 'error' : 'default'" />
+        @if (postalCode.invalid && postalCode.touched) {
+          <span class="dialog-field-error">El código postal no es válido.</span>
+        }
+      </div>
+    </div>
+
     <!-- Grid de 2 columnas para campos opcionales -->
     <div class="dialog-form-grid">
       <div class="dialog-field">
@@ -61,16 +91,6 @@
           <span class="dialog-field-error">El nombre de contacto no es válido.</span>
         }
       </div>
-    </div>
-
-    <!-- Campo de dirección -->
-    <div class="dialog-field">
-      <label for="address" class="dialog-field-label">Dirección</label>
-      <ui-input id="address" formControlName="address" placeholder="Calle Principal 123, Ciudad"
-        [state]="address.invalid && address.touched ? 'error' : 'default'" />
-      @if (address.invalid && address.touched) {
-        <span class="dialog-field-error">La dirección no es válida.</span>
-      }
     </div>
   </form>
 </ui-dialog>

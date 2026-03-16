@@ -64,7 +64,8 @@
           <th>NIF/CIF</th>
           <th>Email</th>
           <th>Teléfono</th>
-          <th>Contacto</th>
+          <th>Dirección</th>
+          <th>Provincia</th>
           <th>Estado</th>
           @if (store.canEdit()) { <th>Acciones</th> }
         </tr>
@@ -76,7 +77,8 @@
           <td>{{ provider.taxId }}</td>
           <td>{{ provider.email }}</td>
           <td>{{ provider.phone || '-' }}</td>
-          <td>{{ provider.contactPerson || '-' }}</td>
+          <td>{{ provider.address || '-' }}</td>
+          <td>{{ provider.province || '-' }}</td>
           <td>
             <ui-badge 
               [label]="getStatusLabel(provider.status)" 
@@ -101,7 +103,7 @@
 
       <ng-template #emptymessage>
         <tr>
-          <td [attr.colspan]="store.canEdit() ? 7 : 6" class="empty-state">
+          <td [attr.colspan]="store.canEdit() ? 8 : 7" class="empty-state">
             No se encontraron proveedores.
           </td>
         </tr>

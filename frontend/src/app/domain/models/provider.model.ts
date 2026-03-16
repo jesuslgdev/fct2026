@@ -8,6 +8,8 @@ export interface Provider {
   email: string;
   phone?: string;
   address?: string;
+  province?: string;
+  postalCode?: string;
   contactPerson?: string;
   isActive: boolean;
   status: ProviderStatus;
@@ -22,6 +24,8 @@ export interface CreateProviderRequest {
   email: string;
   phone?: string;
   address?: string;
+  province?: string;
+  postalCode?: string;
   contactPerson?: string;
 }
 

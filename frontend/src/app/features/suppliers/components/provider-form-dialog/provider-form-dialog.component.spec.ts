@@ -15,6 +15,8 @@ const MOCK_PROVIDER: Provider = {
   email: 'provider@test.com',
   phone: '+1234567890',
   address: 'Test Address',
+  province: '',
+  postalCode: '',
   contactPerson: 'Contact Person',
   isActive: true,
   status: ProviderStatus.ACTIVE,
@@ -109,6 +111,8 @@ describe('ProviderFormDialogComponent', () => {
       email: null,
       phone: null,
       address: null,
+      province: null,
+      postalCode: null,
       contactPerson: null,
     });
   });
@@ -121,6 +125,8 @@ describe('ProviderFormDialogComponent', () => {
       email: MOCK_PROVIDER.email,
       phone: MOCK_PROVIDER.phone ?? '',
       address: MOCK_PROVIDER.address ?? '',
+      province: MOCK_PROVIDER.province ?? '',
+      postalCode: MOCK_PROVIDER.postalCode ?? '',
       contactPerson: MOCK_PROVIDER.contactPerson ?? '',
     });
     fixture.detectChanges();
@@ -131,6 +137,8 @@ describe('ProviderFormDialogComponent', () => {
       email: MOCK_PROVIDER.email,
       phone: MOCK_PROVIDER.phone,
       address: MOCK_PROVIDER.address,
+      province: MOCK_PROVIDER.province,
+      postalCode: MOCK_PROVIDER.postalCode,
       contactPerson: MOCK_PROVIDER.contactPerson,
     });
   });
@@ -150,6 +158,8 @@ describe('ProviderFormDialogComponent', () => {
       email: providerWithNulls.email,
       phone: '',
       address: '',
+      province: '',
+      postalCode: '',
       contactPerson: '',
     });
     fixture.detectChanges();
@@ -160,6 +170,8 @@ describe('ProviderFormDialogComponent', () => {
       email: providerWithNulls.email,
       phone: '',
       address: '',
+      province: '',
+      postalCode: '',
       contactPerson: '',
     });
   });
@@ -180,6 +192,8 @@ describe('ProviderFormDialogComponent', () => {
       email: 'new@test.com',
       phone: '+1234567890',
       address: 'New Address',
+      province: 'New Province',
+      postalCode: '28001',
       contactPerson: 'New Contact',
     });
 
@@ -194,6 +208,8 @@ describe('ProviderFormDialogComponent', () => {
       email: 'new@test.com',
       phone: '+1234567890',
       address: 'New Address',
+      province: 'New Province',
+      postalCode: '28001',
       contactPerson: 'New Contact',
     });
   });
@@ -205,6 +221,8 @@ describe('ProviderFormDialogComponent', () => {
       email: 'updated@test.com',
       phone: '+0987654321',
       address: 'Updated Address',
+      province: 'Updated Province',
+      postalCode: '28002',
       contactPerson: 'Updated Contact',
     });
 
@@ -219,6 +237,8 @@ describe('ProviderFormDialogComponent', () => {
       email: 'updated@test.com',
       phone: '+0987654321',
       address: 'Updated Address',
+      province: 'Updated Province',
+      postalCode: '28002',
       contactPerson: 'Updated Contact',
     });
   });

@@ -24,6 +24,8 @@ export class ProviderFormDialogComponent {
     email: ['', [Validators.required, Validators.email]],
     phone: [''],
     address: [''],
+    province: [''],
+    postalCode: [''],
     contactPerson: [''],
   });
 
@@ -33,6 +35,8 @@ export class ProviderFormDialogComponent {
   get email() { return this.form.controls.email; }
   get phone() { return this.form.controls.phone; }
   get address() { return this.form.controls.address; }
+  get province() { return this.form.controls.province; }
+  get postalCode() { return this.form.controls.postalCode; }
   get contactPerson() { return this.form.controls.contactPerson; }
 
   constructor() {
@@ -47,6 +51,8 @@ export class ProviderFormDialogComponent {
           email: provider.email,
           phone: provider.phone ?? '',
           address: provider.address ?? '',
+          province: provider.province ?? '',
+          postalCode: provider.postalCode ?? '',
           contactPerson: provider.contactPerson ?? '',
         });
       } else {
@@ -72,6 +78,8 @@ export class ProviderFormDialogComponent {
         email: v.email!,
         phone: v.phone || undefined,
         address: v.address || undefined,
+        province: v.province || undefined,
+        postalCode: v.postalCode || undefined,
         contactPerson: v.contactPerson || undefined,
       };
       this.store.saveProvider(payload);
@@ -82,6 +90,8 @@ export class ProviderFormDialogComponent {
         email: v.email ?? undefined,
         phone: v.phone || undefined,
         address: v.address || undefined,
+        province: v.province || undefined,
+        postalCode: v.postalCode || undefined,
         contactPerson: v.contactPerson || undefined,
       };
       this.store.saveProvider(payload);
