@@ -30,7 +30,7 @@ export class ProviderFormDialogComponent {
     contactPerson: [''],
   });
 
-  // Getters for quick access to controls
+// Getters for quick access to controls
   get name() { return this.form.controls.name; }
   get taxId() { return this.form.controls.taxId; }
   get email() { return this.form.controls.email; }

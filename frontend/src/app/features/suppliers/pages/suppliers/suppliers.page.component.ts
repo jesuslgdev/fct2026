@@ -35,7 +35,6 @@ interface StatusOption { label: string; value: ProviderStatus | null; }
 })
 export class SuppliersPageComponent implements OnInit {
   readonly store = inject(SuppliersStore);
-
   // Properties for details dialog
   detailsDialogVisible = false;
   selectedProviderForDetails: Provider | null = null;

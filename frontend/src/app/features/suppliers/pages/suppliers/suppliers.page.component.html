@@ -23,13 +23,12 @@
 
   <!-- ── Filters ────────────────────────────────────── -->
   <ui-card class="filters-card">
-    <div class="filters-row">
+    <div class="flex gap-3 mb-4">
       <ui-input
-        type="text"
-        placeholder="Buscar por nombre, email o NIF…"
+        placeholder="Buscar por nombre, email, NIF..."
         styleClass="flex-1 min-w-64"
         [ngModel]="store.searchQuery()"
-        (valueChange)="store.onSearch($event)"
+        (ngModelChange)="store.onSearch($event)"
       />
       <p-select
         [options]="statusOptions"
@@ -62,10 +61,6 @@
         <tr>
           <th>Nombre</th>
           <th>NIF/CIF</th>
-          <th>Email</th>
-          <th>Teléfono</th>
-          <th>Dirección</th>
-          <th>Provincia</th>
           <th>Estado</th>
           @if (store.canEdit()) { <th>Acciones</th> }
         </tr>
@@ -75,10 +70,6 @@
         <tr>
           <td>{{ provider.name }}</td>
           <td>{{ provider.taxId }}</td>
-          <td>{{ provider.email }}</td>
-          <td>{{ provider.phone || '-' }}</td>
-          <td>{{ provider.address || '-' }}</td>
-          <td>{{ provider.province || '-' }}</td>
           <td>
             <ui-badge 
               [label]="getStatusLabel(provider.status)" 
@@ -105,7 +96,7 @@
 
       <ng-template #emptymessage>
         <tr>
-          <td [attr.colspan]="store.canEdit() ? 8 : 7" class="empty-state">
+          <td [attr.colspan]="store.canEdit() ? 4 : 3" class="empty-state">
             No se encontraron proveedores.
           </td>
         </tr>
@@ -114,10 +105,10 @@
   </ui-card>
 </section>
 
-<!-- Diálogo de crear/editar -->
+<!-- Create/Edit dialog -->
 <app-provider-form-dialog />
 
-<!-- Diálogo de detalles del proveedor -->
+<!-- Provider details dialog -->
 <ui-dialog
   [(visible)]="detailsDialogVisible"
   header="Detalles del Proveedor"
@@ -172,7 +163,8 @@
     </div>
   }
 </ui-dialog>
-<!-- Diálogo de confirmación -->
+
+<!-- Confirmation dialog -->
 <ui-dialog
   [(visible)]="store.confirmDialogVisible"
   [header]="store.providerToToggle()?.isActive ? 'Desactivar proveedor' : 'Activar proveedor'"

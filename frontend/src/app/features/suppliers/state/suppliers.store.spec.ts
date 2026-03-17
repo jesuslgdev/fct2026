@@ -263,9 +263,12 @@ describe('SuppliersStore', () => {
       expect(store.dialogVisible()).toBe(true);
     });
 
-    it('should open edit dialog', () => {
-      store.openEditDialog(MOCK_PROVIDER);
+    it('should open edit dialog', async () => {
+      mockGetProviderByIdUseCase.execute.mockResolvedValue(MOCK_PROVIDER);
 
+      await store.openEditDialog(MOCK_PROVIDER);
+
+      expect(mockGetProviderByIdUseCase.execute).toHaveBeenCalledWith('1');
       expect(store.selectedProvider()).toEqual(MOCK_PROVIDER);
       expect(store.dialogMode()).toBe('edit');
       expect(store.dialogVisible()).toBe(true);
@@ -430,7 +433,7 @@ describe('SuppliersStore', () => {
     });
 
     it('should handle page change', () => {
-      const pageEvent: PageEvent = { first: 10, rows: 10, page: 1 };
+      const pageEvent: PageEvent = { first: 10, rows: 10, page: 2 };
       mockGetProvidersUseCase.execute.mockResolvedValue({
         data: [],
         total: 0,
