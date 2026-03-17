@@ -125,6 +125,7 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
           projectId: practicasmobiverydev
           channelId: live
+          entryPoint: frontend
 
   deploy-prod:
     name: Deploy → PROD
@@ -194,3 +195,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROD }}
           projectId: practicasmobiveryprod
           channelId: live
+          entryPoint: frontend
