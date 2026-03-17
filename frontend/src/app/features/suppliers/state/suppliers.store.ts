@@ -17,10 +17,10 @@ export type DialogMode = 'create' | 'edit';
 
 @Injectable()
 export class SuppliersStore {
-  // ── Inyección ──────────────────────────────────────────────────────────
+  // ── Injection ──────────────────────────────────────────────────────────
   private readonly authService = inject(AuthService);
 
-  // Use cases se inyectan con inject() — NUNCA usar new
+  // Use cases are injected with inject() - NEVER use new
   private readonly getProvidersUseCase = inject(GetProvidersUseCase);
   private readonly getProviderByIdUseCase = inject(GetProviderByIdUseCase);
   private readonly createProviderUseCase = inject(CreateProviderUseCase);
@@ -38,11 +38,11 @@ export class SuppliersStore {
   readonly error = signal<string | null>(null);
   readonly providerProducts = signal<ProviderProduct[]>([]);
 
-  // Filtros
+  // Filters
   readonly searchQuery = signal('');
   readonly statusFilter = signal<ProviderStatus | null>(null);
 
-  // Estado de diálogos
+  // Dialog state
   readonly selectedProvider = signal<Provider | null>(null);
   readonly dialogVisible = signal(false);
   readonly dialogMode = signal<DialogMode>('create');
@@ -59,7 +59,7 @@ export class SuppliersStore {
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
 
-  // Vista enriquecida con productos
+  // Enriched view with products
   readonly providersView = computed(() =>
     this.providers().map((provider) => ({
       ...provider,
@@ -67,35 +67,42 @@ export class SuppliersStore {
     })),
   );
 
-  // Proveedores filtrados para UI
+  // Filtered providers for UI (display only, not for pagination)
   readonly filteredProviders = computed(() => {
-    let filtered = [...this.providers()];
+    // In lazy mode, data comes filtered from server
+    // Only apply local filters if not in lazy mode or for quick search
+    if (this.searchQuery() || this.statusFilter()) {
+      let filtered = [...this.providers()];
+      
+      // Search filter (if backend doesn't support it)
+      const search = this.searchQuery().toLowerCase();
+      if (search) {
+        filtered = filtered.filter(
+          (provider) =>
+            provider.name.toLowerCase().includes(search) ||
+            provider.email.toLowerCase().includes(search) ||
+            provider.taxId.toLowerCase().includes(search) ||
+            (provider.contactPerson?.toLowerCase().includes(search) ?? false),
+        );
+      }
 
-    // Filtro por búsqueda
-    const search = this.searchQuery().toLowerCase();
-    if (search) {
-      filtered = filtered.filter(
-        (provider) =>
-          provider.name.toLowerCase().includes(search) ||
-          provider.email.toLowerCase().includes(search) ||
-          provider.taxId.toLowerCase().includes(search) ||
-          (provider.contactPerson?.toLowerCase().includes(search) ?? false),
-      );
+      // Status filter (if backend doesn't support it)
+      const statusFilter = this.statusFilter();
+      if (statusFilter) {
+        filtered = filtered.filter((provider) => provider.status === statusFilter);
+      }
+
+      return filtered;
     }
-
-    // Filtro por estado
-    const statusFilter = this.statusFilter();
-    if (statusFilter) {
-      filtered = filtered.filter((provider) => provider.status === statusFilter);
-    }
-
-    return filtered;
+    
+    // If no local filters, return server data
+    return this.providers();
   });
 
   // ── Error mapping (Domain → UI messages) ───────────────────────────────────
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) {
-      // Para errores genéricos del backend
+      // For generic backend errors
       if (err.message.includes('Validation failed')) {
         return err.message || 'Please check the submitted data.';
       }
@@ -113,7 +120,7 @@ export class SuppliersStore {
     return fallback;
   }
 
-  // ── Acciones de carga de datos ─────────────────────────────────────────────
+  // ── Data loading actions ─────────────────────────────────────────────
   async loadProviders(pageEvent?: PageEvent): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -122,7 +129,7 @@ export class SuppliersStore {
       this.providers.set(result.data);
       this.total.set(result.total);
 
-      // Actualizar paginación si viene del evento
+      // Update pagination if comes from event
       if (pageEvent?.page !== undefined) {
         this.page.set(pageEvent.page);
       }
@@ -157,17 +164,26 @@ export class SuppliersStore {
     }
   }
 
-  // ── Acciones de diálogos ───────────────────────────────────────────────────
+  // ── Dialog actions ───────────────────────────────────────────────────
   openCreateDialog(): void {
     this.selectedProvider.set(null);
     this.dialogMode.set('create');
     this.dialogVisible.set(true);
   }
 
-  openEditDialog(provider: Provider): void {
-    this.selectedProvider.set(provider);
-    this.dialogMode.set('edit');
-    this.dialogVisible.set(true);
+  async openEditDialog(provider: Provider): Promise<void> {
+    // Load complete details from backend before opening dialog
+    this.loading.set(true);
+    try {
+      const fullProvider = await this.loadProviderById(provider.id);
+      if (fullProvider) {
+        this.selectedProvider.set(fullProvider);
+        this.dialogMode.set('edit');
+        this.dialogVisible.set(true);
+      }
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   closeDialog(): void {
@@ -197,20 +213,20 @@ export class SuppliersStore {
     this.confirmDialogVisible.set(false);
   }
 
-  // ── Acciones CRUD ───────────────────────────────────────────────────────
+  // ── CRUD actions ───────────────────────────────────────────────────────
   async saveProvider(payload: CreateProviderRequest | UpdateProviderRequest): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
     try {
       if (this.dialogMode() === 'edit' && this.selectedProvider()) {
-        // Actualizar: reemplazar en el array local
+        // Update: replace in local array
         const updated = await this.updateProviderUseCase.execute(
           this.selectedProvider()!.id,
           payload as UpdateProviderRequest,
         );
         this.providers.update((list) => list.map((p) => (p.id === updated.id ? updated : p)));
       } else {
-        // Crear: añadir al final del array local
+        // Create: add to end of local array (like in users.store.ts)
         const created = await this.createProviderUseCase.execute(payload as CreateProviderRequest);
         this.providers.update((list) => [...list, created]);
         this.total.update((t) => t + 1);
@@ -236,7 +252,7 @@ export class SuppliersStore {
         await this.activateProviderUseCase.execute(provider.id);
       }
 
-      // Actualización optimista local
+      // Optimistic local update (like in users.store.ts)
       this.providers.update((list) =>
         list.map((p) =>
           p.id === provider.id
@@ -254,10 +270,10 @@ export class SuppliersStore {
     }
   }
 
-  // ── Filtros y paginación ───────────────────────────────────────────────────
+  // ── Filters and pagination ───────────────────────────────────────────────────
   onSearch(query: string): void {
     this.searchQuery.set(query);
-    this.page.set(1); // Reset a primera página
+    this.page.set(1); // Reset to first page
     this.loadProviders();
   }
 
@@ -268,12 +284,33 @@ export class SuppliersStore {
   }
 
   onPageChange(event: PageEvent): void {
-    this.page.set((event.page ?? 0) + 1);
-    this.pageSize.set(event.rows ?? 20);
-    this.loadProviders(event);
+    // PrimeNG pagination emits `first` (offset 0-based) and `rows`, and optionally `page`.
+    // Backend only needs page and page_size, not first.
+    const rows = event.rows ?? this.pageSize();
+    let page: number;
+    
+    if (event.page !== undefined) {
+      // Use page directly if provided (1-based)
+      page = event.page;
+    } else {
+      // Calculate from first offset (convert 0-based to 1-based)
+      page = Math.floor((event.first ?? 0) / rows) + 1;
+    }
+    
+    // Create PageEvent with only parameters backend needs
+    const updatedPageEvent: PageEvent = {
+      page,
+      rows
+    };
+    
+    this.page.set(page);
+    this.pageSize.set(rows);
+    
+    // Load data from server with new pagination
+    this.loadProviders(updatedPageEvent);
   }
 
-  // ── Utilidades ───────────────────────────────────────────────────────────
+  // ── Utilities ───────────────────────────────────────────────────────────
   clearError(): void {
     this.error.set(null);
   }
