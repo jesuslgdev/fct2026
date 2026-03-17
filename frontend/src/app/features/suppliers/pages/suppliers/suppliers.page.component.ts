@@ -21,14 +21,13 @@ import { ImportDialogComponent } from '@features/suppliers/components/import-dia
 import { ProviderStatus } from '@domain/enums/provider-status.enum';
 import { Provider } from '@domain/models/provider.model';
 
-// Tipos para los selects de filtros
+// Types for filter selects
 interface StatusOption { label: string; value: ProviderStatus | null; }
 
 @Component({
   selector: 'app-suppliers-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [SuppliersStore],
   providers: [SuppliersStore],
   imports: [
     FormsModule,
