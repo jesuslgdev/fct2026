@@ -3,6 +3,11 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { ClientsStore } from './clients.store';
 import { AuthService } from '@core/services/auth.service';
+import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
+import { CreateClientUseCase } from '@domain/usecases/client/create-client.usecase';
+import { UpdateClientUseCase } from '@domain/usecases/client/update-client.usecase';
+import { ToggleClientStatusUseCase } from '@domain/usecases/client/toggle-client-status.usecase';
+import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
 import { ClientRepository } from '@domain/repositories/client.repository';
 import {
   Client,
@@ -59,26 +64,50 @@ class MockAuthService {
   });
 }
 
-class MockClientRepository implements ClientRepository {
-  getClients = vi.fn<(params: ClientQueryParams) => Promise<PagedResult<Client>>>();
-  getClientById = vi.fn<(id: number) => Promise<Client>>();
-  createClient = vi.fn<(payload: CreateClientPayload) => Promise<Client>>();
-  updateClient = vi.fn<(id: number, payload: UpdateClientPayload) => Promise<Client>>();
-  toggleClientStatus = vi.fn<(id: number, isActive: boolean) => Promise<void>>();
+class MockGetClientsUseCase {
+  execute = vi.fn<(params: ClientQueryParams) => Promise<PagedResult<Client>>>();
+}
+
+class MockCreateClientUseCase {
+  execute = vi.fn<(payload: CreateClientPayload) => Promise<Client>>();
+}
+
+class MockUpdateClientUseCase {
+  execute = vi.fn<(id: number, payload: UpdateClientPayload) => Promise<Client>>();
+}
+
+class MockToggleClientStatusUseCase {
+  execute = vi.fn<(id: number, isActive: boolean) => Promise<void>>();
+}
+
+class MockGetClientByIdUseCase {
+  execute = vi.fn<(id: number) => Promise<Client>>();
 }
 
 describe('ClientsStore', () => {
   let store: ClientsStore;
-  let repo: MockClientRepository;
+  let getClientsUseCase: MockGetClientsUseCase;
+  let createClientUseCase: MockCreateClientUseCase;
+  let updateClientUseCase: MockUpdateClientUseCase;
+  let toggleClientStatusUseCase: MockToggleClientStatusUseCase;
+  let getClientByIdUseCase: MockGetClientByIdUseCase;
 
   beforeEach(() => {
-    repo = new MockClientRepository();
+    getClientsUseCase = new MockGetClientsUseCase();
+    createClientUseCase = new MockCreateClientUseCase();
+    updateClientUseCase = new MockUpdateClientUseCase();
+    toggleClientStatusUseCase = new MockToggleClientStatusUseCase();
+    getClientByIdUseCase = new MockGetClientByIdUseCase();
 
     TestBed.configureTestingModule({
       providers: [
         ClientsStore,
         { provide: AuthService, useValue: new MockAuthService() },
-        { provide: ClientRepository, useValue: repo },
+        { provide: GetClientsUseCase, useValue: getClientsUseCase },
+        { provide: CreateClientUseCase, useValue: createClientUseCase },
+        { provide: UpdateClientUseCase, useValue: updateClientUseCase },
+        { provide: ToggleClientStatusUseCase, useValue: toggleClientStatusUseCase },
+        { provide: GetClientByIdUseCase, useValue: getClientByIdUseCase },
       ],
     });
 
@@ -92,11 +121,11 @@ describe('ClientsStore', () => {
       page: 1,
       pageSize: 20,
     };
-    repo.getClients.mockResolvedValueOnce(response);
+    getClientsUseCase.execute.mockResolvedValue(response);
 
     await store.loadClients();
 
-    expect(repo.getClients).toHaveBeenCalledWith({
+    expect(getClientsUseCase.execute).toHaveBeenCalledWith({
       page: 1,
       pageSize: 20,
       search: undefined,
@@ -109,7 +138,7 @@ describe('ClientsStore', () => {
   });
 
   it('sets error when loading clients fails', async () => {
-    repo.getClients.mockRejectedValueOnce(new Error('boom'));
+    getClientsUseCase.execute.mockRejectedValueOnce(new Error('boom'));
 
     await store.loadClients();
 
@@ -118,7 +147,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps forbidden clients error to a specific message', async () => {
-    repo.getClients.mockRejectedValueOnce(new ClientForbiddenError());
+    getClientsUseCase.execute.mockRejectedValueOnce(new ClientForbiddenError());
 
     await store.loadClients();
 
@@ -126,7 +155,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps validation clients error to backend message', async () => {
-    repo.createClient.mockRejectedValueOnce(
+    createClientUseCase.execute.mockRejectedValueOnce(
       new ClientValidationError({ field: 'taxId' }, 'Tax ID already exists.'),
     );
 
@@ -141,7 +170,7 @@ describe('ClientsStore', () => {
       email: 'test@example.com',
     });
 
-    expect(store.error()).toBe('Failed to save client.');
+    expect(store.error()).toBe('Tax ID already exists.');
   });
 
   it('creates a new client and updates state', async () => {
@@ -155,7 +184,7 @@ describe('ClientsStore', () => {
       phone: '600000002',
       email: 'beta@example.com',
     };
-    repo.createClient.mockResolvedValueOnce(CLIENT_B);
+    createClientUseCase.execute.mockResolvedValueOnce(CLIENT_B);
 
     store.clients.set([CLIENT_A]);
     store.total.set(1);
@@ -163,7 +192,7 @@ describe('ClientsStore', () => {
 
     await store.saveClient(payload);
 
-    expect(repo.createClient).toHaveBeenCalledWith(payload);
+    expect(createClientUseCase.execute).toHaveBeenCalledWith(payload);
     expect(store.clients()).toEqual([CLIENT_A, CLIENT_B]);
     expect(store.total()).toBe(2);
     expect(store.dialogVisible()).toBe(false);
@@ -173,7 +202,7 @@ describe('ClientsStore', () => {
   it('updates an existing client in edit mode', async () => {
     const updated: Client = { ...CLIENT_A, name: 'Acme Corporation' };
     const payload: UpdateClientPayload = { name: 'Acme Corporation' };
-    repo.updateClient.mockResolvedValueOnce(updated);
+    updateClientUseCase.execute.mockResolvedValueOnce(updated);
 
     store.clients.set([CLIENT_A]);
     store.selectedClient.set(CLIENT_A);
@@ -181,13 +210,13 @@ describe('ClientsStore', () => {
 
     await store.saveClient(payload);
 
-    expect(repo.updateClient).toHaveBeenCalledWith(CLIENT_A.clientId, payload);
+    expect(updateClientUseCase.execute).toHaveBeenCalledWith(CLIENT_A.clientId, payload);
     expect(store.clients()).toEqual([updated]);
     expect(store.dialogVisible()).toBe(false);
   });
 
   it('toggles status and closes confirm dialog', async () => {
-    repo.toggleClientStatus.mockResolvedValueOnce();
+    toggleClientStatusUseCase.execute.mockResolvedValueOnce();
 
     store.clients.set([CLIENT_A]);
     store.clientToToggle.set(CLIENT_A);
@@ -195,28 +224,28 @@ describe('ClientsStore', () => {
 
     await store.confirmToggleStatus();
 
-    expect(repo.toggleClientStatus).toHaveBeenCalledWith(CLIENT_A.clientId, false);
+    expect(toggleClientStatusUseCase.execute).toHaveBeenCalledWith(CLIENT_A.clientId, false);
     expect(store.clients()[0].isActive).toBe(false);
     expect(store.confirmDialogVisible()).toBe(false);
     expect(store.clientToToggle()).toBeNull();
   });
 
   it('loads client by ID successfully', async () => {
-    repo.getClientById.mockResolvedValueOnce(CLIENT_A);
+    getClientByIdUseCase.execute.mockResolvedValueOnce(CLIENT_A);
 
     await store.loadClientById(1);
 
-    expect(repo.getClientById).toHaveBeenCalledWith(1);
+    expect(getClientByIdUseCase.execute).toHaveBeenCalledWith(1);
     expect(store.selectedClient()).toEqual(CLIENT_A);
     expect(store.loading()).toBe(false);
   });
 
   it('sets error when loading client by ID fails', async () => {
-    repo.getClientById.mockRejectedValueOnce(new Error('not found'));
+    getClientByIdUseCase.execute.mockRejectedValueOnce(new Error('not found'));
 
     await store.loadClientById(1);
 
-    expect(store.error()).toBe('The selected client no longer exists.');
+    expect(store.error()).toBe('Failed to load client.');
     expect(store.loading()).toBe(false);
   });
 
@@ -263,8 +292,10 @@ describe('ClientsStore', () => {
     expect(store.dialogVisible()).toBe(true);
   });
 
-  it('open edit dialog sets correct state', () => {
-    store.openEditDialog(CLIENT_A);
+  it('open edit dialog sets correct state', async () => {
+    getClientByIdUseCase.execute.mockResolvedValue(CLIENT_A);
+    
+    await store.openEditDialog(CLIENT_A);
 
     expect(store.selectedClient()).toEqual(CLIENT_A);
     expect(store.dialogMode()).toBe('edit');
@@ -310,7 +341,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps unauthorized error to session expired message', async () => {
-    repo.getClients.mockRejectedValueOnce(new ClientUnauthorizedError());
+    getClientsUseCase.execute.mockRejectedValueOnce(new ClientUnauthorizedError());
 
     await store.loadClients();
 
@@ -318,7 +349,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps not found error to specific message', async () => {
-    repo.getClientById.mockRejectedValueOnce(new ClientNotFoundError());
+    getClientByIdUseCase.execute.mockRejectedValueOnce(new ClientNotFoundError());
 
     await store.loadClientById(1);
 
@@ -326,7 +357,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps API error to fallback message', async () => {
-    repo.getClients.mockRejectedValueOnce(new ClientApiError('Service unavailable'));
+    getClientsUseCase.execute.mockRejectedValueOnce(new ClientApiError('Service unavailable'));
 
     await store.loadClients();
 
