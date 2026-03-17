@@ -12,6 +12,9 @@ import { ErpPreset } from '@theme/erp.preset';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
+import { MockCategoryRepository } from '@infrastructure/repositories/mock/category.repository.mock';
+import { HttpCategoryRepository } from '@infrastructure/repositories/http/category.repository.http';
+import { CategoryRepository } from '@domain/repositories/category.repository';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 
@@ -30,6 +33,7 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    { provide: CategoryRepository, useClass: MockCategoryRepository },
     providePrimeNG({
       ripple: true,
       theme: {
