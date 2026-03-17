@@ -123,6 +123,7 @@ from modules.catalog.domain.interfaces.use_cases.products.i_update_product_use_c
     IUpdateProductUseCase,
 )
 from modules.catalog.infrastructure.repos.category_repository import CategoryRepository
+from modules.catalog.infrastructure.repos.product_reader import ProductReader
 from modules.catalog.infrastructure.repos.product_repository import ProductRepository
 from modules.clients.application.create_client_use_case import CreateClientUseCase
 from modules.clients.application.get_client_use_case import GetClientUseCase
@@ -266,6 +267,15 @@ from modules.suppliers.domain.interfaces.use_cases.i_update_supplier_use_case im
 )
 from modules.suppliers.infrastructure.repos.supplier_repository import (
     SupplierRepository,
+)
+from modules.warehouse.application.get_product_stock_overview_use_case import (
+    GetProductStockOverviewUseCase,
+)
+from modules.warehouse.domain.interfaces.use_cases.i_get_product_stock_overview_use_case import (
+    IGetProductStockOverviewUseCase,
+)
+from modules.warehouse.infrastructure.repos.warehouse_stock_repository import (
+    WarehouseStockRepository,
 )
 from shared.infrastructure.database.connection import get_db
 
@@ -558,4 +568,16 @@ async def get_get_supplier_price_use_case(
         PurchaseRepository(db),
         SupplierRepository(db),
         ProductRepository(db),
+    )
+
+
+# ── Warehouse ──────────────────────────────────────────────────────
+
+
+async def get_get_product_stock_overview_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetProductStockOverviewUseCase:
+    """Build the stock overview use case with its dependencies."""
+    return GetProductStockOverviewUseCase(
+        WarehouseStockRepository(db), ProductReader(db)
     )
