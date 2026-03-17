@@ -36,6 +36,10 @@ interface StatusOption { label: string; value: ProviderStatus | null; }
 export class SuppliersPageComponent implements OnInit {
   readonly store = inject(SuppliersStore);
 
+  // Properties for details dialog
+  detailsDialogVisible = false;
+  selectedProviderForDetails: Provider | null = null;
+
   // Filter options (with "all" represented as null)
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos los estados', value: null },
@@ -49,6 +53,21 @@ export class SuppliersPageComponent implements OnInit {
 
   trackById(_: number, provider: Provider): number {
     return parseInt(provider.id);
+  }
+
+  // Open provider details dialog
+  async openDetailsDialog(provider: Provider): Promise<void> {
+    const fullProvider = await this.store.loadProviderById(provider.id);
+    if (fullProvider) {
+      this.selectedProviderForDetails = fullProvider;
+      this.detailsDialogVisible = true;
+    }
+  }
+
+  // Close details dialog
+  closeDetailsDialog(): void {
+    this.detailsDialogVisible = false;
+    this.selectedProviderForDetails = null;
   }
 
   // Status label mapping (enum -> UI text)

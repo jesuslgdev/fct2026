@@ -88,6 +88,8 @@
           @if (store.canEdit()) {
             <td>
               <div class="flex gap-2">
+                <ui-button icon="pi pi-eye" variant="ghost" size="sm"
+                  (clicked)="openDetailsDialog(provider)" />
                 <ui-button icon="pi pi-pencil" variant="ghost" size="sm"
                   (clicked)="store.openEditDialog(provider)" />
                 <ui-button
@@ -115,6 +117,61 @@
 <!-- Diálogo de crear/editar -->
 <app-provider-form-dialog />
 
+<!-- Diálogo de detalles del proveedor -->
+<ui-dialog
+  [(visible)]="detailsDialogVisible"
+  header="Detalles del Proveedor"
+  size="lg"
+  (cancelled)="closeDetailsDialog()"
+>
+  @if (selectedProviderForDetails; as provider) {
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-medium text-gray-500">Nombre</label>
+          <p class="text-base">{{ provider.name }}</p>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-500">NIF/CIF</label>
+          <p class="text-base">{{ provider.taxId }}</p>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-500">Email</label>
+          <p class="text-base">{{ provider.email || 'No disponible' }}</p>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-500">Teléfono</label>
+          <p class="text-base">{{ provider.phone || 'No disponible' }}</p>
+        </div>
+        <div class="col-span-2">
+          <label class="text-sm font-medium text-gray-500">Dirección</label>
+          <p class="text-base">{{ provider.address || 'No disponible' }}</p>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-500">Ciudad</label>
+          <p class="text-base">{{ provider.city || 'No disponible' }}</p>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-500">Provincia</label>
+          <p class="text-base">{{ provider.province || 'No disponible' }}</p>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-500">Código Postal</label>
+          <p class="text-base">{{ provider.postalCode || 'No disponible' }}</p>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-500">Estado</label>
+          <p class="text-base">
+            <ui-badge 
+              [label]="getStatusLabel(provider.status)" 
+              [variant]="getStatusBadgeVariant(provider.status)" 
+            />
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</ui-dialog>
 <!-- Diálogo de confirmación -->
 <ui-dialog
   [(visible)]="store.confirmDialogVisible"
