@@ -14,6 +14,8 @@ import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/fireba
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
+import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
+import { UserRepository } from '@domain/repositories/user.repository';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -30,6 +32,7 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    { provide: UserRepository, useClass: HttpUserRepository },
     providePrimeNG({
       ripple: true,
       theme: {
