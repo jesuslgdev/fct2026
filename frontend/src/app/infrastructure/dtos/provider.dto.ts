@@ -1,4 +1,17 @@
+<<<<<<< Updated upstream
 import { ProviderStatus } from '@domain/enums/provider-status.enum';
+=======
+// DTO de lectura (lo que devuelve el API) - basado en backend real
+export interface ProviderDto {
+  supplier_id: number;
+  name: string;
+  tax_id: string;
+  city: string;
+  is_active: boolean;
+  // NOTA: El endpoint GET /suppliers solo devuelve estos campos
+  // Los campos email, phone, address, province solo vienen en el detalle individual
+}
+>>>>>>> Stashed changes
 
 // DTO de lectura (lo que devuelve el API)
 export interface ProviderDto {

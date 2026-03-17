@@ -18,7 +18,30 @@ export class ProviderMapper {
   // DTO → Domain
   static fromDto(dto: ProviderDto): Provider {
     return {
+<<<<<<< Updated upstream
       id: dto.provider_id.toString(),
+=======
+      id: dto.supplier_id.toString(),
+      name: dto.name,
+      taxId: dto.tax_id,
+      email: '', // El endpoint lista no devuelve email
+      phone: '', // El endpoint lista no devuelve phone
+      address: '', // El endpoint lista no devuelve address
+      province: '', // El endpoint lista no devuelve province
+      postalCode: '', // El endpoint lista no devuelve postal_code
+      contactPerson: undefined, // Backend no tiene contact_person
+      isActive: dto.is_active,
+      status: dto.is_active ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE,
+      createdAt: new Date(), // Backend no proporciona timestamps en lista
+      updatedAt: new Date(),
+    };
+  }
+
+  // DTO Detail → Domain (detalle individual)
+  static fromDetailDto(dto: ProviderDetailDto): Provider {
+    return {
+      id: dto.supplier_id.toString(),
+>>>>>>> Stashed changes
       name: dto.name,
       taxId: dto.tax_id,
       email: dto.email,
