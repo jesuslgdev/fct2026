@@ -30,6 +30,41 @@ jobs:
         run: npm ci
         working-directory: frontend
 
+      - name: Create stub environment files
+        working-directory: frontend
+        run: |
+          mkdir -p src/environments
+          cat > src/environments/environment.ts << 'EOF'
+          export const environment = {
+            production: false,
+            apiUrl: '',
+            firebase: {
+              apiKey: '',
+              authDomain: '',
+              projectId: '',
+              storageBucket: '',
+              messagingSenderId: '',
+              appId: '',
+              measurementId: '',
+            },
+          };
+          EOF
+          cat > src/environments/environment.prod.ts << 'EOF'
+          export const environment = {
+            production: true,
+            apiUrl: '',
+            firebase: {
+              apiKey: '',
+              authDomain: '',
+              projectId: '',
+              storageBucket: '',
+              messagingSenderId: '',
+              appId: '',
+              measurementId: '',
+            },
+          };
+          EOF
+
       - name: Lint
         run: npm run lint
         working-directory: frontend
@@ -66,6 +101,7 @@ jobs:
           cat > src/environments/environment.ts << 'EOF'
           export const environment = {
             production: false,
+            apiUrl: 'https://fct2026.onrender.com',
             firebase: {
               apiKey: '${{ secrets.FIREBASE_API_KEY_DEV }}',
               authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN_DEV }}',
@@ -118,6 +154,7 @@ jobs:
           cat > src/environments/environment.ts << 'EOF'
           export const environment = {
             production: false,
+            apiUrl: 'https://fct2026.onrender.com',
             firebase: {
               apiKey: '${{ secrets.FIREBASE_API_KEY_PROD }}',
               authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN_PROD }}',
@@ -133,6 +170,7 @@ jobs:
           cat > src/environments/environment.prod.ts << 'EOF'
           export const environment = {
             production: true,
+            apiUrl: 'https://fct2026.onrender.com',
             firebase: {
               apiKey: '${{ secrets.FIREBASE_API_KEY_PROD }}',
               authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN_PROD }}',
