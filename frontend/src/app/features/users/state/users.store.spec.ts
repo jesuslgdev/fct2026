@@ -139,12 +139,16 @@ describe('UsersStore', () => {
       role: 'Manager',
       departmentId: 2,
     };
+    
+    // Mock initial users load
+    repo.getUsers.mockResolvedValueOnce({ data: [USER_A], total: 1, page: 1, pageSize: 20 });
+    await store.loadUsers();
+    
+    // Mock user creation
     repo.createUser.mockResolvedValueOnce(USER_B);
-
-    store.users.set([USER_A]);
-    store.total.set(1);
-    store.dialogVisible.set(true);
-
+    
+    // Open dialog and save user
+    store.openCreateDialog();
     await store.saveUser(payload);
 
     expect(repo.createUser).toHaveBeenCalledWith(payload);
@@ -157,12 +161,13 @@ describe('UsersStore', () => {
   it('updates an existing user in edit mode', async () => {
     const updated: User = { ...USER_A, lastName: 'Gonzalez' };
     const payload: UpdateUserPayload = { lastName: 'Gonzalez' };
+    
+    repo.getUsers.mockResolvedValueOnce({ data: [USER_A], total: 1, page: 1, pageSize: 20 });
+    await store.loadUsers();
+    
     repo.updateUser.mockResolvedValueOnce(updated);
-
-    store.users.set([USER_A]);
-    store.selectedUser.set(USER_A);
-    store.dialogMode.set('edit');
-
+    
+    store.openEditDialog(USER_A);
     await store.saveUser(payload);
 
     expect(repo.updateUser).toHaveBeenCalledWith(USER_A.id, payload);
@@ -171,12 +176,12 @@ describe('UsersStore', () => {
   });
 
   it('toggles status and closes confirm dialog', async () => {
+    repo.getUsers.mockResolvedValueOnce({ data: [USER_A], total: 1, page: 1, pageSize: 20 });
+    await store.loadUsers();
+    
     repo.toggleUserStatus.mockResolvedValueOnce();
-
-    store.users.set([USER_A]);
-    store.userToToggle.set(USER_A);
-    store.confirmDialogVisible.set(true);
-
+    
+    store.requestToggleStatus(USER_A);
     await store.confirmToggleStatus();
 
     expect(repo.toggleUserStatus).toHaveBeenCalledWith(USER_A.id, false);
