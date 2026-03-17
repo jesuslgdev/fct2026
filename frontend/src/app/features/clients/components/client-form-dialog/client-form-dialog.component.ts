@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { InputComponent } from '@shared/ui/input/input.component';
@@ -37,11 +37,20 @@ export class ClientFormDialogComponent {
   get phone() { return this.form.controls.phone; }
   get email() { return this.form.controls.email; }
 
+  readonly isViewMode = computed(() => this.store.dialogMode() === 'view');
+
+  getDialogTitle(): string {
+    const mode = this.store.dialogMode();
+    if (mode === 'create') return 'Nuevo cliente';
+    if (mode === 'edit') return 'Editar cliente';
+    return 'Detalles del cliente';
+  }
+
   constructor() {
     effect(() => {
       const client = this.store.selectedClient();
       const mode = this.store.dialogMode();
-      if (mode === 'edit' && client) {
+      if (client && (mode === 'edit' || mode === 'view')) {
         this.form.patchValue({
           name: client.name,
           taxId: client.taxId,
@@ -63,6 +72,10 @@ export class ClientFormDialogComponent {
   }
 
   onConfirm(): void {
+    if (this.isViewMode()) {
+      this.store.closeDialog();
+      return;
+    }
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

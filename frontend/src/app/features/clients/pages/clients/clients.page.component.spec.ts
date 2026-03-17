@@ -1,9 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ClientsPageComponent } from './clients.page.component';
 import { ClientsStore } from '@features/clients/state/clients.store';
+import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
+import { CreateClientUseCase } from '@domain/usecases/client/create-client.usecase';
+import { UpdateClientUseCase } from '@domain/usecases/client/update-client.usecase';
+import { ToggleClientStatusUseCase } from '@domain/usecases/client/toggle-client-status.usecase';
+import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
-import { ClientRepository } from '@domain/repositories/client.repository';
 
 interface MockStore {
   clients: () => never[];
@@ -27,28 +31,36 @@ interface MockStore {
   error: () => null;
 }
 
-interface MockClientRepository {
-  getClients: ReturnType<typeof vi.fn>;
-  getClientById: ReturnType<typeof vi.fn>;
-  createClient: ReturnType<typeof vi.fn>;
-  updateClient: ReturnType<typeof vi.fn>;
-  toggleClientStatus: ReturnType<typeof vi.fn>;
-}
-
 describe('ClientsPageComponent', () => {
   let component: ClientsPageComponent;
   let fixture: ComponentFixture<ClientsPageComponent>;
   let mockStore: MockStore;
-  let mockClientRepository: MockClientRepository;
+  let mockGetClientsUseCase: GetClientsUseCase;
+  let mockCreateClientUseCase: CreateClientUseCase;
+  let mockUpdateClientUseCase: UpdateClientUseCase;
+  let mockToggleClientStatusUseCase: ToggleClientStatusUseCase;
+  let mockGetClientByIdUseCase: GetClientByIdUseCase;
 
   beforeEach(async () => {
-    mockClientRepository = {
-      getClients: vi.fn(),
-      getClientById: vi.fn(),
-      createClient: vi.fn(),
-      updateClient: vi.fn(),
-      toggleClientStatus: vi.fn(),
-    };
+    mockGetClientsUseCase = {
+      execute: vi.fn(),
+    } as any;
+
+    mockCreateClientUseCase = {
+      execute: vi.fn(),
+    } as any;
+
+    mockUpdateClientUseCase = {
+      execute: vi.fn(),
+    } as any;
+
+    mockToggleClientStatusUseCase = {
+      execute: vi.fn(),
+    } as any;
+
+    mockGetClientByIdUseCase = {
+      execute: vi.fn(),
+    } as any;
 
     mockStore = {
       clients: signal([]),
@@ -76,7 +88,11 @@ describe('ClientsPageComponent', () => {
       imports: [ClientsPageComponent],
       providers: [
         { provide: ClientsStore, useValue: mockStore },
-        { provide: ClientRepository, useValue: mockClientRepository },
+        { provide: GetClientsUseCase, useValue: mockGetClientsUseCase },
+        { provide: CreateClientUseCase, useValue: mockCreateClientUseCase },
+        { provide: UpdateClientUseCase, useValue: mockUpdateClientUseCase },
+        { provide: ToggleClientStatusUseCase, useValue: mockToggleClientStatusUseCase },
+        { provide: GetClientByIdUseCase, useValue: mockGetClientByIdUseCase },
       ],
     }).compileComponents();
 
@@ -98,8 +114,8 @@ describe('ClientsPageComponent', () => {
   });
 
   it('should call loadClients on init', () => {
-    // The test should verify that the component calls the store method
-    // Since the store is properly mocked, we can just verify the call
+    // The test should verify that component calls store method
+    // Since store is properly mocked, we can just verify the call
     expect(mockStore.loadClients).toBeDefined();
   });
 
