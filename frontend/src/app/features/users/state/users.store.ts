@@ -205,9 +205,7 @@ export class UsersStore {
     this.loadUsers();
   }
 
-  // Don't call loadUsers() here: p-table resets its internal `first` when
-  // `[value]` changes, which retriggers onPage with first=0 and forces page=1.
-  // We update page/pageSize here, and let callers (search/filter) invoke loadUsers().
+
   onPageChange(event: { first: number; rows: number }): void {
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
