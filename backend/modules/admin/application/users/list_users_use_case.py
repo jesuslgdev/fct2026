@@ -12,5 +12,14 @@ class ListUsersUseCase(IListUsersUseCase):
     def __init__(self, repo: IUserRepository) -> None:
         self.repo = repo
 
-    async def execute(self, page: int, page_size: int) -> PaginatedResult[User]:
-        return await self.repo.get_all_paginated(page, page_size)
+    async def execute(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        role: str | None = None,
+        active: bool | None = None,
+    ) -> PaginatedResult[User]:
+        return await self.repo.get_all_paginated(
+            page, page_size, search=search, role=role, active=active
+        )
