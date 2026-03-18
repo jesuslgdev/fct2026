@@ -13,7 +13,6 @@ import { GetClientByIdUseCase } from './get-client-by-id.usecase';
 import { CreateClientUseCase } from './create-client.usecase';
 import { UpdateClientUseCase } from './update-client.usecase';
 import { ToggleClientStatusUseCase } from './toggle-client-status.usecase';
-import { ClientAlreadyExistsError, ClientInvalidTaxIdError } from '@domain/models/client-errors';
 
 const CLIENT_MOCK: Client = {
   clientId: 1,
@@ -103,7 +102,7 @@ describe('Client Use Cases', () => {
     expect(result).toEqual(CLIENT_MOCK);
   });
 
-  it('CreateClientUseCase throws error for invalid tax ID', async () => {
+  it('CreateClientUseCase creates client with any tax ID', async () => {
     const useCase = TestBed.inject(CreateClientUseCase);
     const payload: CreateClientPayload = {
       name: 'Test Client',
@@ -115,12 +114,15 @@ describe('Client Use Cases', () => {
       phone: '123456789',
       email: 'test@example.com',
     };
+    repo.createClient.mockResolvedValueOnce({ ...CLIENT_MOCK, ...payload });
 
-    await expect(useCase.execute(payload)).rejects.toThrow(ClientInvalidTaxIdError);
-    expect(repo.createClient).not.toHaveBeenCalled();
+    const result = await useCase.execute(payload);
+
+    expect(repo.createClient).toHaveBeenCalledWith(payload);
+    expect(result).toEqual({ ...CLIENT_MOCK, ...payload });
   });
 
-  it('CreateClientUseCase throws error for duplicate tax ID', async () => {
+  it('CreateClientUseCase propagates repository errors', async () => {
     const useCase = TestBed.inject(CreateClientUseCase);
     const payload: CreateClientPayload = {
       name: 'Test Client',
@@ -132,9 +134,9 @@ describe('Client Use Cases', () => {
       phone: '123456789',
       email: 'test@example.com',
     };
-    repo.createClient.mockRejectedValueOnce(new Error());
+    repo.createClient.mockRejectedValueOnce(new Error('Repository error'));
 
-    await expect(useCase.execute(payload)).rejects.toThrow(ClientAlreadyExistsError);
+    await expect(useCase.execute(payload)).rejects.toThrow('Repository error');
     expect(repo.createClient).toHaveBeenCalledWith(payload);
   });
 
