@@ -1,9 +1,6 @@
 export interface UserDto {
-  user_id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  department_id: number | null;
+  id: number;
+  username: string;
+  department_id: number;
   is_active: boolean;
 }

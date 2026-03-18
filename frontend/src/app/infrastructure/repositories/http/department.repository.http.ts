@@ -19,20 +19,25 @@ export class HttpDepartmentRepository implements DepartmentRepository {
   getAll(): Observable<Department[]> {
     return forkJoin({
       departments: this.http.get<DepartmentDto[]>(this.base),
-      usersResponse: this.http.get<PaginatedResponse<UserDto>>(`${environment.apiUrl}/api/v1/admin/users`)
+      usersResponse: this.http.get<PaginatedResponse<UserDto>>(`${environment.apiUrl}/api/v1/admin/users?page_size=100`)
     }).pipe(
       map(({ departments, usersResponse }) => {
         const users = usersResponse.items || [];
+        
+        console.log('Departments from API:', departments);
+        console.log('Users from API:', users);
         
         return departments.map(dto => {
           const userCount = users.filter(user => 
             user.department_id === dto.department_id && user.is_active
           ).length;
           
+          console.log(`Department ${dto.name} (${dto.department_id}): ${userCount} users`);
           return DepartmentMapper.toDomain(dto, userCount);
         });
       }),
       catchError(err => {
+        console.error('Error fetching departments or users:', err);
         if (err instanceof HttpErrorResponse) {
           if (err.status === 401 || err.status === 403) {
             return throwError(() => new UnauthorizedError());
