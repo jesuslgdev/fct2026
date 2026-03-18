@@ -12,30 +12,33 @@ export class DepartmentsStore {
   private readonly updateDept = inject(UpdateDepartmentUseCase);
   private readonly deleteDept = inject(DeleteDepartmentUseCase);
 
-  readonly departments = signal<Department[]>([]);
-  readonly loading = signal(false);
+  private readonly _departments = signal<Department[]>([]);
+  private readonly _loading = signal(false);
+
+  readonly departments = this._departments.asReadonly();
+  readonly loading = this._loading.asReadonly();
 
   async load(): Promise<void> {
-    this.loading.set(true);
+    this._loading.set(true);
     try {
-      this.departments.set(await this.getDepts.execute());
+      this._departments.set(await this.getDepts.execute());
     } finally {
-      this.loading.set(false);
+      this._loading.set(false);
     }
   }
 
   async create(name: string): Promise<void> {
     const dept = await this.createDept.execute(name);
-    this.departments.update(list => [...list, dept]);
+    this._departments.update(list => [...list, dept]);
   }
 
   async update(id: string, name: string): Promise<void> {
     const updated = await this.updateDept.execute(id, name);
-    this.departments.update(list => list.map(d => d.id === id ? updated : d));
+    this._departments.update(list => list.map(d => d.id === id ? updated : d));
   }
 
   async delete(department: Department): Promise<void> {
     await this.deleteDept.execute(department);
-    this.departments.update(list => list.filter(d => d.id !== department.id));
+    this._departments.update(list => list.filter(d => d.id !== department.id));
   }
 }
