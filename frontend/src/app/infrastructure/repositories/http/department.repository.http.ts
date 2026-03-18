@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, forkJoin, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { DepartmentRepository } from '@domain/repositories/department.repository';
 import { Department } from '@domain/models/department.model';
@@ -16,20 +16,8 @@ export class HttpDepartmentRepository implements DepartmentRepository {
   private readonly base = `${environment.apiUrl}/api/v1/admin/departments`;
 
   getAll(): Observable<Department[]> {
-    return forkJoin({
-      departments: this.http.get<DepartmentDto[]>(this.base),
-      users: this.http.get<UserDto[]>(`${environment.apiUrl}/api/v1/admin/users`)
-    }).pipe(
-      map(({ departments, users }) => {
-        // Calculate user count for each department
-        return departments.map(dto => {
-          const userCount = users.filter(user => 
-            user.department_id === dto.department_id && user.is_active
-          ).length;
-          
-          return DepartmentMapper.toDomain(dto, userCount);
-        });
-      }),
+    return this.http.get<DepartmentDto[]>(this.base).pipe(
+      map(dtos => dtos.map(DepartmentMapper.toDomain)),
       catchError(err => {
         if (err instanceof HttpErrorResponse) {
           if (err.status === 401 || err.status === 403) {
@@ -43,7 +31,7 @@ export class HttpDepartmentRepository implements DepartmentRepository {
 
   create(name: string): Observable<Department> {
     return this.http.post<DepartmentDto>(this.base, { name }).pipe(
-      map(dto => DepartmentMapper.toDomain(dto)),
+      map(DepartmentMapper.toDomain),
       catchError(err => {
         if (err instanceof HttpErrorResponse) {
           if (err.status === 401 || err.status === 403) {
@@ -59,9 +47,8 @@ export class HttpDepartmentRepository implements DepartmentRepository {
   }
 
   update(id: string, name: string): Observable<Department> {
-    const departmentId = parseInt(id, 10);
-    return this.http.put<DepartmentDto>(`${this.base}/${departmentId}`, { name }).pipe(
-      map(dto => DepartmentMapper.toDomain(dto)),
+    return this.http.put<DepartmentDto>(`${this.base}/${id}`, { name }).pipe(
+      map(DepartmentMapper.toDomain),
       catchError(err => {
         if (err instanceof HttpErrorResponse) {
           if (err.status === 401 || err.status === 403) {
@@ -77,8 +64,7 @@ export class HttpDepartmentRepository implements DepartmentRepository {
   }
 
   delete(id: string): Observable<void> {
-    const departmentId = parseInt(id, 10);
-    return this.http.delete<void>(`${this.base}/${departmentId}`).pipe(
+    return this.http.delete<void>(`${this.base}/${id}`).pipe(
       catchError(err => {
         if (err instanceof HttpErrorResponse) {
           if (err.status === 401 || err.status === 403) {

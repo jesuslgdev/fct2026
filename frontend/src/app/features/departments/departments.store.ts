@@ -22,24 +22,24 @@ export class DepartmentsStore {
   async load(): Promise<void> {
     this._loading.set(true);
     try {
-      this._departments.set(await this.getDepts.execute());
+      this._departments.set(await firstValueFrom(this.getDepts.execute()));
     } finally {
       this._loading.set(false);
     }
   }
 
   async create(name: string): Promise<void> {
-    const dept = await this.createDept.execute(name);
+    const dept = await firstValueFrom(this.createDept.execute(name));
     this._departments.update(list => [...list, dept]);
   }
 
   async update(id: string, name: string): Promise<void> {
-    const updated = await this.updateDept.execute(id, name);
+    const updated = await firstValueFrom(this.updateDept.execute(id, name));
     this._departments.update(list => list.map(d => d.id === id ? updated : d));
   }
 
   async delete(department: Department): Promise<void> {
-    await this.deleteDept.execute(department);
+    await firstValueFrom(this.deleteDept.execute(department));
     this._departments.update(list => list.filter(d => d.id !== department.id));
   }
 }
