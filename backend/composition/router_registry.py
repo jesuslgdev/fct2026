@@ -20,3 +20,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(catalog_router, prefix="/api/v1")
     app.include_router(suppliers_router, prefix="/api/v1")
     app.include_router(clients_router, prefix="/api/v1")
+
+    from modules.purchases.infrastructure.http.router import router as purchases_router
+
+    app.include_router(purchases_router, prefix="/api/v1")
