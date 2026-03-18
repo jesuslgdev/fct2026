@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, Query, Response, UploadFile
 from fastapi.responses import StreamingResponse
 
 from composition.dependencies import (
+    get_create_supplier_use_case,
     get_download_supplier_template_use_case,
     get_get_supplier_use_case,
     get_import_suppliers_use_case,
@@ -14,6 +15,9 @@ from composition.dependencies import (
 from composition.security import get_current_user, require_purchases_manager_or_admin
 from modules.suppliers.domain.entities.supplier import Supplier
 from modules.suppliers.domain.entities.supplier_product import SupplierProduct
+from modules.suppliers.domain.interfaces.use_cases.i_create_supplier_use_case import (
+    ICreateSupplierUseCase,
+)
 from modules.suppliers.domain.interfaces.use_cases.i_download_supplier_template_use_case import (
     IDownloadSupplierTemplateUseCase,
 )
@@ -33,6 +37,7 @@ from modules.suppliers.domain.interfaces.use_cases.i_update_supplier_use_case im
     IUpdateSupplierUseCase,
 )
 from modules.suppliers.infrastructure.http.schemas import (
+    CreateSupplierDTO,
     ImportErrorDTO,
     ImportResultDTO,
     SetSupplierActiveDTO,
@@ -112,6 +117,25 @@ async def import_suppliers(
             ImportErrorDTO(row=e.row, reason=e.reason) for e in result.errors
         ],
     )
+
+
+@router.post("", response_model=SupplierDetailDTO, status_code=201)
+async def create_supplier(
+    body: CreateSupplierDTO,
+    _: UserSession = Depends(require_purchases_manager_or_admin),
+    use_case: ICreateSupplierUseCase = Depends(get_create_supplier_use_case),
+):
+    result = await use_case.execute(
+        name=body.name,
+        tax_id=body.tax_id,
+        address=body.address,
+        city=body.city,
+        province=body.province,
+        postal_code=body.postal_code,
+        phone=body.phone,
+        email=body.email,
+    )
+    return _to_supplier_detail_dto(result, [])
 
 
 @router.get("", response_model=PaginatedResponse[SupplierDTO])
