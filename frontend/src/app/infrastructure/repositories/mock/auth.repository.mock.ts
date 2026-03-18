@@ -23,4 +23,8 @@ export class MockAuthRepository implements AuthRepository {
     // no-op: mock implementation
     return Promise.resolve();
   }
+
+  async restoreSession(): Promise<Session | null> {
+    return MOCK_SESSION;
+  }
 }
