@@ -7,6 +7,7 @@ import { Department } from '@domain/models/department.model';
 import { DepartmentHasUsersError, DepartmentNameDuplicateError, UnauthorizedError } from '@domain/models/department-errors';
 import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 import { UserDto } from '@infrastructure/dtos/user.dto';
+import { PaginatedResponse } from '@infrastructure/dtos/paginated-response.dto';
 import { DepartmentMapper } from '@infrastructure/mappers/department.mapper';
 import { environment } from 'environments/environment';
 
@@ -16,8 +17,21 @@ export class HttpDepartmentRepository implements DepartmentRepository {
   private readonly base = `${environment.apiUrl}/api/v1/admin/departments`;
 
   getAll(): Observable<Department[]> {
-    return this.http.get<DepartmentDto[]>(this.base).pipe(
-      map(dtos => dtos.map(DepartmentMapper.toDomain)),
+    return forkJoin({
+      departments: this.http.get<DepartmentDto[]>(this.base),
+      usersResponse: this.http.get<PaginatedResponse<UserDto>>(`${environment.apiUrl}/api/v1/admin/users`)
+    }).pipe(
+      map(({ departments, usersResponse }) => {
+        const users = usersResponse.items || [];
+        
+        return departments.map(dto => {
+          const userCount = users.filter(user => 
+            user.department_id === dto.department_id && user.is_active
+          ).length;
+          
+          return DepartmentMapper.toDomain(dto, userCount);
+        });
+      }),
       catchError(err => {
         if (err instanceof HttpErrorResponse) {
           if (err.status === 401 || err.status === 403) {

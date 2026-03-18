@@ -113,8 +113,7 @@ export class DepartmentsPageComponent implements OnInit {
       this.deleteVisible.set(false);
     } catch {
       // DepartmentHasUsersError is prevented by canDelete() check in template;
-      // still handle defensively for unexpected errors - no logging for security
-      // Error is handled silently since UI shows appropriate feedback
+      // still handle defensively for unexpected errors
     } finally {
       this.saving.set(false);
     }
