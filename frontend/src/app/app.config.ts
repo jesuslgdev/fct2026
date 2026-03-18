@@ -21,9 +21,10 @@ import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
-import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
-import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
-import { AuthService } from '@core/services/auth.service';
+import { MockProductRepository } from '@infrastructure/repositories/mock/product.repository.mock';
+import { MockProductCategoryRepository } from '@infrastructure/repositories/mock/product-category.repository.mock';
+import { ProductRepository } from '@domain/repositories/product.repository';
+import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -43,15 +44,9 @@ export const appConfig: ApplicationConfig = {
     { provide: CategoryRepository, useClass: HttpCategoryRepository },
     { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
-    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
-    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
-    {
-      provide: APP_INITIALIZER,
-      useFactory: (authRepo: AuthRepository, authService: AuthService) =>
-        () => authRepo.restoreSession().then((session) => authService.setSession(session)),
-      deps: [AuthRepository, AuthService],
-      multi: true,
-    },
+    // Mock repositories (replace with real HTTP implementations when backend is ready)
+    { provide: ProductRepository, useClass: MockProductRepository },
+    { provide: ProductCategoryRepository, useClass: MockProductCategoryRepository },
     providePrimeNG({
       ripple: true,
       theme: {
