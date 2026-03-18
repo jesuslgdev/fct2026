@@ -29,10 +29,10 @@ export const routes: Routes = [
 			},
 		],
 	},
-	// fallback
+	// fallback: el authGuard de la ruta raíz decide según sesión
 	{
 		path: '**',
-		redirectTo: 'auth/login',
+		redirectTo: '',
 		pathMatch: 'full',
 	},
 ];
