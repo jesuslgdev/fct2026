@@ -12,6 +12,8 @@ import { ErpPreset } from '@theme/erp.preset';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
+import { DepartmentRepository } from '@domain/repositories/department.repository';
+import { MockDepartmentRepository } from '@infrastructure/repositories/mock/department.repository.mock';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
@@ -40,6 +42,7 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthRepository, AuthService],
       multi: true,
     },
+    { provide: DepartmentRepository, useClass: MockDepartmentRepository },
     providePrimeNG({
       ripple: true,
       theme: {
