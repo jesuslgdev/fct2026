@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { DepartmentRepository } from '@domain/repositories/department.repository';
 import { Department } from '@domain/models/department.model';
 
@@ -6,7 +7,7 @@ import { Department } from '@domain/models/department.model';
 export class GetDepartmentsUseCase {
   private readonly repo = inject(DepartmentRepository);
 
-  execute(): Promise<Department[]> {
+  execute(): Observable<Department[]> {
     return this.repo.getAll();
   }
 }
