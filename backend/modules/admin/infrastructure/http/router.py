@@ -52,6 +52,7 @@ from modules.admin.infrastructure.http.schemas import (
     UpdateUserDTO,
     UserDTO,
 )
+from shared.constants import ROLE_PATTERN
 from shared.domain.entities.user import User
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
@@ -123,10 +124,15 @@ async def delete_department(
 async def list_users(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    search: str | None = Query(None, max_length=255),
+    role: str | None = Query(None, pattern=ROLE_PATTERN),
+    active: bool | None = Query(None),
     use_case: IListUsersUseCase = Depends(get_list_users_use_case),
     _: dict = Depends(require_admin),
 ):
-    result = await use_case.execute(page, page_size)
+    result = await use_case.execute(
+        page, page_size, search=search, role=role, active=active
+    )
     return PaginatedResponse(
         items=[_to_user_dto(u) for u in result.items],
         total=result.total,
