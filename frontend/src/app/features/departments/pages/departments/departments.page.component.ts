@@ -15,10 +15,9 @@ import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { BadgeComponent } from '@shared/ui/badge/badge.component';
 import { AuthService } from '@core/services/auth.service';
 import { UserRole } from '@domain/enums/user-role.enum';
-import { isAdminRole } from '@core/guards/admin.guard';
 import { DepartmentsStore } from '../../departments.store';
 import { Department } from '@domain/models/department.model';
-import { DepartmentHasUsersError, DepartmentNameDuplicateError } from '@domain/models/department-errors';
+import { DepartmentNameDuplicateError } from '@domain/models/department-errors';
 
 @Component({
   selector: 'app-departments-page',
@@ -34,7 +33,6 @@ import { DepartmentHasUsersError, DepartmentNameDuplicateError } from '@domain/m
     TooltipModule,
   ],
   templateUrl: './departments.page.component.html',
-  styleUrls: ['./departments.page.component.css'],
 })
 export class DepartmentsPageComponent implements OnInit {
   readonly store = inject(DepartmentsStore);
@@ -42,7 +40,7 @@ export class DepartmentsPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
 
   readonly isAdmin = computed(() =>
-    isAdminRole(this.authService.user()?.role)
+    this.authService.user()?.role === UserRole.Administrator
   );
 
   readonly formVisible = signal(false);
@@ -113,10 +111,10 @@ export class DepartmentsPageComponent implements OnInit {
     try {
       await this.store.delete(dept);
       this.deleteVisible.set(false);
-    } catch (err) {
+    } catch {
       // DepartmentHasUsersError is prevented by canDelete() check in template;
-      // still handle defensively for unexpected errors
-      console.error(err);
+      // still handle defensively for unexpected errors - no logging for security
+      // Error is handled silently since UI shows appropriate feedback
     } finally {
       this.saving.set(false);
     }
