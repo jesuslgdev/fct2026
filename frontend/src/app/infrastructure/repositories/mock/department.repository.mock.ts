@@ -43,9 +43,6 @@ export class MockDepartmentRepository implements DepartmentRepository {
   delete(id: string): Observable<void> {
     const index = this.departments.findIndex(d => d.id === id);
     if (index === -1) return throwError(() => new Error(`Department ${id} not found`));
-    if (this.departments[index].userCount > 0) {
-      return throwError(() => new DepartmentHasUsersError());
-    }
     this.departments.splice(index, 1);
     return of(void 0);
   }
