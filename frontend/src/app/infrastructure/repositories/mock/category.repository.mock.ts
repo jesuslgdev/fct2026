@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import {
   Category,
+  CreateCategoryPayload,
+  UpdateCategoryPayload,
   CategoryListResult,
 } from '@domain/models/category.model';
 
@@ -58,18 +60,18 @@ export class MockCategoryRepository implements CategoryRepository {
     return category ? { ...category } : null;
   }
 
-  async createCategory(name: string, description: string): Promise<Category> {
+  async createCategory(payload: CreateCategoryPayload): Promise<Category> {
     // Check if category with same name already exists
     const existing = this.categories.find(
-      (c) => c.name.toLowerCase() === name.toLowerCase()
+      (c) => c.name.toLowerCase() === payload.name.toLowerCase()
     );
-    if (existing) throw new Error(`Category with name "${name}" already exists.`);
+    if (existing) throw new Error(`Category with name "${payload.name}" already exists.`);
 
     const nextId = Math.max(0, ...this.categories.map((c) => c.categoryId)) + 1;
     const newCategory: Category = {
       categoryId: nextId,
-      name: name.trim(),
-      description: description.trim(),
+      name: payload.name.trim(),
+      description: payload.description.trim(),
     };
     this.categories = [...this.categories, newCategory];
     return { ...newCategory };
@@ -77,28 +79,21 @@ export class MockCategoryRepository implements CategoryRepository {
 
   async updateCategory(
     categoryId: number,
-    name: string | null,
-    description: string | null
+    payload: UpdateCategoryPayload
   ): Promise<Category> {
     const index = this.categories.findIndex((c) => c.categoryId === categoryId);
     if (index === -1) throw new Error(`Category with ID ${categoryId} not found.`);
 
-    // Check if new name conflicts with existing category
-    if (name && name !== this.categories[index].name) {
-      const existing = this.categories.find(
-        (c) => c.categoryId !== categoryId && c.name.toLowerCase() === name.toLowerCase()
-      );
-      if (existing) throw new Error(`Category with name "${name}" already exists.`);
+    const category = { ...this.categories[index] };
+    if (payload.name !== undefined && payload.name !== null) {
+      category.name = payload.name.trim();
+    }
+    if (payload.description !== undefined && payload.description !== null) {
+      category.description = payload.description.trim();
     }
 
-    const updated: Category = {
-      ...this.categories[index],
-      ...(name !== null && { name: name.trim() }),
-      ...(description !== null && { description: description.trim() }),
-    };
-
-    this.categories = this.categories.map((c) => (c.categoryId === categoryId ? updated : c));
-    return { ...updated };
+    this.categories[index] = category;
+    return { ...category };
   }
 
   async deleteCategory(categoryId: number): Promise<void> {

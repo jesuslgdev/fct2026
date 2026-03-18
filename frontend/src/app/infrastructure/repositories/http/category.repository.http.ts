@@ -13,6 +13,8 @@ import {
 } from '@domain/models/category-errors';
 import {
   Category,
+  CreateCategoryPayload,
+  UpdateCategoryPayload,
   CategoryListResult,
 } from '@domain/models/category.model';
 import {
@@ -116,30 +118,29 @@ export class HttpCategoryRepository implements CategoryRepository {
     });
   }
 
-  async createCategory(name: string, description: string): Promise<Category> {
+  async createCategory(payload: CreateCategoryPayload): Promise<Category> {
     return this.withErrorMapping(async () => {
-      const payload: CreateCategoryDto = { name, description };
-      const dto = await firstValueFrom(
-        this.http.post<CategoryDto>(BASE_URL, payload)
+      const dto: CreateCategoryDto = { name: payload.name, description: payload.description };
+      const response = await firstValueFrom(
+        this.http.post<CategoryDto>(BASE_URL, dto)
       );
-      return CategoryMapper.fromDto(dto);
+      return CategoryMapper.fromDto(response);
     });
   }
 
   async updateCategory(
     categoryId: number,
-    name: string | null,
-    description: string | null
+    payload: UpdateCategoryPayload
   ): Promise<Category> {
     return this.withErrorMapping(async () => {
-      const payload: UpdateCategoryDto = {};
-      if (name !== null) payload.name = name;
-      if (description !== null) payload.description = description;
+      const dto: UpdateCategoryDto = {};
+      if (payload.name !== undefined && payload.name !== null) dto.name = payload.name;
+      if (payload.description !== undefined && payload.description !== null) dto.description = payload.description;
 
-      const dto = await firstValueFrom(
-        this.http.put<CategoryDto>(`${BASE_URL}/${categoryId}`, payload)
+      const response = await firstValueFrom(
+        this.http.put<CategoryDto>(`${BASE_URL}/${categoryId}`, dto)
       );
-      return CategoryMapper.fromDto(dto);
+      return CategoryMapper.fromDto(response);
     });
   }
 
