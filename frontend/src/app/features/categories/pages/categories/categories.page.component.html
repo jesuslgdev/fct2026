@@ -38,7 +38,9 @@
       <tr>
         <th>Nombre</th>
         <th>Descripción</th>
-        <th>Acciones</th>
+        @if (store.canEdit()) {
+          <th>Acciones</th>
+        }
       </tr>
     </ng-template>
 
@@ -46,9 +48,9 @@
       <tr>
         <td>{{ category.name }}</td>
         <td>{{ category.description }}</td>
-        <td>
-          <div class="table-actions">
-            @if (store.canEdit()) {
+        @if (store.canEdit()) {
+          <td>
+            <div class="table-actions">
               <!-- Botón de editar -->
               <ui-button
                 icon="pi pi-pencil"
@@ -63,15 +65,15 @@
                 size="sm"
                 (clicked)="store.requestDelete(category)"
               />
-            }
-          </div>
-        </td>
+            </div>
+          </td>
+        }
       </tr>
     </ng-template>
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="3" class="empty-state">
+        <td [attr.colspan]="store.canEdit() ? 3 : 2" class="empty-state">
           No se encontraron categorías.
         </td>
       </tr>
