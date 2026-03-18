@@ -1,10 +1,15 @@
 import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from composition.security import get_current_user, require_admin
+from main import app
 from modules.catalog.domain.entities.category import Category
 from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.warehouse import Warehouse
 from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
+from shared.domain.entities.user_session import UserSession
+from shared.infrastructure.database.connection import get_db
 
 
 @pytest_asyncio.fixture
@@ -111,3 +116,62 @@ async def stock_below_min(
     db_session.add(stock)
     await db_session.flush()
     return stock
+
+
+@pytest_asyncio.fixture
+async def admin_client(db_session: AsyncSession):
+    """Authenticated client with admin role for write endpoints."""
+
+    async def override_get_db():
+        yield db_session
+
+    def override_require_admin():
+        return UserSession(
+            email="admin@test.com",
+            role="Administrator",
+            department_id=None,
+            firebase_uid="test-uid",
+            name="Admin Test",
+        )
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[require_admin] = override_require_admin
+    app.dependency_overrides[get_current_user] = override_require_admin
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        yield ac
+
+    del app.dependency_overrides[get_db]
+    del app.dependency_overrides[require_admin]
+    del app.dependency_overrides[get_current_user]
+
+
+@pytest_asyncio.fixture
+async def sample_warehouse(db_session: AsyncSession) -> Warehouse:
+    """Create a standalone warehouse for management tests."""
+    wh = Warehouse(name="Main Warehouse", address="123 Main St")
+    db_session.add(wh)
+    await db_session.flush()
+    return wh
+
+
+@pytest_asyncio.fixture
+async def warehouse_with_stock(
+    db_session: AsyncSession,
+    sample_product: Product,
+) -> Warehouse:
+    """Create a warehouse that has stock (cannot be deleted)."""
+    wh = Warehouse(name="Stocked Warehouse", address="456 Stock Ave")
+    db_session.add(wh)
+    await db_session.flush()
+    stock = WarehouseStock(
+        warehouse_id=wh.warehouse_id,
+        product_id=sample_product.product_id,
+        stock=10,
+        reserved_stock=0,
+    )
+    db_session.add(stock)
+    await db_session.flush()
+    return wh
