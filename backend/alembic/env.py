@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 import modules.admin.domain.entities.department  # noqa: F401
 import modules.catalog.domain.entities.category  # noqa: F401
 import modules.catalog.domain.entities.product  # noqa: F401
+import modules.purchases.domain.entities.purchase  # noqa: F401
+import modules.purchases.domain.entities.purchase_line  # noqa: F401
 import modules.suppliers.domain.entities.supplier  # noqa: F401
 import modules.suppliers.domain.entities.supplier_product  # noqa: F401
 import shared.domain.entities.user  # noqa: F401 — register model with Base.metadata
