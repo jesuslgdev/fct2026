@@ -13,3 +13,11 @@ export class DepartmentNameDuplicateError extends Error {
     super('DEPARTMENT_NAME_DUPLICATE');
   }
 }
+
+export class UnauthorizedError extends Error {
+  override readonly name = 'UnauthorizedError';
+
+  constructor() {
+    super('UNAUTHORIZED');
+  }
+}

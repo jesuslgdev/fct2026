@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 import { DepartmentRepository } from '@domain/repositories/department.repository';
 import { Department } from '@domain/models/department.model';
-import { DepartmentNameDuplicateError } from '@domain/models/department-errors';
+import { DepartmentNameDuplicateError, DepartmentHasUsersError } from '@domain/models/department-errors';
 
 // TODO add base url for API REST
 
@@ -16,32 +17,36 @@ export class MockDepartmentRepository implements DepartmentRepository {
   private departments: Department[] = INITIAL_DEPARTMENTS.map(d => ({ ...d }));
   private nextId = INITIAL_DEPARTMENTS.length + 1;
 
-  async getAll(): Promise<Department[]> {
-    return [...this.departments];
+  getAll(): Observable<Department[]> {
+    return of([...this.departments]);
   }
 
-  async create(name: string): Promise<Department> {
+  create(name: string): Observable<Department> {
     if (this.departments.some(d => d.name.toLowerCase() === name.toLowerCase())) {
-      throw new DepartmentNameDuplicateError();
+      return throwError(() => new DepartmentNameDuplicateError());
     }
     const dept: Department = { id: String(this.nextId++), name, userCount: 0 };
     this.departments.push(dept);
-    return { ...dept };
+    return of({ ...dept });
   }
 
-  async update(id: string, name: string): Promise<Department> {
+  update(id: string, name: string): Observable<Department> {
     if (this.departments.some(d => d.id !== id && d.name.toLowerCase() === name.toLowerCase())) {
-      throw new DepartmentNameDuplicateError();
+      return throwError(() => new DepartmentNameDuplicateError());
     }
     const index = this.departments.findIndex(d => d.id === id);
-    if (index === -1) throw new Error(`Department ${id} not found`);
+    if (index === -1) return throwError(() => new Error(`Department ${id} not found`));
     this.departments[index] = { ...this.departments[index], name };
-    return { ...this.departments[index] };
+    return of({ ...this.departments[index] });
   }
 
-  async delete(id: string): Promise<void> {
+  delete(id: string): Observable<void> {
     const index = this.departments.findIndex(d => d.id === id);
-    if (index === -1) throw new Error(`Department ${id} not found`);
+    if (index === -1) return throwError(() => new Error(`Department ${id} not found`));
+    if (this.departments[index].userCount > 0) {
+      return throwError(() => new DepartmentHasUsersError());
+    }
     this.departments.splice(index, 1);
+    return of(void 0);
   }
 }
