@@ -244,6 +244,8 @@ async def get_delete_category_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IDeleteCategoryUseCase:
     return DeleteCategoryUseCase(CategoryRepository(db))
+
+
 async def get_create_supplier_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ICreateSupplierUseCase:
