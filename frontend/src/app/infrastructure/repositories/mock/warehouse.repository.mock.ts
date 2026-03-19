@@ -5,6 +5,11 @@ import { Warehouse,
   UpdateWarehousePayload,
   WarehouseListResult,
 } from '@domain/models/warehouse.model';
+import {
+  WarehouseAlreadyExistsError,
+  WarehouseHasStockError,
+  WarehouseNotFoundError,
+} from '@domain/models/warehouse-errors';
 const INITIAL_MOCK_WAREHOUSES: Warehouse[] = [
   {
     warehouseId: 1,
@@ -36,8 +41,19 @@ export class MockWarehouseRepository implements WarehouseRepository {
 
   private getWarehouseByIdOrThrow(warehouseId: number): Warehouse {
     const warehouse = this.warehouses.find((w) => w.warehouseId === warehouseId);
-    if (!warehouse) throw new Error(`Warehouse with id "${warehouseId}" not found`);
+    if (!warehouse) throw new WarehouseNotFoundError();
     return warehouse;
+  }
+
+  private assertNameIsUnique(name: string, currentId?: number): void {
+    const normalized = name.trim().toLowerCase();
+    const duplicated = this.warehouses.some(
+      (w) => w.warehouseId !== currentId && w.name.trim().toLowerCase() === normalized,
+    );
+
+    if (duplicated) {
+      throw new WarehouseAlreadyExistsError();
+    }
   }
 
   async getWarehouses(): Promise<WarehouseListResult> {
@@ -50,10 +66,13 @@ export class MockWarehouseRepository implements WarehouseRepository {
   }
 
   async getWarehouseByName(name: string): Promise<Warehouse | null> {
-    return this.warehouses.find((w) => w.name.toLowerCase() === name.toLowerCase()) || null;
+    const warehouse = this.warehouses.find((w) => w.name.toLowerCase() === name.toLowerCase());
+    return warehouse ? { ...warehouse } : null;
   }
 
   async createWarehouse(payload: CreateWarehousePayload): Promise<Warehouse> {
+    this.assertNameIsUnique(payload.name);
+
     const nextId = Math.max(0, ...this.warehouses.map((w) => w.warehouseId)) + 1;
     const newWarehouse: Warehouse = {
       warehouseId: nextId,
@@ -67,6 +86,8 @@ export class MockWarehouseRepository implements WarehouseRepository {
 
   async updateWarehouse(warehouseId: number, payload: UpdateWarehousePayload): Promise<Warehouse> {
     const existing = this.getWarehouseByIdOrThrow(warehouseId);
+    const nextName = payload.name ?? existing.name;
+    this.assertNameIsUnique(nextName, warehouseId);
 
     const updated: Warehouse = {
       ...existing,
@@ -83,7 +104,11 @@ export class MockWarehouseRepository implements WarehouseRepository {
   }
 
   async deleteWarehouse(warehouseId: number): Promise<void> {
-    this.getWarehouseByIdOrThrow(warehouseId);
+    const warehouse = this.getWarehouseByIdOrThrow(warehouseId);
+    if (warehouse.totalStock > 0) {
+      throw new WarehouseHasStockError();
+    }
+
     this.warehouses = this.warehouses.filter((w) => w.warehouseId !== warehouseId);
   }
 
