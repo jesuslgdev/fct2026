@@ -6,4 +6,10 @@ from shared.domain.paginated_result import PaginatedResult
 
 class IListClientsUseCase(ABC):
     @abstractmethod
-    async def execute(self, page: int, page_size: int) -> PaginatedResult[Client]: ...
+    async def execute(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        active: bool | None = None,
+    ) -> PaginatedResult[Client]: ...
