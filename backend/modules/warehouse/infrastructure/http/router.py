@@ -1,14 +1,19 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query, Response
 
 from composition.dependencies import (
+    get_adjust_stock_use_case,
     get_create_warehouse_use_case,
     get_delete_warehouse_use_case,
     get_get_product_stock_overview_use_case,
     get_get_warehouse_use_case,
+    get_list_stock_distribution_use_case,
     get_list_warehouses_use_case,
     get_update_warehouse_use_case,
 )
 from composition.security import get_current_user, require_admin
+from modules.warehouse.domain.interfaces.use_cases.i_adjust_stock_use_case import (
+    IAdjustStockUseCase,
+)
 from modules.warehouse.domain.interfaces.use_cases.i_create_warehouse_use_case import (
     ICreateWarehouseUseCase,
 )
@@ -21,6 +26,9 @@ from modules.warehouse.domain.interfaces.use_cases.i_get_product_stock_overview_
 from modules.warehouse.domain.interfaces.use_cases.i_get_warehouse_use_case import (
     IGetWarehouseUseCase,
 )
+from modules.warehouse.domain.interfaces.use_cases.i_list_stock_distribution_use_case import (
+    IListStockDistributionUseCase,
+)
 from modules.warehouse.domain.interfaces.use_cases.i_list_warehouses_use_case import (
     IListWarehousesUseCase,
 )
@@ -28,8 +36,12 @@ from modules.warehouse.domain.interfaces.use_cases.i_update_warehouse_use_case i
     IUpdateWarehouseUseCase,
 )
 from modules.warehouse.infrastructure.http.schemas import (
+    AdjustStockDTO,
+    AdjustStockResponseDTO,
     CreateWarehouseDTO,
     ProductStockOverviewDTO,
+    StockDistributionItemDTO,
+    StockDistributionPageDTO,
     UpdateWarehouseDTO,
     WarehouseDTO,
     WarehouseStockDetailDTO,
@@ -150,3 +162,70 @@ async def delete_warehouse(
     """Delete a warehouse if it has no stock."""
     await use_case.execute(warehouse_id)
     return Response(status_code=204)
+
+
+# ── Stock Distribution & Adjustment ─────────────────────────────
+
+
+@router.get("/stock", response_model=StockDistributionPageDTO)
+async def list_stock_distribution(
+    warehouse_id: int | None = Query(None),
+    product_id: int | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    use_case: IListStockDistributionUseCase = Depends(
+        get_list_stock_distribution_use_case
+    ),
+    _: dict = Depends(get_current_user),
+):
+    """Return paginated stock distribution across warehouses and products."""
+    result = await use_case.execute(
+        warehouse_id=warehouse_id,
+        product_id=product_id,
+        page=page,
+        page_size=page_size,
+    )
+    return StockDistributionPageDTO(
+        items=[
+            StockDistributionItemDTO(
+                warehouse_id=item.warehouse_id,
+                warehouse_name=item.warehouse_name,
+                product_id=item.product_id,
+                product_code=item.product_code,
+                product_name=item.product_name,
+                stock=item.stock,
+                reserved_stock=item.reserved_stock,
+                available_stock=item.available_stock,
+            )
+            for item in result.items
+        ],
+        total_count=result.total_count,
+        page=result.page,
+        page_size=result.page_size,
+    )
+
+
+@router.post("/stock/adjust", response_model=AdjustStockResponseDTO)
+async def adjust_stock(
+    body: AdjustStockDTO,
+    use_case: IAdjustStockUseCase = Depends(get_adjust_stock_use_case),
+    current_user: dict = Depends(get_current_user),
+):
+    """Adjust stock for a product in a specific warehouse."""
+    result = await use_case.execute(
+        warehouse_id=body.warehouse_id,
+        product_id=body.product_id,
+        new_quantity=body.new_quantity,
+        user_email=current_user["email"],
+        reason=body.reason,
+    )
+    return AdjustStockResponseDTO(
+        movement_id=result.movement_id,
+        warehouse_id=result.warehouse_id,
+        product_id=result.product_id,
+        previous_quantity=result.previous_quantity,
+        new_quantity=result.new_quantity,
+        difference=result.difference,
+        global_stock=result.global_stock,
+        created_at=result.created_at,
+    )
