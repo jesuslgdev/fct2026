@@ -25,7 +25,7 @@ import {
 import { CategoryMapper } from '@infrastructure/mappers/category.mapper';
 import { environment } from 'environments/environment';
 
-const BASE_URL = `${environment.apiUrl}/catalog/categories`;
+const BASE_URL = `${environment.apiUrl}/api/v1/catalog/categories`;
 
 @Injectable()
 export class HttpCategoryRepository implements CategoryRepository {
@@ -104,11 +104,11 @@ export class HttpCategoryRepository implements CategoryRepository {
   async getCategoryByName(name: string): Promise<Category | null> {
     return this.withErrorMapping(async () => {
       try {
-        const dtos = await firstValueFrom(
+      const dtos = await firstValueFrom(
           this.http.get<CategoryDto[]>(`${BASE_URL}?search=${encodeURIComponent(name)}`)
-        );
-        const found = dtos.find(dto => dto.name.toLowerCase() === name.toLowerCase());
-        return found ? CategoryMapper.fromDto(found) : null;
+      );
+      const found = dtos.find(dto => dto.name.toLowerCase() === name.toLowerCase());
+      return found ? CategoryMapper.fromDto(found) : null;
       } catch (error) {
         if (error instanceof CategoryNotFoundError) {
           return null;
