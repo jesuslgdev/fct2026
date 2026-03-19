@@ -1,12 +1,17 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.warehouse import Warehouse
 from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_repository import (
     IWarehouseStockRepository,
 )
 from modules.warehouse.domain.product_stock_overview import WarehouseStockDetail
+from modules.warehouse.domain.stock_distribution import (
+    StockDistributionItem,
+    StockDistributionPage,
+)
 
 
 class WarehouseStockRepository(IWarehouseStockRepository):
@@ -42,3 +47,102 @@ class WarehouseStockRepository(IWarehouseStockRepository):
             )
         )
         return result.scalar_one()
+
+    async def get_by_warehouse_and_product(
+        self, warehouse_id: int, product_id: int
+    ) -> WarehouseStock | None:
+        """Return the stock record for a specific warehouse-product pair."""
+        result = await self._db.execute(
+            select(WarehouseStock).where(
+                WarehouseStock.warehouse_id == warehouse_id,
+                WarehouseStock.product_id == product_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def upsert_stock(
+        self, warehouse_id: int, product_id: int, new_stock: int
+    ) -> WarehouseStock:
+        """Create or update the stock for a warehouse-product pair."""
+        existing = await self.get_by_warehouse_and_product(warehouse_id, product_id)
+        if existing is not None:
+            existing.stock = new_stock
+            await self._db.flush()
+            return existing
+
+        record = WarehouseStock(
+            warehouse_id=warehouse_id,
+            product_id=product_id,
+            stock=new_stock,
+            reserved_stock=0,
+        )
+        self._db.add(record)
+        await self._db.flush()
+        await self._db.refresh(record)
+        return record
+
+    async def list_distribution(
+        self,
+        *,
+        warehouse_id: int | None = None,
+        product_id: int | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> StockDistributionPage:
+        """Return paginated stock distribution with server-side filtering."""
+        base_query = (
+            select(
+                WarehouseStock,
+                Warehouse.name.label("warehouse_name"),
+                Product.product_code,
+                Product.name.label("product_name"),
+            )
+            .join(Warehouse, WarehouseStock.warehouse_id == Warehouse.warehouse_id)
+            .join(Product, WarehouseStock.product_id == Product.product_id)
+        )
+        count_query = (
+            select(func.count())
+            .select_from(WarehouseStock)
+            .join(Warehouse, WarehouseStock.warehouse_id == Warehouse.warehouse_id)
+            .join(Product, WarehouseStock.product_id == Product.product_id)
+        )
+
+        if warehouse_id is not None:
+            base_query = base_query.where(WarehouseStock.warehouse_id == warehouse_id)
+            count_query = count_query.where(WarehouseStock.warehouse_id == warehouse_id)
+
+        if product_id is not None:
+            base_query = base_query.where(WarehouseStock.product_id == product_id)
+            count_query = count_query.where(WarehouseStock.product_id == product_id)
+
+        total_result = await self._db.execute(count_query)
+        total_count = total_result.scalar_one()
+
+        offset = (page - 1) * page_size
+        base_query = (
+            base_query.order_by(Warehouse.name, Product.name)
+            .offset(offset)
+            .limit(page_size)
+        )
+
+        result = await self._db.execute(base_query)
+        items = [
+            StockDistributionItem(
+                warehouse_id=row.WarehouseStock.warehouse_id,
+                warehouse_name=row.warehouse_name,
+                product_id=row.WarehouseStock.product_id,
+                product_code=row.product_code,
+                product_name=row.product_name,
+                stock=row.WarehouseStock.stock,
+                reserved_stock=row.WarehouseStock.reserved_stock,
+                available_stock=row.WarehouseStock.available_stock,
+            )
+            for row in result.all()
+        ]
+
+        return StockDistributionPage(
+            items=items,
+            total_count=total_count,
+            page=page,
+            page_size=page_size,
+        )

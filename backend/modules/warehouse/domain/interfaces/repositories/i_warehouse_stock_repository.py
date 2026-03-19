@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
 
+from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from modules.warehouse.domain.product_stock_overview import (
     WarehouseStockDetail,
+)
+from modules.warehouse.domain.stock_distribution import (
+    StockDistributionPage,
 )
 
 
@@ -19,4 +23,39 @@ class IWarehouseStockRepository(ABC):
     @abstractmethod
     async def get_global_stock(self, product_id: int) -> int:
         """Return the total stock for a product across all warehouses."""
+        ...
+
+    @abstractmethod
+    async def get_by_warehouse_and_product(
+        self, warehouse_id: int, product_id: int
+    ) -> WarehouseStock | None:
+        """Return the stock record for a specific warehouse-product pair."""
+        ...
+
+    @abstractmethod
+    async def upsert_stock(
+        self, warehouse_id: int, product_id: int, new_stock: int
+    ) -> WarehouseStock:
+        """Create or update the stock for a warehouse-product pair."""
+        ...
+
+    @abstractmethod
+    async def list_distribution(
+        self,
+        *,
+        warehouse_id: int | None = None,
+        product_id: int | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> StockDistributionPage:
+        """Return paginated stock distribution across warehouses and products.
+
+        Filtering is server-side: applies optional WHERE clauses for
+        warehouse_id and/or product_id before pagination. Uses
+        LIMIT/OFFSET for pagination.
+
+        Returns:
+            A StockDistributionPage with items and total_count reflecting
+            the filtered result set.
+        """
         ...
