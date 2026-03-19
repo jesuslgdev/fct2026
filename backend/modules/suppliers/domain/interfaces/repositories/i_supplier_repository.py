@@ -42,4 +42,17 @@ class ISupplierRepository(ABC):
     async def get_existing_tax_ids(self, tax_ids: list[str]) -> set[str]: ...
 
     @abstractmethod
+    async def create(
+        self,
+        name: str,
+        tax_id: str,
+        address: str,
+        city: str,
+        province: str,
+        postal_code: str,
+        phone: str,
+        email: str,
+    ) -> Supplier: ...
+
+    @abstractmethod
     async def bulk_create(self, suppliers: list[Supplier]) -> int: ...

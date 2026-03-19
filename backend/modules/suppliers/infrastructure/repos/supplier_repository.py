@@ -96,6 +96,32 @@ class SupplierRepository(ISupplierRepository):
         )
         return set(result.scalars().all())
 
+    async def create(
+        self,
+        name: str,
+        tax_id: str,
+        address: str,
+        city: str,
+        province: str,
+        postal_code: str,
+        phone: str,
+        email: str,
+    ) -> Supplier:
+        supplier = Supplier(
+            name=name,
+            tax_id=tax_id,
+            address=address,
+            city=city,
+            province=province,
+            postal_code=postal_code,
+            phone=phone,
+            email=email,
+        )
+        self._db.add(supplier)
+        await self._db.flush()
+        await self._db.refresh(supplier)
+        return supplier
+
     async def bulk_create(self, suppliers: list[Supplier]) -> int:
         self._db.add_all(suppliers)
         await self._db.flush()

@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from shared.constants import EMAIL_PATTERN, PHONE_PATTERN, POSTAL_CODE_PATTERN
 
@@ -37,6 +37,22 @@ class SupplierDetailDTO(SupplierDTO):
     phone: str
     email: str
     products: list[SupplierProductDTO]
+
+
+class CreateSupplierDTO(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    tax_id: str = Field(..., min_length=1, max_length=20)
+    address: str = Field(..., min_length=1, max_length=300)
+    city: str = Field(..., min_length=1, max_length=100)
+    province: str = Field(..., min_length=1, max_length=100)
+    postal_code: str = Field(..., pattern=POSTAL_CODE_PATTERN)
+    phone: str = Field(..., pattern=PHONE_PATTERN)
+    email: str = Field(..., max_length=255, pattern=EMAIL_PATTERN)
+
+    @field_validator("tax_id", mode="before")
+    @classmethod
+    def normalize_tax_id(cls, v: str) -> str:
+        return v.upper()
 
 
 class UpdateSupplierDTO(BaseModel):

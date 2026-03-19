@@ -110,6 +110,9 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.repos.client_repository import ClientRepository
+from modules.suppliers.application.create_supplier_use_case import (
+    CreateSupplierUseCase,
+)
 from modules.suppliers.application.download_supplier_template_use_case import (
     DownloadSupplierTemplateUseCase,
 )
@@ -122,6 +125,9 @@ from modules.suppliers.application.set_supplier_active_use_case import (
     SetSupplierActiveUseCase,
 )
 from modules.suppliers.application.update_supplier_use_case import UpdateSupplierUseCase
+from modules.suppliers.domain.interfaces.use_cases.i_create_supplier_use_case import (
+    ICreateSupplierUseCase,
+)
 from modules.suppliers.domain.interfaces.use_cases.i_download_supplier_template_use_case import (
     IDownloadSupplierTemplateUseCase,
 )
@@ -238,6 +244,10 @@ async def get_delete_category_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IDeleteCategoryUseCase:
     return DeleteCategoryUseCase(CategoryRepository(db))
+async def get_create_supplier_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ICreateSupplierUseCase:
+    return CreateSupplierUseCase(SupplierRepository(db))
 
 
 def get_download_supplier_template_use_case() -> IDownloadSupplierTemplateUseCase:
