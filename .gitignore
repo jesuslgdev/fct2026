@@ -6,6 +6,7 @@ frontend/environments
 
 # Claude Code (asistente IA)
 .claude/
+CLAUDE.md
 
 # Node
 node_modules/

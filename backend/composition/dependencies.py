@@ -62,6 +62,31 @@ from modules.auth.application.logout_use_case import LogoutUseCase
 from modules.auth.domain.interfaces.use_cases.i_login_use_case import ILoginUseCase
 from modules.auth.domain.interfaces.use_cases.i_logout_use_case import ILogoutUseCase
 from modules.auth.infrastructure.repos.auth_repository import AuthRepository
+from modules.catalog.application.categories.create_category_use_case import (
+    CreateCategoryUseCase,
+)
+from modules.catalog.application.categories.delete_category_use_case import (
+    DeleteCategoryUseCase,
+)
+from modules.catalog.application.categories.list_categories_use_case import (
+    ListCategoriesUseCase,
+)
+from modules.catalog.application.categories.update_category_use_case import (
+    UpdateCategoryUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.categories.i_create_category_use_case import (
+    ICreateCategoryUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.categories.i_delete_category_use_case import (
+    IDeleteCategoryUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.categories.i_list_categories_use_case import (
+    IListCategoriesUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.categories.i_update_category_use_case import (
+    IUpdateCategoryUseCase,
+)
+from modules.catalog.infrastructure.repos.category_repository import CategoryRepository
 from modules.clients.application.create_client_use_case import CreateClientUseCase
 from modules.clients.application.get_client_use_case import GetClientUseCase
 from modules.clients.application.list_clients_use_case import ListClientsUseCase
@@ -195,6 +220,30 @@ async def get_set_user_active_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ISetUserActiveUseCase:
     return SetUserActiveUseCase(UserRepository(db))
+
+
+async def get_list_categories_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListCategoriesUseCase:
+    return ListCategoriesUseCase(CategoryRepository(db))
+
+
+async def get_create_category_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ICreateCategoryUseCase:
+    return CreateCategoryUseCase(CategoryRepository(db))
+
+
+async def get_update_category_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IUpdateCategoryUseCase:
+    return UpdateCategoryUseCase(CategoryRepository(db))
+
+
+async def get_delete_category_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IDeleteCategoryUseCase:
+    return DeleteCategoryUseCase(CategoryRepository(db))
 
 
 async def get_create_supplier_use_case(
