@@ -1,12 +1,10 @@
 import { Injectable } from '@angular/core';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
-import {
-  Warehouse,
+import { Warehouse,
   CreateWarehousePayload,
   UpdateWarehousePayload,
   WarehouseListResult,
 } from '@domain/models/warehouse.model';
-
 const INITIAL_MOCK_WAREHOUSES: Warehouse[] = [
   {
     warehouseId: 1,

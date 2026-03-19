@@ -97,11 +97,13 @@ export class HttpWarehouseRepository implements WarehouseRepository {
 
   async getWarehouseByName(name: string): Promise<Warehouse | null> {
     return this.withErrorMapping(async () => {
-      const response = await firstValueFrom(
-        this.http.get<WarehouseDto[]>(`${BASE_URL}?name=${encodeURIComponent(name)}`),
+      const allWarehouses = await firstValueFrom(
+        this.http.get<WarehouseDto[]>(BASE_URL),
       );
-      const warehouses = response.map(WarehouseMapper.fromDto);
-      return warehouses.length > 0 ? warehouses[0] : null;
+      const searchTerm = name.toLowerCase();
+      return allWarehouses
+        .map(WarehouseMapper.fromDto)
+        .find(w => w.name.toLowerCase() === searchTerm) || null;
     });
   }
 
