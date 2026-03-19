@@ -68,6 +68,9 @@ from modules.catalog.application.categories.create_category_use_case import (
 from modules.catalog.application.categories.delete_category_use_case import (
     DeleteCategoryUseCase,
 )
+from modules.catalog.application.categories.get_category_use_case import (
+    GetCategoryUseCase,
+)
 from modules.catalog.application.categories.list_categories_use_case import (
     ListCategoriesUseCase,
 )
@@ -79,6 +82,9 @@ from modules.catalog.domain.interfaces.use_cases.categories.i_create_category_us
 )
 from modules.catalog.domain.interfaces.use_cases.categories.i_delete_category_use_case import (
     IDeleteCategoryUseCase,
+)
+from modules.catalog.domain.interfaces.use_cases.categories.i_get_category_use_case import (
+    IGetCategoryUseCase,
 )
 from modules.catalog.domain.interfaces.use_cases.categories.i_list_categories_use_case import (
     IListCategoriesUseCase,
@@ -226,6 +232,12 @@ async def get_list_categories_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IListCategoriesUseCase:
     return ListCategoriesUseCase(CategoryRepository(db))
+
+
+async def get_get_category_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetCategoryUseCase:
+    return GetCategoryUseCase(CategoryRepository(db))
 
 
 async def get_create_category_use_case(
