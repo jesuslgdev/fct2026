@@ -10,9 +10,16 @@ class IProductRepository(ABC):
 
     @abstractmethod
     async def get_all_paginated(
-        self, page: int, page_size: int, category_id: int | None = None
+        self,
+        page: int,
+        page_size: int,
+        category_id: int | None = None,
+        search: str | None = None,
+        active: bool | None = None,
+        sort_field: str = "name",
+        sort_order: str = "asc",
     ) -> PaginatedResult[Product]:
-        """Fetch a paginated list of products, optionally filtered by category."""
+        """Fetch a paginated list of products, optionally filtered."""
         ...
 
     @abstractmethod
