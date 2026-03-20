@@ -17,3 +17,5 @@ export type { BadgeVariant, BadgeSize } from './badge/badge.component';
 
 export { CheckboxComponent } from './checkbox/checkbox.component';
 export type { CheckboxVariant } from './checkbox/checkbox.component';
+
+export { GoogleLogoComponent } from './google-logo/google-logo.component';
