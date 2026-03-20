@@ -1,0 +1,42 @@
+<ui-dialog
+  [(visible)]="store.dialogVisible"
+  [header]="store.dialogMode() === 'create' ? 'Nuevo almacen' : 'Editar almacen'"
+  confirmLabel="Guardar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  [confirmDisabled]="form.invalid"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+>
+  <form [formGroup]="form" class="dialog-form">
+    <label class="dialog-field">
+      <span class="dialog-field-label">Nombre</span>
+      <ui-input
+        formControlName="name"
+        placeholder="Nombre del almacen"
+        [state]="name.invalid && name.touched ? 'error' : 'default'"
+      />
+      @if (name.invalid && name.touched) {
+        <span class="dialog-field-error">
+          @if (name.hasError('required')) { El nombre es obligatorio. }
+          @else { El nombre no puede superar 100 caracteres. }
+        </span>
+      }
+    </label>
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Direccion</span>
+      <ui-input
+        formControlName="address"
+        placeholder="Direccion del almacen"
+        [state]="address.invalid && address.touched ? 'error' : 'default'"
+      />
+      @if (address.invalid && address.touched) {
+        <span class="dialog-field-error">
+          @if (address.hasError('required')) { La direccion es obligatoria. }
+          @else { La direccion no puede superar 255 caracteres. }
+        </span>
+      }
+    </label>
+  </form>
+</ui-dialog>

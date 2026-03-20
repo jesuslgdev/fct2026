@@ -16,6 +16,8 @@ import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
+import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
+import { MockWarehouseRepository } from '@infrastructure/repositories/mock/warehouse.repository.mock';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -33,6 +35,7 @@ export const appConfig: ApplicationConfig = {
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
+    { provide: WarehouseRepository, useClass: MockWarehouseRepository },
     providePrimeNG({
       ripple: true,
       theme: {
