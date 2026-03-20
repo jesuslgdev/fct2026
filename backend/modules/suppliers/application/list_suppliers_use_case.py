@@ -12,5 +12,13 @@ class ListSuppliersUseCase(IListSuppliersUseCase):
     def __init__(self, repo: ISupplierRepository) -> None:
         self._repo = repo
 
-    async def execute(self, page: int, page_size: int) -> PaginatedResult[Supplier]:
-        return await self._repo.get_all_paginated(page, page_size)
+    async def execute(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        active: bool | None = None,
+    ) -> PaginatedResult[Supplier]:
+        return await self._repo.get_all_paginated(
+            page, page_size, search=search, active=active
+        )

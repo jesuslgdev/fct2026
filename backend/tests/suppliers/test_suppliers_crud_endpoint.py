@@ -101,7 +101,7 @@ async def test_list_suppliers_pagination_params(auth_client: AsyncClient):
     response = await auth_client.get("/api/v1/suppliers?page=2&page_size=5")
     del app.dependency_overrides[get_list_suppliers_use_case]
     assert response.status_code == 200
-    mock.execute.assert_called_once_with(2, 5)
+    mock.execute.assert_called_once_with(2, 5, search=None, active=None)
 
 
 async def test_get_supplier_returns_detail(auth_client: AsyncClient):

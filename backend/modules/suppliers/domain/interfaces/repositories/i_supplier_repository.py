@@ -8,7 +8,11 @@ from shared.domain.paginated_result import PaginatedResult
 class ISupplierRepository(ABC):
     @abstractmethod
     async def get_all_paginated(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        active: bool | None = None,
     ) -> PaginatedResult[Supplier]: ...
 
     @abstractmethod

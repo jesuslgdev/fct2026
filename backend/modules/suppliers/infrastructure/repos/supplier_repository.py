@@ -15,17 +15,35 @@ class SupplierRepository(ISupplierRepository):
         self._db = db
 
     async def get_all_paginated(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        active: bool | None = None,
     ) -> PaginatedResult[Supplier]:
-        total_result = await self._db.execute(
-            select(func.count()).select_from(Supplier)
-        )
+        base_query = select(Supplier)
+        count_query = select(func.count()).select_from(Supplier)
+
+        if search:
+            pattern = f"%{search}%"
+            search_filter = (
+                Supplier.name.ilike(pattern)
+                | Supplier.tax_id.ilike(pattern)
+                | Supplier.email.ilike(pattern)
+            )
+            base_query = base_query.where(search_filter)
+            count_query = count_query.where(search_filter)
+
+        if active is not None:
+            base_query = base_query.where(Supplier.is_active == active)
+            count_query = count_query.where(Supplier.is_active == active)
+
+        total_result = await self._db.execute(count_query)
         total = total_result.scalar_one()
 
         offset = (page - 1) * page_size
         result = await self._db.execute(
-            select(Supplier)
-            .order_by(Supplier.name, Supplier.supplier_id)
+            base_query.order_by(Supplier.name, Supplier.supplier_id)
             .limit(page_size)
             .offset(offset)
         )

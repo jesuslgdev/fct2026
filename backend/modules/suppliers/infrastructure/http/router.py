@@ -142,10 +142,12 @@ async def create_supplier(
 async def list_suppliers(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    search: str | None = Query(None, max_length=255),
+    active: bool | None = Query(None),
     _: UserSession = Depends(get_current_user),
     use_case: IListSuppliersUseCase = Depends(get_list_suppliers_use_case),
 ):
-    result = await use_case.execute(page, page_size)
+    result = await use_case.execute(page, page_size, search=search, active=active)
     return PaginatedResponse(
         items=[_to_supplier_dto(s) for s in result.items],
         total=result.total,
