@@ -7,6 +7,7 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import modules.catalog.domain.entities.product  # noqa: F401
 from composition.security import get_current_user
 from main import app
 from shared.infrastructure.database.connection import engine, get_db
