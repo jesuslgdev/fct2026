@@ -41,11 +41,11 @@ from modules.warehouse.infrastructure.http.schemas import (
     CreateWarehouseDTO,
     ProductStockOverviewDTO,
     StockDistributionItemDTO,
-    StockDistributionPageDTO,
     UpdateWarehouseDTO,
     WarehouseDTO,
     WarehouseStockDetailDTO,
 )
+from shared.infrastructure.http.paginated_response import PaginatedResponse
 
 router = APIRouter(prefix="/warehouse", tags=["Warehouse - Stock"])
 
@@ -167,25 +167,20 @@ async def delete_warehouse(
 # ── Stock Distribution & Adjustment ─────────────────────────────
 
 
-@router.get("/stock", response_model=StockDistributionPageDTO)
+@router.get("/stock", response_model=PaginatedResponse[StockDistributionItemDTO])
 async def list_stock_distribution(
-    warehouse_id: int | None = Query(None),
-    product_id: int | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    warehouse_id: int | None = Query(None),
+    product_id: int | None = Query(None),
     use_case: IListStockDistributionUseCase = Depends(
         get_list_stock_distribution_use_case
     ),
     _: dict = Depends(get_current_user),
 ):
     """Return paginated stock distribution across warehouses and products."""
-    result = await use_case.execute(
-        warehouse_id=warehouse_id,
-        product_id=product_id,
-        page=page,
-        page_size=page_size,
-    )
-    return StockDistributionPageDTO(
+    result = await use_case.execute(page, page_size, warehouse_id, product_id)
+    return PaginatedResponse(
         items=[
             StockDistributionItemDTO(
                 warehouse_id=item.warehouse_id,
@@ -199,7 +194,7 @@ async def list_stock_distribution(
             )
             for item in result.items
         ],
-        total_count=result.total_count,
+        total=result.total,
         page=result.page,
         page_size=result.page_size,
     )

@@ -4,9 +4,8 @@ from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from modules.warehouse.domain.product_stock_overview import (
     WarehouseStockDetail,
 )
-from modules.warehouse.domain.stock_distribution import (
-    StockDistributionPage,
-)
+from modules.warehouse.domain.stock_distribution import StockDistributionItem
+from shared.domain.paginated_result import PaginatedResult
 
 
 class IWarehouseStockRepository(ABC):
@@ -42,20 +41,10 @@ class IWarehouseStockRepository(ABC):
     @abstractmethod
     async def list_distribution(
         self,
-        *,
+        page: int,
+        page_size: int,
         warehouse_id: int | None = None,
         product_id: int | None = None,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> StockDistributionPage:
-        """Return paginated stock distribution across warehouses and products.
-
-        Filtering is server-side: applies optional WHERE clauses for
-        warehouse_id and/or product_id before pagination. Uses
-        LIMIT/OFFSET for pagination.
-
-        Returns:
-            A StockDistributionPage with items and total_count reflecting
-            the filtered result set.
-        """
+    ) -> PaginatedResult[StockDistributionItem]:
+        """Return paginated stock distribution across warehouses and products."""
         ...

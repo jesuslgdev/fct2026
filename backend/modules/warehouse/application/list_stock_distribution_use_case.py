@@ -4,7 +4,8 @@ from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_reposito
 from modules.warehouse.domain.interfaces.use_cases.i_list_stock_distribution_use_case import (
     IListStockDistributionUseCase,
 )
-from modules.warehouse.domain.stock_distribution import StockDistributionPage
+from modules.warehouse.domain.stock_distribution import StockDistributionItem
+from shared.domain.paginated_result import PaginatedResult
 
 
 class ListStockDistributionUseCase(IListStockDistributionUseCase):
@@ -15,15 +16,11 @@ class ListStockDistributionUseCase(IListStockDistributionUseCase):
 
     async def execute(
         self,
-        *,
+        page: int,
+        page_size: int,
         warehouse_id: int | None = None,
         product_id: int | None = None,
-        page: int = 1,
-        page_size: int = 20,
-    ) -> StockDistributionPage:
+    ) -> PaginatedResult[StockDistributionItem]:
         return await self._stock_repo.list_distribution(
-            warehouse_id=warehouse_id,
-            product_id=product_id,
-            page=page,
-            page_size=page_size,
+            page, page_size, warehouse_id, product_id
         )

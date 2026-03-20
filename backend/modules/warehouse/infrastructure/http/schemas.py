@@ -58,15 +58,6 @@ class StockDistributionItemDTO(BaseModel):
     available_stock: int
 
 
-class StockDistributionPageDTO(BaseModel):
-    """Paginated stock distribution response."""
-
-    items: list[StockDistributionItemDTO]
-    total_count: int
-    page: int
-    page_size: int
-
-
 # ── Stock Adjustment ────────────────────────────────────────────
 
 

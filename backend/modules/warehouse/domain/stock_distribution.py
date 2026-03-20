@@ -24,20 +24,3 @@ class StockDistributionItem:
     stock: int
     reserved_stock: int
     available_stock: int
-
-
-@dataclass(frozen=True)
-class StockDistributionPage:
-    """Paginated result for stock distribution queries.
-
-    Attributes:
-        items: Stock distribution rows for the current page.
-        total_count: Total number of rows matching the filters.
-        page: Current page number (1-based).
-        page_size: Maximum items per page.
-    """
-
-    items: list[StockDistributionItem]
-    total_count: int
-    page: int
-    page_size: int
