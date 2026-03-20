@@ -33,8 +33,14 @@ class PurchaseRepository(IPurchaseRepository):
         supplier_id: int | None,
         date_from: datetime | None,
         date_to: datetime | None,
+        search: str | None = None,
     ) -> PaginatedResult[tuple]:
         filters = []
+        if search:
+            pattern = f"%{search}%"
+            filters.append(
+                Purchase.purchase_number.ilike(pattern) | Supplier.name.ilike(pattern)
+            )
         if status:
             filters.append(Purchase.status == status)
         if supplier_id:

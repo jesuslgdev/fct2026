@@ -16,4 +16,5 @@ class IListPurchasesUseCase(ABC):
         supplier_id: int | None,
         date_from: datetime | None,
         date_to: datetime | None,
+        search: str | None = None,
     ) -> PaginatedResult: ...
