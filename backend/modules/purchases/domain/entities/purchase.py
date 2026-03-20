@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from shared.infrastructure.database.base_model import Base
+
+if TYPE_CHECKING:
+    from modules.purchases.domain.entities.purchase_line import PurchaseLine
 
 
 class Purchase(Base):
@@ -37,3 +43,5 @@ class Purchase(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    lines: Mapped[list[PurchaseLine]] = relationship("PurchaseLine", lazy="selectin")

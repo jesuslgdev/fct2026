@@ -19,6 +19,7 @@ from shared.domain.paginated_result import PaginatedResult
 def _mock_user(role: str = "Administrator"):
     def override():
         return UserSession(
+            user_id=1,
             email="test@test.com",
             role=role,
             department_id=None,
@@ -32,6 +33,7 @@ def _mock_user(role: str = "Administrator"):
 def _mock_purchases_auth():
     def override():
         return UserSession(
+            user_id=1,
             email="test@test.com",
             role="Administrator",
             department_id=None,

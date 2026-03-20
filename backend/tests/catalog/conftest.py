@@ -21,6 +21,7 @@ async def admin_client(db_session: AsyncSession):
 
     def override_require_admin():
         return UserSession(
+            user_id=1,
             email="admin@test.com",
             role="Administrator",
             department_id=None,
@@ -64,6 +65,7 @@ async def purchases_manager_client(db_session: AsyncSession):
 
     def override_get_current_user():
         return UserSession(
+            user_id=2,
             email="manager@test.com",
             role="Manager",
             department_id=purchases_id,
@@ -103,6 +105,7 @@ async def other_manager_client(db_session: AsyncSession):
 
     def override_get_current_user():
         return UserSession(
+            user_id=3,
             email="other@test.com",
             role="Manager",
             department_id=sales_id,
@@ -129,6 +132,7 @@ async def non_admin_client(db_session: AsyncSession):
 
     def override_get_current_user():
         return UserSession(
+            user_id=4,
             email="employee@test.com",
             role="Employee",
             department_id=None,

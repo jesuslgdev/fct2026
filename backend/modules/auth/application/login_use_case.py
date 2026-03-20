@@ -31,6 +31,7 @@ class LoginUseCase(ILoginUseCase):
             )
 
         return UserSession(
+            user_id=user.user_id,
             email=user.email,
             role=user.role,
             department_id=user.department_id,

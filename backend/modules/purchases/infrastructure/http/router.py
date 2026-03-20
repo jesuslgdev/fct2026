@@ -2,12 +2,23 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
-from composition.dependencies import get_list_purchases_use_case
-from composition.security import get_current_user
+from composition.dependencies import (
+    get_create_purchase_use_case,
+    get_list_purchases_use_case,
+)
+from composition.security import get_current_user, require_purchases_manager_or_admin
+from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
+    ICreatePurchaseUseCase,
+)
 from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case import (
     IListPurchasesUseCase,
 )
-from modules.purchases.infrastructure.http.schemas import PurchaseDTO
+from modules.purchases.infrastructure.http.schemas import (
+    CreatePurchaseRequest,
+    PurchaseDetailDTO,
+    PurchaseDTO,
+    PurchaseLineDTO,
+)
 from shared.domain.entities.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
@@ -55,4 +66,44 @@ async def list_purchases(
         total=result.total,
         page=result.page,
         page_size=result.page_size,
+    )
+
+
+@router.post("", response_model=PurchaseDetailDTO, status_code=201)
+async def create_purchase(
+    body: CreatePurchaseRequest,
+    current_user: UserSession = Depends(require_purchases_manager_or_admin),
+    use_case: ICreatePurchaseUseCase = Depends(get_create_purchase_use_case),
+):
+    purchase = await use_case.execute(
+        supplier_id=body.supplier_id,
+        user_id=current_user.user_id,
+        warehouse_id=body.warehouse_id,
+        lines=[line.model_dump() for line in body.lines],
+    )
+    return PurchaseDetailDTO(
+        purchase_id=purchase.purchase_id,
+        purchase_number=purchase.purchase_number,
+        supplier_id=purchase.supplier_id,
+        user_id=purchase.user_id,
+        warehouse_id=purchase.warehouse_id,
+        purchase_date=purchase.purchase_date,
+        status=purchase.status,
+        subtotal=purchase.subtotal,
+        taxes=purchase.taxes,
+        total=purchase.total,
+        created_at=purchase.created_at,
+        updated_at=purchase.updated_at,
+        lines=[
+            PurchaseLineDTO(
+                purchase_line_id=line.purchase_line_id,
+                purchase_id=line.purchase_id,
+                product_id=line.product_id,
+                quantity=line.quantity,
+                unit_price=line.unit_price,
+                discount=line.discount,
+                line_subtotal=line.line_subtotal,
+            )
+            for line in purchase.lines
+        ],
     )

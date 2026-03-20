@@ -12,6 +12,7 @@ from shared.infrastructure.database.connection import get_db
 def _mock_user(role: str, department_id: int | None = None):
     def override():
         return UserSession(
+            user_id=1,
             email="test@test.com",
             role=role,
             department_id=department_id,
