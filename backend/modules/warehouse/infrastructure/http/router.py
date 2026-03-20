@@ -45,6 +45,7 @@ from modules.warehouse.infrastructure.http.schemas import (
     WarehouseDTO,
     WarehouseStockDetailDTO,
 )
+from shared.domain.entities.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
 router = APIRouter(prefix="/warehouse", tags=["Warehouse - Stock"])
@@ -204,14 +205,14 @@ async def list_stock_distribution(
 async def adjust_stock(
     body: AdjustStockDTO,
     use_case: IAdjustStockUseCase = Depends(get_adjust_stock_use_case),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserSession = Depends(get_current_user),
 ):
     """Adjust stock for a product in a specific warehouse."""
     result = await use_case.execute(
         warehouse_id=body.warehouse_id,
         product_id=body.product_id,
         new_quantity=body.new_quantity,
-        user_email=current_user["email"],
+        user_email=current_user.email,
         reason=body.reason,
     )
     return AdjustStockResponseDTO(
