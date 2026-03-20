@@ -175,3 +175,74 @@ async def warehouse_with_stock(
     db_session.add(stock)
     await db_session.flush()
     return wh
+
+
+@pytest_asyncio.fixture
+async def inactive_product(
+    db_session: AsyncSession, sample_category: Category
+) -> Product:
+    """Create an inactive product for rejection tests."""
+    product = Product(
+        product_code="PROD-INACTIVE",
+        name="Discontinued Item",
+        category_id=sample_category.category_id,
+        price=9.99,
+        stock_current=0,
+        stock_min=0,
+        is_active=False,
+    )
+    db_session.add(product)
+    await db_session.flush()
+    return product
+
+
+@pytest_asyncio.fixture
+async def second_product(
+    db_session: AsyncSession, sample_category: Category
+) -> Product:
+    """Create a second active product for multi-product distribution tests."""
+    product = Product(
+        product_code="PROD-002",
+        name="Tablet",
+        category_id=sample_category.category_id,
+        price=299.99,
+        stock_current=0,
+        stock_min=5,
+    )
+    db_session.add(product)
+    await db_session.flush()
+    return product
+
+
+@pytest_asyncio.fixture
+async def stock_distribution_seed(
+    db_session: AsyncSession,
+    sample_product: Product,
+    second_product: Product,
+    warehouse_a: Warehouse,
+    warehouse_b: Warehouse,
+) -> list[WarehouseStock]:
+    """Seed 3 stock records: sample_product x2 warehouses, second_product x warehouse_a."""
+    records = [
+        WarehouseStock(
+            warehouse_id=warehouse_a.warehouse_id,
+            product_id=sample_product.product_id,
+            stock=10,
+            reserved_stock=2,
+        ),
+        WarehouseStock(
+            warehouse_id=warehouse_b.warehouse_id,
+            product_id=sample_product.product_id,
+            stock=5,
+            reserved_stock=0,
+        ),
+        WarehouseStock(
+            warehouse_id=warehouse_a.warehouse_id,
+            product_id=second_product.product_id,
+            stock=20,
+            reserved_stock=0,
+        ),
+    ]
+    db_session.add_all(records)
+    await db_session.flush()
+    return records
