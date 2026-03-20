@@ -11,6 +11,11 @@ from modules.catalog.domain.interfaces.repositories.i_product_repository import 
 )
 from shared.domain.paginated_result import PaginatedResult
 
+SORT_FIELDS = {
+    "name": Product.name,
+    "price": Product.price,
+}
+
 
 class ProductRepository(IProductRepository):
     """SQLAlchemy implementation of the Product repository."""
@@ -19,24 +24,43 @@ class ProductRepository(IProductRepository):
         self._db = db
 
     async def get_all_paginated(
-        self, page: int, page_size: int, category_id: int | None = None
+        self,
+        page: int,
+        page_size: int,
+        category_id: int | None = None,
+        search: str | None = None,
+        active: bool | None = None,
+        sort_field: str = "name",
+        sort_order: str = "asc",
     ) -> PaginatedResult[Product]:
-        query = select(Product).options(selectinload(Product.category))
-        if category_id:
-            query = query.where(Product.category_id == category_id)
+        base_query = select(Product).options(selectinload(Product.category))
+        count_query = select(func.count()).select_from(Product)
 
-        # Count total
-        count_query = select(func.count()).select_from(query.subquery())
+        if category_id:
+            base_query = base_query.where(Product.category_id == category_id)
+            count_query = count_query.where(Product.category_id == category_id)
+        if search:
+            pattern = f"%{search}%"
+            search_filter = Product.name.ilike(pattern) | Product.product_code.ilike(
+                pattern
+            )
+            base_query = base_query.where(search_filter)
+            count_query = count_query.where(search_filter)
+        if active is not None:
+            base_query = base_query.where(Product.is_active == active)
+            count_query = count_query.where(Product.is_active == active)
+
         total = (await self._db.execute(count_query)).scalar_one()
 
         # Fetch page
+        order_col = SORT_FIELDS.get(sort_field, Product.name)
+        order_expr = order_col.desc() if sort_order == "desc" else order_col.asc()
         offset = (page - 1) * page_size
-        query = (
-            query.order_by(Product.name, Product.product_id)
+        result = await self._db.execute(
+            base_query.order_by(order_expr, Product.product_id)
             .limit(page_size)
             .offset(offset)
         )
-        result = await self._db.execute(query)
         items = list(result.scalars().all())
 
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)

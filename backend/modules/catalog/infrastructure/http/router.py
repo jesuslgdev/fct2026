@@ -168,10 +168,22 @@ async def list_products(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     category_id: int | None = Query(None),
+    search: str | None = Query(None, max_length=255),
+    active: bool | None = Query(None),
+    sort_field: str = Query("name"),
+    sort_order: str = Query("asc"),
     use_case: IListProductsUseCase = Depends(get_list_products_use_case),
     _: UserSession = Depends(get_current_user),
 ):
-    result = await use_case.execute(page, page_size, category_id)
+    result = await use_case.execute(
+        page,
+        page_size,
+        category_id,
+        search=search,
+        active=active,
+        sort_field=sort_field,
+        sort_order=sort_order,
+    )
     return PaginatedResponse(
         items=[_product_to_dto(p) for p in result.items],
         total=result.total,
