@@ -31,6 +31,7 @@ class PurchaseLineDTO(BaseModel):
     purchase_line_id: int
     purchase_id: int
     product_id: int
+    product_name: str | None = None
     quantity: int
     unit_price: Decimal
     discount: Decimal
@@ -59,8 +60,11 @@ class PurchaseDetailDTO(BaseModel):
     purchase_id: int
     purchase_number: str
     supplier_id: int
+    supplier_name: str | None = None
     user_id: int
+    user_name: str | None = None
     warehouse_id: int
+    warehouse_name: str | None = None
     purchase_date: datetime
     status: str
     subtotal: Decimal
