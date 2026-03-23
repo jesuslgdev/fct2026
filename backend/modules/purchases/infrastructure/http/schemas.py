@@ -37,6 +37,24 @@ class PurchaseLineDTO(BaseModel):
     line_subtotal: Decimal
 
 
+class AddPurchaseLineRequest(BaseModel):
+    product_id: int
+    quantity: int = Field(gt=0)
+    unit_price: Decimal = Field(gt=0)
+    discount: Decimal = Field(default=0, ge=0)
+
+
+class UpdatePurchaseLineRequest(BaseModel):
+    quantity: int = Field(gt=0)
+    unit_price: Decimal = Field(gt=0)
+    discount: Decimal = Field(default=0, ge=0)
+
+
+class SupplierPriceDTO(BaseModel):
+    product_id: int
+    supplier_price: Decimal
+
+
 class PurchaseDetailDTO(BaseModel):
     purchase_id: int
     purchase_number: str
