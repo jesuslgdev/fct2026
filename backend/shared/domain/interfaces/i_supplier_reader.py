@@ -19,3 +19,6 @@ class ISupplierReader(ABC):
     async def get_association(
         self, supplier_id: int, product_id: int
     ) -> SupplierProduct | None: ...
+
+    @abstractmethod
+    async def get_name_by_id(self, supplier_id: int) -> str | None: ...
