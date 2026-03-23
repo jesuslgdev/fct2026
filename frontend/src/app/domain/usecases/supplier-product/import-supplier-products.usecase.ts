@@ -6,7 +6,7 @@ import { ImportSupplierProductsRequest, ImportResult } from '@domain/models/supp
 export class ImportSupplierProductsUseCase {
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
-  execute(supplierId: string, request: ImportSupplierProductsRequest): Promise<ImportResult> {
+  execute(supplierId: number, request: ImportSupplierProductsRequest): Promise<ImportResult> {
     return this.supplierProductRepository.importSupplierProducts(supplierId, request);
   }
 }

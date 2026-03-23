@@ -5,7 +5,7 @@ import { SupplierProductRepository } from '@domain/repositories/supplier-product
 export class RemoveProductFromSupplierUseCase {
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
-  execute(supplierId: string, productId: string): Promise<void> {
+  execute(supplierId: number, productId: number): Promise<void> {
     return this.supplierProductRepository.removeProductFromSupplier(supplierId, productId);
   }
 }

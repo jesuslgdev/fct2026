@@ -1,6 +1,6 @@
 export interface SupplierProduct {
-  supplierId: string;
-  productId: string;
+  supplierId: number;
+  productId: number;
   productCode: string;
   productName: string;
   categoryName?: string;
@@ -9,9 +9,9 @@ export interface SupplierProduct {
   updatedAt: string;
 }
 
-
+// Request DTOs (I - Interface Segregation)
 export interface AddSupplierProductRequest {
-  productId: string;
+  productId: number;
   supplierPrice: number;
 }
 

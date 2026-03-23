@@ -25,8 +25,8 @@ import {
 } from './import-supplier-products.usecase';
 
 const SUPPLIER_PRODUCT_MOCK: SupplierProduct = {
-  supplierId: '1',
-  productId: '1',
+  supplierId: 1,
+  productId: 1,
   productCode: 'PROD001',
   productName: 'Test Product',
   supplierPrice: 100.50,
@@ -35,11 +35,11 @@ const SUPPLIER_PRODUCT_MOCK: SupplierProduct = {
 };
 
 class MockSupplierProductRepository implements SupplierProductRepository {
-  getSupplierProducts = vi.fn<(supplierId: string) => Promise<SupplierProduct[]>>();
-  addProductToSupplier = vi.fn<(supplierId: string, request: AddSupplierProductRequest) => Promise<SupplierProduct>>();
-  updateSupplierProductPrice = vi.fn<(supplierId: string, productId: string, request: UpdateSupplierProductPriceRequest) => Promise<SupplierProduct>>();
-  removeProductFromSupplier = vi.fn<(supplierId: string, productId: string) => Promise<void>>();
-  importSupplierProducts = vi.fn<(supplierId: string, request: ImportSupplierProductsRequest) => Promise<ImportResult>>();
+  getSupplierProducts = vi.fn<(supplierId: number) => Promise<SupplierProduct[]>>();
+  addProductToSupplier = vi.fn<(supplierId: number, request: AddSupplierProductRequest) => Promise<SupplierProduct>>();
+  updateSupplierProductPrice = vi.fn<(supplierId: number, productId: number, request: UpdateSupplierProductPriceRequest) => Promise<SupplierProduct>>();
+  removeProductFromSupplier = vi.fn<(supplierId: number, productId: number) => Promise<void>>();
+  importSupplierProducts = vi.fn<(supplierId: number, request: ImportSupplierProductsRequest) => Promise<ImportResult>>();
 }
 
 describe('Supplier Product Use Cases', () => {
@@ -72,7 +72,7 @@ describe('Supplier Product Use Cases', () => {
 
   describe('GetSupplierProductsUseCase', () => {
     it('should delegate to repository', async () => {
-      const supplierId = '1';
+      const supplierId = 1;
       const expectedProducts = [SUPPLIER_PRODUCT_MOCK];
 
       repo.getSupplierProducts.mockResolvedValue(expectedProducts);
@@ -84,7 +84,7 @@ describe('Supplier Product Use Cases', () => {
     });
 
     it('should propagate repository errors', async () => {
-      const supplierId = '1';
+      const supplierId = 1;
       const errorMessage = 'Repository error';
       repo.getSupplierProducts.mockRejectedValue(new Error(errorMessage));
 
@@ -94,9 +94,9 @@ describe('Supplier Product Use Cases', () => {
 
   describe('AddProductToSupplierUseCase', () => {
     it('should delegate to repository', async () => {
-      const supplierId = '1';
+      const supplierId = 1;
       const request: AddSupplierProductRequest = {
-        productId: '1',
+        productId: 1,
         supplierPrice: 100.50
       };
 
@@ -108,9 +108,9 @@ describe('Supplier Product Use Cases', () => {
     });
 
     it('should propagate repository errors', async () => {
-      const supplierId = '1';
+      const supplierId = 1;
       const request: AddSupplierProductRequest = {
-        productId: '1',
+        productId: 1,
         supplierPrice: 100.50
       };
       const errorMessage = 'Repository error';
@@ -122,8 +122,8 @@ describe('Supplier Product Use Cases', () => {
 
   describe('UpdateSupplierProductPriceUseCase', () => {
     it('should delegate to repository', async () => {
-      const supplierId = '1';
-      const productId = '1';
+      const supplierId = 1;
+      const productId = 1;
       const request: UpdateSupplierProductPriceRequest = {
         supplierPrice: 150.75
       };
@@ -136,8 +136,8 @@ describe('Supplier Product Use Cases', () => {
     });
 
     it('should propagate repository errors', async () => {
-      const supplierId = '1';
-      const productId = '1';
+      const supplierId = 1;
+      const productId = 1;
       const request: UpdateSupplierProductPriceRequest = {
         supplierPrice: 150.75
       };
@@ -150,8 +150,8 @@ describe('Supplier Product Use Cases', () => {
 
   describe('RemoveProductFromSupplierUseCase', () => {
     it('should delegate to repository', async () => {
-      const supplierId = '1';
-      const productId = '1';
+      const supplierId = 1;
+      const productId = 1;
 
       repo.removeProductFromSupplier.mockResolvedValue();
 
@@ -161,8 +161,8 @@ describe('Supplier Product Use Cases', () => {
     });
 
     it('should propagate repository errors', async () => {
-      const supplierId = '1';
-      const productId = '1';
+      const supplierId = 1;
+      const productId = 1;
       const errorMessage = 'Repository error';
       repo.removeProductFromSupplier.mockRejectedValue(new Error(errorMessage));
 
@@ -172,7 +172,7 @@ describe('Supplier Product Use Cases', () => {
 
   describe('ImportSupplierProductsUseCase', () => {
     it('should delegate to repository', async () => {
-      const supplierId = '1';
+      const supplierId = 1;
       const request: ImportSupplierProductsRequest = {
         products: [
           { productCode: 'PROD001', supplierPrice: 100.50 },
@@ -190,7 +190,7 @@ describe('Supplier Product Use Cases', () => {
     });
 
     it('should propagate repository errors', async () => {
-      const supplierId = '1';
+      const supplierId = 1;
       const request: ImportSupplierProductsRequest = {
         products: [
           { productCode: 'PROD001', supplierPrice: 100.50 }

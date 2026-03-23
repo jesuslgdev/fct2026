@@ -6,7 +6,7 @@ import { SupplierProduct } from '@domain/models/supplier-product.model';
 export class GetSupplierProductsUseCase {
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
-  execute(supplierId: string): Promise<SupplierProduct[]> {
+  execute(supplierId: number): Promise<SupplierProduct[]> {
     return this.supplierProductRepository.getSupplierProducts(supplierId);
   }
 }

@@ -6,7 +6,7 @@ import { UpdateSupplierProductPriceRequest, SupplierProduct } from '@domain/mode
 export class UpdateSupplierProductPriceUseCase {
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
-  execute(supplierId: string, productId: string, request: UpdateSupplierProductPriceRequest): Promise<SupplierProduct> {
+  execute(supplierId: number, productId: number, request: UpdateSupplierProductPriceRequest): Promise<SupplierProduct> {
     return this.supplierProductRepository.updateSupplierProductPrice(supplierId, productId, request);
   }
 }
