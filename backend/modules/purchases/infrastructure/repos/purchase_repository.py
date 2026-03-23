@@ -79,6 +79,12 @@ class PurchaseRepository(IPurchaseRepository):
 
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
 
+    async def get_by_id(self, purchase_id: int) -> Purchase | None:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        return result.scalar_one_or_none()
+
     async def generate_purchase_number(self) -> str:
         year = datetime.now().year
         prefix = f"COM-{year}-"
