@@ -77,3 +77,28 @@ def require_department_manager_or_admin(department_name: str):
 
 require_purchases_manager_or_admin = require_department_manager_or_admin("Purchases")
 require_sales_manager_or_admin = require_department_manager_or_admin("Sales")
+
+
+def require_department_or_admin(department_name: str):
+    async def _dependency(
+        current_user: UserSession = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> UserSession:
+        if current_user.role == "Administrator":
+            return current_user
+        result = await db.execute(
+            text("SELECT department_id FROM departments WHERE name = :name"),
+            {"name": department_name},
+        )
+        dept_id = result.scalar_one_or_none()
+        if dept_id is not None and current_user.department_id == dept_id:
+            return current_user
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions",
+        )
+
+    return _dependency
+
+
+require_purchases_department_or_admin = require_department_or_admin("Purchases")

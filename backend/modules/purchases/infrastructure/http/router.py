@@ -6,7 +6,10 @@ from composition.dependencies import (
     get_create_purchase_use_case,
     get_list_purchases_use_case,
 )
-from composition.security import get_current_user, require_purchases_manager_or_admin
+from composition.security import (
+    get_current_user,
+    require_purchases_department_or_admin,
+)
 from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
     ICreatePurchaseUseCase,
 )
@@ -72,7 +75,7 @@ async def list_purchases(
 @router.post("", response_model=PurchaseDetailDTO, status_code=201)
 async def create_purchase(
     body: CreatePurchaseRequest,
-    current_user: UserSession = Depends(require_purchases_manager_or_admin),
+    current_user: UserSession = Depends(require_purchases_department_or_admin),
     use_case: ICreatePurchaseUseCase = Depends(get_create_purchase_use_case),
 ):
     purchase = await use_case.execute(
