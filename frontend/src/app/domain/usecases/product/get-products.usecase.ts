@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import { Product, ProductQueryParams, PagedResult } from '@domain/models/product.model';
 
@@ -6,7 +7,7 @@ import { Product, ProductQueryParams, PagedResult } from '@domain/models/product
 export class GetProductsUseCase {
   private readonly productRepository = inject(ProductRepository);
 
-  execute(params: ProductQueryParams): Promise<PagedResult<Product>> {
+  execute(params: ProductQueryParams): Observable<PagedResult<Product>> {
     return this.productRepository.getProducts(params);
   }
 }

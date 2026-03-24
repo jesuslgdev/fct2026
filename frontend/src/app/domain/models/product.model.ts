@@ -55,3 +55,26 @@ export interface ProductQueryParams {
   active?: boolean;
 }
 
+export interface ProductStockByWarehouse {
+  warehouseId: string;
+  warehouseName: string;
+  warehouseLocation?: string;
+  currentStock: number;
+  minStock: number;
+  status: 'critical' | 'low' | 'normal' | 'out';
+}
+
+export interface ProductStockView {
+  productId: number;
+  productCode: string;
+  productName: string;
+  categoryId: number;
+  categoryName: string;
+  price: number;
+  totalStock: number;
+  minStock: number;
+  stockStatus: 'critical' | 'low' | 'normal' | 'out';
+  warehouses: ProductStockByWarehouse[];
+  isActive: boolean;
+}
+
