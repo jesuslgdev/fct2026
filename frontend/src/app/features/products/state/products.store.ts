@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { catchError, finalize, of, tap } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import {
   Product,
@@ -101,109 +102,119 @@ export class ProductsStore {
   }
 
   // ── Data Loading ────────────────────────────────────────────────────────────
-  async loadProducts(): Promise<void> {
+  loadProducts(): void {
     this.loading.set(true);
     this.error.set(null);
 
-    try {
-      const params: ProductQueryParams = {
-        page: this.page(),
-        pageSize: this.pageSize(),
-        search: this.searchQuery() || undefined,
-        categoryId: this.categoryFilter() || undefined,
-        active: this.statusFilter() ?? undefined,
-      };
+    const params: ProductQueryParams = {
+      page: this.page(),
+      pageSize: this.pageSize(),
+      search: this.searchQuery() || undefined,
+      categoryId: this.categoryFilter() || undefined,
+      active: this.statusFilter() ?? undefined,
+    };
 
-      const result = await this.getProductsUseCase.execute(params);
-      this.products.set(result.data);
-      this.total.set(result.total);
-    } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load products.'));
-    } finally {
-      this.loading.set(false);
-    }
+    this.getProductsUseCase.execute(params).pipe(
+      tap(result => {
+        this.products.set(result.data);
+        this.total.set(result.total);
+      }),
+      catchError(err => {
+        this.error.set(this.resolveErrorMessage(err, 'Failed to load products.'));
+        return of();
+      }),
+      finalize(() => this.loading.set(false))
+    ).subscribe();
   }
 
-  async loadCategories(): Promise<void> {
-    try {
-      const categories = await this.getProductCategoriesUseCase.execute();
-      this.categories.set(categories);
-    } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load categories.'));
-    }
+  loadCategories(): void {
+    this.getProductCategoriesUseCase.execute().pipe(
+      tap(categories => this.categories.set(categories)),
+      catchError(err => {
+        this.error.set(this.resolveErrorMessage(err, 'Failed to load categories.'));
+        return of();
+      })
+    ).subscribe();
   }
 
-  async loadLowStockProducts(): Promise<void> {
-    try {
-      const products = await this.getLowStockProductsUseCase.execute();
-      this.lowStockProducts.set(products);
-    } catch {
-      console.error('Failed to load low stock products');
-    }
+  loadLowStockProducts(): void {
+    this.getLowStockProductsUseCase.execute().pipe(
+      tap(products => this.lowStockProducts.set(products)),
+      catchError(() => {
+        console.error('Failed to load low stock products');
+        return of();
+      })
+    ).subscribe();
   }
 
   // ── CRUD Actions ────────────────────────────────────────────────────────────
-  async createProduct(payload: CreateProductPayload): Promise<void> {
+  createProduct(payload: CreateProductPayload): void {
     this.loading.set(true);
     this.error.set(null);
 
-    try {
-      await this.createProductUseCase.execute(payload);
-      await this.loadProducts(); // Reload to get updated list
-      this.closeDialog();
-    } catch {
-      this.error.set('Failed to create product.');
-    } finally {
-      this.loading.set(false);
-    }
+    this.createProductUseCase.execute(payload).pipe(
+      tap(() => {
+        this.loadProducts(); // Reload to get updated list
+        this.closeDialog();
+      }),
+      catchError(() => {
+        this.error.set('Failed to create product.');
+        return of();
+      }),
+      finalize(() => this.loading.set(false))
+    ).subscribe();
   }
 
-  async updateProduct(productId: number, payload: UpdateProductPayload): Promise<void> {
+  updateProduct(productId: number, payload: UpdateProductPayload): void {
     this.loading.set(true);
     this.error.set(null);
 
-    try {
-      await this.updateProductUseCase.execute(productId, payload);
-      await this.loadProducts(); // Reload to get updated list
-      this.closeDialog();
-    } catch {
-      this.error.set('Failed to update product.');
-    } finally {
-      this.loading.set(false);
-    }
+    this.updateProductUseCase.execute(productId, payload).pipe(
+      tap(() => {
+        this.loadProducts(); // Reload to get updated list
+        this.closeDialog();
+      }),
+      catchError(() => {
+        this.error.set('Failed to update product.');
+        return of();
+      }),
+      finalize(() => this.loading.set(false))
+    ).subscribe();
   }
 
-  async toggleProductStatus(product: Product): Promise<void> {
+  toggleProductStatus(product: Product): void {
     this.loading.set(true);
     this.error.set(null);
 
-    try {
-      await this.toggleProductStatusUseCase.execute(product.productId, !product.isActive);
-      await this.loadProducts(); // Reload to get updated list
-      this.closeConfirmDialog();
-    } catch {
-      this.error.set('Failed to update product status.');
-    } finally {
-      this.loading.set(false);
-    }
+    this.toggleProductStatusUseCase.execute(product.productId, !product.isActive).pipe(
+      tap(() => {
+        this.loadProducts(); // Reload to get updated list
+        this.closeConfirmDialog();
+      }),
+      catchError(() => {
+        this.error.set('Failed to update product status.');
+        return of();
+      }),
+      finalize(() => this.loading.set(false))
+    ).subscribe();
   }
 
-  async loadProductById(productId: number): Promise<void> {
+  loadProductById(productId: number): void {
     this.loading.set(true);
     this.error.set(null);
 
-    try {
-      const product = await this.getProductByIdUseCase.execute(productId);
-      this.selectedProduct.set(product);
-    } catch {
-      this.error.set('Failed to load product details.');
-    } finally {
-      this.loading.set(false);
-    }
+    this.getProductByIdUseCase.execute(productId).pipe(
+      tap(product => this.selectedProduct.set(product)),
+      catchError(() => {
+        this.error.set('Failed to load product details.');
+        return of();
+      }),
+      finalize(() => this.loading.set(false))
+    ).subscribe();
   }
 
   // ── Validation ─────────────────────────────────────────────────────────────
-  async validateProductCode(code: string): Promise<void> {
+  validateProductCode(code: string): void {
     if (!code || code.trim().length === 0) {
       this.codeValidationError.set(null);
       return;
@@ -212,16 +223,18 @@ export class ProductsStore {
     this.codeValidationLoading.set(true);
     this.codeValidationError.set(null);
 
-    try {
-      const exists = await this.checkProductCodeUseCase.execute(code.trim());
-      if (exists) {
-        this.codeValidationError.set('Product code already exists');
-      }
-    } catch {
-      this.codeValidationError.set('Failed to validate product code');
-    } finally {
-      this.codeValidationLoading.set(false);
-    }
+    this.checkProductCodeUseCase.execute(code.trim()).pipe(
+      tap(exists => {
+        if (exists) {
+          this.codeValidationError.set('Product code already exists');
+        }
+      }),
+      catchError(() => {
+        this.codeValidationError.set('Failed to validate product code');
+        return of();
+      }),
+      finalize(() => this.codeValidationLoading.set(false))
+    ).subscribe();
   }
 
   // ── Dialog Actions ──────────────────────────────────────────────────────────
@@ -232,8 +245,8 @@ export class ProductsStore {
     this.codeValidationError.set(null);
   }
 
-  async openEditDialog(productId: number): Promise<void> {
-    await this.loadProductById(productId);
+  openEditDialog(productId: number): void {
+    this.loadProductById(productId);
     this.dialogMode.set('edit');
     this.dialogVisible.set(true);
     this.codeValidationError.set(null);
@@ -277,21 +290,21 @@ export class ProductsStore {
     this.page.set(1); // Reset to first page when filtering
   }
 
-  async onPageChange(newPage: number): Promise<void> {
+  onPageChange(newPage: number): void {
     this.page.set(newPage);
-    await this.loadProducts();
+    this.loadProducts();
   }
 
-  async onPageSizeChange(newPageSize: number): Promise<void> {
+  onPageSizeChange(newPageSize: number): void {
     this.pageSize.set(newPageSize);
     this.page.set(1); // Reset to first page when changing page size
-    await this.loadProducts();
+    this.loadProducts();
   }
 
   // ── Utilities ───────────────────────────────────────────────────────────────
-  async refresh(): Promise<void> {
-    await this.loadProducts();
-    await this.loadLowStockProducts();
+  refresh(): void {
+    this.loadProducts();
+    this.loadLowStockProducts();
   }
 
   clearError(): void {
