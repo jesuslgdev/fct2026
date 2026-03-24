@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.catalog.domain.entities.category import Category
+from modules.catalog.domain.entities.product import Product
 from modules.catalog.domain.exceptions import CatalogException, CatalogExceptionInfo
 from modules.catalog.domain.interfaces.repositories.i_category_repository import (
     ICategoryRepository,
@@ -64,5 +65,7 @@ class CategoryRepository(ICategoryRepository):
             await self._db.flush()
 
     async def has_products(self, category_id: int) -> bool:
-        # TODO: replace with Product query once entity exists
-        return False
+        result = await self._db.execute(
+            select(Product).where(Product.category_id == category_id).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
