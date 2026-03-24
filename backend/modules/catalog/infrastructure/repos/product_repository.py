@@ -108,7 +108,7 @@ class ProductRepository(IProductRepository):
             product.stock_min = stock_min
 
         await self._db.flush()
-        await self._db.refresh(product)
+        await self._db.refresh(product, ["category"])
         return product
 
     async def set_active(self, product_id: int, is_active: bool) -> None:
