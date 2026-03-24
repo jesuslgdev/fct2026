@@ -1,10 +1,27 @@
+import asyncio
+import selectors
+import sys
+
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import modules.catalog.domain.entities.product  # noqa: F401
 from composition.security import get_current_user
 from main import app
 from shared.infrastructure.database.connection import engine, get_db
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for each test case."""
+    if sys.platform == "win32":
+        loop = asyncio.SelectorEventLoop(selectors.SelectSelector())
+    else:
+        loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest_asyncio.fixture
