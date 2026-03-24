@@ -10,8 +10,8 @@ export interface Client {
   phone: string;
   email: string;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateClientPayload {
