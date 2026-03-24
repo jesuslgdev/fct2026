@@ -13,6 +13,21 @@ class ListProductsUseCase(IListProductsUseCase):
         self._repo = repo
 
     async def execute(
-        self, page: int, page_size: int, category_id: int | None = None
+        self,
+        page: int,
+        page_size: int,
+        category_id: int | None = None,
+        search: str | None = None,
+        active: bool | None = None,
+        sort_field: str = "name",
+        sort_order: str = "asc",
     ) -> PaginatedResult[Product]:
-        return await self._repo.get_all_paginated(page, page_size, category_id)
+        return await self._repo.get_all_paginated(
+            page,
+            page_size,
+            category_id,
+            search=search,
+            active=active,
+            sort_field=sort_field,
+            sort_order=sort_order,
+        )
