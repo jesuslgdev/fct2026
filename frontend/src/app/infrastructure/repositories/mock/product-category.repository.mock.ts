@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
 import { ProductCategory } from '@domain/models/product.model';
 
@@ -17,15 +18,15 @@ const INITIAL_MOCK_CATEGORIES: ProductCategory[] = [
 
 @Injectable({ providedIn: 'root' })
 export class MockProductCategoryRepository implements ProductCategoryRepository {
-  async getCategories(): Promise<ProductCategory[]> {
-    return INITIAL_MOCK_CATEGORIES.map((c) => ({ ...c }));
+  getCategories(): Observable<ProductCategory[]> {
+    return of(INITIAL_MOCK_CATEGORIES.map((c) => ({ ...c })));
   }
 
-  async getCategoryById(categoryId: number): Promise<ProductCategory> {
+  getCategoryById(categoryId: number): Observable<ProductCategory> {
     const category = INITIAL_MOCK_CATEGORIES.find((c) => c.categoryId === categoryId);
     if (!category) {
-      throw new Error('Category not found');
+      return throwError(() => new Error('Category not found'));
     }
-    return { ...category };
+    return of({ ...category });
   }
 }
