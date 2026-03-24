@@ -8,6 +8,7 @@ import {
   ClientQueryParams,
   PagedResult,
 } from '@domain/models/client.model';
+import { ClientInvalidTaxIdError } from '@domain/models/client-errors';
 import { GetClientsUseCase } from './get-clients.usecase';
 import { GetClientByIdUseCase } from './get-client-by-id.usecase';
 import { CreateClientUseCase } from './create-client.usecase';
@@ -25,8 +26,8 @@ const CLIENT_MOCK: Client = {
   phone: '600000001',
   email: 'acme@example.com',
   isActive: true,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
+  createdAt: new Date('2024-01-01T00:00:00Z'),
+  updatedAt: new Date('2024-01-01T00:00:00Z'),
 };
 
 class MockClientRepository implements ClientRepository {
@@ -86,7 +87,7 @@ describe('Client Use Cases', () => {
     const useCase = TestBed.inject(CreateClientUseCase);
     const payload: CreateClientPayload = {
       name: 'Test Client',
-      taxId: '12345678A',
+      taxId: '12345678a',
       address: 'Test Address',
       city: 'Test City',
       province: 'Test Province',
@@ -98,11 +99,11 @@ describe('Client Use Cases', () => {
 
     const result = await useCase.execute(payload);
 
-    expect(repo.createClient).toHaveBeenCalledWith(payload);
+    expect(repo.createClient).toHaveBeenCalledWith({ ...payload, taxId: '12345678A' });
     expect(result).toEqual(CLIENT_MOCK);
   });
 
-  it('CreateClientUseCase creates client with any tax ID', async () => {
+  it('CreateClientUseCase throws ClientInvalidTaxIdError with invalid tax ID', async () => {
     const useCase = TestBed.inject(CreateClientUseCase);
     const payload: CreateClientPayload = {
       name: 'Test Client',
@@ -114,12 +115,9 @@ describe('Client Use Cases', () => {
       phone: '123456789',
       email: 'test@example.com',
     };
-    repo.createClient.mockResolvedValueOnce({ ...CLIENT_MOCK, ...payload });
 
-    const result = await useCase.execute(payload);
-
-    expect(repo.createClient).toHaveBeenCalledWith(payload);
-    expect(result).toEqual({ ...CLIENT_MOCK, ...payload });
+    expect(() => useCase.execute(payload)).toThrow(ClientInvalidTaxIdError);
+    expect(repo.createClient).not.toHaveBeenCalled();
   });
 
   it('CreateClientUseCase propagates repository errors', async () => {
