@@ -30,9 +30,9 @@ export class UserFormDialogComponent {
   });
 
   readonly roleOptions: RoleOption[] = [
-    { label: 'Empleado',      value: 'Employee'      },
-    { label: 'Gerente',       value: 'Manager'       },
-    { label: 'Administrador', value: 'Administrator' },
+    { label: 'Empleado',      value: UserRole.Employee      },
+    { label: 'Gerente',       value: UserRole.Manager       },
+    { label: 'Administrador', value: UserRole.Administrator },
   ];
 
   get firstName()    { return this.form.controls.firstName;    }

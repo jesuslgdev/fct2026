@@ -8,7 +8,7 @@ import { InputComponent } from '@shared/ui/input/input.component';
 import { UsersStore } from '@features/users/state/users.store';
 import { UserStatusBadgeComponent } from '@features/users/components/user-status-badge/user-status-badge.component';
 import { UserFormDialogComponent } from '@features/users/components/user-form-dialog/user-form-dialog.component';
-import { USER_ROLES, UserRole } from '@domain/enums/user-role.enum';
+import { UserRole } from '@domain/enums/user-role.enum';
 import { User } from '@domain/models/user.model';
 
 interface StatusOption { label: string; value: boolean | null; }
@@ -36,7 +36,7 @@ export class UsersPageComponent implements OnInit {
 
   readonly roleOptions: RoleOption[] = [
     { label: 'Todos los roles', value: null },
-    ...USER_ROLES.map((r) => ({
+    ...Object.values(UserRole).map((r: UserRole) => ({
       label: this.getRoleLabel(r),
       value: r,
     })),
@@ -56,11 +56,11 @@ export class UsersPageComponent implements OnInit {
   
   getRoleLabel(role: User['role']): string {
     switch (role) {
-      case 'Employee':
+      case UserRole.Employee:
         return 'Empleado';
-      case 'Manager':
+      case UserRole.Manager:
         return 'Gerente';
-      case 'Administrator':
+      case UserRole.Administrator:
         return 'Administrador';
       default:
         return role;

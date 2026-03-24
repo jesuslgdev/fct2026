@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, ViewChild } from 
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { SignOutUseCase } from '@domain/usecases/auth/sign-out.usecase';
 import { AuthService } from '@core/services/auth.service';
-import { type UserRole } from '@domain/enums/user-role.enum';
+import { UserRole } from '@domain/enums/user-role.enum';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
@@ -132,7 +132,7 @@ export class AppShellComponent {
       title: 'Administración',
       items: [
         { label: 'Departamentos', icon: 'pi pi-sitemap', route: '/departments' },
-        { label: 'Usuarios', icon: 'pi pi-user', route: '/users', roles: ['Administrator'] },
+        { label: 'Usuarios', icon: 'pi pi-user', route: '/users', roles: [UserRole.Administrator] },
       ],
     },
     {

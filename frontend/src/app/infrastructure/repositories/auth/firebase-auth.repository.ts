@@ -13,7 +13,7 @@ import { Session } from '@domain/models/session.model';
 import { AccessDeniedError } from '@domain/models/auth-errors';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { environment } from 'environments/environment';
-import { USER_ROLES, type UserRole } from '@domain/enums/user-role.enum';
+import { UserRole } from '@domain/enums/user-role.enum';
 
 interface LoginResponse {
   role: string;
@@ -37,7 +37,7 @@ export class FirebaseAuthRepository implements AuthRepository {
           { firebase_id_token: firebaseToken },
         ),
       );
-      const role: UserRole | null = USER_ROLES.includes(response.role as UserRole)
+      const role: UserRole | null = Object.values(UserRole).includes(response.role as UserRole)
         ? (response.role as UserRole)
         : null;
 
@@ -88,7 +88,7 @@ export class FirebaseAuthRepository implements AuthRepository {
               { firebase_id_token: firebaseToken },
             ),
           );
-          const role: UserRole | null = USER_ROLES.includes(response.role as UserRole)
+          const role: UserRole | null = Object.values(UserRole).includes(response.role as UserRole)
             ? (response.role as UserRole)
             : null;
           resolve({
