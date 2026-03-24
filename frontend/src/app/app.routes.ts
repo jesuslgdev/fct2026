@@ -29,7 +29,7 @@ export const routes: Routes = [
 			},
 		],
 	},
-	// fallback: el authGuard de la ruta raíz decide según sesión
+	
 	{
 		path: '**',
 		redirectTo: '',
