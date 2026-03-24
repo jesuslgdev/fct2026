@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import {
   Product,
   CreateProductPayload,
   UpdateProductPayload,
+  ProductCategory,
 } from '@domain/models/product.model';
 
 const INITIAL_MOCK_PRODUCTS: Product[] = [
@@ -33,7 +35,7 @@ export class MockProductRepository implements ProductRepository {
   private products: Product[] = INITIAL_MOCK_PRODUCTS.map((p) => ({ ...p }));
   private nextId = Math.max(...this.products.map((p) => p.productId)) + 1;
 
-  async getProducts(params: { page: number; pageSize: number; search?: string; categoryId?: number; active?: boolean; }): Promise<import("@domain/models/user.model").PagedResult<Product>> {
+  getProducts(params: { page: number; pageSize: number; search?: string; categoryId?: number; active?: boolean; }): Observable<import("@domain/models/user.model").PagedResult<Product>> {
     const filtered = this.products.filter((p) => {
       if (params.search && !p.name.toLowerCase().includes(params.search.toLowerCase())) {
         return false;
@@ -52,26 +54,26 @@ export class MockProductRepository implements ProductRepository {
     const start = (page - 1) * pageSize;
     const data = filtered.slice(start, start + pageSize);
 
-    return {
+    return of({
       data,
       total: filtered.length,
       page,
       pageSize,
-    };
+    });
   }
 
-  async getProductById(productId: number): Promise<Product> {
+  getProductById(productId: number): Observable<Product> {
     const product = this.products.find((p) => p.productId === productId);
     if (!product) {
-      throw new Error('Product not found');
+      return throwError(() => new Error('Product not found'));
     }
-    return { ...product };
+    return of({ ...product });
   }
 
-  async createProduct(payload: CreateProductPayload): Promise<Product> {
+  createProduct(payload: CreateProductPayload): Observable<Product> {
     const exists = this.products.some((p) => p.code === payload.code);
     if (exists) {
-      throw new Error('Product code already exists');
+      return throwError(() => new Error('Product code already exists'));
     }
 
     const newProduct: Product = {
@@ -89,13 +91,13 @@ export class MockProductRepository implements ProductRepository {
     };
 
     this.products.push(newProduct);
-    return { ...newProduct };
+    return of({ ...newProduct });
   }
 
-  async updateProduct(productId: number, payload: UpdateProductPayload): Promise<Product> {
+  updateProduct(productId: number, payload: UpdateProductPayload): Observable<Product> {
     const index = this.products.findIndex((p) => p.productId === productId);
     if (index === -1) {
-      throw new Error('Product not found');
+      return throwError(() => new Error('Product not found'));
     }
 
     const existing = this.products[index];
@@ -110,22 +112,39 @@ export class MockProductRepository implements ProductRepository {
     };
 
     this.products[index] = updated;
-    return { ...updated };
+    return of({ ...updated });
   }
 
-  async toggleProductStatus(productId: number, isActive: boolean): Promise<void> {
+  toggleProductStatus(productId: number, isActive: boolean): Observable<void> {
     const product = this.products.find((p) => p.productId === productId);
     if (!product) {
-      throw new Error('Product not found');
+      return throwError(() => new Error('Product not found'));
     }
     product.isActive = isActive;
+    return of(undefined);
   }
 
-  async checkCodeExists(code: string): Promise<boolean> {
-    return this.products.some((p) => p.code === code);
+  checkCodeExists(code: string): Observable<boolean> {
+    return of(this.products.some((p) => p.code === code));
   }
 
-  async getLowStockProducts(): Promise<Product[]> {
-    return this.products.filter((p) => p.stock < p.minStock).map((p) => ({ ...p }));
+  getLowStockProducts(): Observable<Product[]> {
+    return of(this.products.filter((p) => p.stock < p.minStock).map((p) => ({ ...p })));
+  }
+
+  getProductCategories(): Observable<ProductCategory[]> {
+    const mockCategories: ProductCategory[] = [
+      {
+        categoryId: 1,
+        name: 'Categoría general',
+        description: 'Categoría de productos generales',
+      },
+      {
+        categoryId: 2,
+        name: 'Electrónica',
+        description: 'Productos electrónicos',
+      },
+    ];
+    return of(mockCategories);
   }
 }
