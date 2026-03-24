@@ -1,6 +1,6 @@
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from composition.security import (
@@ -9,6 +9,7 @@ from composition.security import (
     require_purchases_manager_or_admin,
 )
 from main import app
+from modules.admin.domain.entities.department import Department
 from shared.domain.entities.user_session import UserSession
 from shared.infrastructure.database.connection import get_db
 
@@ -49,12 +50,14 @@ async def admin_client(db_session: AsyncSession):
 async def purchases_manager_client(db_session: AsyncSession):
     # Ensure Purchases department exists
     result = await db_session.execute(
-        text(
-            "INSERT INTO departments (name) VALUES ('Purchases') ON CONFLICT (name) DO UPDATE SET name = 'Purchases' RETURNING department_id"
-        )
+        select(Department).where(Department.name == "Purchases")
     )
-    purchases_id = result.scalar_one()
-    await db_session.flush()
+    dept = result.scalar_one_or_none()
+    if dept is None:
+        dept = Department(name="Purchases")
+        db_session.add(dept)
+        await db_session.flush()
+    purchases_id = dept.department_id
 
     async def override_get_db():
         yield db_session
@@ -86,12 +89,14 @@ async def purchases_manager_client(db_session: AsyncSession):
 async def other_manager_client(db_session: AsyncSession):
     # Ensure Sales department exists
     result = await db_session.execute(
-        text(
-            "INSERT INTO departments (name) VALUES ('Sales') ON CONFLICT (name) DO UPDATE SET name = 'Sales' RETURNING department_id"
-        )
+        select(Department).where(Department.name == "Sales")
     )
-    sales_id = result.scalar_one()
-    await db_session.flush()
+    dept = result.scalar_one_or_none()
+    if dept is None:
+        dept = Department(name="Sales")
+        db_session.add(dept)
+        await db_session.flush()
+    sales_id = dept.department_id
 
     async def override_get_db():
         yield db_session
