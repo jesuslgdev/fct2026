@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
 import { ProductCategory } from '@domain/models/product.model';
 
@@ -6,7 +7,7 @@ import { ProductCategory } from '@domain/models/product.model';
 export class GetProductCategoriesUseCase {
   private readonly productCategoryRepository = inject(ProductCategoryRepository);
 
-  execute(): Promise<ProductCategory[]> {
+  execute(): Observable<ProductCategory[]> {
     return this.productCategoryRepository.getCategories();
   }
 }

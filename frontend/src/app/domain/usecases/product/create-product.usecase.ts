@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import { Product, CreateProductPayload } from '@domain/models/product.model';
 
@@ -6,7 +7,7 @@ import { Product, CreateProductPayload } from '@domain/models/product.model';
 export class CreateProductUseCase {
   private readonly productRepository = inject(ProductRepository);
 
-  execute(payload: CreateProductPayload): Promise<Product> {
+  execute(payload: CreateProductPayload): Observable<Product> {
     return this.productRepository.createProduct(payload);
   }
 }
