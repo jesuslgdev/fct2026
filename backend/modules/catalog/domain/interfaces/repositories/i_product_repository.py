@@ -26,7 +26,16 @@ class IProductRepository(ABC):
         ...
 
     @abstractmethod
-    async def create(self, product: Product) -> Product:
+    async def create(
+        self,
+        product_code: str,
+        name: str,
+        description: str | None,
+        category_id: int,
+        price: Decimal,
+        stock_current: int,
+        stock_min: int,
+    ) -> Product:
         """Persist a new product entity."""
         ...
 
@@ -34,12 +43,12 @@ class IProductRepository(ABC):
     async def update(
         self,
         product_id: int,
+        product_code: str | None = None,
         name: str | None = None,
         description: str | None = None,
         category_id: int | None = None,
         price: Decimal | None = None,
         stock_min: int | None = None,
-        product_code: str | None = None,
     ) -> Product:
         """Update existing product fields."""
         ...
