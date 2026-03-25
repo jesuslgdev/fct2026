@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, ViewChild } from 
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { SignOutUseCase } from '@domain/usecases/auth/sign-out.usecase';
 import { AuthService } from '@core/services/auth.service';
+import { isAdminRole } from '@core/guards/admin.guard';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
@@ -92,7 +93,7 @@ export class AppShellComponent {
 
   readonly navSections = computed(() => {
     const currentUser = this.authService.user();
-    const isAdmin = currentUser?.role === 'Administrator';
+    const isAdmin = isAdminRole(currentUser?.role);
     
     const allSections: NavSection[] = [
       {
