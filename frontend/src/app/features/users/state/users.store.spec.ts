@@ -12,6 +12,7 @@ import {
   UserQueryParams,
   PagedResult,
 } from '@domain/models/user.model';
+import { UserRole } from '@domain/enums/user-role.enum';
 import {
   UserForbiddenError,
   UserValidationError,
@@ -22,7 +23,7 @@ const USER_A: User = {
   firstName: 'Ana',
   lastName: 'Garcia',
   email: 'ana@example.com',
-  role: 'Administrator',
+  role: UserRole.Administrator,
   departmentId: 1,
   active: true,
 };
@@ -32,7 +33,7 @@ const USER_B: User = {
   firstName: 'Carlos',
   lastName: 'Martinez',
   email: 'carlos@example.com',
-  role: 'Manager',
+  role: UserRole.Manager,
   departmentId: 2,
   active: true,
 };
@@ -43,7 +44,7 @@ class MockAuthService {
     email: 'admin@example.com',
     displayName: 'Admin',
     photoURL: null,
-    role: 'Administrator' as const,
+    role: UserRole.Administrator as const,
   });
 }
 
@@ -124,7 +125,7 @@ describe('UsersStore', () => {
       firstName: 'Ana',
       lastName: 'Garcia',
       email: 'ana@example.com',
-      role: 'Administrator',
+      role: UserRole.Administrator,
       departmentId: 1,
     });
 
@@ -136,7 +137,7 @@ describe('UsersStore', () => {
       firstName: 'Carlos',
       lastName: 'Martinez',
       email: 'carlos@example.com',
-      role: 'Manager',
+      role: UserRole.Manager,
       departmentId: 2,
     };
     
