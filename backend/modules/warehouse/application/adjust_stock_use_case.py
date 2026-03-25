@@ -1,4 +1,4 @@
-from modules.warehouse.domain.adjust_stock_result import AdjustStockResult
+from modules.warehouse.domain.dtos.adjust_stock_result import AdjustStockResult
 from modules.warehouse.domain.entities.stock_movement import StockMovement
 from modules.warehouse.domain.exceptions import (
     WarehouseException,

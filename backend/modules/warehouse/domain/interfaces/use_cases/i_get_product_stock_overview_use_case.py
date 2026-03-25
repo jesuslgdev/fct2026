@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from modules.warehouse.domain.product_stock_overview import (
+from modules.warehouse.domain.dtos.product_stock_overview import (
     ProductStockOverview,
 )
 

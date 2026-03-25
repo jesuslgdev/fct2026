@@ -1,10 +1,10 @@
+from modules.warehouse.domain.dtos.warehouse_detail import WarehouseDetail
 from modules.warehouse.domain.interfaces.repositories.i_warehouse_repository import (
     IWarehouseRepository,
 )
 from modules.warehouse.domain.interfaces.use_cases.i_list_warehouses_use_case import (
     IListWarehousesUseCase,
 )
-from modules.warehouse.domain.warehouse_detail import WarehouseDetail
 
 
 class ListWarehousesUseCase(IListWarehousesUseCase):

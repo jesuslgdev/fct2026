@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from modules.warehouse.domain.warehouse_detail import WarehouseDetail
+from modules.warehouse.domain.dtos.warehouse_detail import WarehouseDetail
 
 
 class IGetWarehouseUseCase(ABC):

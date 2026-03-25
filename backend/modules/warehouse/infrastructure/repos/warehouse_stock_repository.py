@@ -2,13 +2,13 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.catalog.domain.entities.product import Product
+from modules.warehouse.domain.dtos.product_stock_overview import WarehouseStockDetail
+from modules.warehouse.domain.dtos.stock_distribution import StockDistributionItem
 from modules.warehouse.domain.entities.warehouse import Warehouse
 from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_repository import (
     IWarehouseStockRepository,
 )
-from modules.warehouse.domain.product_stock_overview import WarehouseStockDetail
-from modules.warehouse.domain.stock_distribution import StockDistributionItem
 from shared.domain.paginated_result import PaginatedResult
 
 

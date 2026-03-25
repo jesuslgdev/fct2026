@@ -1,3 +1,6 @@
+from modules.warehouse.domain.dtos.product_stock_overview import (
+    ProductStockOverview,
+)
 from modules.warehouse.domain.exceptions import (
     WarehouseException,
     WarehouseExceptionInfo,
@@ -7,9 +10,6 @@ from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_reposito
 )
 from modules.warehouse.domain.interfaces.use_cases.i_get_product_stock_overview_use_case import (
     IGetProductStockOverviewUseCase,
-)
-from modules.warehouse.domain.product_stock_overview import (
-    ProductStockOverview,
 )
 from shared.domain.interfaces.i_product_reader import IProductReader
 

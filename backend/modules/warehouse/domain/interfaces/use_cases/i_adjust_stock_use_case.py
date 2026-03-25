@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from modules.warehouse.domain.adjust_stock_result import AdjustStockResult
+from modules.warehouse.domain.dtos.adjust_stock_result import AdjustStockResult
 
 
 class IAdjustStockUseCase(ABC):

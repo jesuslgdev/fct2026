@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 
-from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
-from modules.warehouse.domain.product_stock_overview import (
+from modules.warehouse.domain.dtos.product_stock_overview import (
     WarehouseStockDetail,
 )
-from modules.warehouse.domain.stock_distribution import StockDistributionItem
+from modules.warehouse.domain.dtos.stock_distribution import StockDistributionItem
+from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from shared.domain.paginated_result import PaginatedResult
 
 

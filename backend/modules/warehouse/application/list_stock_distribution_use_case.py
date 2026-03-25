@@ -1,10 +1,10 @@
+from modules.warehouse.domain.dtos.stock_distribution import StockDistributionItem
 from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_repository import (
     IWarehouseStockRepository,
 )
 from modules.warehouse.domain.interfaces.use_cases.i_list_stock_distribution_use_case import (
     IListStockDistributionUseCase,
 )
-from modules.warehouse.domain.stock_distribution import StockDistributionItem
 from shared.domain.paginated_result import PaginatedResult
 
 

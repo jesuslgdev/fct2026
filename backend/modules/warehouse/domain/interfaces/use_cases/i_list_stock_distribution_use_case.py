@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from modules.warehouse.domain.stock_distribution import StockDistributionItem
+from modules.warehouse.domain.dtos.stock_distribution import StockDistributionItem
 from shared.domain.paginated_result import PaginatedResult
 
 

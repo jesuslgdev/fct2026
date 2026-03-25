@@ -1,3 +1,4 @@
+from modules.warehouse.domain.dtos.warehouse_detail import WarehouseDetail
 from modules.warehouse.domain.exceptions import (
     WarehouseException,
     WarehouseExceptionInfo,
@@ -8,7 +9,6 @@ from modules.warehouse.domain.interfaces.repositories.i_warehouse_repository imp
 from modules.warehouse.domain.interfaces.use_cases.i_get_warehouse_use_case import (
     IGetWarehouseUseCase,
 )
-from modules.warehouse.domain.warehouse_detail import WarehouseDetail
 
 
 class GetWarehouseUseCase(IGetWarehouseUseCase):
