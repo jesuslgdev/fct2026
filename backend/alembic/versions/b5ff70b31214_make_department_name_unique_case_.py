@@ -18,7 +18,7 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.drop_index("uq_departments_name", table_name="departments", if_exists=True)
+    op.drop_constraint("uq_departments_name", "departments", type_="unique")
     op.execute(
         "CREATE UNIQUE INDEX ix_departments_name_lower ON departments (lower(name))"
     )
@@ -26,4 +26,4 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.execute("DROP INDEX IF EXISTS ix_departments_name_lower")
-    op.create_index("uq_departments_name", "departments", ["name"], unique=True)
+    op.create_unique_constraint("uq_departments_name", "departments", ["name"])
