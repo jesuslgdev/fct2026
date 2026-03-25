@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ClientRepository } from '@domain/repositories/client.repository';
-import { Client, CreateClientPayload } from '@domain/models/client.model';
+import { ClientDetail, CreateClientPayload } from '@domain/models/client.model';
 import { ClientInvalidTaxIdError } from '@domain/models/client-errors';
 import { Observable } from 'rxjs';
 
@@ -13,7 +13,7 @@ const TAX_ID_PATTERN =
 export class CreateClientUseCase {
   private readonly clientRepository = inject(ClientRepository);
 
-  execute(payload: CreateClientPayload): Observable<Client> {
+  execute(payload: CreateClientPayload): Observable<ClientDetail> {
     const normalizedPayload: CreateClientPayload = {
       ...payload,
       taxId: payload.taxId.toUpperCase(),

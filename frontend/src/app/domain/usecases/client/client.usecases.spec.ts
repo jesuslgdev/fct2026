@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ClientRepository } from '@domain/repositories/client.repository';
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
   ClientQueryParams,
@@ -17,26 +18,28 @@ import { ToggleClientStatusUseCase } from './toggle-client-status.usecase';
 import { of, throwError } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 
-const CLIENT_MOCK: Client = {
+const CLIENT_SUMMARY_MOCK: Client = {
   clientId: 1,
   name: 'Acme Corp',
   taxId: '12345678A',
-  address: 'Calle Mayor 1',
   city: 'Madrid',
+  isActive: true,
+};
+
+const CLIENT_MOCK: ClientDetail = {
+  ...CLIENT_SUMMARY_MOCK,
+  address: 'Calle Mayor 1',
   province: 'Madrid',
   postalCode: '28001',
   phone: '600000001',
   email: 'acme@example.com',
-  isActive: true,
-  createdAt: new Date('2024-01-01T00:00:00Z'),
-  updatedAt: new Date('2024-01-01T00:00:00Z'),
 };
 
 class MockClientRepository implements ClientRepository {
   getClients = vi.fn<(params: ClientQueryParams) => import('rxjs').Observable<PagedResult<Client>>>();
-  getClientById = vi.fn<(id: number) => import('rxjs').Observable<Client>>();
-  createClient = vi.fn<(payload: CreateClientPayload) => import('rxjs').Observable<Client>>();
-  updateClient = vi.fn<(id: number, payload: UpdateClientPayload) => import('rxjs').Observable<Client>>();
+  getClientById = vi.fn<(id: number) => import('rxjs').Observable<ClientDetail>>();
+  createClient = vi.fn<(payload: CreateClientPayload) => import('rxjs').Observable<ClientDetail>>();
+  updateClient = vi.fn<(id: number, payload: UpdateClientPayload) => import('rxjs').Observable<ClientDetail>>();
   toggleClientStatus = vi.fn<(id: number, isActive: boolean) => import('rxjs').Observable<void>>();
 }
 
@@ -61,7 +64,7 @@ describe('Client Use Cases', () => {
     const useCase = TestBed.inject(GetClientsUseCase);
     const params: ClientQueryParams = { page: 1, pageSize: 20 };
     const resultMock: PagedResult<Client> = {
-      data: [CLIENT_MOCK],
+      data: [CLIENT_SUMMARY_MOCK],
       total: 1,
       page: 1,
       pageSize: 20,
@@ -143,7 +146,7 @@ describe('Client Use Cases', () => {
   it('UpdateClientUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(UpdateClientUseCase);
     const payload: UpdateClientPayload = { name: 'Updated Client' };
-    const updated: Client = { ...CLIENT_MOCK, name: 'Updated Client' };
+    const updated: ClientDetail = { ...CLIENT_MOCK, name: 'Updated Client' };
     repo.updateClient.mockReturnValueOnce(of(updated));
 
     const result = await firstValueFrom(useCase.execute(1, payload));

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ClientRepository } from '@domain/repositories/client.repository';
-import { Client } from '@domain/models/client.model';
+import { ClientDetail } from '@domain/models/client.model';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 export class GetClientByIdUseCase {
   private readonly clientRepository = inject(ClientRepository);
 
-  execute(id: number): Observable<Client> {
+  execute(id: number): Observable<ClientDetail> {
     return this.clientRepository.getClientById(id);
   }
 }
