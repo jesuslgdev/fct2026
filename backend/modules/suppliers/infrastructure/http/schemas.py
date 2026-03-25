@@ -34,6 +34,13 @@ class UpdateSupplierProductPriceRequest(BaseModel):
     supplier_price: Decimal = Field(..., gt=0, decimal_places=2)
 
 
+class ProductSupplierDTO(BaseModel):
+    supplier_id: int
+    supplier_name: str
+    tax_id: str
+    supplier_price: Decimal
+
+
 class SupplierDTO(BaseModel):
     supplier_id: int
     name: str

@@ -9,6 +9,7 @@ from composition.dependencies import (
     get_download_supplier_template_use_case,
     get_get_supplier_use_case,
     get_import_suppliers_use_case,
+    get_list_product_suppliers_use_case,
     get_list_supplier_products_use_case,
     get_list_suppliers_use_case,
     get_remove_product_from_supplier_use_case,
@@ -17,8 +18,10 @@ from composition.dependencies import (
     get_update_supplier_use_case,
 )
 from composition.security import get_current_user, require_purchases_manager_or_admin
+from modules.suppliers.domain.entities.product_supplier_detail import (
+    ProductSupplierDetail,
+)
 from modules.suppliers.domain.entities.supplier import Supplier
-from modules.suppliers.domain.entities.supplier_product import SupplierProduct
 from modules.suppliers.domain.entities.supplier_product_detail import (
     SupplierProductDetail,
 )
@@ -36,6 +39,9 @@ from modules.suppliers.domain.interfaces.use_cases.i_get_supplier_use_case impor
 )
 from modules.suppliers.domain.interfaces.use_cases.i_import_suppliers_use_case import (
     IImportSuppliersUseCase,
+)
+from modules.suppliers.domain.interfaces.use_cases.i_list_product_suppliers_use_case import (
+    IListProductSuppliersUseCase,
 )
 from modules.suppliers.domain.interfaces.use_cases.i_list_supplier_products_use_case import (
     IListSupplierProductsUseCase,
@@ -60,6 +66,7 @@ from modules.suppliers.infrastructure.http.schemas import (
     CreateSupplierDTO,
     ImportErrorDTO,
     ImportResultDTO,
+    ProductSupplierDTO,
     SetSupplierActiveDTO,
     SupplierDetailDTO,
     SupplierDTO,
@@ -289,3 +296,35 @@ async def remove_product_from_supplier(
 ):
     await use_case.execute(supplier_id, product_id)
     return Response(status_code=204)
+
+
+def _to_product_supplier_dto(detail: ProductSupplierDetail) -> ProductSupplierDTO:
+    return ProductSupplierDTO(
+        supplier_id=detail.supplier_id,
+        supplier_name=detail.supplier_name,
+        tax_id=detail.tax_id,
+        supplier_price=detail.supplier_price,
+    )
+
+
+@router.get(
+    "/products/{product_id}/suppliers",
+    response_model=PaginatedResponse[ProductSupplierDTO],
+    tags=["Suppliers - Products"],
+)
+async def list_product_suppliers(
+    product_id: int,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    use_case: IListProductSuppliersUseCase = Depends(
+        get_list_product_suppliers_use_case
+    ),
+    _: UserSession = Depends(get_current_user),
+):
+    result = await use_case.execute(product_id, page, page_size)
+    return PaginatedResponse(
+        items=[_to_product_supplier_dto(s) for s in result.items],
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+    )
