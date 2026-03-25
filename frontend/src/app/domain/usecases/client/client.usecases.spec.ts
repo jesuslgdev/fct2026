@@ -14,6 +14,8 @@ import { GetClientByIdUseCase } from './get-client-by-id.usecase';
 import { CreateClientUseCase } from './create-client.usecase';
 import { UpdateClientUseCase } from './update-client.usecase';
 import { ToggleClientStatusUseCase } from './toggle-client-status.usecase';
+import { of, throwError } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 const CLIENT_MOCK: Client = {
   clientId: 1,
@@ -31,11 +33,11 @@ const CLIENT_MOCK: Client = {
 };
 
 class MockClientRepository implements ClientRepository {
-  getClients = vi.fn<(params: ClientQueryParams) => Promise<PagedResult<Client>>>();
-  getClientById = vi.fn<(id: number) => Promise<Client>>();
-  createClient = vi.fn<(payload: CreateClientPayload) => Promise<Client>>();
-  updateClient = vi.fn<(id: number, payload: UpdateClientPayload) => Promise<Client>>();
-  toggleClientStatus = vi.fn<(id: number, isActive: boolean) => Promise<void>>();
+  getClients = vi.fn<(params: ClientQueryParams) => import('rxjs').Observable<PagedResult<Client>>>();
+  getClientById = vi.fn<(id: number) => import('rxjs').Observable<Client>>();
+  createClient = vi.fn<(payload: CreateClientPayload) => import('rxjs').Observable<Client>>();
+  updateClient = vi.fn<(id: number, payload: UpdateClientPayload) => import('rxjs').Observable<Client>>();
+  toggleClientStatus = vi.fn<(id: number, isActive: boolean) => import('rxjs').Observable<void>>();
 }
 
 describe('Client Use Cases', () => {
@@ -64,9 +66,9 @@ describe('Client Use Cases', () => {
       page: 1,
       pageSize: 20,
     };
-    repo.getClients.mockResolvedValueOnce(resultMock);
+    repo.getClients.mockReturnValueOnce(of(resultMock));
 
-    const result = await useCase.execute(params);
+    const result = await firstValueFrom(useCase.execute(params));
 
     expect(repo.getClients).toHaveBeenCalledOnce();
     expect(repo.getClients).toHaveBeenCalledWith(params);
@@ -75,9 +77,9 @@ describe('Client Use Cases', () => {
 
   it('GetClientByIdUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(GetClientByIdUseCase);
-    repo.getClientById.mockResolvedValueOnce(CLIENT_MOCK);
+    repo.getClientById.mockReturnValueOnce(of(CLIENT_MOCK));
 
-    const result = await useCase.execute(1);
+    const result = await firstValueFrom(useCase.execute(1));
 
     expect(repo.getClientById).toHaveBeenCalledWith(1);
     expect(result).toEqual(CLIENT_MOCK);
@@ -95,9 +97,9 @@ describe('Client Use Cases', () => {
       phone: '123456789',
       email: 'test@example.com',
     };
-    repo.createClient.mockResolvedValueOnce(CLIENT_MOCK);
+    repo.createClient.mockReturnValueOnce(of(CLIENT_MOCK));
 
-    const result = await useCase.execute(payload);
+    const result = await firstValueFrom(useCase.execute(payload));
 
     expect(repo.createClient).toHaveBeenCalledWith({ ...payload, taxId: '12345678A' });
     expect(result).toEqual(CLIENT_MOCK);
@@ -132,9 +134,9 @@ describe('Client Use Cases', () => {
       phone: '123456789',
       email: 'test@example.com',
     };
-    repo.createClient.mockRejectedValueOnce(new Error('Repository error'));
+    repo.createClient.mockReturnValueOnce(throwError(() => new Error('Repository error')));
 
-    await expect(useCase.execute(payload)).rejects.toThrow('Repository error');
+    await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow('Repository error');
     expect(repo.createClient).toHaveBeenCalledWith(payload);
   });
 
@@ -142,9 +144,9 @@ describe('Client Use Cases', () => {
     const useCase = TestBed.inject(UpdateClientUseCase);
     const payload: UpdateClientPayload = { name: 'Updated Client' };
     const updated: Client = { ...CLIENT_MOCK, name: 'Updated Client' };
-    repo.updateClient.mockResolvedValueOnce(updated);
+    repo.updateClient.mockReturnValueOnce(of(updated));
 
-    const result = await useCase.execute(1, payload);
+    const result = await firstValueFrom(useCase.execute(1, payload));
 
     expect(repo.updateClient).toHaveBeenCalledWith(1, payload);
     expect(result).toEqual(updated);
@@ -152,9 +154,9 @@ describe('Client Use Cases', () => {
 
   it('ToggleClientStatusUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(ToggleClientStatusUseCase);
-    repo.toggleClientStatus.mockResolvedValueOnce();
+    repo.toggleClientStatus.mockReturnValueOnce(of(void 0));
 
-    await useCase.execute(1, false);
+    await firstValueFrom(useCase.execute(1, false));
 
     expect(repo.toggleClientStatus).toHaveBeenCalledWith(1, false);
     expect(repo.toggleClientStatus).toHaveBeenCalledOnce();
