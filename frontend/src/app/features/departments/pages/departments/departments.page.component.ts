@@ -14,7 +14,6 @@ import { TableComponent } from '@shared/ui/table/table.component';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { BadgeComponent } from '@shared/ui/badge/badge.component';
 import { AuthService } from '@core/services/auth.service';
-import { isAdminRole } from '@core/guards/admin.guard';
 import { DepartmentsStore } from '../../departments.store';
 import { Department } from '@domain/models/department.model';
 import { DepartmentNameDuplicateError } from '@domain/models/department-errors';
@@ -39,9 +38,7 @@ export class DepartmentsPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
 
-  readonly isAdmin = computed(() =>
-    isAdminRole(this.authService.user()?.role)
-  );
+  readonly isAdmin = this.authService.isAdmin;
 
   readonly formVisible = signal(false);
   readonly deleteVisible = signal(false);

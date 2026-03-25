@@ -10,7 +10,6 @@ import { UserDto } from '@infrastructure/dtos/user.dto';
 import { PaginatedResponse } from '@infrastructure/dtos/paginated-response.dto';
 import { DepartmentMapper } from '@infrastructure/mappers/department.mapper';
 import { AuthService } from '@core/services/auth.service';
-import { isAdminRole } from '@core/guards/admin.guard';
 import { environment } from 'environments/environment';
 
 @Injectable()
@@ -27,7 +26,7 @@ export class HttpDepartmentRepository implements DepartmentRepository {
     }
 
     // If user is administrator, get departments with user counts
-    if (isAdminRole(currentUser.role)) {
+    if (this.authService.isAdmin()) {
       return forkJoin({
         departments: this.http.get<DepartmentDto[]>(this.base),
         usersResponse: this.http.get<PaginatedResponse<UserDto>>(`${environment.apiUrl}/api/v1/admin/users?page_size=100`)

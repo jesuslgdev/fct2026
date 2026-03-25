@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Department } from '@domain/models/department.model';
+import { DepartmentNameDuplicateError } from '@domain/models/department-errors';
 import { GetDepartmentsUseCase } from '@domain/usecases/departments/get-departments.usecase';
 import { CreateDepartmentUseCase } from '@domain/usecases/departments/create-department.usecase';
 import { UpdateDepartmentUseCase } from '@domain/usecases/departments/update-department.usecase';
@@ -31,12 +32,20 @@ export class DepartmentsStore {
   }
 
   async create(name: string): Promise<void> {
-    const dept = await firstValueFrom(this.createDept.execute(name));
+    const trimmed = name.trim();
+    if (this._departments().some(d => d.name.toLowerCase() === trimmed.toLowerCase())) {
+      throw new DepartmentNameDuplicateError();
+    }
+    const dept = await firstValueFrom(this.createDept.execute(trimmed));
     this._departments.update(list => [...list, dept]);
   }
 
   async update(id: string, name: string): Promise<void> {
-    const updated = await firstValueFrom(this.updateDept.execute(id, name));
+    const trimmed = name.trim();
+    if (this._departments().some(d => d.id !== id && d.name.toLowerCase() === trimmed.toLowerCase())) {
+      throw new DepartmentNameDuplicateError();
+    }
+    const updated = await firstValueFrom(this.updateDept.execute(id, trimmed));
     this._departments.update(list => list.map(d => d.id === id ? updated : d));
   }
 

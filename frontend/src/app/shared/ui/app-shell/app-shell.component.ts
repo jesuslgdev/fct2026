@@ -6,8 +6,6 @@ import { UserRole } from '@domain/enums/user-role.enum';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
-import { BadgeModule } from 'primeng/badge';
-import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 import { RippleModule } from 'primeng/ripple';
 import { StyleClassModule } from 'primeng/styleclass';
@@ -51,8 +49,6 @@ const PAGE_TITLES: Record<string, string> = {
   imports: [
     RouterModule,
     AvatarModule,
-    BadgeModule,
-    ButtonModule,
     DrawerModule,
     RippleModule,
     StyleClassModule,
@@ -93,8 +89,7 @@ export class AppShellComponent {
   }
 
   readonly navSections = computed(() => {
-    const currentUser = this.authService.user();
-    const isAdmin = isAdminRole(currentUser?.role);
+    const isAdmin = this.authService.isAdmin();
     
     const allSections: NavSection[] = [
       {
