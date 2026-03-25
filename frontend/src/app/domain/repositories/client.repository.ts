@@ -1,5 +1,6 @@
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
   ClientQueryParams,
@@ -9,8 +10,8 @@ import { Observable } from 'rxjs';
 
 export abstract class ClientRepository {
   abstract getClients(params: ClientQueryParams): Observable<PagedResult<Client>>;
-  abstract getClientById(id: number): Observable<Client>;
-  abstract createClient(payload: CreateClientPayload): Observable<Client>;
-  abstract updateClient(id: number, payload: UpdateClientPayload): Observable<Client>;
+  abstract getClientById(id: number): Observable<ClientDetail>;
+  abstract createClient(payload: CreateClientPayload): Observable<ClientDetail>;
+  abstract updateClient(id: number, payload: UpdateClientPayload): Observable<ClientDetail>;
   abstract toggleClientStatus(id: number, isActive: boolean): Observable<void>;
 }
