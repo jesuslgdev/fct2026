@@ -4,5 +4,5 @@ import { AuthService } from '@core/services/auth.service';
 
 export const adminGuard: CanActivateFn = () => {
   if (inject(AuthService).isAdmin()) return true;
-  return inject(Router).createUrlTree(['/legal/terms']);
+  return inject(Router).createUrlTree(['/unauthorized']);
 };
