@@ -36,6 +36,8 @@ def make_purchase_line(**kwargs) -> MagicMock:
         "unit_price": Decimal("50.00"),
         "discount": Decimal("0.00"),
         "line_subtotal": Decimal("100.00"),
+        "vat_rate": Decimal("0.21"),
+        "line_tax": Decimal("21.00"),
     }
     defaults.update(kwargs)
     line = MagicMock(spec=PurchaseLine)
