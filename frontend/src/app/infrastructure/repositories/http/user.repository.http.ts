@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
+  UserAlreadyExistsError,
   UserApiError,
   UserForbiddenError,
   UserNotFoundError,
@@ -58,6 +59,8 @@ export class HttpUserRepository implements UserRepository {
         return new UserForbiddenError(message ?? 'Insufficient permissions.');
       case 404:
         return new UserNotFoundError(message ?? 'User not found.');
+      case 409:
+        return new UserAlreadyExistsError(message);
       default:
         return new UserApiError(message ?? 'Unexpected users API error.');
     }

@@ -19,6 +19,7 @@ const USER_MOCK: User = {
 class MockUsersStore {
   readonly selectedUser = signal<User | null>(null);
   readonly dialogMode = signal<'create' | 'edit'>('create');
+  readonly dialogVisible = signal(true);
   readonly departments = signal([
     { id: 1, name: 'Tecnologia' },
     { id: 2, name: 'Ventas' },

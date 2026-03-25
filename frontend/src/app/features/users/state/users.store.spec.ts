@@ -104,7 +104,7 @@ describe('UsersStore', () => {
 
     await store.loadUsers();
 
-    expect(store.error()).toBe('Failed to load users.');
+    expect(store.error()).toBe('No se pudieron cargar los usuarios.');
     expect(store.loading()).toBe(false);
   });
 
@@ -113,7 +113,7 @@ describe('UsersStore', () => {
 
     await store.loadUsers();
 
-    expect(store.error()).toBe('You do not have permissions to perform this action.');
+    expect(store.error()).toBe('No tienes permisos para realizar esta acción.');
   });
 
   it('maps validation users error to backend message', async () => {
@@ -129,7 +129,7 @@ describe('UsersStore', () => {
       departmentId: 1,
     });
 
-    expect(store.error()).toBe('Email already exists.');
+    expect(store.dialogError()).toBe('Email already exists.');
   });
 
   it('creates a new user and updates state', async () => {

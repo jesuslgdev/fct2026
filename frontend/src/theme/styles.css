@@ -275,5 +275,9 @@
   .dialog-field-error {
     @apply text-xs text-danger;
   }
+
+  .dialog-error-banner {
+    @apply text-sm font-medium text-danger bg-red-50 border border-red-200 rounded-md px-3 py-2;
+  }
 }
 

@@ -8,6 +8,7 @@ import { UpdateUserUseCase } from '@domain/usecases/user/update-user.usecase';
 import { ToggleUserStatusUseCase } from '@domain/usecases/user/toggle-user-status.usecase';
 import { GetDepartmentsUseCase } from '@domain/usecases/user/get-departments.usecase';
 import {
+  UserAlreadyExistsError,
   UserApiError,
   UserForbiddenError,
   UserNotFoundError,
@@ -42,6 +43,7 @@ export class UsersStore {
   readonly selectedUser = signal<User | null>(null);
   readonly dialogVisible = signal(false);
   readonly dialogMode = signal<DialogMode>('create');
+  readonly dialogError = signal<string | null>(null);
   readonly confirmDialogVisible = signal(false);
   readonly userToToggle = signal<User | null>(null);
 
@@ -59,20 +61,24 @@ export class UsersStore {
   );
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
+    if (err instanceof UserAlreadyExistsError) {
+      return 'Ya existe un usuario con este correo electrónico.';
+    }
+
     if (err instanceof UserValidationError) {
-      return err.message || 'Please check the submitted data.';
+      return err.message || 'Revisa los datos introducidos.';
     }
 
     if (err instanceof UserUnauthorizedError) {
-      return 'Your session has expired. Please sign in again.';
+      return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
     }
 
     if (err instanceof UserForbiddenError) {
-      return 'You do not have permissions to perform this action.';
+      return 'No tienes permisos para realizar esta acción.';
     }
 
     if (err instanceof UserNotFoundError) {
-      return 'The selected user no longer exists.';
+      return 'El usuario seleccionado ya no existe.';
     }
 
     if (err instanceof UserApiError) {
@@ -98,7 +104,7 @@ export class UsersStore {
       this.users.set(result.data);
       this.total.set(result.total);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load users.'));
+      this.error.set(this.resolveErrorMessage(err, 'No se pudieron cargar los usuarios.'));
     } finally {
       this.loading.set(false);
     }
@@ -109,7 +115,7 @@ export class UsersStore {
       const result = await this.getDepartmentsUseCase.execute();
       this.departments.set(result);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load departments.'));
+      this.error.set(this.resolveErrorMessage(err, 'No se pudieron cargar los departamentos.'));
     }
   }
 
@@ -117,18 +123,21 @@ export class UsersStore {
   openCreateDialog(): void {
     this.selectedUser.set(null);
     this.dialogMode.set('create');
+    this.dialogError.set(null);
     this.dialogVisible.set(true);
   }
 
   openEditDialog(user: User): void {
     this.selectedUser.set(user);
     this.dialogMode.set('edit');
+    this.dialogError.set(null);
     this.dialogVisible.set(true);
   }
 
   closeDialog(): void {
     this.dialogVisible.set(false);
     this.selectedUser.set(null);
+    this.dialogError.set(null);
   }
 
   // ── Confirm deactivate dialog ───────────────────────────────────────────────
@@ -145,7 +154,7 @@ export class UsersStore {
   // ── CRUD ───────────────────────────────────────────────────────────────────
   async saveUser(payload: CreateUserPayload | UpdateUserPayload): Promise<void> {
     this.loading.set(true);
-    this.error.set(null);
+    this.dialogError.set(null);
     try {
       if (this.dialogMode() === 'edit' && this.selectedUser()) {
         const updated = await this.updateUserUseCase.execute(
@@ -160,7 +169,7 @@ export class UsersStore {
       }
       this.closeDialog();
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to save user.'));
+      this.dialogError.set(this.resolveErrorMessage(err, 'No se pudo guardar el usuario.'));
     } finally {
       this.loading.set(false);
     }
@@ -180,7 +189,7 @@ export class UsersStore {
       this.confirmDialogVisible.set(false);
       this.userToToggle.set(null);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to update user status.'));
+      this.error.set(this.resolveErrorMessage(err, 'No se pudo actualizar el estado del usuario.'));
     } finally {
       this.loading.set(false);
     }

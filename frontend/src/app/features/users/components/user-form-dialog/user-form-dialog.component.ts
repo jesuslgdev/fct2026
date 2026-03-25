@@ -43,8 +43,13 @@ export class UserFormDialogComponent {
 
   constructor() {
     effect(() => {
+      const visible = this.store.dialogVisible();
       const user = this.store.selectedUser();
       const mode = this.store.dialogMode();
+
+      
+      if (!visible) return;
+
       if (mode === 'edit' && user) {
         this.form.patchValue({
           firstName:    user.firstName,
