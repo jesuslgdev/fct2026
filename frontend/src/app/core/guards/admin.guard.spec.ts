@@ -17,7 +17,7 @@ describe('adminGuard', () => {
 
   beforeEach(() => {
     mockAuth = new MockAuthService();
-    mockRouter = { createUrlTree: vi.fn().mockReturnValue('/legal/terms') };
+    mockRouter = { createUrlTree: vi.fn().mockReturnValue('/unauthorized') };
 
     TestBed.configureTestingModule({
       providers: [
@@ -38,14 +38,14 @@ describe('adminGuard', () => {
     expect(mockRouter.createUrlTree).not.toHaveBeenCalled();
   });
 
-  it('should redirect to terms when user is not admin', async () => {
+  it('should redirect to unauthorized when user is not admin', async () => {
     mockAuth.setIsAdmin(false);
 
     const result = await TestBed.runInInjectionContext(() =>
       adminGuard({} as never, {} as never)
     );
 
-    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/legal/terms']);
-    expect(result).toBe('/legal/terms');
+    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/unauthorized']);
+    expect(result).toBe('/unauthorized');
   });
 });
