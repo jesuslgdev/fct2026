@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from '@core/guards/admin.guard';
 
 export const USERS_ROUTES: Routes = [
   {
@@ -8,5 +9,6 @@ export const USERS_ROUTES: Routes = [
         (m) => m.UsersPageComponent,
       ),
     title: 'Gestión de usuarios',
+    canActivate: [adminGuard],
   },
 ];

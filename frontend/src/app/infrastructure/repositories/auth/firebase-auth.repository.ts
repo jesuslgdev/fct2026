@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
   GoogleAuthProvider,
   getIdToken,
+  onAuthStateChanged,
   signInWithPopup,
   signOut,
 } from 'firebase/auth';
@@ -12,7 +13,7 @@ import { Session } from '@domain/models/session.model';
 import { AccessDeniedError } from '@domain/models/auth-errors';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { environment } from 'environments/environment';
-import { USER_ROLES, type UserRole } from '@domain/enums/user-role.enum';
+import { UserRole } from '@domain/enums/user-role.enum';
 
 interface LoginResponse {
   role: string;
@@ -36,7 +37,7 @@ export class FirebaseAuthRepository implements AuthRepository {
           { firebase_id_token: firebaseToken },
         ),
       );
-      const role: UserRole | null = USER_ROLES.includes(response.role as UserRole)
+      const role: UserRole | null = Object.values(UserRole).includes(response.role as UserRole)
         ? (response.role as UserRole)
         : null;
 
@@ -69,5 +70,41 @@ export class FirebaseAuthRepository implements AuthRepository {
     } finally {
       await signOut(this.auth);
     }
+  }
+
+  restoreSession(): Promise<Session | null> {
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(this.auth, async (user) => {
+        unsubscribe();
+        if (!user) {
+          resolve(null);
+          return;
+        }
+        try {
+          const firebaseToken = await getIdToken(user);
+          const response = await firstValueFrom(
+            this.http.post<LoginResponse>(
+              `${environment.apiUrl}/api/v1/auth/login`,
+              { firebase_id_token: firebaseToken },
+            ),
+          );
+          const role: UserRole | null = Object.values(UserRole).includes(response.role as UserRole)
+            ? (response.role as UserRole)
+            : null;
+          resolve({
+            token: firebaseToken,
+            user: {
+              uid: user.uid,
+              email: user.email,
+              displayName: response.name || user.displayName,
+              photoURL: user.photoURL,
+              role,
+            },
+          });
+        } catch {
+          resolve(null);
+        }
+      });
+    });
   }
 }

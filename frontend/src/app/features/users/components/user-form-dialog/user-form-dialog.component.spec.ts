@@ -4,13 +4,14 @@ import { signal } from '@angular/core';
 import { UserFormDialogComponent } from '@features/users/components/user-form-dialog/user-form-dialog.component';
 import { UsersStore } from '@features/users/state/users.store';
 import { User } from '@domain/models/user.model';
+import { UserRole } from '@domain/enums/user-role.enum';
 
 const USER_MOCK: User = {
   id: 10,
   firstName: 'Elena',
   lastName: 'Ruiz',
   email: 'elena@example.com',
-  role: 'Administrator',
+  role: UserRole.Administrator,
   departmentId: 2,
   active: true,
 };
@@ -53,7 +54,7 @@ describe('UserFormDialogComponent', () => {
       firstName: 'Ana',
       lastName: 'Garcia',
       email: 'ana@example.com',
-      role: 'Manager',
+      role: UserRole.Manager,
       departmentId: 1,
     });
 
@@ -79,7 +80,7 @@ describe('UserFormDialogComponent', () => {
     component.form.patchValue({
       firstName: 'Elena Maria',
       lastName: 'Ruiz',
-      role: 'Administrator',
+      role: UserRole.Administrator,
       departmentId: 2,
     });
 
@@ -88,7 +89,7 @@ describe('UserFormDialogComponent', () => {
     expect(store.saveUser).toHaveBeenCalledWith({
       firstName: 'Elena Maria',
       lastName: 'Ruiz',
-      role: 'Administrator',
+      role: UserRole.Administrator,
       departmentId: 2,
     });
   });
