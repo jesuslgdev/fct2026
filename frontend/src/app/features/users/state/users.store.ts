@@ -46,7 +46,7 @@ export class UsersStore {
   readonly userToToggle = signal<User | null>(null);
 
   // ── Computed ───────────────────────────────────────────────────────────────
-  readonly canEdit = computed(() => this.authService.user()?.role === 'Administrator');
+  readonly canEdit = computed(() => this.authService.user()?.role === UserRole.Administrator);
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
   readonly usersView = computed<UserView[]>(() =>
     this.users().map((user) => ({

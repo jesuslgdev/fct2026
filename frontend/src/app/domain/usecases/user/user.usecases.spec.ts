@@ -9,6 +9,7 @@ import {
   UserQueryParams,
   PagedResult,
 } from '@domain/models/user.model';
+import { UserRole } from '@domain/enums/user-role.enum';
 import { GetUsersUseCase } from '@domain/usecases/user/get-users.usecase';
 import { GetUserByIdUseCase } from '@domain/usecases/user/get-user-by-id.usecase';
 import { CreateUserUseCase } from '@domain/usecases/user/create-user.usecase';
@@ -20,7 +21,7 @@ const USER_MOCK: User = {
   firstName: 'Ana',
   lastName: 'Garcia',
   email: 'ana@example.com',
-  role: 'Administrator',
+  role: UserRole.Administrator,
   departmentId: 1,
   active: true,
 };
@@ -87,7 +88,7 @@ describe('User Use Cases', () => {
       firstName: 'Ana',
       lastName: 'Garcia',
       email: 'ana@example.com',
-      role: 'Administrator',
+      role: UserRole.Administrator,
       departmentId: 1,
     };
     repo.createUser.mockResolvedValueOnce(USER_MOCK);

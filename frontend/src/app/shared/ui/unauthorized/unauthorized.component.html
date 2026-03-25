@@ -1,0 +1,28 @@
+<div class="flex-center min-h-screen bg-surface-50 p-4">
+  <ui-card class="w-full max-w-md text-center">
+    <div class="mb-6">
+      <i class="pi pi-lock text-6xl text-surface-400"></i>
+    </div>
+    
+    <h1 class="text-style-title mb-4">Acceso No Autorizado</h1>
+    
+    <p class="text-subtitle-base text-surface-600 mb-6">
+      No tienes permisos para acceder a esta sección. 
+      Si crees que esto es un error, contacta con el administrador del sistema.
+    </p>
+    
+    <div class="flex gap-3 justify-center">
+      <ui-button 
+        label="Volver al Inicio" 
+        icon="pi pi-home"
+        routerLink="/dashboard"
+      />
+      <ui-button 
+        label="Cerrar Sesión" 
+        icon="pi pi-sign-out"
+        variant="secondary"
+        (clicked)="logout()"
+      />
+    </div>
+  </ui-card>
+</div>

@@ -19,3 +19,4 @@ export { CheckboxComponent } from './checkbox/checkbox.component';
 export type { CheckboxVariant } from './checkbox/checkbox.component';
 
 export { GoogleLogoComponent } from './google-logo/google-logo.component';
+export { UnauthorizedComponent } from './unauthorized/unauthorized.component';
