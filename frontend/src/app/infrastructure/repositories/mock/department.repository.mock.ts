@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { DepartmentRepository } from '@domain/repositories/department.repository';
 import { Department } from '@domain/models/department.model';
-import { DepartmentNameDuplicateError, DepartmentHasUsersError } from '@domain/models/department-errors';
+import { DepartmentNameDuplicateError } from '@domain/models/department-errors';
 
 // TODO add base url for API REST
 

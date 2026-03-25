@@ -94,7 +94,7 @@ export class AppShellComponent {
 
   readonly navSections = computed(() => {
     const currentUser = this.authService.user();
-    const isAdmin = currentUser?.role === 'Administrator';
+    const isAdmin = isAdminRole(currentUser?.role);
     
     const allSections: NavSection[] = [
       {
