@@ -23,8 +23,7 @@ export class DepartmentsStore {
     this._loading.set(true);
     try {
       this._departments.set(await firstValueFrom(this.getDepts.execute()));
-    } catch (error) {
-      console.error('Error loading departments:', error);
+    } catch {
       this._departments.set([]);
     } finally {
       this._loading.set(false);
