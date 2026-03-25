@@ -158,6 +158,7 @@ def _product_to_dto(product: Product) -> ProductDTO:
         category_id=product.category_id,
         category_name=product.category.name if product.category else None,
         price=product.price,
+        vat_rate=product.vat_rate,
         stock_current=product.stock_current,
         stock_min=product.stock_min,
         is_active=product.is_active,
@@ -229,6 +230,7 @@ async def create_product(
         description=body.description,
         category_id=body.category_id,
         price=body.price,
+        vat_rate=body.vat_rate,
         stock_current=body.stock_current,
         stock_min=body.stock_min,
     )
@@ -252,6 +254,7 @@ async def update_product(
         description=body.description,
         category_id=body.category_id,
         price=body.price,
+        vat_rate=body.vat_rate,
         stock_min=body.stock_min,
     )
     return _product_to_dto(result)
