@@ -1,8 +1,5 @@
 from decimal import Decimal
 
-from modules.catalog.domain.interfaces.repositories.i_product_repository import (
-    IProductRepository,
-)
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.purchases.domain.exceptions import PurchaseException, PurchaseExceptionInfo
 from modules.purchases.domain.interfaces.repositories.i_purchase_repository import (
@@ -11,21 +8,20 @@ from modules.purchases.domain.interfaces.repositories.i_purchase_repository impo
 from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
     ICreatePurchaseUseCase,
 )
-from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
-    ISupplierRepository,
-)
+from shared.domain.interfaces.i_product_reader import IProductReader
+from shared.domain.interfaces.i_supplier_reader import ISupplierReader
 
 
 class CreatePurchaseUseCase(ICreatePurchaseUseCase):
     def __init__(
         self,
         purchase_repo: IPurchaseRepository,
-        supplier_repo: ISupplierRepository,
-        product_repo: IProductRepository,
+        supplier_reader: ISupplierReader,
+        product_reader: IProductReader,
     ) -> None:
         self._purchase_repo = purchase_repo
-        self._supplier_repo = supplier_repo
-        self._product_repo = product_repo
+        self._supplier_reader = supplier_reader
+        self._product_reader = product_reader
 
     async def execute(
         self,
@@ -34,7 +30,7 @@ class CreatePurchaseUseCase(ICreatePurchaseUseCase):
         warehouse_id: int,
         lines: list[dict],
     ) -> Purchase:
-        supplier = await self._supplier_repo.get_by_id(supplier_id)
+        supplier = await self._supplier_reader.get_by_id(supplier_id)
         if supplier is None:
             raise PurchaseException(PurchaseExceptionInfo.PURCHASE_NOT_FOUND)
         if not supplier.is_active:
@@ -44,13 +40,13 @@ class CreatePurchaseUseCase(ICreatePurchaseUseCase):
         subtotal = Decimal("0")
 
         for line in lines:
-            product = await self._product_repo.get_by_id(line["product_id"])
+            product = await self._product_reader.get_by_id(line["product_id"])
             if product is None:
                 raise PurchaseException(PurchaseExceptionInfo.PRODUCT_NOT_FOUND)
             if not product.is_active:
                 raise PurchaseException(PurchaseExceptionInfo.PRODUCT_NOT_ACTIVE)
 
-            association = await self._supplier_repo.get_association(
+            association = await self._supplier_reader.get_association(
                 supplier_id, line["product_id"]
             )
             if association is None:
