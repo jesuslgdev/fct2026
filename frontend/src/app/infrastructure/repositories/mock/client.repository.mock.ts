@@ -1,14 +1,17 @@
 import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 import { ClientRepository } from '@domain/repositories/client.repository';
+import { ClientNotFoundError } from '@domain/models/client-errors';
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
   ClientQueryParams,
   PagedResult,
 } from '@domain/models/client.model';
 
-const INITIAL_MOCK_CLIENTS: Client[] = [
+const INITIAL_MOCK_CLIENTS: ClientDetail[] = [
   {
     clientId: 1,
     name: 'Acme Corp',
@@ -20,8 +23,6 @@ const INITIAL_MOCK_CLIENTS: Client[] = [
     phone: '600000001',
     email: 'acme@example.com',
     isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   },
   {
     clientId: 2,
@@ -34,8 +35,6 @@ const INITIAL_MOCK_CLIENTS: Client[] = [
     phone: '600000002',
     email: 'beta@example.com',
     isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   },
   {
     clientId: 3,
@@ -48,20 +47,18 @@ const INITIAL_MOCK_CLIENTS: Client[] = [
     phone: '600000003',
     email: 'gamma@example.com',
     isActive: false,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   },
 ];
 
 @Injectable()
 export class MockClientRepository implements ClientRepository {
-  private clients: Client[];
+  private clients: ClientDetail[];
 
   constructor() {
     this.clients = INITIAL_MOCK_CLIENTS.map((c) => ({ ...c }));
   }
 
-  async getClients(params: ClientQueryParams): Promise<PagedResult<Client>> {
+  getClients(params: ClientQueryParams): Observable<PagedResult<Client>> {
     let filtered = [...this.clients];
 
     if (params.search) {
@@ -81,18 +78,20 @@ export class MockClientRepository implements ClientRepository {
     const start = (params.page - 1) * params.pageSize;
     const data = filtered.slice(start, start + params.pageSize);
 
-    return { data, total, page: params.page, pageSize: params.pageSize };
+    return of({ data, total, page: params.page, pageSize: params.pageSize });
   }
 
-  async getClientById(id: number): Promise<Client> {
+  getClientById(id: number): Observable<ClientDetail> {
     const client = this.clients.find((c) => c.clientId === id);
-    if (!client) throw new Error(`Client with ID ${id} not found.`);
-    return { ...client };
+    if (!client) {
+      return throwError(() => new ClientNotFoundError(`Client with ID ${id} not found.`));
+    }
+    return of({ ...client });
   }
 
-  async createClient(payload: CreateClientPayload): Promise<Client> {
+  createClient(payload: CreateClientPayload): Observable<ClientDetail> {
     const nextId = Math.max(0, ...this.clients.map((c) => c.clientId)) + 1;
-    const newClient: Client = {
+    const newClient: ClientDetail = {
       clientId: nextId,
       name: payload.name,
       taxId: payload.taxId,
@@ -103,18 +102,18 @@ export class MockClientRepository implements ClientRepository {
       phone: payload.phone,
       email: payload.email,
       isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
     this.clients = [...this.clients, newClient];
-    return { ...newClient };
+    return of({ ...newClient });
   }
 
-  async updateClient(id: number, payload: UpdateClientPayload): Promise<Client> {
+  updateClient(id: number, payload: UpdateClientPayload): Observable<ClientDetail> {
     const index = this.clients.findIndex((c) => c.clientId === id);
-    if (index === -1) throw new Error(`Client with ID ${id} not found.`);
+    if (index === -1) {
+      return throwError(() => new ClientNotFoundError(`Client with ID ${id} not found.`));
+    }
 
-    const updated: Client = {
+    const updated: ClientDetail = {
       ...this.clients[index],
       ...(payload.name !== undefined && {
         name: payload.name ?? this.clients[index].name,
@@ -137,19 +136,21 @@ export class MockClientRepository implements ClientRepository {
       ...(payload.email !== undefined && {
         email: payload.email ?? this.clients[index].email,
       }),
-      updatedAt: new Date().toISOString(),
     };
 
     this.clients = this.clients.map((c) => (c.clientId === id ? updated : c));
-    return { ...updated };
+    return of({ ...updated });
   }
 
-  async toggleClientStatus(id: number, isActive: boolean): Promise<void> {
+  toggleClientStatus(id: number, isActive: boolean): Observable<void> {
     const index = this.clients.findIndex((c) => c.clientId === id);
-    if (index === -1) throw new Error(`Client with ID ${id} not found.`);
+    if (index === -1) {
+      return throwError(() => new ClientNotFoundError(`Client with ID ${id} not found.`));
+    }
 
     this.clients = this.clients.map((c) =>
       c.clientId === id ? { ...c, isActive } : c,
     );
+    return of(undefined);
   }
 }
