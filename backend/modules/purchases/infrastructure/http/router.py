@@ -24,6 +24,7 @@ async def list_purchases(
     supplier_id: int | None = Query(None),
     date_from: datetime | None = Query(None),
     date_to: datetime | None = Query(None),
+    search: str | None = Query(None, max_length=255),
     _: UserSession = Depends(get_current_user),
     use_case: IListPurchasesUseCase = Depends(get_list_purchases_use_case),
 ):
@@ -36,6 +37,7 @@ async def list_purchases(
         supplier_id=supplier_id,
         date_from=date_from,
         date_to=date_to,
+        search=search,
     )
     return PaginatedResponse(
         items=[

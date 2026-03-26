@@ -23,6 +23,7 @@ class ListPurchasesUseCase(IListPurchasesUseCase):
         supplier_id: int | None,
         date_from: datetime | None,
         date_to: datetime | None,
+        search: str | None = None,
     ) -> PaginatedResult:
         return await self._repo.get_all_paginated(
             page=page,
@@ -33,4 +34,5 @@ class ListPurchasesUseCase(IListPurchasesUseCase):
             supplier_id=supplier_id,
             date_from=date_from,
             date_to=date_to,
+            search=search,
         )
