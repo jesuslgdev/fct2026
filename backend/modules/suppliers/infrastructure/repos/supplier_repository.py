@@ -7,10 +7,11 @@ from modules.suppliers.domain.exceptions import SupplierException, SupplierExcep
 from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
     ISupplierRepository,
 )
+from shared.domain.interfaces.i_supplier_reader import ISupplierReader
 from shared.domain.paginated_result import PaginatedResult
 
 
-class SupplierRepository(ISupplierRepository):
+class SupplierRepository(ISupplierRepository, ISupplierReader):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
@@ -126,3 +127,20 @@ class SupplierRepository(ISupplierRepository):
         self._db.add_all(suppliers)
         await self._db.flush()
         return len(suppliers)
+
+    # --- ISupplierReader methods ---
+
+    async def is_active(self, supplier_id: int) -> bool:
+        supplier = await self.get_by_id(supplier_id)
+        return supplier is not None and supplier.is_active
+
+    async def get_association(
+        self, supplier_id: int, product_id: int
+    ) -> SupplierProduct | None:
+        result = await self._db.execute(
+            select(SupplierProduct).where(
+                SupplierProduct.supplier_id == supplier_id,
+                SupplierProduct.product_id == product_id,
+            )
+        )
+        return result.scalar_one_or_none()
