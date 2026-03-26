@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { of } from 'rxjs';
+import { signal } from '@angular/core';
 import { DepartmentRepository } from '@domain/repositories/department.repository';
+import { UserRepository } from '@domain/repositories/user.repository';
+import { AuthService } from '@core/services/auth.service';
 import { Department } from '@domain/models/department.model';
 import { DepartmentHasUsersError } from '@domain/models/department-errors';
 import { GetDepartmentsUseCase } from './get-departments.usecase';
@@ -19,6 +22,15 @@ class MockDepartmentRepository implements DepartmentRepository {
   delete = vi.fn().mockReturnValue(of(undefined));
 }
 
+class MockUserRepository {
+  getUsers = vi.fn();
+  getDepartments = vi.fn();
+}
+
+class MockAuthService {
+  readonly isAdmin = signal(false);
+}
+
 describe('Department Use Cases', () => {
   let mockRepo: MockDepartmentRepository;
 
@@ -31,6 +43,8 @@ describe('Department Use Cases', () => {
         UpdateDepartmentUseCase,
         DeleteDepartmentUseCase,
         { provide: DepartmentRepository, useValue: mockRepo },
+        { provide: UserRepository, useValue: new MockUserRepository() },
+        { provide: AuthService, useValue: new MockAuthService() },
       ],
     });
   });

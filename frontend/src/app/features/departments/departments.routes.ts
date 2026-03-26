@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from '@core/guards/admin.guard';
 
 export const DEPARTMENTS_ROUTES: Routes = [
   {
@@ -8,5 +9,6 @@ export const DEPARTMENTS_ROUTES: Routes = [
         m => m.DepartmentsPageComponent,
       ),
     title: 'Departamentos',
+    canActivate: [adminGuard],
   },
 ];

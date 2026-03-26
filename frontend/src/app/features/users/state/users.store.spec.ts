@@ -46,6 +46,7 @@ class MockAuthService {
     photoURL: null,
     role: UserRole.Administrator as const,
   });
+  readonly isAdmin = signal(true);
 }
 
 class MockUserRepository implements UserRepository {

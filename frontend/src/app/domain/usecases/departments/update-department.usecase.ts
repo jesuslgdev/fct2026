@@ -8,6 +8,10 @@ export class UpdateDepartmentUseCase {
   private readonly repo = inject(DepartmentRepository);
 
   execute(id: string, name: string): Observable<Department> {
-    return this.repo.update(id, name.trim());
+    const trimmed = name.trim();
+    if (!trimmed) {
+      throw new Error('Department name cannot be empty.');
+    }
+    return this.repo.update(id, trimmed);
   }
 }

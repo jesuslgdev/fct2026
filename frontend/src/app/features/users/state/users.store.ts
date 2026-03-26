@@ -6,7 +6,7 @@ import { GetUsersUseCase } from '@domain/usecases/user/get-users.usecase';
 import { CreateUserUseCase } from '@domain/usecases/user/create-user.usecase';
 import { UpdateUserUseCase } from '@domain/usecases/user/update-user.usecase';
 import { ToggleUserStatusUseCase } from '@domain/usecases/user/toggle-user-status.usecase';
-import { GetDepartmentsUseCase } from '@domain/usecases/user/get-departments.usecase';
+import { GetDepartmentsForUsersUseCase } from '@domain/usecases/departments/get-departments-for-users.usecase';
 import {
   UserApiError,
   UserForbiddenError,
@@ -21,7 +21,7 @@ type UserView = User & { departmentName: string };
 @Injectable()
 export class UsersStore {
   private readonly authService = inject(AuthService);
-  private readonly getDepartmentsUseCase = inject(GetDepartmentsUseCase);
+  private readonly getDepartmentsUseCase = inject(GetDepartmentsForUsersUseCase);
 
   private readonly getUsersUseCase = inject(GetUsersUseCase);
   private readonly createUserUseCase = inject(CreateUserUseCase);
@@ -46,7 +46,7 @@ export class UsersStore {
   readonly userToToggle = signal<User | null>(null);
 
   // ── Computed ───────────────────────────────────────────────────────────────
-  readonly canEdit = computed(() => this.authService.user()?.role === UserRole.Administrator);
+  readonly canEdit = this.authService.isAdmin;
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
   readonly usersView = computed<UserView[]>(() =>
     this.users().map((user) => ({

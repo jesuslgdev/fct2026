@@ -17,12 +17,8 @@ import {
   UserQueryParams,
   PagedResult,
 } from '@domain/models/user.model';
-import {
-  UserDto,
-  UsersPageDto,
-  SetUserActiveDto,
-  DepartmentDto,
-} from '@infrastructure/dtos/user.dto';
+import { UserDto, UsersPageDto, SetUserActiveDto } from '@infrastructure/dtos/user.dto';
+import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 import { UserMapper } from '@infrastructure/mappers/user.mapper';
 import { environment } from 'environments/environment';
 
