@@ -13,7 +13,6 @@ import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/fireba
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { ClientRepository } from '@domain/repositories/client.repository';
 import { HttpClientRepository } from '@infrastructure/repositories/http/client.repository.http';
-import { MockClientRepository } from '@infrastructure/repositories/mock/client.repository.mock';
 import { DepartmentRepository } from '@domain/repositories/department.repository';
 import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
