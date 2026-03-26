@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class IListPurchasesUseCase(ABC):

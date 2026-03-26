@@ -45,7 +45,7 @@ from modules.warehouse.infrastructure.http.schemas import (
     WarehouseDTO,
     WarehouseStockDetailDTO,
 )
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
 router = APIRouter(prefix="/warehouse", tags=["Warehouse - Stock"])

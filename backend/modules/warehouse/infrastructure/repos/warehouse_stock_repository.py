@@ -9,7 +9,7 @@ from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_repository import (
     IWarehouseStockRepository,
 )
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class WarehouseStockRepository(IWarehouseStockRepository):

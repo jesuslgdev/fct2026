@@ -10,7 +10,7 @@ from modules.purchases.domain.interfaces.repositories.i_purchase_repository impo
     IPurchaseRepository,
 )
 from modules.suppliers.domain.entities.supplier import Supplier
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 SORT_FIELDS = {
     "purchase_number": Purchase.purchase_number,

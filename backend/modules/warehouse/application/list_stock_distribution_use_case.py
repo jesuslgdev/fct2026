@@ -5,7 +5,7 @@ from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_reposito
 from modules.warehouse.domain.interfaces.use_cases.i_list_stock_distribution_use_case import (
     IListStockDistributionUseCase,
 )
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class ListStockDistributionUseCase(IListStockDistributionUseCase):

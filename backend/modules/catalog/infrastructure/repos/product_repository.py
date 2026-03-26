@@ -9,8 +9,8 @@ from modules.catalog.domain.exceptions import CatalogException, CatalogException
 from modules.catalog.domain.interfaces.repositories.i_product_repository import (
     IProductRepository,
 )
+from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_product_reader import IProductReader
-from shared.domain.paginated_result import PaginatedResult
 
 SORT_FIELDS = {
     "name": Product.name,

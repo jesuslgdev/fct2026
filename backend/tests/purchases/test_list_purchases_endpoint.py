@@ -9,8 +9,8 @@ from composition.dependencies import get_list_purchases_use_case
 from composition.security import get_current_user
 from main import app
 from modules.purchases.domain.entities.purchase import Purchase
-from shared.domain.entities.user_session import UserSession
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.dtos.user_session import UserSession
 
 
 def _mock_user():

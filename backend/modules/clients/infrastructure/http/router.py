@@ -36,6 +36,9 @@ from modules.clients.infrastructure.http.schemas import (
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
 
+# ── Client Management ───────────────────────────────────────────
+
+
 def _to_detail_dto(client: Client) -> ClientDetailDTO:
     """Map a Client ORM entity to a ClientDetailDTO.
 

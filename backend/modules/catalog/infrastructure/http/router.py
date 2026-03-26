@@ -58,13 +58,13 @@ from modules.catalog.infrastructure.http.schemas import (
     UpdateCategoryRequest,
     UpdateProductRequest,
 )
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
-router = APIRouter(prefix="/catalog", tags=["Catalog"])
+router = APIRouter(prefix="/catalog")
 
 
-# --- Category Endpoints ---
+# ── Category Management ─────────────────────────────────────────
 
 
 def _category_to_dto(category: Category) -> CategoryDTO:
@@ -82,6 +82,7 @@ async def list_categories(
     use_case: IListCategoriesUseCase = Depends(get_list_categories_use_case),
     _: UserSession = Depends(get_current_user),
 ):
+    """Return all categories."""
     results = await use_case.execute()
     return [_category_to_dto(c) for c in results]
 
@@ -96,6 +97,7 @@ async def get_category(
     use_case: IGetCategoryUseCase = Depends(get_get_category_use_case),
     _: UserSession = Depends(get_current_user),
 ):
+    """Return a single category by ID."""
     result = await use_case.execute(category_id)
     return _category_to_dto(result)
 
@@ -111,6 +113,7 @@ async def create_category(
     use_case: ICreateCategoryUseCase = Depends(get_create_category_use_case),
     _: UserSession = Depends(require_admin),
 ):
+    """Create a new category."""
     result = await use_case.execute(body.name, body.description)
     return _category_to_dto(result)
 
@@ -126,6 +129,7 @@ async def update_category(
     use_case: IUpdateCategoryUseCase = Depends(get_update_category_use_case),
     _: UserSession = Depends(require_admin),
 ):
+    """Update an existing category."""
     result = await use_case.execute(category_id, body.name, body.description)
     return _category_to_dto(result)
 
@@ -138,10 +142,11 @@ async def delete_category(
     use_case: IDeleteCategoryUseCase = Depends(get_delete_category_use_case),
     _: UserSession = Depends(require_admin),
 ):
+    """Delete a category."""
     await use_case.execute(category_id)
 
 
-# --- Product Endpoints ---
+# ── Product Management ──────────────────────────────────────────
 
 
 def _product_to_dto(product: Product) -> ProductDTO:
@@ -175,6 +180,7 @@ async def list_products(
     use_case: IListProductsUseCase = Depends(get_list_products_use_case),
     _: UserSession = Depends(get_current_user),
 ):
+    """Return a paginated list of products with optional filters."""
     result = await use_case.execute(
         page,
         page_size,
@@ -200,18 +206,23 @@ async def get_product(
     use_case: IGetProductUseCase = Depends(get_get_product_use_case),
     _: UserSession = Depends(get_current_user),
 ):
+    """Return a single product by ID."""
     result = await use_case.execute(product_id)
     return _product_to_dto(result)
 
 
 @router.post(
-    "/products", response_model=ProductDTO, status_code=201, tags=["Catalog - Products"]
+    "/products",
+    response_model=ProductDTO,
+    status_code=201,
+    tags=["Catalog - Products"],
 )
 async def create_product(
     body: CreateProductRequest,
     use_case: ICreateProductUseCase = Depends(get_create_product_use_case),
     _: UserSession = Depends(require_purchases_manager_or_admin),
 ):
+    """Create a new product."""
     result = await use_case.execute(
         product_code=body.product_code,
         name=body.name,
@@ -233,6 +244,7 @@ async def update_product(
     use_case: IUpdateProductUseCase = Depends(get_update_product_use_case),
     _: UserSession = Depends(require_purchases_manager_or_admin),
 ):
+    """Update an existing product."""
     result = await use_case.execute(
         product_id=product_id,
         product_code=body.product_code,
@@ -254,4 +266,5 @@ async def set_product_active(
     use_case: ISetProductActiveUseCase = Depends(get_set_product_active_use_case),
     _: UserSession = Depends(require_purchases_manager_or_admin),
 ):
+    """Activate or deactivate a product."""
     await use_case.execute(product_id, body.is_active)

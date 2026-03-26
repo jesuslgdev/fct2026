@@ -6,7 +6,7 @@ from modules.purchases.domain.interfaces.repositories.i_purchase_repository impo
 from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case import (
     IListPurchasesUseCase,
 )
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class ListPurchasesUseCase(IListPurchasesUseCase):

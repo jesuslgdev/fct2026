@@ -4,7 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.auth.infrastructure.repos.auth_repository import AuthRepository
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import get_db
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
 

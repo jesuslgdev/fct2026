@@ -8,7 +8,7 @@ from modules.catalog.domain.entities.category import Category
 from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.warehouse import Warehouse
 from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import get_db
 
 

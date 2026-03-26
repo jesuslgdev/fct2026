@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
-from modules.suppliers.domain.entities.product_supplier_detail import (
+from modules.suppliers.domain.dtos.product_supplier_detail import (
     ProductSupplierDetail,
+)
+from modules.suppliers.domain.dtos.supplier_product_detail import (
+    SupplierProductDetail,
 )
 from modules.suppliers.domain.entities.supplier import Supplier
 from modules.suppliers.domain.entities.supplier_product import SupplierProduct
-from modules.suppliers.domain.entities.supplier_product_detail import (
-    SupplierProductDetail,
-)
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class ISupplierRepository(ABC):
