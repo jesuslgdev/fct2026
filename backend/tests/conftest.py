@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import modules.catalog.domain.entities.product  # noqa: F401
 from composition.security import get_current_user
 from main import app
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import engine, get_db
 
 
@@ -38,7 +39,14 @@ async def client(db_session: AsyncSession):
         yield db_session
 
     def override_get_current_user():
-        return {"email": "admin@test.com", "role": "Administrator"}
+        return UserSession(
+            user_id=1,
+            email="admin@test.com",
+            role="Administrator",
+            department_id=None,
+            firebase_uid="test-uid",
+            name="Admin Test",
+        )
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user

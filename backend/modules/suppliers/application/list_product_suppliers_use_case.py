@@ -1,4 +1,4 @@
-from modules.suppliers.domain.entities.product_supplier_detail import (
+from modules.suppliers.domain.dtos.product_supplier_detail import (
     ProductSupplierDetail,
 )
 from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
@@ -7,7 +7,7 @@ from modules.suppliers.domain.interfaces.repositories.i_supplier_repository impo
 from modules.suppliers.domain.interfaces.use_cases.i_list_product_suppliers_use_case import (
     IListProductSuppliersUseCase,
 )
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class ListProductSuppliersUseCase(IListProductSuppliersUseCase):

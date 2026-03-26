@@ -13,11 +13,13 @@ import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/fireba
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { ClientRepository } from '@domain/repositories/client.repository';
 import { MockClientRepository } from '@infrastructure/repositories/mock/client.repository.mock';
-import { AuthService } from '@core/services/auth.service';
+import { DepartmentRepository } from '@domain/repositories/department.repository';
+import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
+import { AuthService } from '@core/services/auth.service';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -36,6 +38,7 @@ export const appConfig: ApplicationConfig = {
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: ClientRepository, useClass: MockClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
+    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     {
       provide: APP_INITIALIZER,
       useFactory: (authRepo: AuthRepository, authService: AuthService) =>
@@ -52,17 +55,12 @@ export const appConfig: ApplicationConfig = {
           darkModeSelector: 'none',
           cssLayer: {
             name: 'primeng',
-            // Layer order: theme → base → primeng → components → utilities
             order: 'theme, base, primeng, components, utilities',
           },
         },
       },
     }),
-
     MessageService,
     ConfirmationService,
-
-    // { provide: PurchaseRepository, useClass: PurchaseRepositoryMock },
-    // TODO add base url for API REST
   ],
 };

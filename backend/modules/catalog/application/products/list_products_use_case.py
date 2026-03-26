@@ -5,7 +5,7 @@ from modules.catalog.domain.interfaces.repositories.i_product_repository import 
 from modules.catalog.domain.interfaces.use_cases.products.i_list_products_use_case import (
     IListProductsUseCase,
 )
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class ListProductsUseCase(IListProductsUseCase):

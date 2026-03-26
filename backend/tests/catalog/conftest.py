@@ -10,7 +10,7 @@ from composition.security import (
 )
 from main import app
 from modules.admin.domain.entities.department import Department
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import get_db
 
 

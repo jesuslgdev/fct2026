@@ -19,6 +19,16 @@ export const routes: Routes = [
 		component: AppShellComponent,
 		canActivate: [authGuard],
 		children: [
+			// default redirect for authenticated users
+			{
+				path: '',
+				pathMatch: 'full',
+				redirectTo: 'departments',
+			},
+			{
+				path: 'departments',
+				loadChildren: () => import('@features/departments/departments.routes').then(m => m.DEPARTMENTS_ROUTES),
+			},
 			{
 				path: 'legal',
 				loadChildren: () => import('@features/legal/legal.routes').then(m => m.LEGAL_ROUTES),

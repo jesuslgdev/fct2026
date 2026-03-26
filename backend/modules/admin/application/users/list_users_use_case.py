@@ -4,8 +4,8 @@ from modules.admin.domain.interfaces.repositories.i_user_repository import (
 from modules.admin.domain.interfaces.use_cases.users.i_list_users_use_case import (
     IListUsersUseCase,
 )
+from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.entities.user import User
-from shared.domain.paginated_result import PaginatedResult
 
 
 class ListUsersUseCase(IListUsersUseCase):

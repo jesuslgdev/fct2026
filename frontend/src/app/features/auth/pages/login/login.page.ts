@@ -32,6 +32,12 @@ export class LoginPage {
     try {
       const session = await this.signInWithGoogle.execute();
       this.authService.setSession(session);
+
+      if (!this.authService.isAdmin()) {
+        await this.router.navigateByUrl('/legal/terms');
+        return;
+      }
+
       const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
       const safeUrl = returnUrl?.startsWith('/') ? returnUrl : '/';
       await this.router.navigateByUrl(safeUrl);

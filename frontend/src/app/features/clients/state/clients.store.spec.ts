@@ -21,6 +21,9 @@ import {
 import {
   ClientForbiddenError,
   ClientValidationError,
+  ClientUnauthorizedError,
+  ClientNotFoundError,
+  ClientApiError,
 } from '@domain/models/client-errors';
 
 const CLIENT_DETAIL_A: ClientDetail = {
@@ -76,23 +79,23 @@ class MockAuthService {
 }
 
 class MockGetClientsUseCase {
-  execute = vi.fn();
+  execute = vi.fn().mockImplementation(() => of({ data: [], total: 0, page: 1, pageSize: 20 }));
 }
 
 class MockCreateClientUseCase {
-  execute = vi.fn();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_DETAIL_B));
 }
 
 class MockUpdateClientUseCase {
-  execute = vi.fn();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_DETAIL_A));
 }
 
 class MockToggleClientStatusUseCase {
-  execute = vi.fn();
+  execute = vi.fn().mockImplementation(() => of(undefined));
 }
 
 class MockGetClientByIdUseCase {
-  execute = vi.fn();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_DETAIL_A));
 }
 
 describe('ClientsStore', () => {
@@ -151,7 +154,7 @@ describe('ClientsStore', () => {
   });
 
   it('sets error when loading clients fails', async () => {
-    getClientsUseCase.execute.mockReturnValue(throwError(() => new Error('boom')));
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new Error('boom')));
 
     await store.loadClients();
 
@@ -160,7 +163,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps forbidden clients error to a specific message', async () => {
-    getClientsUseCase.execute.mockReturnValue(throwError(() => new ClientForbiddenError()));
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new ClientForbiddenError()));
 
     await store.loadClients();
 
@@ -168,7 +171,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps validation clients error to backend message', async () => {
-    createClientUseCase.execute.mockReturnValue(
+    createClientUseCase.execute.mockReturnValueOnce(
       throwError(() => new ClientValidationError({ field: 'taxId' }, 'Tax ID already exists.')),
     );
 
@@ -197,7 +200,7 @@ describe('ClientsStore', () => {
       phone: '600000002',
       email: 'beta@example.com',
     };
-    createClientUseCase.execute.mockReturnValue(of(CLIENT_DETAIL_B));
+    createClientUseCase.execute.mockReturnValueOnce(of(CLIENT_DETAIL_B));
 
     store.clients.set([CLIENT_SUMMARY_A]);
     store.total.set(1);
@@ -216,7 +219,7 @@ describe('ClientsStore', () => {
     const updatedDetail: ClientDetail = { ...CLIENT_DETAIL_A, name: 'Acme Corporation' };
     const updatedSummary: Client = { ...CLIENT_SUMMARY_A, name: 'Acme Corporation' };
     const payload: UpdateClientPayload = { name: 'Acme Corporation' };
-    updateClientUseCase.execute.mockReturnValue(of(updatedDetail));
+    updateClientUseCase.execute.mockReturnValueOnce(of(updatedDetail));
 
     store.clients.set([CLIENT_SUMMARY_A]);
     store.selectedClient.set(CLIENT_DETAIL_A);
@@ -230,7 +233,7 @@ describe('ClientsStore', () => {
   });
 
   it('toggles status and closes confirm dialog', async () => {
-    toggleClientStatusUseCase.execute.mockReturnValue(of(void 0));
+    toggleClientStatusUseCase.execute.mockReturnValueOnce(of(undefined));
 
     store.clients.set([CLIENT_SUMMARY_A]);
     store.clientToToggle.set(CLIENT_SUMMARY_A);
@@ -242,6 +245,25 @@ describe('ClientsStore', () => {
     expect(store.clients()[0].isActive).toBe(false);
     expect(store.confirmDialogVisible()).toBe(false);
     expect(store.clientToToggle()).toBeNull();
+  });
+
+  it('loads client by ID successfully', async () => {
+    getClientByIdUseCase.execute.mockReturnValueOnce(of(CLIENT_DETAIL_A));
+
+    await store.loadClientById(1);
+
+    expect(getClientByIdUseCase.execute).toHaveBeenCalledWith(1);
+    expect(store.selectedClient()).toEqual(CLIENT_DETAIL_A);
+    expect(store.loading()).toBe(false);
+  });
+
+  it('sets error when loading client by ID fails', async () => {
+    getClientByIdUseCase.execute.mockReturnValueOnce(throwError(() => new Error('not found')));
+
+    await store.loadClientById(1);
+
+    expect(store.error()).toBe('Failed to load client.');
+    expect(store.loading()).toBe(false);
   });
 
   it('search resets page and triggers load', () => {
@@ -263,6 +285,16 @@ describe('ClientsStore', () => {
 
     expect(store.statusFilter()).toBe(false);
     expect(store.page()).toBe(1);
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
+  it('page change triggers load with new parameters', () => {
+    const spy = vi.spyOn(store, 'loadClients').mockResolvedValue();
+
+    store.onPageChange({ first: 20, rows: 10 });
+
+    expect(store.page()).toBe(3);
+    expect(store.pageSize()).toBe(10);
     expect(spy).toHaveBeenCalledOnce();
   });
 
@@ -298,11 +330,28 @@ describe('ClientsStore', () => {
     expect(store.selectedClient()).toBeNull();
   });
 
+  it('request toggle status sets confirm dialog', () => {
+    store.requestToggleStatus(CLIENT_SUMMARY_A);
+
+    expect(store.clientToToggle()).toEqual(CLIENT_SUMMARY_A);
+    expect(store.confirmDialogVisible()).toBe(true);
+  });
+
+  it('cancel toggle status resets confirm dialog', () => {
+    store.clientToToggle.set(CLIENT_SUMMARY_A);
+    store.confirmDialogVisible.set(true);
+
+    store.cancelToggleStatus();
+
+    expect(store.confirmDialogVisible()).toBe(false);
+    expect(store.clientToToggle()).toBeNull();
+  });
+
   it('canEdit returns true for Administrator', () => {
     expect(store.canEdit()).toBe(true);
   });
 
-  it('canEdit returns false for Sales Manager (Department 1)', () => {
+  it('canEdit returns false for Sales Manager', () => {
     authServiceMock.user.set({
       uid: 'u1',
       email: 'm@sales.com',
@@ -329,5 +378,31 @@ describe('ClientsStore', () => {
     store.pageSize.set(20);
 
     expect(store.totalPages()).toBe(3);
+  });
+
+  it('maps unauthorized error to session expired message', async () => {
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new ClientUnauthorizedError()));
+
+    await store.loadClients();
+
+    expect(store.error()).toBe('Your session has expired. Please sign in again.');
+  });
+
+  it('maps not found error to specific message', async () => {
+    getClientByIdUseCase.execute.mockReturnValueOnce(throwError(() => new ClientNotFoundError()));
+
+    await store.loadClientById(1);
+
+    expect(store.error()).toBe('The selected client no longer exists.');
+  });
+
+  it('maps API error to fallback message', async () => {
+    getClientsUseCase.execute.mockReturnValueOnce(
+      throwError(() => new ClientApiError('Service unavailable')),
+    );
+
+    await store.loadClients();
+
+    expect(store.error()).toBe('Service unavailable');
   });
 });

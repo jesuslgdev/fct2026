@@ -35,8 +35,3 @@ export interface UsersPageDto {
   page: number;
   page_size: number;
 }
-
-export interface DepartmentDto {
-  department_id: number;
-  name: string;
-}

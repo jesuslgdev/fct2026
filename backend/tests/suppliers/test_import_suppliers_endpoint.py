@@ -8,8 +8,8 @@ from openpyxl import Workbook
 from composition.dependencies import get_import_suppliers_use_case
 from composition.security import get_current_user, require_purchases_manager_or_admin
 from main import app
-from modules.suppliers.domain.entities.import_result import ImportResult, ImportRowError
-from shared.domain.entities.user_session import UserSession
+from modules.suppliers.domain.dtos.import_result import ImportResult, ImportRowError
+from shared.domain.dtos.user_session import UserSession
 
 
 def _make_xlsx(headers: list, rows: list[list]) -> bytes:

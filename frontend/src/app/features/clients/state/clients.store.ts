@@ -101,6 +101,19 @@ export class ClientsStore {
     }
   }
 
+  async loadClientById(id: number): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const client = await firstValueFrom(this.getClientByIdUseCase.execute(id));
+      this.selectedClient.set(client);
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load client.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
   private async loadClientDetail(id: number, mode: DialogMode): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -223,5 +236,6 @@ export class ClientsStore {
   onPageChange(event: { first: number; rows: number }): void {
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
+    this.loadClients();
   }
 }

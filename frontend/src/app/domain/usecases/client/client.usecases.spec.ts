@@ -121,7 +121,7 @@ describe('Client Use Cases', () => {
       email: 'test@example.com',
     };
 
-    expect(() => useCase.execute(payload)).toThrow(ClientInvalidTaxIdError);
+    await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow(ClientInvalidTaxIdError);
     expect(repo.createClient).not.toHaveBeenCalled();
   });
 

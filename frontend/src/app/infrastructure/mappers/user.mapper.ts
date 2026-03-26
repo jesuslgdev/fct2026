@@ -1,15 +1,11 @@
 import {
   User,
-  Department,
   CreateUserPayload,
   UpdateUserPayload,
 } from '@domain/models/user.model';
-import {
-  UserDto,
-  CreateUserDto,
-  UpdateUserDto,
-  DepartmentDto,
-} from '@infrastructure/dtos/user.dto';
+import { Department } from '@domain/models/department.model';
+import { UserDto, CreateUserDto, UpdateUserDto } from '@infrastructure/dtos/user.dto';
+import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 
 export class UserMapper {
   static fromDto(dto: UserDto): User {

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { ClientRepository } from '@domain/repositories/client.repository';
 import { ClientDetail, CreateClientPayload } from '@domain/models/client.model';
 import { ClientInvalidTaxIdError } from '@domain/models/client-errors';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 const TAX_ID_PATTERN =
   /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJKLMNPQRSUVW][0-9]{7}[0-9A-J])$/;
@@ -20,7 +20,7 @@ export class CreateClientUseCase {
     };
 
     if (!TAX_ID_PATTERN.test(normalizedPayload.taxId)) {
-      throw new ClientInvalidTaxIdError();
+      return throwError(() => new ClientInvalidTaxIdError());
     }
 
     return this.clientRepository.createClient(normalizedPayload);

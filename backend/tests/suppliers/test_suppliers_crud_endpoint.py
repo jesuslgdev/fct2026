@@ -12,8 +12,8 @@ from composition.dependencies import (
 from composition.security import get_current_user, require_purchases_manager_or_admin
 from main import app
 from modules.suppliers.domain.entities.supplier import Supplier
-from shared.domain.entities.user_session import UserSession
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.dtos.user_session import UserSession
 
 
 def _mock_user(role: str = "Administrator"):

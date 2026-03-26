@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 
-@dataclass
+@dataclass(frozen=True)
 class SupplierProductDetail:
     product_id: int
     product_name: str

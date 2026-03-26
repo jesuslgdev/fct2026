@@ -5,20 +5,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.catalog.domain.entities.category import Category
 from modules.catalog.domain.entities.product import Product
-from modules.suppliers.domain.entities.product_supplier_detail import (
+from modules.suppliers.domain.dtos.product_supplier_detail import (
     ProductSupplierDetail,
+)
+from modules.suppliers.domain.dtos.supplier_product_detail import (
+    SupplierProductDetail,
 )
 from modules.suppliers.domain.entities.supplier import Supplier
 from modules.suppliers.domain.entities.supplier_product import SupplierProduct
-from modules.suppliers.domain.entities.supplier_product_detail import (
-    SupplierProductDetail,
-)
 from modules.suppliers.domain.exceptions import SupplierException, SupplierExceptionInfo
 from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
     ISupplierRepository,
 )
+from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_supplier_reader import ISupplierReader
-from shared.domain.paginated_result import PaginatedResult
 
 
 class SupplierRepository(ISupplierRepository, ISupplierReader):

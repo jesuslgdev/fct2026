@@ -6,8 +6,6 @@ import { UserRole } from '@domain/enums/user-role.enum';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
-import { BadgeModule } from 'primeng/badge';
-import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 import { RippleModule } from 'primeng/ripple';
 import { StyleClassModule } from 'primeng/styleclass';
@@ -51,8 +49,6 @@ const PAGE_TITLES: Record<string, string> = {
   imports: [
     RouterModule,
     AvatarModule,
-    BadgeModule,
-    ButtonModule,
     DrawerModule,
     RippleModule,
     StyleClassModule,
@@ -92,64 +88,63 @@ export class AppShellComponent {
     this.drawerRef.close(event);
   }
 
-  readonly navSections: NavSection[] = [
-    {
-      title: 'General',
-      items: [
-        { label: 'Dashboard', icon: 'pi pi-home', route: '/dashboard' },
-      ],
-    },
-    {
-      title: 'Operaciones',
-      items: [
-        { label: 'Compras', icon: 'pi pi-shopping-cart', route: '/purchases' },
-        { label: 'Ventas', icon: 'pi pi-credit-card', route: '/sales' },
-      ],
-    },
-    {
-      title: 'Catálogo',
-      items: [
-        { label: 'Productos', icon: 'pi pi-box', route: '/products' },
-        { label: 'Categorías', icon: 'pi pi-tags', route: '/categories' },
-      ],
-    },
-    {
-      title: 'Terceros',
-      items: [
-        { label: 'Clientes', icon: 'pi pi-users', route: '/clients' },
-        { label: 'Proveedores', icon: 'pi pi-truck', route: '/suppliers' },
-      ],
-    },
-    {
-      title: 'Inventario',
-      items: [
-        { label: 'Almacenes', icon: 'pi pi-building', route: '/warehouses' },
-        { label: 'Stock por almacén', icon: 'pi pi-database', route: '/stock-by-warehouse' },
-        { label: 'Movimientos', icon: 'pi pi-refresh', route: '/movements' },
-      ],
-    },
-    {
-      title: 'Administración',
-      items: [
-        { label: 'Departamentos', icon: 'pi pi-sitemap', route: '/departments' },
-        { label: 'Usuarios', icon: 'pi pi-user', route: '/users', roles: [UserRole.Administrator] },
-      ],
-    },
-    {
-      title: 'Legal',
-      items: [
-        { label: 'Términos y Condiciones', icon: 'pi pi-file', route: '/legal/terms' },
-      ],
-    },
-  ];
+  readonly navSections = computed(() => {
+    const isAdmin = this.authService.isAdmin();
 
-  readonly filteredNavSections = computed(() => {
-    const role = this.user()?.role;
-    return this.navSections
-      .map(section => ({
-        ...section,
-        items: section.items.filter(item => !item.roles || item.roles.includes(role as UserRole)),
-      }))
-      .filter(section => section.items.length > 0);
+    const allSections: NavSection[] = [
+      {
+        title: 'General',
+        items: [
+          { label: 'Dashboard', icon: 'pi pi-home', route: '/dashboard' },
+        ],
+      },
+      {
+        title: 'Operaciones',
+        items: [
+          { label: 'Compras', icon: 'pi pi-shopping-cart', route: '/purchases' },
+          { label: 'Ventas', icon: 'pi pi-credit-card', route: '/sales' },
+        ],
+      },
+      {
+        title: 'Catálogo',
+        items: [
+          { label: 'Productos', icon: 'pi pi-box', route: '/products' },
+          { label: 'Categorías', icon: 'pi pi-tags', route: '/categories' },
+        ],
+      },
+      {
+        title: 'Terceros',
+        items: [
+          { label: 'Clientes', icon: 'pi pi-users', route: '/clients' },
+          { label: 'Proveedores', icon: 'pi pi-truck', route: '/suppliers' },
+        ],
+      },
+      {
+        title: 'Inventario',
+        items: [
+          { label: 'Almacenes', icon: 'pi pi-building', route: '/warehouses' },
+          { label: 'Stock por almacén', icon: 'pi pi-database', route: '/stock-by-warehouse' },
+          { label: 'Movimientos', icon: 'pi pi-refresh', route: '/movements' },
+        ],
+      },
+      {
+        title: 'Administración',
+        items: [
+          { label: 'Departamentos', icon: 'pi pi-sitemap', route: '/departments' },
+          { label: 'Usuarios', icon: 'pi pi-user', route: '/users', roles: [UserRole.Administrator] },
+        ],
+      },
+      {
+        title: 'Legal',
+        items: [
+          { label: 'Términos y Condiciones', icon: 'pi pi-file', route: '/legal/terms' },
+        ],
+      },
+    ];
+
+    // Filter out Administration section for non-admin users
+    return allSections.filter(section =>
+      isAdmin || section.title !== 'Administración'
+    );
   });
 }
