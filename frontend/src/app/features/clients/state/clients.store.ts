@@ -118,37 +118,21 @@ export class ClientsStore {
   }
 
   openEditDialog(client: Client): void {
-    this.loadClientForEdit(client.clientId);
-  }
-
-  private async loadClientForEdit(clientId: number): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
-
-    try {
-      const clientData = await firstValueFrom(this.getClientByIdUseCase.execute(clientId));
-      this.selectedClient.set(clientData);
-      this.dialogMode.set('edit');
-      this.dialogVisible.set(true);
-    } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load client data.'));
-    } finally {
-      this.loading.set(false);
-    }
+    this.loadClientDetail(client.clientId, 'edit');
   }
 
   openViewDialog(client: Client): void {
-    this.loadClientForView(client.clientId);
+    this.loadClientDetail(client.clientId, 'view');
   }
 
-  private async loadClientForView(clientId: number): Promise<void> {
+  private async loadClientDetail(clientId: number, mode: DialogMode): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
 
     try {
       const clientData = await firstValueFrom(this.getClientByIdUseCase.execute(clientId));
       this.selectedClient.set(clientData);
-      this.dialogMode.set('view');
+      this.dialogMode.set(mode);
       this.dialogVisible.set(true);
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Failed to load client data.'));
