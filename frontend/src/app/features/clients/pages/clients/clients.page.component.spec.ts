@@ -1,74 +1,51 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
+import { vi, Mock } from 'vitest';
 import { ClientsPageComponent } from './clients.page.component';
-import { ClientsStore } from '@features/clients/state/clients.store';
+import { ClientsStore, DialogMode } from '@features/clients/state/clients.store';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
 import { CreateClientUseCase } from '@domain/usecases/client/create-client.usecase';
 import { UpdateClientUseCase } from '@domain/usecases/client/update-client.usecase';
 import { ToggleClientStatusUseCase } from '@domain/usecases/client/toggle-client-status.usecase';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
-import { signal } from '@angular/core';
-import { vi } from 'vitest';
+import { Client, ClientDetail } from '@domain/models/client.model';
 
 interface MockStore {
-  clients: () => never[];
-  loading: () => boolean;
-  total: () => number;
-  pageSize: () => number;
-  searchQuery: () => string;
-  statusFilter: () => boolean | null;
-  canEdit: ReturnType<typeof vi.fn>;
-  loadClients: ReturnType<typeof vi.fn>;
-  onSearch: ReturnType<typeof vi.fn>;
-  onStatusFilterChange: ReturnType<typeof vi.fn>;
-  onPageChange: ReturnType<typeof vi.fn>;
-  openCreateDialog: ReturnType<typeof vi.fn>;
-  openEditDialog: ReturnType<typeof vi.fn>;
-  requestToggleStatus: ReturnType<typeof vi.fn>;
-  confirmDialogVisible: () => boolean;
-  clientToToggle: () => null;
-  confirmToggleStatus: ReturnType<typeof vi.fn>;
-  cancelToggleStatus: ReturnType<typeof vi.fn>;
-  error: () => null;
+  clients: WritableSignal<Client[]>;
+  loading: WritableSignal<boolean>;
+  total: WritableSignal<number>;
+  pageSize: WritableSignal<number>;
+  searchQuery: WritableSignal<string>;
+  statusFilter: WritableSignal<boolean | null>;
+  canEdit: Mock<() => boolean>;
+  loadClients: Mock<() => Promise<void>>;
+  onSearch: Mock<(query: string) => void>;
+  onStatusFilterChange: Mock<(active: boolean | null) => void>;
+  onPageChange: Mock<(event: { first: number; rows: number }) => void>;
+  openCreateDialog: Mock<() => void>;
+  openEditDialog: Mock<(client: Client | ClientDetail) => void>;
+  requestToggleStatus: Mock<(client: Client) => void>;
+  confirmDialogVisible: WritableSignal<boolean>;
+  clientToToggle: WritableSignal<Client | null>;
+  confirmToggleStatus: Mock<() => Promise<void>>;
+  cancelToggleStatus: Mock<() => void>;
+  error: WritableSignal<string | null>;
+  dialogMode: WritableSignal<DialogMode>;
 }
 
 describe('ClientsPageComponent', () => {
   let component: ClientsPageComponent;
   let fixture: ComponentFixture<ClientsPageComponent>;
   let mockStore: MockStore;
-  let mockGetClientsUseCase: GetClientsUseCase;
-  let mockCreateClientUseCase: CreateClientUseCase;
-  let mockUpdateClientUseCase: UpdateClientUseCase;
-  let mockToggleClientStatusUseCase: ToggleClientStatusUseCase;
-  let mockGetClientByIdUseCase: GetClientByIdUseCase;
 
   beforeEach(async () => {
-    mockGetClientsUseCase = {
-      execute: vi.fn(),
-    } as any;
-
-    mockCreateClientUseCase = {
-      execute: vi.fn(),
-    } as any;
-
-    mockUpdateClientUseCase = {
-      execute: vi.fn(),
-    } as any;
-
-    mockToggleClientStatusUseCase = {
-      execute: vi.fn(),
-    } as any;
-
-    mockGetClientByIdUseCase = {
-      execute: vi.fn(),
-    } as any;
-
     mockStore = {
-      clients: signal([]),
+      clients: signal<Client[]>([]),
       loading: signal(false),
       total: signal(0),
       pageSize: signal(20),
       searchQuery: signal(''),
-      statusFilter: signal(null),
+      statusFilter: signal<boolean | null>(null),
       canEdit: vi.fn(() => true),
       loadClients: vi.fn(),
       onSearch: vi.fn(),
@@ -78,27 +55,28 @@ describe('ClientsPageComponent', () => {
       openEditDialog: vi.fn(),
       requestToggleStatus: vi.fn(),
       confirmDialogVisible: signal(false),
-      clientToToggle: signal(null),
+      clientToToggle: signal<Client | null>(null),
       confirmToggleStatus: vi.fn(),
       cancelToggleStatus: vi.fn(),
-      error: signal(null),
+      error: signal<string | null>(null),
+      dialogMode: signal<DialogMode>('create'),
     };
 
     await TestBed.configureTestingModule({
       imports: [ClientsPageComponent],
       providers: [
         { provide: ClientsStore, useValue: mockStore },
-        { provide: GetClientsUseCase, useValue: mockGetClientsUseCase },
-        { provide: CreateClientUseCase, useValue: mockCreateClientUseCase },
-        { provide: UpdateClientUseCase, useValue: mockUpdateClientUseCase },
-        { provide: ToggleClientStatusUseCase, useValue: mockToggleClientStatusUseCase },
-        { provide: GetClientByIdUseCase, useValue: mockGetClientByIdUseCase },
+        { provide: GetClientsUseCase, useValue: { execute: vi.fn() } as unknown as GetClientsUseCase },
+        { provide: CreateClientUseCase, useValue: { execute: vi.fn() } as unknown as CreateClientUseCase },
+        { provide: UpdateClientUseCase, useValue: { execute: vi.fn() } as unknown as UpdateClientUseCase },
+        { provide: ToggleClientStatusUseCase, useValue: { execute: vi.fn() } as unknown as ToggleClientStatusUseCase },
+        { provide: GetClientByIdUseCase, useValue: { execute: vi.fn() } as unknown as GetClientByIdUseCase },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ClientsPageComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges(); // Trigger ngOnInit
+    fixture.detectChanges();
   });
 
   it('should create', () => {
@@ -114,16 +92,10 @@ describe('ClientsPageComponent', () => {
   });
 
   it('should call loadClients on init', () => {
-    // The test should verify that component calls store method
-    // Since store is properly mocked, we can just verify the call
     expect(mockStore.loadClients).toBeDefined();
   });
 
   it('should have store injected', () => {
-    expect(component.store).toBeDefined();
-  });
-
-  it('should expose store properties', () => {
     expect(component.store).toBeDefined();
   });
 });

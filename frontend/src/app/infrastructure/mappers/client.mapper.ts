@@ -1,5 +1,6 @@
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
   ClientQueryParams,
@@ -20,19 +21,12 @@ export class ClientMapper {
       clientId: dto.client_id,
       name: dto.name,
       taxId: dto.tax_id,
-      address: '',
       city: dto.city,
-      province: '',
-      postalCode: '',
-      phone: '',
-      email: '',
       isActive: dto.is_active,
-      createdAt: '',
-      updatedAt: '',
     };
   }
 
-  static fromDetailDto(dto: ClientDetailDto): Client {
+  static fromDetailDto(dto: ClientDetailDto): ClientDetail {
     return {
       clientId: dto.client_id,
       name: dto.name,
@@ -44,8 +38,6 @@ export class ClientMapper {
       phone: dto.phone,
       email: dto.email,
       isActive: dto.is_active,
-      createdAt: '',
-      updatedAt: '',
     };
   }
 
@@ -83,15 +75,15 @@ export class ClientMapper {
       page: params.page,
       page_size: params.pageSize,
     };
-    
+
     if (params.search !== undefined) {
       query['search'] = params.search;
     }
-    
+
     if (params.isActive !== undefined) {
       query['active'] = params.isActive;
     }
-    
+
     return query;
   }
 

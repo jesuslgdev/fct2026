@@ -1,19 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { of, throwError } from 'rxjs';
 import { ClientsStore } from './clients.store';
 import { AuthService } from '@core/services/auth.service';
+import { UserRole } from '@domain/enums/user-role.enum';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
 import { CreateClientUseCase } from '@domain/usecases/client/create-client.usecase';
 import { UpdateClientUseCase } from '@domain/usecases/client/update-client.usecase';
 import { ToggleClientStatusUseCase } from '@domain/usecases/client/toggle-client-status.usecase';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
-import { ClientRepository } from '@domain/repositories/client.repository';
+import { AuthUser } from '@domain/models/auth-user.model';
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
-  ClientQueryParams,
   PagedResult,
 } from '@domain/models/client.model';
 import {
@@ -24,7 +26,7 @@ import {
   ClientApiError,
 } from '@domain/models/client-errors';
 
-const CLIENT_A: Client = {
+const CLIENT_DETAIL_A: ClientDetail = {
   clientId: 1,
   name: 'Acme Corp',
   taxId: '12345678A',
@@ -35,11 +37,17 @@ const CLIENT_A: Client = {
   phone: '600000001',
   email: 'acme@example.com',
   isActive: true,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
 };
 
-const CLIENT_B: Client = {
+const CLIENT_SUMMARY_A: Client = {
+  clientId: 1,
+  name: 'Acme Corp',
+  taxId: '12345678A',
+  city: 'Madrid',
+  isActive: true,
+};
+
+const CLIENT_DETAIL_B: ClientDetail = {
   clientId: 2,
   name: 'Beta SL',
   taxId: '87654321B',
@@ -50,38 +58,44 @@ const CLIENT_B: Client = {
   phone: '600000002',
   email: 'beta@example.com',
   isActive: true,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
+};
+
+const CLIENT_SUMMARY_B: Client = {
+  clientId: 2,
+  name: 'Beta SL',
+  taxId: '87654321B',
+  city: 'Barcelona',
+  isActive: true,
 };
 
 class MockAuthService {
-  readonly user = signal({
+  readonly user = signal<AuthUser | null>({
     uid: 'uid-1',
     email: 'admin@example.com',
     displayName: 'Admin',
     photoURL: null,
-    role: 'Administrator',
+    role: UserRole.Administrator,
   });
 }
 
 class MockGetClientsUseCase {
-  execute = vi.fn<(params: ClientQueryParams) => Promise<PagedResult<Client>>>();
+  execute = vi.fn().mockImplementation(() => of({ data: [], total: 0, page: 1, pageSize: 20 }));
 }
 
 class MockCreateClientUseCase {
-  execute = vi.fn<(payload: CreateClientPayload) => Promise<Client>>();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_DETAIL_B));
 }
 
 class MockUpdateClientUseCase {
-  execute = vi.fn<(id: number, payload: UpdateClientPayload) => Promise<Client>>();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_DETAIL_A));
 }
 
 class MockToggleClientStatusUseCase {
-  execute = vi.fn<(id: number, isActive: boolean) => Promise<void>>();
+  execute = vi.fn().mockImplementation(() => of(undefined));
 }
 
 class MockGetClientByIdUseCase {
-  execute = vi.fn<(id: number) => Promise<Client>>();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_DETAIL_A));
 }
 
 describe('ClientsStore', () => {
@@ -91,6 +105,7 @@ describe('ClientsStore', () => {
   let updateClientUseCase: MockUpdateClientUseCase;
   let toggleClientStatusUseCase: MockToggleClientStatusUseCase;
   let getClientByIdUseCase: MockGetClientByIdUseCase;
+  let authServiceMock: MockAuthService;
 
   beforeEach(() => {
     getClientsUseCase = new MockGetClientsUseCase();
@@ -98,16 +113,17 @@ describe('ClientsStore', () => {
     updateClientUseCase = new MockUpdateClientUseCase();
     toggleClientStatusUseCase = new MockToggleClientStatusUseCase();
     getClientByIdUseCase = new MockGetClientByIdUseCase();
+    authServiceMock = new MockAuthService();
 
     TestBed.configureTestingModule({
       providers: [
         ClientsStore,
-        { provide: AuthService, useValue: new MockAuthService() },
-        { provide: GetClientsUseCase, useValue: getClientsUseCase },
-        { provide: CreateClientUseCase, useValue: createClientUseCase },
-        { provide: UpdateClientUseCase, useValue: updateClientUseCase },
-        { provide: ToggleClientStatusUseCase, useValue: toggleClientStatusUseCase },
-        { provide: GetClientByIdUseCase, useValue: getClientByIdUseCase },
+        { provide: AuthService, useValue: authServiceMock },
+        { provide: GetClientsUseCase, useValue: getClientsUseCase as unknown as GetClientsUseCase },
+        { provide: CreateClientUseCase, useValue: createClientUseCase as unknown as CreateClientUseCase },
+        { provide: UpdateClientUseCase, useValue: updateClientUseCase as unknown as UpdateClientUseCase },
+        { provide: ToggleClientStatusUseCase, useValue: toggleClientStatusUseCase as unknown as ToggleClientStatusUseCase },
+        { provide: GetClientByIdUseCase, useValue: getClientByIdUseCase as unknown as GetClientByIdUseCase },
       ],
     });
 
@@ -116,12 +132,12 @@ describe('ClientsStore', () => {
 
   it('loads clients and total successfully', async () => {
     const response: PagedResult<Client> = {
-      data: [CLIENT_A, CLIENT_B],
+      data: [CLIENT_SUMMARY_A, CLIENT_SUMMARY_B],
       total: 2,
       page: 1,
       pageSize: 20,
     };
-    getClientsUseCase.execute.mockResolvedValue(response);
+    getClientsUseCase.execute.mockReturnValue(of(response));
 
     await store.loadClients();
 
@@ -131,14 +147,14 @@ describe('ClientsStore', () => {
       search: undefined,
       isActive: undefined,
     });
-    expect(store.clients()).toEqual([CLIENT_A, CLIENT_B]);
+    expect(store.clients()).toEqual([CLIENT_SUMMARY_A, CLIENT_SUMMARY_B]);
     expect(store.total()).toBe(2);
     expect(store.loading()).toBe(false);
     expect(store.error()).toBeNull();
   });
 
   it('sets error when loading clients fails', async () => {
-    getClientsUseCase.execute.mockRejectedValueOnce(new Error('boom'));
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new Error('boom')));
 
     await store.loadClients();
 
@@ -147,7 +163,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps forbidden clients error to a specific message', async () => {
-    getClientsUseCase.execute.mockRejectedValueOnce(new ClientForbiddenError());
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new ClientForbiddenError()));
 
     await store.loadClients();
 
@@ -155,8 +171,8 @@ describe('ClientsStore', () => {
   });
 
   it('maps validation clients error to backend message', async () => {
-    createClientUseCase.execute.mockRejectedValueOnce(
-      new ClientValidationError({ field: 'taxId' }, 'Tax ID already exists.'),
+    createClientUseCase.execute.mockReturnValueOnce(
+      throwError(() => new ClientValidationError({ field: 'taxId' }, 'Tax ID already exists.')),
     );
 
     await store.saveClient({
@@ -168,7 +184,7 @@ describe('ClientsStore', () => {
       postalCode: '12345',
       phone: '123456789',
       email: 'test@example.com',
-    });
+    } as unknown as CreateClientPayload);
 
     expect(store.error()).toBe('Tax ID already exists.');
   });
@@ -184,64 +200,65 @@ describe('ClientsStore', () => {
       phone: '600000002',
       email: 'beta@example.com',
     };
-    createClientUseCase.execute.mockResolvedValueOnce(CLIENT_B);
+    createClientUseCase.execute.mockReturnValueOnce(of(CLIENT_DETAIL_B));
 
-    store.clients.set([CLIENT_A]);
+    store.clients.set([CLIENT_SUMMARY_A]);
     store.total.set(1);
     store.dialogVisible.set(true);
 
     await store.saveClient(payload);
 
     expect(createClientUseCase.execute).toHaveBeenCalledWith(payload);
-    expect(store.clients()).toEqual([CLIENT_A, CLIENT_B]);
+    expect(store.clients()).toEqual([CLIENT_SUMMARY_A, CLIENT_SUMMARY_B]);
     expect(store.total()).toBe(2);
     expect(store.dialogVisible()).toBe(false);
     expect(store.selectedClient()).toBeNull();
   });
 
   it('updates an existing client in edit mode', async () => {
-    const updated: Client = { ...CLIENT_A, name: 'Acme Corporation' };
+    const updatedDetail: ClientDetail = { ...CLIENT_DETAIL_A, name: 'Acme Corporation' };
+    const updatedSummary: Client = { ...CLIENT_SUMMARY_A, name: 'Acme Corporation' };
     const payload: UpdateClientPayload = { name: 'Acme Corporation' };
-    updateClientUseCase.execute.mockResolvedValueOnce(updated);
+    updateClientUseCase.execute.mockReturnValueOnce(of(updatedDetail));
 
-    store.clients.set([CLIENT_A]);
-    store.selectedClient.set(CLIENT_A);
+    store.clients.set([CLIENT_SUMMARY_A]);
+    store.selectedClient.set(CLIENT_DETAIL_A);
     store.dialogMode.set('edit');
 
     await store.saveClient(payload);
 
-    expect(updateClientUseCase.execute).toHaveBeenCalledWith(CLIENT_A.clientId, payload);
-    expect(store.clients()).toEqual([updated]);
+    expect(updateClientUseCase.execute).toHaveBeenCalledWith(CLIENT_DETAIL_A.clientId, payload);
+    expect(store.clients()).toEqual([updatedSummary]);
     expect(store.dialogVisible()).toBe(false);
   });
 
   it('toggles status and closes confirm dialog', async () => {
-    toggleClientStatusUseCase.execute.mockResolvedValueOnce();
+    toggleClientStatusUseCase.execute.mockReturnValueOnce(of(undefined));
 
-    store.clients.set([CLIENT_A]);
-    store.clientToToggle.set(CLIENT_A);
+    store.clients.set([CLIENT_SUMMARY_A]);
+    store.clientToToggle.set(CLIENT_SUMMARY_A);
     store.confirmDialogVisible.set(true);
 
     await store.confirmToggleStatus();
 
-    expect(toggleClientStatusUseCase.execute).toHaveBeenCalledWith(CLIENT_A.clientId, false);
+    expect(toggleClientStatusUseCase.execute).toHaveBeenCalledWith(CLIENT_SUMMARY_A.clientId, false);
     expect(store.clients()[0].isActive).toBe(false);
     expect(store.confirmDialogVisible()).toBe(false);
     expect(store.clientToToggle()).toBeNull();
   });
 
   it('loads client by ID successfully', async () => {
-    getClientByIdUseCase.execute.mockResolvedValueOnce(CLIENT_A);
+    getClientByIdUseCase.execute.mockReturnValueOnce(of(CLIENT_DETAIL_A));
 
     await store.loadClientById(1);
 
     expect(getClientByIdUseCase.execute).toHaveBeenCalledWith(1);
-    expect(store.selectedClient()).toEqual(CLIENT_A);
+    expect(store.selectedClient()).toEqual(CLIENT_DETAIL_A);
     expect(store.loading()).toBe(false);
   });
 
   it('sets error when loading client by ID fails', async () => {
-    getClientByIdUseCase.execute.mockRejectedValueOnce(new Error('not found'));
+    getClientByIdUseCase.execute.mockReturnValueOnce(throwError(() => new Error('not found')));
 
     await store.loadClientById(1);
 
@@ -271,19 +288,18 @@ describe('ClientsStore', () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 
-  it('page change updates pagination parameters without loading', () => {
+  it('page change triggers load with new parameters', () => {
     const spy = vi.spyOn(store, 'loadClients').mockResolvedValue();
 
     store.onPageChange({ first: 20, rows: 10 });
 
     expect(store.page()).toBe(3);
     expect(store.pageSize()).toBe(10);
-    // onPageChange should NOT call loadClients() to avoid pagination loops
-    expect(spy).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledOnce();
   });
 
   it('open create dialog sets correct state', () => {
-    store.selectedClient.set(CLIENT_A);
+    store.selectedClient.set(CLIENT_DETAIL_A);
     store.dialogMode.set('edit');
 
     store.openCreateDialog();
@@ -293,18 +309,19 @@ describe('ClientsStore', () => {
     expect(store.dialogVisible()).toBe(true);
   });
 
-  it('open edit dialog sets correct state', async () => {
-    getClientByIdUseCase.execute.mockResolvedValue(CLIENT_A);
-    
-    await store.openEditDialog(CLIENT_A);
+  it('open edit dialog calls loadClientDetail', async () => {
+    getClientByIdUseCase.execute.mockReturnValue(of(CLIENT_DETAIL_A));
 
-    expect(store.selectedClient()).toEqual(CLIENT_A);
+    await store.openEditDialog(CLIENT_SUMMARY_A);
+
+    expect(getClientByIdUseCase.execute).toHaveBeenCalledWith(CLIENT_SUMMARY_A.clientId);
+    expect(store.selectedClient()).toEqual(CLIENT_DETAIL_A);
     expect(store.dialogMode()).toBe('edit');
     expect(store.dialogVisible()).toBe(true);
   });
 
   it('close dialog resets state', () => {
-    store.selectedClient.set(CLIENT_A);
+    store.selectedClient.set(CLIENT_DETAIL_A);
     store.dialogVisible.set(true);
 
     store.closeDialog();
@@ -314,14 +331,14 @@ describe('ClientsStore', () => {
   });
 
   it('request toggle status sets confirm dialog', () => {
-    store.requestToggleStatus(CLIENT_A);
+    store.requestToggleStatus(CLIENT_SUMMARY_A);
 
-    expect(store.clientToToggle()).toEqual(CLIENT_A);
+    expect(store.clientToToggle()).toEqual(CLIENT_SUMMARY_A);
     expect(store.confirmDialogVisible()).toBe(true);
   });
 
   it('cancel toggle status resets confirm dialog', () => {
-    store.clientToToggle.set(CLIENT_A);
+    store.clientToToggle.set(CLIENT_SUMMARY_A);
     store.confirmDialogVisible.set(true);
 
     store.cancelToggleStatus();
@@ -334,6 +351,28 @@ describe('ClientsStore', () => {
     expect(store.canEdit()).toBe(true);
   });
 
+  it('canEdit returns false for Sales Manager', () => {
+    authServiceMock.user.set({
+      uid: 'u1',
+      email: 'm@sales.com',
+      displayName: 'Sales Mgr',
+      photoURL: null,
+      role: UserRole.Manager,
+    });
+    expect(store.canEdit()).toBe(false);
+  });
+
+  it('canEdit returns false for Non-Sales Manager', () => {
+    authServiceMock.user.set({
+      uid: 'u2',
+      email: 'm@other.com',
+      displayName: 'Other Mgr',
+      photoURL: null,
+      role: UserRole.Manager,
+    });
+    expect(store.canEdit()).toBe(false);
+  });
+
   it('totalPages calculates correctly', () => {
     store.total.set(50);
     store.pageSize.set(20);
@@ -342,7 +381,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps unauthorized error to session expired message', async () => {
-    getClientsUseCase.execute.mockRejectedValueOnce(new ClientUnauthorizedError());
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new ClientUnauthorizedError()));
 
     await store.loadClients();
 
@@ -350,7 +389,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps not found error to specific message', async () => {
-    getClientByIdUseCase.execute.mockRejectedValueOnce(new ClientNotFoundError());
+    getClientByIdUseCase.execute.mockReturnValueOnce(throwError(() => new ClientNotFoundError()));
 
     await store.loadClientById(1);
 
@@ -358,7 +397,9 @@ describe('ClientsStore', () => {
   });
 
   it('maps API error to fallback message', async () => {
-    getClientsUseCase.execute.mockRejectedValueOnce(new ClientApiError('Service unavailable'));
+    getClientsUseCase.execute.mockReturnValueOnce(
+      throwError(() => new ClientApiError('Service unavailable')),
+    );
 
     await store.loadClients();
 

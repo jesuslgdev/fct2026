@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { InputComponent } from '@shared/ui/input/input.component';
 import { ClientsStore } from '@features/clients/state/clients.store';
 import { CreateClientPayload, UpdateClientPayload } from '@domain/models/client.model';
+
+const TAX_ID_PATTERN =
+  /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJKLMNPQRSUVW][0-9]{7}[0-9A-J])$/;
 
 @Component({
   selector: 'app-client-form-dialog',
@@ -15,11 +18,10 @@ import { CreateClientPayload, UpdateClientPayload } from '@domain/models/client.
 export class ClientFormDialogComponent {
   readonly store = inject(ClientsStore);
   private readonly fb = inject(FormBuilder);
-  readonly renderSelects = signal(true);
 
   readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
-    taxId: ['', [Validators.required, Validators.pattern(/^[A-Z0-9]{8,10}[A-Z]$/i)]],
+    taxId: ['', [Validators.required, Validators.pattern(TAX_ID_PATTERN)]],
     address: ['', Validators.required],
     city: ['', Validators.required],
     province: ['', Validators.required],
@@ -64,10 +66,6 @@ export class ClientFormDialogComponent {
       } else {
         this.form.reset();
       }
-      // Force remount of p-select controls to clear stale internal label state
-      // after switching between edit/create contexts.
-      this.renderSelects.set(false);
-      queueMicrotask(() => this.renderSelects.set(true));
     });
   }
 

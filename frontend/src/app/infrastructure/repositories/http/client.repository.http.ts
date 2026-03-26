@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { ClientRepository } from '@domain/repositories/client.repository';
 import {
+  ClientAlreadyExistsError,
   ClientApiError,
   ClientForbiddenError,
   ClientNotFoundError,
@@ -11,6 +12,7 @@ import {
 } from '@domain/models/client-errors';
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
   ClientQueryParams,
@@ -30,14 +32,6 @@ const BASE_URL = `${environment.apiUrl}/api/v1/clients`;
 export class HttpClientRepository implements ClientRepository {
   private readonly http = inject(HttpClient);
 
-  private async withErrorMapping<T>(operation: () => Promise<T>): Promise<T> {
-    try {
-      return await operation();
-    } catch (err) {
-      throw this.mapHttpError(err);
-    }
-  }
-
   private mapHttpError(err: unknown): Error {
     if (!(err instanceof HttpErrorResponse)) {
       return err instanceof Error ? err : new ClientApiError();
@@ -56,7 +50,7 @@ export class HttpClientRepository implements ClientRepository {
       case 404:
         return new ClientNotFoundError(message ?? 'Client not found.');
       case 409:
-        return new ClientApiError(message ?? 'A client with this tax ID already exists.');
+        return new ClientAlreadyExistsError(message ?? 'A client with this tax ID already exists.');
       default:
         return new ClientApiError(message ?? 'Unexpected clients API error.');
     }
@@ -76,45 +70,43 @@ export class HttpClientRepository implements ClientRepository {
     return undefined;
   }
 
-  async getClients(params: ClientQueryParams): Promise<PagedResult<Client>> {
-    return this.withErrorMapping(async () => {
-      const query = ClientMapper.toQueryParams(params);
-      const response = await firstValueFrom(
-        this.http.get<ClientsPageDto>(BASE_URL, { params: query }),
+  getClients(params: ClientQueryParams): Observable<PagedResult<Client>> {
+    const query = ClientMapper.toQueryParams(params);
+    return this.http.get<ClientsPageDto>(BASE_URL, { params: query }).pipe(
+      map((response) => ClientMapper.fromPageDto(response)),
+      catchError((err) => throwError(() => this.mapHttpError(err))),
+    );
+  }
+
+  getClientById(id: number): Observable<ClientDetail> {
+    return this.http.get<ClientDetailDto>(`${BASE_URL}/${id}`).pipe(
+      map((dto) => ClientMapper.fromDetailDto(dto)),
+      catchError((err) => throwError(() => this.mapHttpError(err))),
+    );
+  }
+
+  createClient(payload: CreateClientPayload): Observable<ClientDetail> {
+    return this.http
+      .post<ClientDetailDto>(BASE_URL, ClientMapper.toCreateDto(payload))
+      .pipe(
+        map((dto) => ClientMapper.fromDetailDto(dto)),
+        catchError((err) => throwError(() => this.mapHttpError(err))),
       );
-      return ClientMapper.fromPageDto(response);
-    });
   }
 
-  async getClientById(id: number): Promise<Client> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(this.http.get<ClientDetailDto>(`${BASE_URL}/${id}`));
-      return ClientMapper.fromDetailDto(dto);
-    });
-  }
-
-  async createClient(payload: CreateClientPayload): Promise<Client> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(
-        this.http.post<ClientDetailDto>(BASE_URL, ClientMapper.toCreateDto(payload)),
+  updateClient(id: number, payload: UpdateClientPayload): Observable<ClientDetail> {
+    return this.http
+      .put<ClientDetailDto>(`${BASE_URL}/${id}`, ClientMapper.toUpdateDto(payload))
+      .pipe(
+        map((dto) => ClientMapper.fromDetailDto(dto)),
+        catchError((err) => throwError(() => this.mapHttpError(err))),
       );
-      return ClientMapper.fromDetailDto(dto);
-    });
   }
 
-  async updateClient(id: number, payload: UpdateClientPayload): Promise<Client> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(
-        this.http.put<ClientDetailDto>(`${BASE_URL}/${id}`, ClientMapper.toUpdateDto(payload)),
-      );
-      return ClientMapper.fromDetailDto(dto);
-    });
-  }
-
-  async toggleClientStatus(id: number, isActive: boolean): Promise<void> {
-    return this.withErrorMapping(async () => {
-      const body: SetClientActiveDto = ClientMapper.toSetActiveDto(isActive);
-      await firstValueFrom(this.http.patch<void>(`${BASE_URL}/${id}/active`, body));
-    });
+  toggleClientStatus(id: number, isActive: boolean): Observable<void> {
+    const body: SetClientActiveDto = ClientMapper.toSetActiveDto(isActive);
+    return this.http.patch<void>(`${BASE_URL}/${id}/active`, body).pipe(
+      catchError((err) => throwError(() => this.mapHttpError(err))),
+    );
   }
 }

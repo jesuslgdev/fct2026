@@ -3,15 +3,16 @@ export interface Client {
   clientId: number;
   name: string;
   taxId: string;
-  address: string;
   city: string;
+  isActive: boolean;
+}
+
+export interface ClientDetail extends Client {
+  address: string;
   province: string;
   postalCode: string;
   phone: string;
   email: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface CreateClientPayload {

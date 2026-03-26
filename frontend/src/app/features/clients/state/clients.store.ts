@@ -1,7 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
+import { UserRole } from '@domain/enums/user-role.enum';
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
   ClientQueryParams,
@@ -38,7 +41,7 @@ export class ClientsStore {
   readonly error = signal<string | null>(null);
   readonly searchQuery = signal('');
   readonly statusFilter = signal<boolean | null>(null);
-  readonly selectedClient = signal<Client | null>(null);
+  readonly selectedClient = signal<ClientDetail | null>(null);
   readonly dialogVisible = signal(false);
   readonly dialogMode = signal<DialogMode>('create');
   readonly confirmDialogVisible = signal(false);
@@ -46,12 +49,12 @@ export class ClientsStore {
 
   readonly canEdit = computed(() => {
     const user = this.authService.user();
-    return user?.role === 'Administrator' || user?.role === 'Sales Manager';
+    if (user?.role === UserRole.Administrator) return true;
+    return false;
   });
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
-  
-  // Computed view for table - allows wrapping/enriching data without triggering pagination
+
   readonly clientsView = computed(() => this.clients());
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
@@ -88,7 +91,7 @@ export class ClientsStore {
         search: this.searchQuery() || undefined,
         isActive: this.statusFilter() ?? undefined,
       };
-      const result = await this.getClientsUseCase.execute(params);
+      const result = await firstValueFrom(this.getClientsUseCase.execute(params));
       this.clients.set(result.data);
       this.total.set(result.total);
     } catch (err) {
@@ -102,10 +105,25 @@ export class ClientsStore {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const client = await this.getClientByIdUseCase.execute(id);
+      const client = await firstValueFrom(this.getClientByIdUseCase.execute(id));
       this.selectedClient.set(client);
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Failed to load client.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private async loadClientDetail(id: number, mode: DialogMode): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const client = await firstValueFrom(this.getClientByIdUseCase.execute(id));
+      this.selectedClient.set(client);
+      this.dialogMode.set(mode);
+      this.dialogVisible.set(true);
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load client detail.'));
     } finally {
       this.loading.set(false);
     }
@@ -117,46 +135,12 @@ export class ClientsStore {
     this.dialogVisible.set(true);
   }
 
-  openEditDialog(client: Client): void {
-    this.loadClientForEdit(client.clientId);
+  openEditDialog(client: Client | ClientDetail): void {
+    this.loadClientDetail(client.clientId, 'edit');
   }
 
-  private async loadClientForEdit(clientId: number): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
-
-    try {
-      const clientData = await this.getClientByIdUseCase.execute(clientId);
-      this.selectedClient.set(clientData);
-      this.dialogMode.set('edit');
-      this.dialogVisible.set(true);
-    } catch (err) {
-      this.error.set('Error al cargar los datos del cliente');
-      console.error('Error loading client for edit:', err);
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  openViewDialog(client: Client): void {
-    this.loadClientForView(client.clientId);
-  }
-
-  private async loadClientForView(clientId: number): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
-
-    try {
-      const clientData = await this.getClientByIdUseCase.execute(clientId);
-      this.selectedClient.set(clientData);
-      this.dialogMode.set('view');
-      this.dialogVisible.set(true);
-    } catch (err) {
-      this.error.set('Error al cargar los datos del cliente');
-      console.error('Error loading client for view:', err);
-    } finally {
-      this.loading.set(false);
-    }
+  openViewDialog(client: Client | ClientDetail): void {
+    this.loadClientDetail(client.clientId, 'view');
   }
 
   closeDialog(): void {
@@ -179,16 +163,34 @@ export class ClientsStore {
     this.error.set(null);
     try {
       if (this.dialogMode() === 'edit' && this.selectedClient()) {
-        const updated = await this.updateClientUseCase.execute(
+        const updated = await firstValueFrom(this.updateClientUseCase.execute(
           this.selectedClient()!.clientId,
           payload as UpdateClientPayload,
-        );
+        ));
+
+        const clientSummary: Client = {
+          clientId: updated.clientId,
+          name: updated.name,
+          taxId: updated.taxId,
+          city: updated.city,
+          isActive: updated.isActive,
+        };
+
         this.clients.update((list) =>
-          list.map((c) => (c.clientId === updated.clientId ? updated : c)),
+          list.map((c) => (c.clientId === clientSummary.clientId ? clientSummary : c)),
         );
       } else {
-        const created = await this.createClientUseCase.execute(payload as CreateClientPayload);
-        this.clients.update((list) => [...list, created]);
+        const created = await firstValueFrom(this.createClientUseCase.execute(payload as CreateClientPayload));
+
+        const clientSummary: Client = {
+          clientId: created.clientId,
+          name: created.name,
+          taxId: created.taxId,
+          city: created.city,
+          isActive: created.isActive,
+        };
+
+        this.clients.update((list) => [...list, clientSummary]);
         this.total.update((t) => t + 1);
       }
       this.closeDialog();
@@ -206,7 +208,7 @@ export class ClientsStore {
     this.error.set(null);
     try {
       const nextActive = !client.isActive;
-      await this.toggleClientStatusUseCase.execute(client.clientId, nextActive);
+      await firstValueFrom(this.toggleClientStatusUseCase.execute(client.clientId, nextActive));
       this.clients.update((list) =>
         list.map((c) => (c.clientId === client.clientId ? { ...c, isActive: nextActive } : c)),
       );
@@ -232,10 +234,8 @@ export class ClientsStore {
   }
 
   onPageChange(event: { first: number; rows: number }): void {
-    // Don't call loadClients() here: p-table resets its internal `first` when
-    // `[value]` changes, which retriggers onPage with first=0 and forces page=1.
-    // We update page/pageSize here, and let callers (search/filter) invoke loadClients().
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
+    this.loadClients();
   }
 }
