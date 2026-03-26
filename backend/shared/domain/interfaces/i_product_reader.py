@@ -8,6 +8,12 @@ if TYPE_CHECKING:
 
 
 class IProductReader(ABC):
+    """Cross-module contract for reading product data.
+
+    Implemented by the catalog module, consumed by any module
+    that needs product information without importing catalog directly.
+    """
+
     @abstractmethod
     async def get_by_id(self, product_id: int) -> Product | None: ...
 

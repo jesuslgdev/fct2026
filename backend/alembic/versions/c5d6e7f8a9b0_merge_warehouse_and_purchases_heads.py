@@ -1,16 +1,16 @@
-"""merge categories into main line
+"""merge warehouse and purchases heads
 
-Revision ID: d2fc5b80d35c
-Revises: a1b2c3d4e5f6, c4f8a21e9d35
-Create Date: 2026-03-19 07:47:03.094126
+Revision ID: c5d6e7f8a9b0
+Revises: b3c4d5e6f7a8, b5c6d7e8f9a0
+Create Date: 2026-03-26 10:54:29.358876
 
 """
 
 from collections.abc import Sequence
 
 # revision identifiers, used by Alembic.
-revision: str = "d2fc5b80d35c"
-down_revision: str | Sequence[str] | None = ("a1b2c3d4e5f6", "c4f8a21e9d35")
+revision: str = "c5d6e7f8a9b0"
+down_revision: str | Sequence[str] | None = ("b3c4d5e6f7a8", "b5c6d7e8f9a0")
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

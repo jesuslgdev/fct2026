@@ -17,6 +17,8 @@ import modules.purchases.domain.entities.purchase
 import modules.purchases.domain.entities.purchase_line
 import modules.suppliers.domain.entities.supplier
 import modules.suppliers.domain.entities.supplier_product
+import modules.warehouse.domain.entities.warehouse
+import modules.warehouse.domain.entities.warehouse_stock
 import shared.domain.entities.user  # register models with Base.metadata
 from alembic import context
 from shared.config import settings
