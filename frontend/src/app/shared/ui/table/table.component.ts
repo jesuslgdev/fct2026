@@ -53,6 +53,7 @@ export class TableComponent<T extends object, C extends object = object> {
   value              = input<T[]>([]);
   columns            = input<C[]>([]);
   paginator          = input<boolean>(false);
+  lazy               = input<boolean>(false);
   rows               = input<number>(10);
   totalRecords       = input<number>(0);
   rowsPerPageOptions = input<number[]>([10, 20, 50]);

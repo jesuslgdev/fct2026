@@ -38,7 +38,7 @@ export const appConfig: ApplicationConfig = {
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: ClientRepository, useClass: HttpClientRepository },
-    { provide: ClientRepository, useClass: MockClientRepository },
+    { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     {
