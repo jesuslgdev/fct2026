@@ -26,7 +26,6 @@ import {
 import { ClientMapper } from '@infrastructure/mappers/client.mapper';
 import { environment } from 'environments/environment';
 
-// TODO add base url for API REST
 const BASE_URL = `${environment.apiUrl}/api/v1/clients`;
 
 @Injectable()
