@@ -32,7 +32,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/sales': 'Ventas',
   '/products': 'Productos',
   '/categories': 'Categorías',
-  '/customers': 'Clientes',
+  '/clients': 'Clientes',
   '/suppliers': 'Proveedores',
   '/warehouses': 'Almacenes',
   '/stock-by-warehouse': 'Stock por almacén',
@@ -90,7 +90,7 @@ export class AppShellComponent {
 
   readonly navSections = computed(() => {
     const isAdmin = this.authService.isAdmin();
-    
+
     const allSections: NavSection[] = [
       {
         title: 'General',
@@ -115,7 +115,7 @@ export class AppShellComponent {
       {
         title: 'Terceros',
         items: [
-          { label: 'Clientes', icon: 'pi pi-users', route: '/customers' },
+          { label: 'Clientes', icon: 'pi pi-users', route: '/clients' },
           { label: 'Proveedores', icon: 'pi pi-truck', route: '/suppliers' },
         ],
       },
@@ -131,7 +131,7 @@ export class AppShellComponent {
         title: 'Administración',
         items: [
           { label: 'Departamentos', icon: 'pi pi-sitemap', route: '/departments' },
-          { label: 'Usuarios', icon: 'pi pi-user', route: '/users' },
+          { label: 'Usuarios', icon: 'pi pi-user', route: '/users', roles: [UserRole.Administrator] },
         ],
       },
       {
@@ -143,7 +143,7 @@ export class AppShellComponent {
     ];
 
     // Filter out Administration section for non-admin users
-    return allSections.filter(section => 
+    return allSections.filter(section =>
       isAdmin || section.title !== 'Administración'
     );
   });

@@ -1,0 +1,138 @@
+<section class="page">
+
+  <!-- ── Header ───────────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <!-- título semántico definido en styles.css -->
+    <h1 class="text-style-title">Clientes</h1>
+    @if (store.canEdit()) {
+      <ui-button
+        label="Nuevo cliente"
+        icon="pi pi-plus"
+        (clicked)="store.openCreateDialog()"
+      />
+    }
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <div class="filters-row">
+    <ui-input
+      type="text"
+      placeholder="Buscar por nombre o tax ID…"
+      styleClass="flex-1 min-w-64"
+      [ngModel]="store.searchQuery()"
+      (valueChange)="store.onSearch($event)"
+    />
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los estados"
+      class="min-w-44"
+      [ngModel]="store.statusFilter()"
+      (ngModelChange)="store.onStatusFilterChange($event)"
+    />
+  </div>
+
+  <!-- ── Table ────────────────────────────────────────────────────────────── -->
+  <ui-table
+    [value]="store.clientsView()"
+    [loading]="store.loading()"
+    [paginator]="true"
+    [rows]="store.pageSize()"
+    [totalRecords]="store.total()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="clientId"
+    (page)="store.onPageChange($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Nombre</th>
+        <th>Tax ID</th>
+        <th>Ciudad</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-client>
+      <tr>
+        <td>{{ client.name }}</td>
+        <td>{{ client.taxId }}</td>
+        <td>{{ client.city }}</td>
+        <td>
+          <ui-client-status-badge [isActive]="client.isActive" />
+        </td>
+        <td>
+          <div class="table-actions">
+            <!-- Icono de ojo para todos los usuarios -->
+            <ui-button
+              icon="pi pi-eye"
+              variant="ghost"
+              size="sm"
+              (clicked)="store.openViewDialog(client)"
+            />
+            @if (store.canEdit()) {
+              <!-- Botón de editar solo para admin/sales manager -->
+              <ui-button
+                icon="pi pi-pencil"
+                variant="ghost"
+                size="sm"
+                (clicked)="store.openEditDialog(client)"
+              />
+              <!-- Botón de activar/desactivar -->
+              <ui-button
+                [icon]="client.isActive ? 'pi pi-ban' : 'pi pi-check-circle'"
+                [variant]="client.isActive ? 'destructive' : 'secondary'"
+                size="sm"
+                (clicked)="store.requestToggleStatus(client)"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="5" class="empty-state">
+          No se encontraron clientes.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+
+</section>
+
+<!-- ── Create / Edit client dialog ────────────────────────────────────────── -->
+<app-client-form-dialog />
+
+<!-- ── Confirm toggle status dialog ─────────────────────────────────────── -->
+<ui-dialog
+  [(visible)]="store.confirmDialogVisible"
+  [header]="store.clientToToggle()?.isActive ? 'Desactivar cliente' : 'Activar cliente'"
+  variant="warning"
+  size="sm"
+  confirmLabel="Confirmar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmToggleStatus()"
+  (cancelled)="store.cancelToggleStatus()"
+>
+  @if (store.clientToToggle(); as client) {
+    <!-- párrafo de advertencia con clase global -->
+    <p class="warning-text">
+      @if (client.isActive) {
+        ¿Está seguro de que desea desactivar
+        <strong>{{ client.name }}</strong>?
+      } @else {
+        ¿Está seguro de que desea reactivar
+        <strong>{{ client.name }}</strong>?
+      }
+    </p>
+  }
+</ui-dialog>

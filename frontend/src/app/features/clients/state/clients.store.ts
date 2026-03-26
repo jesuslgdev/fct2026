@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { UserRole } from '@domain/enums/user-role.enum';
 import { AuthService } from '@core/services/auth.service';
+import { UserRole } from '@domain/enums/user-role.enum';
 import {
   Client,
   ClientDetail,
@@ -49,10 +49,13 @@ export class ClientsStore {
 
   readonly canEdit = computed(() => {
     const user = this.authService.user();
-    return user?.role === UserRole.Administrator || user?.role === UserRole.Manager;
+    if (user?.role === UserRole.Administrator) return true;
+    return false;
   });
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
+
+  readonly clientsView = computed(() => this.clients());
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof ClientValidationError) {
@@ -111,34 +114,33 @@ export class ClientsStore {
     }
   }
 
+  private async loadClientDetail(id: number, mode: DialogMode): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const client = await firstValueFrom(this.getClientByIdUseCase.execute(id));
+      this.selectedClient.set(client);
+      this.dialogMode.set(mode);
+      this.dialogVisible.set(true);
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load client detail.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
   openCreateDialog(): void {
     this.selectedClient.set(null);
     this.dialogMode.set('create');
     this.dialogVisible.set(true);
   }
 
-  openEditDialog(client: Client): void {
+  openEditDialog(client: Client | ClientDetail): void {
     this.loadClientDetail(client.clientId, 'edit');
   }
 
-  openViewDialog(client: Client): void {
+  openViewDialog(client: Client | ClientDetail): void {
     this.loadClientDetail(client.clientId, 'view');
-  }
-
-  private async loadClientDetail(clientId: number, mode: DialogMode): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
-
-    try {
-      const clientData = await firstValueFrom(this.getClientByIdUseCase.execute(clientId));
-      this.selectedClient.set(clientData);
-      this.dialogMode.set(mode);
-      this.dialogVisible.set(true);
-    } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load client data.'));
-    } finally {
-      this.loading.set(false);
-    }
   }
 
   closeDialog(): void {
@@ -161,20 +163,34 @@ export class ClientsStore {
     this.error.set(null);
     try {
       if (this.dialogMode() === 'edit' && this.selectedClient()) {
-        const updated = await firstValueFrom(
-          this.updateClientUseCase.execute(
-            this.selectedClient()!.clientId,
-            payload as UpdateClientPayload,
-          ),
-        );
+        const updated = await firstValueFrom(this.updateClientUseCase.execute(
+          this.selectedClient()!.clientId,
+          payload as UpdateClientPayload,
+        ));
+
+        const clientSummary: Client = {
+          clientId: updated.clientId,
+          name: updated.name,
+          taxId: updated.taxId,
+          city: updated.city,
+          isActive: updated.isActive,
+        };
+
         this.clients.update((list) =>
-          list.map((c) => (c.clientId === updated.clientId ? updated : c)),
+          list.map((c) => (c.clientId === clientSummary.clientId ? clientSummary : c)),
         );
       } else {
-        const created = await firstValueFrom(
-          this.createClientUseCase.execute(payload as CreateClientPayload),
-        );
-        this.clients.update((list) => [...list, created]);
+        const created = await firstValueFrom(this.createClientUseCase.execute(payload as CreateClientPayload));
+
+        const clientSummary: Client = {
+          clientId: created.clientId,
+          name: created.name,
+          taxId: created.taxId,
+          city: created.city,
+          isActive: created.isActive,
+        };
+
+        this.clients.update((list) => [...list, clientSummary]);
         this.total.update((t) => t + 1);
       }
       this.closeDialog();

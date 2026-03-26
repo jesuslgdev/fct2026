@@ -276,8 +276,24 @@
     @apply text-xs text-danger;
   }
 
+  /* ── Form Layout Utilities ── */
+  .form-grid-2 {
+    @apply grid grid-cols-2 gap-4;
+  }
+
+  .form-container {
+    @apply flex flex-col gap-4;
+  }
+
+  .actions-row {
+    @apply flex gap-2;
+  }
+
+  .table-actions {
+    @apply flex gap-1;
+  }
+
   .dialog-error-banner {
     @apply text-sm font-medium text-danger bg-red-50 border border-red-200 rounded-md px-3 py-2;
   }
 }
-
