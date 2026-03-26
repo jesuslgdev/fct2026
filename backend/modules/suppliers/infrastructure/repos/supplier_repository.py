@@ -3,8 +3,16 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.catalog.domain.entities.category import Category
+from modules.catalog.domain.entities.product import Product
+from modules.suppliers.domain.entities.product_supplier_detail import (
+    ProductSupplierDetail,
+)
 from modules.suppliers.domain.entities.supplier import Supplier
 from modules.suppliers.domain.entities.supplier_product import SupplierProduct
+from modules.suppliers.domain.entities.supplier_product_detail import (
+    SupplierProductDetail,
+)
 from modules.suppliers.domain.exceptions import SupplierException, SupplierExceptionInfo
 from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
     ISupplierRepository,
@@ -199,9 +207,37 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         )
         return list(result.scalars().all())
 
+    async def get_products_by_supplier_detailed(
+        self, supplier_id: int
+    ) -> list[SupplierProductDetail]:
+        result = await self._db.execute(
+            select(
+                Product.product_id,
+                Product.name.label("product_name"),
+                Product.product_code,
+                Category.name.label("category_name"),
+                SupplierProduct.supplier_price,
+            )
+            .select_from(SupplierProduct)
+            .join(Product, SupplierProduct.product_id == Product.product_id)
+            .outerjoin(Category, Product.category_id == Category.category_id)
+            .where(SupplierProduct.supplier_id == supplier_id)
+            .order_by(Product.name)
+        )
+        return [
+            SupplierProductDetail(
+                product_id=row.product_id,
+                product_name=row.product_name,
+                product_code=row.product_code,
+                category_name=row.category_name,
+                supplier_price=row.supplier_price,
+            )
+            for row in result.all()
+        ]
+
     async def get_products_by_supplier_paginated(
         self, supplier_id: int, page: int, page_size: int
-    ) -> PaginatedResult[SupplierProduct]:
+    ) -> PaginatedResult[SupplierProductDetail]:
         total_result = await self._db.execute(
             select(func.count())
             .select_from(SupplierProduct)
@@ -211,19 +247,38 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
 
         offset = (page - 1) * page_size
         result = await self._db.execute(
-            select(SupplierProduct)
+            select(
+                Product.product_id,
+                Product.name.label("product_name"),
+                Product.product_code,
+                Category.name.label("category_name"),
+                SupplierProduct.supplier_price,
+            )
+            .select_from(SupplierProduct)
+            .join(Product, SupplierProduct.product_id == Product.product_id)
+            .outerjoin(Category, Product.category_id == Category.category_id)
             .where(SupplierProduct.supplier_id == supplier_id)
-            .order_by(SupplierProduct.product_id)
+            .order_by(Product.name)
             .limit(page_size)
             .offset(offset)
         )
-        items = list(result.scalars().all())
+        rows = result.all()
+        items = [
+            SupplierProductDetail(
+                product_id=row.product_id,
+                product_name=row.product_name,
+                product_code=row.product_code,
+                category_name=row.category_name,
+                supplier_price=row.supplier_price,
+            )
+            for row in rows
+        ]
 
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
 
     async def get_suppliers_by_product_paginated(
         self, product_id: int, page: int, page_size: int
-    ) -> PaginatedResult[SupplierProduct]:
+    ) -> PaginatedResult[ProductSupplierDetail]:
         total_result = await self._db.execute(
             select(func.count())
             .select_from(SupplierProduct)
@@ -233,12 +288,33 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
 
         offset = (page - 1) * page_size
         result = await self._db.execute(
-            select(SupplierProduct)
+            select(
+                Supplier.supplier_id,
+                Supplier.name.label("supplier_name"),
+                Supplier.tax_id,
+                SupplierProduct.supplier_price,
+            )
+            .select_from(SupplierProduct)
+            .join(Supplier, SupplierProduct.supplier_id == Supplier.supplier_id)
             .where(SupplierProduct.product_id == product_id)
-            .order_by(SupplierProduct.supplier_id)
+            .order_by(Supplier.name)
             .limit(page_size)
             .offset(offset)
         )
-        items = list(result.scalars().all())
+        rows = result.all()
+        items = [
+            ProductSupplierDetail(
+                supplier_id=row.supplier_id,
+                supplier_name=row.supplier_name,
+                tax_id=row.tax_id,
+                supplier_price=row.supplier_price,
+            )
+            for row in rows
+        ]
 
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
+
+    async def bulk_create_products(self, associations: list[SupplierProduct]) -> int:
+        self._db.add_all(associations)
+        await self._db.flush()
+        return len(associations)
