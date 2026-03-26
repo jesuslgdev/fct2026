@@ -7,9 +7,10 @@ from modules.admin.domain.interfaces.repositories.i_user_repository import (
 )
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.entities.user import User
+from shared.domain.interfaces.i_user_reader import IUserReader
 
 
-class UserRepository(IUserRepository):
+class UserRepository(IUserRepository, IUserReader):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
@@ -56,6 +57,15 @@ class UserRepository(IUserRepository):
     async def get_by_id(self, user_id: int) -> User | None:
         result = await self._db.execute(select(User).where(User.user_id == user_id))
         return result.scalar_one_or_none()
+
+    async def get_name_by_id(self, user_id: int) -> str | None:
+        result = await self._db.execute(
+            select(User.first_name, User.last_name).where(User.user_id == user_id)
+        )
+        row = result.one_or_none()
+        if row is None:
+            return None
+        return f"{row.first_name} {row.last_name}"
 
     async def get_by_email(self, email: str) -> User | None:
         result = await self._db.execute(select(User).where(User.email == email))

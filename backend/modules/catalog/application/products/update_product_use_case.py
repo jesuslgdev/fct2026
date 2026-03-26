@@ -28,6 +28,7 @@ class UpdateProductUseCase(IUpdateProductUseCase):
         description: str | None = None,
         category_id: int | None = None,
         price: Decimal | None = None,
+        vat_rate: Decimal | None = None,
         stock_min: int | None = None,
     ) -> Product:
         # 1. Validate category if provided
@@ -50,5 +51,6 @@ class UpdateProductUseCase(IUpdateProductUseCase):
             description=description,
             category_id=category_id,
             price=price,
+            vat_rate=vat_rate,
             stock_min=stock_min,
         )

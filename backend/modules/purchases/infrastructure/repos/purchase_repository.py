@@ -79,6 +79,12 @@ class PurchaseRepository(IPurchaseRepository):
 
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
 
+    async def get_by_id(self, purchase_id: int) -> Purchase | None:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        return result.scalar_one_or_none()
+
     async def generate_purchase_number(self) -> str:
         year = datetime.now().year
         prefix = f"COM-{year}-"
@@ -129,18 +135,14 @@ class PurchaseRepository(IPurchaseRepository):
                 unit_price=line["unit_price"],
                 discount=line["discount"],
                 line_subtotal=line["line_subtotal"],
+                vat_rate=line["vat_rate"],
+                line_tax=line["line_tax"],
             )
             self._db.add(purchase_line)
 
         await self._db.flush()
         await self._db.refresh(purchase, ["lines"])
         return purchase
-
-    async def get_by_id(self, purchase_id: int) -> Purchase | None:
-        result = await self._db.execute(
-            select(Purchase).where(Purchase.purchase_id == purchase_id)
-        )
-        return result.scalar_one_or_none()
 
     async def get_line_by_id(self, purchase_line_id: int) -> PurchaseLine | None:
         result = await self._db.execute(

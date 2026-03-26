@@ -40,6 +40,7 @@ class IProductRepository(ABC):
         description: str | None,
         category_id: int,
         price: Decimal,
+        vat_rate: Decimal,
         stock_current: int,
         stock_min: int,
     ) -> Product:
@@ -55,6 +56,7 @@ class IProductRepository(ABC):
         description: str | None = None,
         category_id: int | None = None,
         price: Decimal | None = None,
+        vat_rate: Decimal | None = None,
         stock_min: int | None = None,
     ) -> Product:
         """Update existing product fields."""

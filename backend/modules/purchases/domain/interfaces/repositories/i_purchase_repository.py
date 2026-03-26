@@ -23,6 +23,9 @@ class IPurchaseRepository(ABC):
     ) -> PaginatedResult[tuple]: ...
 
     @abstractmethod
+    async def get_by_id(self, purchase_id: int) -> Purchase | None: ...
+
+    @abstractmethod
     async def generate_purchase_number(self) -> str: ...
 
     @abstractmethod
@@ -38,9 +41,6 @@ class IPurchaseRepository(ABC):
         total: Decimal,
         lines: list[dict],
     ) -> Purchase: ...
-
-    @abstractmethod
-    async def get_by_id(self, purchase_id: int) -> Purchase | None: ...
 
     @abstractmethod
     async def get_line_by_id(self, purchase_line_id: int) -> PurchaseLine | None: ...

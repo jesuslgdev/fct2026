@@ -68,6 +68,12 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         )
         return result.scalar_one_or_none()
 
+    async def get_name_by_id(self, supplier_id: int) -> str | None:
+        result = await self._db.execute(
+            select(Supplier.name).where(Supplier.supplier_id == supplier_id)
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_tax_id(self, tax_id: str) -> Supplier | None:
         result = await self._db.execute(
             select(Supplier).where(Supplier.tax_id == tax_id)
