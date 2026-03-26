@@ -147,6 +147,15 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.repos.client_repository import ClientRepository
+from modules.purchases.application.list_purchases_use_case import (
+    ListPurchasesUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case import (
+    IListPurchasesUseCase,
+)
+from modules.purchases.infrastructure.repos.purchase_repository import (
+    PurchaseRepository,
+)
 from modules.suppliers.application.add_product_to_supplier_use_case import (
     AddProductToSupplierUseCase,
 )
@@ -471,3 +480,9 @@ async def get_import_supplier_products_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IImportSupplierProductsUseCase:
     return ImportSupplierProductsUseCase(SupplierRepository(db), ProductRepository(db))
+
+
+async def get_list_purchases_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListPurchasesUseCase:
+    return ListPurchasesUseCase(PurchaseRepository(db))
