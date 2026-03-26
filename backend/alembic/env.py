@@ -10,12 +10,14 @@ from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-import modules.admin.domain.entities.department  # noqa: F401
-import modules.catalog.domain.entities.category  # noqa: F401
-import modules.catalog.domain.entities.product  # noqa: F401
-import modules.suppliers.domain.entities.supplier  # noqa: F401
-import modules.suppliers.domain.entities.supplier_product  # noqa: F401
-import shared.domain.entities.user  # noqa: F401 — register model with Base.metadata
+import modules.admin.domain.entities.department
+import modules.catalog.domain.entities.category
+import modules.catalog.domain.entities.product
+import modules.purchases.domain.entities.purchase
+import modules.purchases.domain.entities.purchase_line
+import modules.suppliers.domain.entities.supplier
+import modules.suppliers.domain.entities.supplier_product
+import shared.domain.entities.user  # register models with Base.metadata
 from alembic import context
 from shared.config import settings
 from shared.infrastructure.database.base_model import Base
