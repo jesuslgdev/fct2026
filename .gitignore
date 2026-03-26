@@ -6,9 +6,9 @@ frontend/environments
 
 # Claude Code (asistente IA)
 .claude/
+CLAUDE.md
 
 # Node
-package-lock.json
 node_modules/
 frontend/node_modules/
 
@@ -32,3 +32,4 @@ firebase-debug.log
 # Estructura interna
 FinalStructure.md
 **/FinalStructure.md
+.github/skills/fct2026/SKILL.md
