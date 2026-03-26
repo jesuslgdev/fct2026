@@ -40,6 +40,7 @@ async def client(db_session: AsyncSession):
 
     def override_get_current_user():
         return UserSession(
+            user_id=1,
             email="admin@test.com",
             role="Administrator",
             department_id=None,

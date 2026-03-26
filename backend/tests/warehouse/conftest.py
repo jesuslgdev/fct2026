@@ -127,6 +127,7 @@ async def admin_client(db_session: AsyncSession):
 
     def override_require_admin():
         return UserSession(
+            user_id=1,
             email="admin@test.com",
             role="Administrator",
             department_id=None,

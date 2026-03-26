@@ -16,8 +16,20 @@ class ProductReader(IProductReader):
         self._db = db
 
     async def get_by_id(self, product_id: int) -> Product | None:
-        """Fetch a product by its primary key."""
         result = await self._db.execute(
             select(Product).where(Product.product_id == product_id)
         )
         return result.scalar_one_or_none()
+
+    async def get_by_code(self, product_code: str) -> Product | None:
+        result = await self._db.execute(
+            select(Product).where(Product.product_code == product_code)
+        )
+        return result.scalar_one_or_none()
+
+    async def is_active(self, product_id: int) -> bool:
+        result = await self._db.execute(
+            select(Product.is_active).where(Product.product_id == product_id)
+        )
+        value = result.scalar_one_or_none()
+        return bool(value)
