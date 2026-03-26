@@ -12,7 +12,7 @@ import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { ClientRepository } from '@domain/repositories/client.repository';
-import { MockClientRepository } from '@infrastructure/repositories/mock/client.repository.mock';
+import { HttpClientRepository } from '@infrastructure/repositories/http/client.repository.http';
 import { DepartmentRepository } from '@domain/repositories/department.repository';
 import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
@@ -36,7 +36,8 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
-    { provide: ClientRepository, useClass: MockClientRepository },
+    { provide: ClientRepository, useClass: HttpClientRepository },
+    { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     {

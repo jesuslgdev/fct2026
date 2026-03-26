@@ -16,6 +16,7 @@ import { ClientDetail, CreateClientPayload, UpdateClientPayload } from '@domain/
 interface MockStore {
   dialogVisible: WritableSignal<boolean>;
   dialogMode: WritableSignal<DialogMode>;
+  dialogError: WritableSignal<string | null>;
   selectedClient: WritableSignal<ClientDetail | null>;
   loading: WritableSignal<boolean>;
   error: WritableSignal<string | null>;
@@ -33,6 +34,7 @@ describe('ClientFormDialogComponent', () => {
     mockStore = {
       dialogVisible: signal(false),
       dialogMode: signal<DialogMode>('create'),
+      dialogError: signal<string | null>(null),
       selectedClient: signal<ClientDetail | null>(null),
       loading: signal(false),
       error: signal<string | null>(null),

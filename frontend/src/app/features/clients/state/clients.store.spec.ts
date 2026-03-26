@@ -158,7 +158,7 @@ describe('ClientsStore', () => {
 
     await store.loadClients();
 
-    expect(store.error()).toBe('Failed to load clients.');
+    expect(store.error()).toBe('No se pudieron cargar los clientes.');
     expect(store.loading()).toBe(false);
   });
 
@@ -167,7 +167,7 @@ describe('ClientsStore', () => {
 
     await store.loadClients();
 
-    expect(store.error()).toBe('You do not have permissions to perform this action.');
+    expect(store.error()).toBe('No tienes permisos para realizar esta accion.');
   });
 
   it('maps validation clients error to backend message', async () => {
@@ -186,7 +186,7 @@ describe('ClientsStore', () => {
       email: 'test@example.com',
     } as unknown as CreateClientPayload);
 
-    expect(store.error()).toBe('Tax ID already exists.');
+    expect(store.dialogError()).toBe('Tax ID already exists.');
   });
 
   it('creates a new client and updates state', async () => {
@@ -262,7 +262,7 @@ describe('ClientsStore', () => {
 
     await store.loadClientById(1);
 
-    expect(store.error()).toBe('Failed to load client.');
+    expect(store.error()).toBe('No se pudo cargar el cliente.');
     expect(store.loading()).toBe(false);
   });
 
@@ -385,7 +385,7 @@ describe('ClientsStore', () => {
 
     await store.loadClients();
 
-    expect(store.error()).toBe('Your session has expired. Please sign in again.');
+    expect(store.error()).toBe('Tu sesion ha expirado. Vuelve a iniciar sesion.');
   });
 
   it('maps not found error to specific message', async () => {
@@ -393,7 +393,7 @@ describe('ClientsStore', () => {
 
     await store.loadClientById(1);
 
-    expect(store.error()).toBe('The selected client no longer exists.');
+    expect(store.error()).toBe('El cliente seleccionado ya no existe.');
   });
 
   it('maps API error to fallback message', async () => {

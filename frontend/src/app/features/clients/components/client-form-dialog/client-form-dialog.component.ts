@@ -30,15 +30,6 @@ export class ClientFormDialogComponent {
     email: ['', [Validators.required, Validators.email]],
   });
 
-  get name() { return this.form.controls.name; }
-  get taxId() { return this.form.controls.taxId; }
-  get address() { return this.form.controls.address; }
-  get city() { return this.form.controls.city; }
-  get province() { return this.form.controls.province; }
-  get postalCode() { return this.form.controls.postalCode; }
-  get phone() { return this.form.controls.phone; }
-  get email() { return this.form.controls.email; }
-
   readonly isViewMode = computed(() => this.store.dialogMode() === 'view');
 
   getDialogTitle(): string {
@@ -47,6 +38,15 @@ export class ClientFormDialogComponent {
     if (mode === 'edit') return 'Editar cliente';
     return 'Detalles del cliente';
   }
+
+  get name() { return this.form.controls.name; }
+  get taxId() { return this.form.controls.taxId; }
+  get address() { return this.form.controls.address; }
+  get city() { return this.form.controls.city; }
+  get province() { return this.form.controls.province; }
+  get postalCode() { return this.form.controls.postalCode; }
+  get phone() { return this.form.controls.phone; }
+  get email() { return this.form.controls.email; }
 
   constructor() {
     effect(() => {

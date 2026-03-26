@@ -15,6 +15,7 @@ import { UpdateClientUseCase } from '@domain/usecases/client/update-client.useca
 import { ToggleClientStatusUseCase } from '@domain/usecases/client/toggle-client-status.usecase';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
 import {
+  ClientAlreadyExistsError,
   ClientApiError,
   ClientForbiddenError,
   ClientNotFoundError,
@@ -44,6 +45,7 @@ export class ClientsStore {
   readonly selectedClient = signal<ClientDetail | null>(null);
   readonly dialogVisible = signal(false);
   readonly dialogMode = signal<DialogMode>('create');
+  readonly dialogError = signal<string | null>(null);
   readonly confirmDialogVisible = signal(false);
   readonly clientToToggle = signal<Client | null>(null);
 
@@ -58,20 +60,24 @@ export class ClientsStore {
   readonly clientsView = computed(() => this.clients());
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
+    if (err instanceof ClientAlreadyExistsError) {
+      return 'Ya existe un cliente con este Tax ID.';
+    }
+
     if (err instanceof ClientValidationError) {
-      return err.message || 'Please check the submitted data.';
+      return err.message || 'Revisa los datos introducidos.';
     }
 
     if (err instanceof ClientUnauthorizedError) {
-      return 'Your session has expired. Please sign in again.';
+      return 'Tu sesion ha expirado. Vuelve a iniciar sesion.';
     }
 
     if (err instanceof ClientForbiddenError) {
-      return 'You do not have permissions to perform this action.';
+      return 'No tienes permisos para realizar esta accion.';
     }
 
     if (err instanceof ClientNotFoundError) {
-      return 'The selected client no longer exists.';
+      return 'El cliente seleccionado ya no existe.';
     }
 
     if (err instanceof ClientApiError) {
@@ -95,7 +101,7 @@ export class ClientsStore {
       this.clients.set(result.data);
       this.total.set(result.total);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load clients.'));
+      this.error.set(this.resolveErrorMessage(err, 'No se pudieron cargar los clientes.'));
     } finally {
       this.loading.set(false);
     }
@@ -108,7 +114,7 @@ export class ClientsStore {
       const client = await firstValueFrom(this.getClientByIdUseCase.execute(id));
       this.selectedClient.set(client);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load client.'));
+      this.error.set(this.resolveErrorMessage(err, 'No se pudo cargar el cliente.'));
     } finally {
       this.loading.set(false);
     }
@@ -117,13 +123,14 @@ export class ClientsStore {
   private async loadClientDetail(id: number, mode: DialogMode): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    this.dialogError.set(null);
     try {
       const client = await firstValueFrom(this.getClientByIdUseCase.execute(id));
       this.selectedClient.set(client);
       this.dialogMode.set(mode);
       this.dialogVisible.set(true);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load client detail.'));
+      this.error.set(this.resolveErrorMessage(err, 'No se pudo cargar el detalle del cliente.'));
     } finally {
       this.loading.set(false);
     }
@@ -132,6 +139,7 @@ export class ClientsStore {
   openCreateDialog(): void {
     this.selectedClient.set(null);
     this.dialogMode.set('create');
+    this.dialogError.set(null);
     this.dialogVisible.set(true);
   }
 
@@ -146,6 +154,7 @@ export class ClientsStore {
   closeDialog(): void {
     this.dialogVisible.set(false);
     this.selectedClient.set(null);
+    this.dialogError.set(null);
   }
 
   requestToggleStatus(client: Client): void {
@@ -160,7 +169,7 @@ export class ClientsStore {
 
   async saveClient(payload: CreateClientPayload | UpdateClientPayload): Promise<void> {
     this.loading.set(true);
-    this.error.set(null);
+    this.dialogError.set(null);
     try {
       if (this.dialogMode() === 'edit' && this.selectedClient()) {
         const updated = await firstValueFrom(this.updateClientUseCase.execute(
@@ -195,7 +204,7 @@ export class ClientsStore {
       }
       this.closeDialog();
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to save client.'));
+      this.dialogError.set(this.resolveErrorMessage(err, 'No se pudo guardar el cliente.'));
     } finally {
       this.loading.set(false);
     }
@@ -215,7 +224,7 @@ export class ClientsStore {
       this.confirmDialogVisible.set(false);
       this.clientToToggle.set(null);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to update client status.'));
+      this.error.set(this.resolveErrorMessage(err, 'No se pudo actualizar el estado del cliente.'));
     } finally {
       this.loading.set(false);
     }
