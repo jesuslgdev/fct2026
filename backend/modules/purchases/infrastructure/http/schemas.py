@@ -36,6 +36,8 @@ class PurchaseLineDTO(BaseModel):
     unit_price: Decimal
     discount: Decimal
     line_subtotal: Decimal
+    vat_rate: Decimal
+    line_tax: Decimal
 
 
 class AddPurchaseLineRequest(BaseModel):

@@ -61,6 +61,8 @@ class CreatePurchaseUseCase(ICreatePurchaseUseCase):
                 raise PurchaseException(PurchaseExceptionInfo.INVALID_DISCOUNT)
 
             line_subtotal = gross - discount
+            vat_rate = product.vat_rate
+            line_tax = line_subtotal * vat_rate
             subtotal += line_subtotal
 
             processed_lines.append(
@@ -70,10 +72,12 @@ class CreatePurchaseUseCase(ICreatePurchaseUseCase):
                     "unit_price": unit_price,
                     "discount": discount,
                     "line_subtotal": line_subtotal,
+                    "vat_rate": vat_rate,
+                    "line_tax": line_tax,
                 }
             )
 
-        taxes = subtotal * Decimal("0.21")
+        taxes = sum(pl["line_tax"] for pl in processed_lines)
         total = subtotal + taxes
 
         purchase_number = await self._purchase_repo.generate_purchase_number()

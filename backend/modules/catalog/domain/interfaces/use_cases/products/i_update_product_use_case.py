@@ -14,6 +14,7 @@ class IUpdateProductUseCase(ABC):
         description: str | None = None,
         category_id: int | None = None,
         price: Decimal | None = None,
+        vat_rate: Decimal | None = None,
         stock_min: int | None = None,
     ) -> Product:
         """Update an existing product validating partial changes and code collisions."""

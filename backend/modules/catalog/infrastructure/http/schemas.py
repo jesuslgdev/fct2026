@@ -29,6 +29,7 @@ class ProductDTO(BaseModel):
     category_id: int
     category_name: str | None = None
     price: Decimal
+    vat_rate: Decimal
     stock_current: int
     stock_min: int
     is_active: bool
@@ -40,6 +41,7 @@ class CreateProductRequest(BaseModel):
     description: str | None = Field(None, max_length=500)
     category_id: int = Field(..., gt=0)
     price: Decimal = Field(..., gt=0, decimal_places=2)
+    vat_rate: Decimal = Field(Decimal("0.21"), ge=0, le=1)
     stock_current: int = Field(0, ge=0)
     stock_min: int = Field(0, ge=0)
 
@@ -52,6 +54,7 @@ class UpdateProductRequest(BaseModel):
     description: str | None = Field(None, max_length=500)
     category_id: int | None = Field(None, gt=0)
     price: Decimal | None = Field(None, gt=0, decimal_places=2)
+    vat_rate: Decimal | None = Field(None, ge=0, le=1)
     stock_min: int | None = Field(None, ge=0)
 
 

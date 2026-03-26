@@ -87,6 +87,7 @@ class ProductRepository(IProductRepository, IProductReader):
         description: str | None,
         category_id: int,
         price: Decimal,
+        vat_rate: Decimal,
         stock_current: int,
         stock_min: int,
     ) -> Product:
@@ -96,6 +97,7 @@ class ProductRepository(IProductRepository, IProductReader):
             description=description,
             category_id=category_id,
             price=price,
+            vat_rate=vat_rate,
             stock_current=stock_current,
             stock_min=stock_min,
             is_active=True,
@@ -113,6 +115,7 @@ class ProductRepository(IProductRepository, IProductReader):
         description: str | None = None,
         category_id: int | None = None,
         price: Decimal | None = None,
+        vat_rate: Decimal | None = None,
         stock_min: int | None = None,
     ) -> Product:
         product = await self.get_by_id(product_id)
@@ -129,6 +132,8 @@ class ProductRepository(IProductRepository, IProductReader):
             product.category_id = category_id
         if price is not None:
             product.price = price
+        if vat_rate is not None:
+            product.vat_rate = vat_rate
         if stock_min is not None:
             product.stock_min = stock_min
 

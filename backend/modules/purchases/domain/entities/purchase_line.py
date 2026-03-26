@@ -20,3 +20,5 @@ class PurchaseLine(Base):
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     discount: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=0, nullable=False)
     line_subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    vat_rate: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=False)
+    line_tax: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)

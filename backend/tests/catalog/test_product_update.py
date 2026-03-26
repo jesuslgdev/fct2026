@@ -63,6 +63,19 @@ async def test_update_product_duplicate_code(
     assert response.json()["error_code"] == 5202
 
 
+async def test_update_product_vat_rate(
+    purchases_manager_client: AsyncClient, sample_product: Product
+):
+    payload = {"vat_rate": 0.10}
+    response = await purchases_manager_client.put(
+        f"/api/v1/catalog/products/{sample_product.product_id}", json=payload
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert float(data["vat_rate"]) == 0.10
+
+
 async def test_update_product_forbidden_for_other_manager(
     other_manager_client: AsyncClient, sample_product: Product
 ):
