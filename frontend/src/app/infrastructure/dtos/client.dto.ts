@@ -49,4 +49,5 @@ export interface ClientDetailDto {
   phone: string;
   email: string;
   is_active: boolean;
+  // TODO: add created_at/updated_at when API exposes them
 }

@@ -3,9 +3,18 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
 
 export const authGuard: CanActivateFn = (_route, state) => {
-  const isLoggedIn = inject(AuthService).isLoggedIn();
-  if (isLoggedIn) return true;
-  return inject(Router).createUrlTree(['/auth/login'], {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  
+  if (authService.isLoggedIn()) {
+    if (state.url === '/' || state.url === '') {
+      const redirectUrl = authService.isAdmin() ? '/users' : '/legal/terms';
+      return router.createUrlTree([redirectUrl]);
+    }
+    return true;
+  }
+  
+  return router.createUrlTree(['/auth/login'], {
     queryParams: { returnUrl: state.url },
   });
 };

@@ -1,5 +1,5 @@
 // Application configuration for Angular app
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -12,8 +12,11 @@ import { ErpPreset } from '@theme/erp.preset';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
+import { AuthService } from '@core/services/auth.service';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
+import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
+import { UserRepository } from '@domain/repositories/user.repository';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -30,6 +33,14 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    { provide: UserRepository, useClass: HttpUserRepository },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (authRepo: AuthRepository, authService: AuthService) =>
+        () => authRepo.restoreSession().then((session) => authService.setSession(session)),
+      deps: [AuthRepository, AuthService],
+      multi: true,
+    },
     providePrimeNG({
       ripple: true,
       theme: {
