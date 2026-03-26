@@ -1,7 +1,7 @@
 """make department name unique case insensitive
 
 Revision ID: b5ff70b31214
-Revises: e3f4a5b6c7d8
+Revises: c5d6e7f8a9b0
 Create Date: 2026-03-25 10:29:23.563515
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "b5ff70b31214"
-down_revision: str | Sequence[str] | None = "e3f4a5b6c7d8"
+down_revision: str | Sequence[str] | None = "c5d6e7f8a9b0"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
