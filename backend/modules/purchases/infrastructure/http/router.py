@@ -75,6 +75,8 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
                 unit_price=line.unit_price,
                 discount=line.discount,
                 line_subtotal=line.line_subtotal,
+                vat_rate=line.vat_rate,
+                line_tax=line.line_tax,
             )
             for line in purchase.lines
         ],
@@ -156,6 +158,8 @@ def _to_purchase_detail_dto(enriched: PurchaseEnriched) -> PurchaseDetailDTO:
                 unit_price=line.unit_price,
                 discount=line.discount,
                 line_subtotal=line.line_subtotal,
+                vat_rate=line.vat_rate,
+                line_tax=line.line_tax,
             )
             for line in enriched.purchase.lines
         ],

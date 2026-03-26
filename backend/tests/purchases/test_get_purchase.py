@@ -87,11 +87,15 @@ async def test_get_purchase_economic_summary(auth_client: AsyncClient):
 
 
 async def test_get_purchase_line_details(auth_client: AsyncClient):
+    from decimal import Decimal
+
     line = make_purchase_line(
         quantity=3,
         unit_price=50,
         discount=10,
         line_subtotal=140,
+        vat_rate=Decimal("0.21"),
+        line_tax=Decimal("29.40"),
     )
     purchase = make_purchase(lines=[line])
     enriched = make_enriched(purchase=purchase, product_names={10: "Tornillo M8"})
@@ -106,6 +110,37 @@ async def test_get_purchase_line_details(auth_client: AsyncClient):
     assert float(line_body["unit_price"]) == 50.00
     assert float(line_body["discount"]) == 10.00
     assert float(line_body["line_subtotal"]) == 140.00
+    assert float(line_body["vat_rate"]) == 0.21
+    assert float(line_body["line_tax"]) == 29.40
+
+
+async def test_get_purchase_line_reduced_vat(auth_client: AsyncClient):
+    from decimal import Decimal
+
+    line = make_purchase_line(
+        line_subtotal=Decimal("100.00"),
+        vat_rate=Decimal("0.10"),
+        line_tax=Decimal("10.00"),
+    )
+    purchase = make_purchase(
+        lines=[line],
+        subtotal=Decimal("100.00"),
+        taxes=Decimal("10.00"),
+        total=Decimal("110.00"),
+    )
+    enriched = make_enriched(purchase=purchase, product_names={10: "Pan"})
+    mock = MagicMock()
+    mock.execute = AsyncMock(return_value=enriched)
+    app.dependency_overrides[get_get_purchase_use_case] = lambda: mock
+    response = await auth_client.get("/api/v1/purchases/1")
+    del app.dependency_overrides[get_get_purchase_use_case]
+    assert response.status_code == 200
+    body = response.json()
+    line_body = body["lines"][0]
+    assert float(line_body["vat_rate"]) == 0.10
+    assert float(line_body["line_tax"]) == 10.00
+    assert float(body["taxes"]) == 10.00
+    assert float(body["total"]) == 110.00
 
 
 async def test_get_purchase_not_found(auth_client: AsyncClient):

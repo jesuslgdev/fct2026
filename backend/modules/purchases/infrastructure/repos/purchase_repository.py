@@ -135,6 +135,8 @@ class PurchaseRepository(IPurchaseRepository):
                 unit_price=line["unit_price"],
                 discount=line["discount"],
                 line_subtotal=line["line_subtotal"],
+                vat_rate=line["vat_rate"],
+                line_tax=line["line_tax"],
             )
             self._db.add(purchase_line)
 
