@@ -135,3 +135,89 @@ class PurchaseRepository(IPurchaseRepository):
         await self._db.flush()
         await self._db.refresh(purchase, ["lines"])
         return purchase
+
+    async def get_by_id(self, purchase_id: int) -> Purchase | None:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_line_by_id(self, purchase_line_id: int) -> PurchaseLine | None:
+        result = await self._db.execute(
+            select(PurchaseLine).where(
+                PurchaseLine.purchase_line_id == purchase_line_id
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def add_line(
+        self,
+        purchase_id: int,
+        product_id: int,
+        quantity: int,
+        unit_price: Decimal,
+        discount: Decimal,
+        line_subtotal: Decimal,
+    ) -> PurchaseLine:
+        line = PurchaseLine(
+            purchase_id=purchase_id,
+            product_id=product_id,
+            quantity=quantity,
+            unit_price=unit_price,
+            discount=discount,
+            line_subtotal=line_subtotal,
+        )
+        self._db.add(line)
+        await self._db.flush()
+        await self._db.refresh(line)
+        return line
+
+    async def update_line(
+        self,
+        purchase_line_id: int,
+        quantity: int,
+        unit_price: Decimal,
+        discount: Decimal,
+        line_subtotal: Decimal,
+    ) -> PurchaseLine:
+        result = await self._db.execute(
+            select(PurchaseLine).where(
+                PurchaseLine.purchase_line_id == purchase_line_id
+            )
+        )
+        line = result.scalar_one()
+        line.quantity = quantity
+        line.unit_price = unit_price
+        line.discount = discount
+        line.line_subtotal = line_subtotal
+        await self._db.flush()
+        await self._db.refresh(line)
+        return line
+
+    async def delete_line(self, purchase_line_id: int) -> None:
+        result = await self._db.execute(
+            select(PurchaseLine).where(
+                PurchaseLine.purchase_line_id == purchase_line_id
+            )
+        )
+        line = result.scalar_one()
+        await self._db.delete(line)
+        await self._db.flush()
+
+    async def update_totals(
+        self,
+        purchase_id: int,
+        subtotal: Decimal,
+        taxes: Decimal,
+        total: Decimal,
+    ) -> Purchase:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        purchase.subtotal = subtotal
+        purchase.taxes = taxes
+        purchase.total = total
+        await self._db.flush()
+        await self._db.refresh(purchase, ["lines"])
+        return purchase

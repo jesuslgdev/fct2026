@@ -17,8 +17,8 @@ class PurchaseDTO(BaseModel):
 class CreatePurchaseLineRequest(BaseModel):
     product_id: int
     quantity: int = Field(gt=0)
-    unit_price: Decimal = Field(gt=0)
-    discount: Decimal = Field(default=0, ge=0)
+    unit_price: Decimal = Field(gt=0, decimal_places=2)
+    discount: Decimal = Field(default=0, ge=0, decimal_places=2)
 
 
 class CreatePurchaseRequest(BaseModel):
@@ -35,6 +35,24 @@ class PurchaseLineDTO(BaseModel):
     unit_price: Decimal
     discount: Decimal
     line_subtotal: Decimal
+
+
+class AddPurchaseLineRequest(BaseModel):
+    product_id: int
+    quantity: int = Field(gt=0)
+    unit_price: Decimal = Field(gt=0, decimal_places=2)
+    discount: Decimal = Field(default=0, ge=0, decimal_places=2)
+
+
+class UpdatePurchaseLineRequest(BaseModel):
+    quantity: int = Field(gt=0)
+    unit_price: Decimal = Field(gt=0, decimal_places=2)
+    discount: Decimal = Field(default=0, ge=0, decimal_places=2)
+
+
+class SupplierPriceDTO(BaseModel):
+    product_id: int
+    supplier_price: Decimal
 
 
 class PurchaseDetailDTO(BaseModel):

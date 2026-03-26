@@ -147,17 +147,41 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.repos.client_repository import ClientRepository
+from modules.purchases.application.add_purchase_line_use_case import (
+    AddPurchaseLineUseCase,
+)
 from modules.purchases.application.create_purchase_use_case import (
     CreatePurchaseUseCase,
+)
+from modules.purchases.application.delete_purchase_line_use_case import (
+    DeletePurchaseLineUseCase,
+)
+from modules.purchases.application.get_supplier_price_use_case import (
+    GetSupplierPriceUseCase,
 )
 from modules.purchases.application.list_purchases_use_case import (
     ListPurchasesUseCase,
 )
+from modules.purchases.application.update_purchase_line_use_case import (
+    UpdatePurchaseLineUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_add_purchase_line_use_case import (
+    IAddPurchaseLineUseCase,
+)
 from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
     ICreatePurchaseUseCase,
 )
+from modules.purchases.domain.interfaces.use_cases.i_delete_purchase_line_use_case import (
+    IDeletePurchaseLineUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_get_supplier_price_use_case import (
+    IGetSupplierPriceUseCase,
+)
 from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case import (
     IListPurchasesUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_update_purchase_line_use_case import (
+    IUpdatePurchaseLineUseCase,
 )
 from modules.purchases.infrastructure.repos.purchase_repository import (
     PurchaseRepository,
@@ -498,6 +522,38 @@ async def get_create_purchase_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ICreatePurchaseUseCase:
     return CreatePurchaseUseCase(
+        PurchaseRepository(db),
+        SupplierRepository(db),
+        ProductRepository(db),
+    )
+
+
+async def get_add_purchase_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IAddPurchaseLineUseCase:
+    return AddPurchaseLineUseCase(
+        PurchaseRepository(db),
+        SupplierRepository(db),
+        ProductRepository(db),
+    )
+
+
+async def get_update_purchase_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IUpdatePurchaseLineUseCase:
+    return UpdatePurchaseLineUseCase(PurchaseRepository(db))
+
+
+async def get_delete_purchase_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IDeletePurchaseLineUseCase:
+    return DeletePurchaseLineUseCase(PurchaseRepository(db))
+
+
+async def get_get_supplier_price_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetSupplierPriceUseCase:
+    return GetSupplierPriceUseCase(
         PurchaseRepository(db),
         SupplierRepository(db),
         ProductRepository(db),
