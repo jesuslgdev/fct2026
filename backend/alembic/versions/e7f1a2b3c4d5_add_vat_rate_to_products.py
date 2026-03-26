@@ -1,7 +1,7 @@
 """add vat_rate to products
 
 Revision ID: e7f1a2b3c4d5
-Revises: b5c6d7e8f9a0, d2fc5b80d35c
+Revises: b5ff70b31214
 Create Date: 2026-03-25
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "e7f1a2b3c4d5"
-down_revision: str | Sequence[str] | None = ("b5c6d7e8f9a0", "d2fc5b80d35c")
+down_revision: str | Sequence[str] | None = "b5ff70b31214"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -10,7 +10,7 @@ from main import app
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.purchases.domain.entities.purchase_enriched import PurchaseEnriched
 from modules.purchases.domain.entities.purchase_line import PurchaseLine
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 
 
 def _mock_user():

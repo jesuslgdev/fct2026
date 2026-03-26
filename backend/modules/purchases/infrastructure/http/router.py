@@ -15,10 +15,10 @@ from composition.security import (
     get_current_user,
     require_purchases_department_or_admin,
 )
+from modules.purchases.domain.entities.purchase_enriched import PurchaseEnriched
 from modules.purchases.domain.interfaces.use_cases.i_add_purchase_line_use_case import (
     IAddPurchaseLineUseCase,
 )
-from modules.purchases.domain.entities.purchase_enriched import PurchaseEnriched
 from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
     ICreatePurchaseUseCase,
 )

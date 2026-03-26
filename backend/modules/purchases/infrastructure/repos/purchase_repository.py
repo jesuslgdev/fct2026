@@ -144,12 +144,6 @@ class PurchaseRepository(IPurchaseRepository):
         await self._db.refresh(purchase, ["lines"])
         return purchase
 
-    async def get_by_id(self, purchase_id: int) -> Purchase | None:
-        result = await self._db.execute(
-            select(Purchase).where(Purchase.purchase_id == purchase_id)
-        )
-        return result.scalar_one_or_none()
-
     async def get_line_by_id(self, purchase_line_id: int) -> PurchaseLine | None:
         result = await self._db.execute(
             select(PurchaseLine).where(

@@ -43,9 +43,6 @@ class IPurchaseRepository(ABC):
     ) -> Purchase: ...
 
     @abstractmethod
-    async def get_by_id(self, purchase_id: int) -> Purchase | None: ...
-
-    @abstractmethod
     async def get_line_by_id(self, purchase_line_id: int) -> PurchaseLine | None: ...
 
     @abstractmethod
