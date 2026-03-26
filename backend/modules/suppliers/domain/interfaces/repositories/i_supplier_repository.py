@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from decimal import Decimal
 
 from modules.suppliers.domain.entities.supplier import Supplier
 from modules.suppliers.domain.entities.supplier_product import SupplierProduct
@@ -60,3 +61,36 @@ class ISupplierRepository(ABC):
 
     @abstractmethod
     async def bulk_create(self, suppliers: list[Supplier]) -> int: ...
+
+    @abstractmethod
+    async def add_product(
+        self, supplier_id: int, product_id: int, price: Decimal
+    ) -> SupplierProduct: ...
+
+    @abstractmethod
+    async def update_product_price(
+        self, supplier_id: int, product_id: int, price: Decimal
+    ) -> SupplierProduct: ...
+
+    @abstractmethod
+    async def remove_product(self, supplier_id: int, product_id: int) -> None: ...
+
+    @abstractmethod
+    async def get_association(
+        self, supplier_id: int, product_id: int
+    ) -> SupplierProduct | None: ...
+
+    @abstractmethod
+    async def get_suppliers_by_product(
+        self, product_id: int
+    ) -> list[SupplierProduct]: ...
+
+    @abstractmethod
+    async def get_products_by_supplier_paginated(
+        self, supplier_id: int, page: int, page_size: int
+    ) -> PaginatedResult[SupplierProduct]: ...
+
+    @abstractmethod
+    async def get_suppliers_by_product_paginated(
+        self, product_id: int, page: int, page_size: int
+    ) -> PaginatedResult[SupplierProduct]: ...

@@ -9,6 +9,7 @@ from modules.catalog.domain.exceptions import CatalogException, CatalogException
 from modules.catalog.domain.interfaces.repositories.i_product_repository import (
     IProductRepository,
 )
+from shared.domain.interfaces.i_product_reader import IProductReader
 from shared.domain.paginated_result import PaginatedResult
 
 SORT_FIELDS = {
@@ -17,7 +18,7 @@ SORT_FIELDS = {
 }
 
 
-class ProductRepository(IProductRepository):
+class ProductRepository(IProductRepository, IProductReader):
     """SQLAlchemy implementation of the Product repository."""
 
     def __init__(self, db: AsyncSession) -> None:
@@ -142,3 +143,7 @@ class ProductRepository(IProductRepository):
 
         product.is_active = is_active
         await self._db.flush()
+
+    async def is_active(self, product_id: int) -> bool:
+        product = await self.get_by_id(product_id)
+        return product.is_active if product else False
