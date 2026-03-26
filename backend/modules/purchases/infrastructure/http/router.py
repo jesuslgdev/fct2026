@@ -6,6 +6,7 @@ from composition.dependencies import (
     get_add_purchase_line_use_case,
     get_create_purchase_use_case,
     get_delete_purchase_line_use_case,
+    get_get_purchase_use_case,
     get_get_supplier_price_use_case,
     get_list_purchases_use_case,
     get_update_purchase_line_use_case,
@@ -17,11 +18,15 @@ from composition.security import (
 from modules.purchases.domain.interfaces.use_cases.i_add_purchase_line_use_case import (
     IAddPurchaseLineUseCase,
 )
+from modules.purchases.domain.entities.purchase_enriched import PurchaseEnriched
 from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
     ICreatePurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_delete_purchase_line_use_case import (
     IDeletePurchaseLineUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_get_purchase_use_case import (
+    IGetPurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_get_supplier_price_use_case import (
     IGetSupplierPriceUseCase,
@@ -70,6 +75,8 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
                 unit_price=line.unit_price,
                 discount=line.discount,
                 line_subtotal=line.line_subtotal,
+                vat_rate=line.vat_rate,
+                line_tax=line.line_tax,
             )
             for line in purchase.lines
         ],
@@ -122,6 +129,52 @@ async def list_purchases(
         page=result.page,
         page_size=result.page_size,
     )
+
+
+def _to_purchase_detail_dto(enriched: PurchaseEnriched) -> PurchaseDetailDTO:
+    return PurchaseDetailDTO(
+        purchase_id=enriched.purchase.purchase_id,
+        purchase_number=enriched.purchase.purchase_number,
+        supplier_id=enriched.purchase.supplier_id,
+        supplier_name=enriched.supplier_name,
+        user_id=enriched.purchase.user_id,
+        user_name=enriched.user_name,
+        warehouse_id=enriched.purchase.warehouse_id,
+        warehouse_name=enriched.warehouse_name,
+        purchase_date=enriched.purchase.purchase_date,
+        status=enriched.purchase.status,
+        subtotal=enriched.purchase.subtotal,
+        taxes=enriched.purchase.taxes,
+        total=enriched.purchase.total,
+        created_at=enriched.purchase.created_at,
+        updated_at=enriched.purchase.updated_at,
+        lines=[
+            PurchaseLineDTO(
+                purchase_line_id=line.purchase_line_id,
+                purchase_id=line.purchase_id,
+                product_id=line.product_id,
+                product_name=enriched.product_names.get(line.product_id),
+                quantity=line.quantity,
+                unit_price=line.unit_price,
+                discount=line.discount,
+                line_subtotal=line.line_subtotal,
+                vat_rate=line.vat_rate,
+                line_tax=line.line_tax,
+            )
+            for line in enriched.purchase.lines
+        ],
+    )
+
+
+@router.get("/{purchase_id}", response_model=PurchaseDetailDTO, tags=["Purchases"])
+async def get_purchase(
+    purchase_id: int,
+    use_case: IGetPurchaseUseCase = Depends(get_get_purchase_use_case),
+    _: UserSession = Depends(get_current_user),
+):
+    """Return the full detail of a single purchase."""
+    result = await use_case.execute(purchase_id)
+    return _to_purchase_detail_dto(result)
 
 
 @router.post("", response_model=PurchaseDetailDTO, status_code=201, tags=["Purchases"])
