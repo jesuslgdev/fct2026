@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { InputComponent } from '@shared/ui/input/input.component';
@@ -18,7 +18,6 @@ const TAX_ID_PATTERN =
 export class ClientFormDialogComponent {
   readonly store = inject(ClientsStore);
   private readonly fb = inject(FormBuilder);
-  readonly renderSelects = signal(true);
 
   readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
@@ -67,10 +66,6 @@ export class ClientFormDialogComponent {
       } else {
         this.form.reset();
       }
-      // Force remount of p-select controls to clear stale internal label state
-      // after switching between edit/create contexts.
-      this.renderSelects.set(false);
-      queueMicrotask(() => this.renderSelects.set(true));
     });
   }
 

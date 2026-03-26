@@ -6,12 +6,7 @@ import { BadgeComponent } from '@shared/ui/badge/badge.component';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [BadgeComponent],
-  template: `
-    <ui-badge
-      [label]="label()"
-      [variant]="variant()"
-    />
-  `,
+  templateUrl: './client-status-badge.component.html',
 })
 export class ClientStatusBadgeComponent {
   isActive = input.required<boolean>();

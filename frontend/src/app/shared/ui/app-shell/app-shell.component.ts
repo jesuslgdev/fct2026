@@ -34,7 +34,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/sales': 'Ventas',
   '/products': 'Productos',
   '/categories': 'Categorías',
-  '/customers': 'Clientes',
   '/clients': 'Clientes',
   '/suppliers': 'Proveedores',
   '/warehouses': 'Almacenes',
