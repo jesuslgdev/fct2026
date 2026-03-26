@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { UserRepository } from '@domain/repositories/user.repository';
-import { Department } from '@domain/models/user.model';
+import { Department } from '@domain/models/department.model';
 
 /** Fetches the lightweight department list used to populate dropdowns in user forms. */
 @Injectable({

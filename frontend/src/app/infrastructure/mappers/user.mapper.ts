@@ -1,9 +1,9 @@
 import {
   User,
-  Department,
   CreateUserPayload,
   UpdateUserPayload,
 } from '@domain/models/user.model';
+import { Department } from '@domain/models/department.model';
 import { UserDto, CreateUserDto, UpdateUserDto } from '@infrastructure/dtos/user.dto';
 import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 

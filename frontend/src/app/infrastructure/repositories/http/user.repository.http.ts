@@ -11,12 +11,12 @@ import {
 } from '@domain/models/user-errors';
 import {
   User,
-  Department,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
   PagedResult,
 } from '@domain/models/user.model';
+import { Department } from '@domain/models/department.model';
 import { UserDto, UsersPageDto, SetUserActiveDto } from '@infrastructure/dtos/user.dto';
 import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 import { UserMapper } from '@infrastructure/mappers/user.mapper';

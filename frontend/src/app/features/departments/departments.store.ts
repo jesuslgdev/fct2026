@@ -42,11 +42,11 @@ export class DepartmentsStore {
 
   async update(id: string, name: string): Promise<void> {
     const trimmed = name.trim();
-    if (this._departments().some(d => d.id !== id && d.name.toLowerCase() === trimmed.toLowerCase())) {
+    if (this._departments().some(d => String(d.id) !== id && d.name.toLowerCase() === trimmed.toLowerCase())) {
       throw new DepartmentNameDuplicateError();
     }
     const updated = await firstValueFrom(this.updateDept.execute(id, trimmed));
-    this._departments.update(list => list.map(d => d.id === id ? updated : d));
+    this._departments.update(list => list.map(d => String(d.id) === id ? updated : d));
   }
 
   async delete(department: Department): Promise<void> {

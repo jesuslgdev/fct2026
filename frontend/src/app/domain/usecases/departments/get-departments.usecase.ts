@@ -25,7 +25,7 @@ export class GetDepartmentsUseCase {
         departments.map(dept => ({
           ...dept,
           userCount: users.data.filter(
-            u => u.departmentId === parseInt(dept.id) && u.active,
+            u => u.departmentId === parseInt(String(dept.id), 10) && u.active,
           ).length,
         })),
       ),

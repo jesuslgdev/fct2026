@@ -85,7 +85,7 @@ export class DepartmentsPageComponent implements OnInit {
     try {
       const editing = this.selectedDept();
       if (editing) {
-        await this.store.update(editing.id, name);
+        await this.store.update(String(editing.id), name);
       } else {
         await this.store.create(name);
       }

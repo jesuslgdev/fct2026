@@ -9,9 +9,9 @@ export class DeleteDepartmentUseCase {
   private readonly repo = inject(DepartmentRepository);
 
   execute(department: Department): Observable<void> {
-    if (department.userCount > 0) {
+    if ((department.userCount ?? 0) > 0) {
       return throwError(() => new DepartmentHasUsersError());
     }
-    return this.repo.delete(department.id);
+    return this.repo.delete(String(department.id));
   }
 }

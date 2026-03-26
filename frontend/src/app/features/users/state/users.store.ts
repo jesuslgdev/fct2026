@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
-import { User, Department, CreateUserPayload, UpdateUserPayload, UserQueryParams } from '@domain/models/user.model';
+import { User, CreateUserPayload, UpdateUserPayload, UserQueryParams } from '@domain/models/user.model';
+import { Department } from '@domain/models/department.model';
 import { UserRole } from '@domain/enums/user-role.enum';
 import { GetUsersUseCase } from '@domain/usecases/user/get-users.usecase';
 import { CreateUserUseCase } from '@domain/usecases/user/create-user.usecase';
