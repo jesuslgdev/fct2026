@@ -174,8 +174,8 @@ async def test_list_product_suppliers_from_catalog(auth_client: AsyncClient):
 async def test_download_products_template(auth_client: AsyncClient):
     mock = MagicMock()
     mock.execute = MagicMock(return_value=b"fake-excel-content")
-    app.dependency_overrides[get_download_supplier_product_template_use_case] = lambda: (
-        mock
+    app.dependency_overrides[get_download_supplier_product_template_use_case] = (
+        lambda: (mock)
     )
 
     response = await auth_client.get("/api/v1/suppliers/1/products/template")
