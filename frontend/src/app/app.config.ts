@@ -12,11 +12,13 @@ import { ErpPreset } from '@theme/erp.preset';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
-import { AuthService } from '@core/services/auth.service';
+import { DepartmentRepository } from '@domain/repositories/department.repository';
+import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
+import { AuthService } from '@core/services/auth.service';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -30,7 +32,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([
         authInterceptor,
       ])
-    ),
+    ), 
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
@@ -41,6 +43,7 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthRepository, AuthService],
       multi: true,
     },
+    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     providePrimeNG({
       ripple: true,
       theme: {

@@ -6,12 +6,12 @@ import { AuthService } from '@core/services/auth.service';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
   User,
-  Department,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
   PagedResult,
 } from '@domain/models/user.model';
+import { Department } from '@domain/models/department.model';
 import { UserRole } from '@domain/enums/user-role.enum';
 import {
   UserForbiddenError,
@@ -46,6 +46,7 @@ class MockAuthService {
     photoURL: null,
     role: UserRole.Administrator as const,
   });
+  readonly isAdmin = signal(true);
 }
 
 class MockUserRepository implements UserRepository {

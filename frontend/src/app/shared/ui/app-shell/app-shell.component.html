@@ -65,7 +65,7 @@
       <!-- ── NAV SECTIONS (scrollable) ─────────── -->
       <nav class="flex-1 overflow-y-auto px-3 py-3 space-y-4">
 
-        @for (section of filteredNavSections(); track section.title) {
+        @for (section of navSections(); track section.title) {
           <div>
             <p class="nav-section-title">{{ section.title }}</p>
             <ul class="space-y-0.5 list-none p-0 m-0">

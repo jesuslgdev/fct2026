@@ -1,11 +1,11 @@
 import {
   User,
-  Department,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
   PagedResult,
 } from '@domain/models/user.model';
+import { Department } from '@domain/models/department.model';
 
 export abstract class UserRepository {
   abstract getUsers(params: UserQueryParams): Promise<PagedResult<User>>;
