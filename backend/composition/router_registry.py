@@ -17,7 +17,6 @@ def register_routers(app: FastAPI) -> None:
     """Register all module routers onto the FastAPI application."""
     from modules.warehouse.infrastructure.http.router import router as warehouse_router
 
-
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(admin_router, prefix="/api/v1")
     app.include_router(catalog_router, prefix="/api/v1")

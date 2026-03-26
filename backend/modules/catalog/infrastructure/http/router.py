@@ -100,7 +100,6 @@ async def get_category(
     return _category_to_dto(result)
 
 
-
 @router.post(
     "/categories",
     response_model=CategoryDTO,
