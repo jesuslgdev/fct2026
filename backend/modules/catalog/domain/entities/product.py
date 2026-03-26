@@ -20,6 +20,7 @@ class Product(Base):
         description: Optional long description, max 500 chars.
         category_id: ID of the parent category.
         price: Unit price (> 0), max 2 decimals.
+        vat_rate: Applicable VAT rate (e.g. 0.21, 0.10, 0.04, 0.00).
         stock_current: Current units in inventory.
         stock_min: Threshold for low stock alerts.
         is_active: Logical deletion flag.
@@ -37,6 +38,9 @@ class Product(Base):
         ForeignKey("categories.category_id"), nullable=False
     )
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    vat_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), nullable=False, default=Decimal("0.21")
+    )
     stock_current: Mapped[int] = mapped_column(nullable=False, default=0)
     stock_min: Mapped[int] = mapped_column(nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

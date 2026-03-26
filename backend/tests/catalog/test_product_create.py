@@ -37,12 +37,41 @@ async def test_create_product_success(
     data = response.json()
     assert data["product_code"] == "NEW-PROD-001"
     assert data["category_name"] == "Electronics"
+    assert float(data["vat_rate"]) == 0.21
 
     # Verify DB
     result = await db_session.execute(
         select(Product).where(Product.product_code == "NEW-PROD-001")
     )
     assert result.scalar_one_or_none() is not None
+
+
+async def test_create_product_custom_vat_rate(
+    purchases_manager_client: AsyncClient,
+    db_session: AsyncSession,
+    sample_category: Category,
+):
+    payload = {
+        "product_code": "FOOD-001",
+        "name": "Bread",
+        "category_id": sample_category.category_id,
+        "price": 1.50,
+        "vat_rate": 0.04,
+    }
+    response = await purchases_manager_client.post(
+        "/api/v1/catalog/products", json=payload
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert float(data["vat_rate"]) == 0.04
+
+    result = await db_session.execute(
+        select(Product).where(Product.product_code == "FOOD-001")
+    )
+    product = result.scalar_one_or_none()
+    assert product is not None
+    assert float(product.vat_rate) == 0.04
 
 
 async def test_create_product_duplicate_code(

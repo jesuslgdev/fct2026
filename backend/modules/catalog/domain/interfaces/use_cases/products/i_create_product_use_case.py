@@ -13,6 +13,7 @@ class ICreateProductUseCase(ABC):
         description: str | None,
         category_id: int,
         price: Decimal,
+        vat_rate: Decimal,
         stock_current: int,
         stock_min: int,
     ) -> Product:
