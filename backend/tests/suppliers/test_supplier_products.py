@@ -160,7 +160,7 @@ async def test_list_product_suppliers_from_catalog(auth_client: AsyncClient):
     )
     app.dependency_overrides[get_list_product_suppliers_use_case] = lambda: mock
 
-    response = await auth_client.get("/api/v1/catalog/products/10/suppliers")
+    response = await auth_client.get("/api/v1/suppliers/products/10/suppliers")
 
     assert response.status_code == 200
     body = response.json()
