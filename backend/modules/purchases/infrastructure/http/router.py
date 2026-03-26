@@ -41,10 +41,10 @@ from modules.purchases.infrastructure.http.schemas import (
     SupplierPriceDTO,
     UpdatePurchaseLineRequest,
 )
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
-router = APIRouter(prefix="/purchases", tags=["Purchases"])
+router = APIRouter(prefix="/purchases")
 
 
 def _purchase_detail(purchase) -> PurchaseDetailDTO:
@@ -76,7 +76,10 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
     )
 
 
-@router.get("", response_model=PaginatedResponse[PurchaseDTO])
+# ── Purchases ───────────────────────────────────────────────────
+
+
+@router.get("", response_model=PaginatedResponse[PurchaseDTO], tags=["Purchases"])
 async def list_purchases(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -90,6 +93,7 @@ async def list_purchases(
     _: UserSession = Depends(get_current_user),
     use_case: IListPurchasesUseCase = Depends(get_list_purchases_use_case),
 ):
+    """Return a paginated list of purchases with optional filters."""
     result = await use_case.execute(
         page=page,
         page_size=page_size,
@@ -120,12 +124,13 @@ async def list_purchases(
     )
 
 
-@router.post("", response_model=PurchaseDetailDTO, status_code=201)
+@router.post("", response_model=PurchaseDetailDTO, status_code=201, tags=["Purchases"])
 async def create_purchase(
     body: CreatePurchaseRequest,
     current_user: UserSession = Depends(require_purchases_department_or_admin),
     use_case: ICreatePurchaseUseCase = Depends(get_create_purchase_use_case),
 ):
+    """Create a new purchase order."""
     purchase = await use_case.execute(
         supplier_id=body.supplier_id,
         user_id=current_user.user_id,
@@ -135,13 +140,22 @@ async def create_purchase(
     return _purchase_detail(purchase)
 
 
-@router.post("/{purchase_id}/lines", response_model=PurchaseDetailDTO, status_code=201)
+# ── Purchase Lines ──────────────────────────────────────────────
+
+
+@router.post(
+    "/{purchase_id}/lines",
+    response_model=PurchaseDetailDTO,
+    status_code=201,
+    tags=["Purchases - Lines"],
+)
 async def add_purchase_line(
     purchase_id: int,
     body: AddPurchaseLineRequest,
     _: UserSession = Depends(require_purchases_department_or_admin),
     use_case: IAddPurchaseLineUseCase = Depends(get_add_purchase_line_use_case),
 ):
+    """Add a new line to an existing purchase."""
     purchase = await use_case.execute(
         purchase_id=purchase_id,
         product_id=body.product_id,
@@ -152,7 +166,11 @@ async def add_purchase_line(
     return _purchase_detail(purchase)
 
 
-@router.put("/{purchase_id}/lines/{line_id}", response_model=PurchaseDetailDTO)
+@router.put(
+    "/{purchase_id}/lines/{line_id}",
+    response_model=PurchaseDetailDTO,
+    tags=["Purchases - Lines"],
+)
 async def update_purchase_line(
     purchase_id: int,
     line_id: int,
@@ -160,6 +178,7 @@ async def update_purchase_line(
     _: UserSession = Depends(require_purchases_department_or_admin),
     use_case: IUpdatePurchaseLineUseCase = Depends(get_update_purchase_line_use_case),
 ):
+    """Update an existing purchase line."""
     purchase = await use_case.execute(
         purchase_id=purchase_id,
         purchase_line_id=line_id,
@@ -170,13 +189,18 @@ async def update_purchase_line(
     return _purchase_detail(purchase)
 
 
-@router.delete("/{purchase_id}/lines/{line_id}", response_model=PurchaseDetailDTO)
+@router.delete(
+    "/{purchase_id}/lines/{line_id}",
+    response_model=PurchaseDetailDTO,
+    tags=["Purchases - Lines"],
+)
 async def delete_purchase_line(
     purchase_id: int,
     line_id: int,
     _: UserSession = Depends(require_purchases_department_or_admin),
     use_case: IDeletePurchaseLineUseCase = Depends(get_delete_purchase_line_use_case),
 ):
+    """Remove a line from a purchase."""
     purchase = await use_case.execute(
         purchase_id=purchase_id,
         purchase_line_id=line_id,
@@ -187,6 +211,7 @@ async def delete_purchase_line(
 @router.get(
     "/{purchase_id}/supplier-prices/{product_id}",
     response_model=SupplierPriceDTO,
+    tags=["Purchases - Lines"],
 )
 async def get_supplier_price(
     purchase_id: int,
@@ -194,6 +219,7 @@ async def get_supplier_price(
     _: UserSession = Depends(get_current_user),
     use_case: IGetSupplierPriceUseCase = Depends(get_get_supplier_price_use_case),
 ):
+    """Return the supplier price for a product in a purchase."""
     return await use_case.execute(
         purchase_id=purchase_id,
         product_id=product_id,

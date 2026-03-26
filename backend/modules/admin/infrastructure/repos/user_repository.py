@@ -5,8 +5,8 @@ from modules.admin.domain.exceptions import AdminException, AdminExceptionInfo
 from modules.admin.domain.interfaces.repositories.i_user_repository import (
     IUserRepository,
 )
+from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.entities.user import User
-from shared.domain.paginated_result import PaginatedResult
 
 
 class UserRepository(IUserRepository):

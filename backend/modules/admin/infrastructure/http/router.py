@@ -56,7 +56,7 @@ from shared.constants import ROLE_PATTERN
 from shared.domain.entities.user import User
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
-router = APIRouter(prefix="/admin", tags=["Admin - Departments"])
+router = APIRouter(prefix="/admin")
 
 
 def _to_user_dto(user: User) -> UserDTO:
@@ -71,53 +71,81 @@ def _to_user_dto(user: User) -> UserDTO:
     )
 
 
-@router.get("/departments", response_model=list[DepartmentDTO])
+# ── Department Management ───────────────────────────────────────
+
+
+@router.get(
+    "/departments", response_model=list[DepartmentDTO], tags=["Admin - Departments"]
+)
 async def list_departments(
     use_case: IListDepartmentsUseCase = Depends(get_list_departments_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Return all departments."""
     results = await use_case.execute()
     return [DepartmentDTO(department_id=d.department_id, name=d.name) for d in results]
 
 
-@router.post("/departments", response_model=DepartmentDTO, status_code=201)
+@router.post(
+    "/departments",
+    response_model=DepartmentDTO,
+    status_code=201,
+    tags=["Admin - Departments"],
+)
 async def create_department(
     body: CreateDepartmentDTO,
     use_case: ICreateDepartmentUseCase = Depends(get_create_department_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Create a new department."""
     result = await use_case.execute(body.name)
     return DepartmentDTO(department_id=result.department_id, name=result.name)
 
 
-@router.get("/departments/{department_id}", response_model=DepartmentDTO)
+@router.get(
+    "/departments/{department_id}",
+    response_model=DepartmentDTO,
+    tags=["Admin - Departments"],
+)
 async def get_department(
     department_id: int,
     use_case: IGetDepartmentUseCase = Depends(get_get_department_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Return a single department by ID."""
     result = await use_case.execute(department_id)
     return DepartmentDTO(department_id=result.department_id, name=result.name)
 
 
-@router.put("/departments/{department_id}", response_model=DepartmentDTO)
+@router.put(
+    "/departments/{department_id}",
+    response_model=DepartmentDTO,
+    tags=["Admin - Departments"],
+)
 async def update_department(
     department_id: int,
     body: UpdateDepartmentDTO,
     use_case: IUpdateDepartmentUseCase = Depends(get_update_department_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Update an existing department."""
     result = await use_case.execute(department_id, body.name)
     return DepartmentDTO(department_id=result.department_id, name=result.name)
 
 
-@router.delete("/departments/{department_id}", status_code=204)
+@router.delete(
+    "/departments/{department_id}", status_code=204, tags=["Admin - Departments"]
+)
 async def delete_department(
     department_id: int,
     use_case: IDeleteDepartmentUseCase = Depends(get_delete_department_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Delete a department."""
     await use_case.execute(department_id)
+
+
+# ── User Management ────────────────────────────────────────────
 
 
 @router.get("/users", response_model=PaginatedResponse[UserDTO], tags=["Admin - Users"])
@@ -130,6 +158,7 @@ async def list_users(
     use_case: IListUsersUseCase = Depends(get_list_users_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Return a paginated list of users with optional filters."""
     result = await use_case.execute(
         page, page_size, search=search, role=role, active=active
     )
@@ -147,6 +176,7 @@ async def get_user(
     use_case: IGetUserUseCase = Depends(get_get_user_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Return a single user by ID."""
     result = await use_case.execute(user_id)
     return _to_user_dto(result)
 
@@ -157,6 +187,7 @@ async def create_user(
     use_case: ICreateUserUseCase = Depends(get_create_user_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Create a new user."""
     result = await use_case.execute(
         body.first_name, body.last_name, body.email, body.role, body.department_id
     )
@@ -170,6 +201,7 @@ async def update_user(
     use_case: IUpdateUserUseCase = Depends(get_update_user_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Update an existing user."""
     result = await use_case.execute(
         user_id, body.first_name, body.last_name, body.role, body.department_id
     )
@@ -183,5 +215,6 @@ async def set_user_active(
     use_case: ISetUserActiveUseCase = Depends(get_set_user_active_use_case),
     _: dict = Depends(require_admin),
 ):
+    """Activate or deactivate a user."""
     await use_case.execute(user_id, body.is_active)
     return Response(status_code=204)

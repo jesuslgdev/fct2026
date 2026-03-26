@@ -5,7 +5,7 @@ from httpx import ASGITransport, AsyncClient
 
 from composition.security import get_current_user
 from main import app
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import get_db
 
 

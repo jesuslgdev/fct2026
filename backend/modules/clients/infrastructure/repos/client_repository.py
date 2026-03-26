@@ -6,8 +6,8 @@ from modules.clients.domain.exceptions import ClientException, ClientExceptionIn
 from modules.clients.domain.interfaces.repositories.i_client_repository import (
     IClientRepository,
 )
+from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_client_reader import IClientReader
-from shared.domain.paginated_result import PaginatedResult
 
 
 class ClientRepository(IClientRepository, IClientReader):

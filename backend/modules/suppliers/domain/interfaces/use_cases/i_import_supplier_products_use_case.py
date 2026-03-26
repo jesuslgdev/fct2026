@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from modules.suppliers.domain.entities.import_result import ImportResult
+from modules.suppliers.domain.dtos.import_result import ImportResult
 
 
 class IImportSupplierProductsUseCase(ABC):

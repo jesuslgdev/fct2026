@@ -7,7 +7,7 @@ from modules.clients.domain.interfaces.repositories.i_client_repository import (
 from modules.clients.domain.interfaces.use_cases.i_list_clients_use_case import (
     IListClientsUseCase,
 )
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class ListClientsUseCase(IListClientsUseCase):

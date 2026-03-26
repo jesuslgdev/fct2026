@@ -3,7 +3,7 @@ from io import BytesIO
 
 from openpyxl import load_workbook
 
-from modules.suppliers.domain.entities.import_result import (
+from modules.suppliers.domain.dtos.import_result import (
     ImportResult,
     ImportRowError,
 )

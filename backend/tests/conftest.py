@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import modules.catalog.domain.entities.product  # noqa: F401
 from composition.security import get_current_user
 from main import app
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import engine, get_db
 
 

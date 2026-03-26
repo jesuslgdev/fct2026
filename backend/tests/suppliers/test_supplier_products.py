@@ -15,15 +15,15 @@ from composition.dependencies import (
 )
 from composition.security import get_current_user, require_purchases_manager_or_admin
 from main import app
-from modules.suppliers.domain.entities.product_supplier_detail import (
+from modules.suppliers.domain.dtos.product_supplier_detail import (
     ProductSupplierDetail,
 )
-from modules.suppliers.domain.entities.supplier_product import SupplierProduct
-from modules.suppliers.domain.entities.supplier_product_detail import (
+from modules.suppliers.domain.dtos.supplier_product_detail import (
     SupplierProductDetail,
 )
-from shared.domain.entities.user_session import UserSession
-from shared.domain.paginated_result import PaginatedResult
+from modules.suppliers.domain.entities.supplier_product import SupplierProduct
+from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.dtos.user_session import UserSession
 
 
 def _mock_user(role: str = "Administrator"):
