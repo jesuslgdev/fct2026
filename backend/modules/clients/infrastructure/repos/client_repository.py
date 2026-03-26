@@ -31,23 +31,46 @@ class ClientRepository(IClientRepository, IClientReader):
         self._db = db
 
     async def get_all_paginated(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        active: bool | None = None,
     ) -> PaginatedResult[Client]:
-        """Return a paginated list of all clients ordered by client_id.
+        """Return a paginated list of clients with optional filters.
 
         Args:
             page: 1-based page number.
             page_size: Number of records per page.
+            search: Optional text to filter by name, tax_id or email.
+            active: Optional flag to filter by active/inactive status.
 
         Returns:
             A PaginatedResult containing the requested page of clients.
         """
-        total_result = await self._db.execute(select(func.count()).select_from(Client))
+        base_query = select(Client)
+        count_query = select(func.count()).select_from(Client)
+
+        if search:
+            pattern = f"%{search}%"
+            search_filter = (
+                Client.name.ilike(pattern)
+                | Client.tax_id.ilike(pattern)
+                | Client.email.ilike(pattern)
+            )
+            base_query = base_query.where(search_filter)
+            count_query = count_query.where(search_filter)
+
+        if active is not None:
+            base_query = base_query.where(Client.is_active == active)
+            count_query = count_query.where(Client.is_active == active)
+
+        total_result = await self._db.execute(count_query)
         total = total_result.scalar_one()
 
         offset = (page - 1) * page_size
         result = await self._db.execute(
-            select(Client).order_by(Client.client_id).limit(page_size).offset(offset)
+            base_query.order_by(Client.client_id).limit(page_size).offset(offset)
         )
         items = list(result.scalars().all())
 
