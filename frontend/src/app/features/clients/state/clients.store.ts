@@ -1,7 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { UserRole } from '@domain/enums/user-role.enum';
 import { AuthService } from '@core/services/auth.service';
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
   ClientQueryParams,
@@ -38,7 +41,7 @@ export class ClientsStore {
   readonly error = signal<string | null>(null);
   readonly searchQuery = signal('');
   readonly statusFilter = signal<boolean | null>(null);
-  readonly selectedClient = signal<Client | null>(null);
+  readonly selectedClient = signal<ClientDetail | null>(null);
   readonly dialogVisible = signal(false);
   readonly dialogMode = signal<DialogMode>('create');
   readonly confirmDialogVisible = signal(false);
@@ -46,7 +49,7 @@ export class ClientsStore {
 
   readonly canEdit = computed(() => {
     const user = this.authService.user();
-    return user?.role === 'Administrator' || user?.role === 'Sales Manager';
+    return user?.role === UserRole.Administrator || user?.role === UserRole.Manager;
   });
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
@@ -85,7 +88,7 @@ export class ClientsStore {
         search: this.searchQuery() || undefined,
         isActive: this.statusFilter() ?? undefined,
       };
-      const result = await this.getClientsUseCase.execute(params);
+      const result = await firstValueFrom(this.getClientsUseCase.execute(params));
       this.clients.set(result.data);
       this.total.set(result.total);
     } catch (err) {
@@ -99,7 +102,7 @@ export class ClientsStore {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const client = await this.getClientByIdUseCase.execute(id);
+      const client = await firstValueFrom(this.getClientByIdUseCase.execute(id));
       this.selectedClient.set(client);
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Failed to load client.'));
@@ -123,13 +126,12 @@ export class ClientsStore {
     this.error.set(null);
 
     try {
-      const clientData = await this.getClientByIdUseCase.execute(clientId);
+      const clientData = await firstValueFrom(this.getClientByIdUseCase.execute(clientId));
       this.selectedClient.set(clientData);
       this.dialogMode.set('edit');
       this.dialogVisible.set(true);
     } catch (err) {
-      this.error.set('Error al cargar los datos del cliente');
-      console.error('Error loading client for edit:', err);
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load client data.'));
     } finally {
       this.loading.set(false);
     }
@@ -144,13 +146,12 @@ export class ClientsStore {
     this.error.set(null);
 
     try {
-      const clientData = await this.getClientByIdUseCase.execute(clientId);
+      const clientData = await firstValueFrom(this.getClientByIdUseCase.execute(clientId));
       this.selectedClient.set(clientData);
       this.dialogMode.set('view');
       this.dialogVisible.set(true);
     } catch (err) {
-      this.error.set('Error al cargar los datos del cliente');
-      console.error('Error loading client for view:', err);
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load client data.'));
     } finally {
       this.loading.set(false);
     }
@@ -176,15 +177,19 @@ export class ClientsStore {
     this.error.set(null);
     try {
       if (this.dialogMode() === 'edit' && this.selectedClient()) {
-        const updated = await this.updateClientUseCase.execute(
-          this.selectedClient()!.clientId,
-          payload as UpdateClientPayload,
+        const updated = await firstValueFrom(
+          this.updateClientUseCase.execute(
+            this.selectedClient()!.clientId,
+            payload as UpdateClientPayload,
+          ),
         );
         this.clients.update((list) =>
           list.map((c) => (c.clientId === updated.clientId ? updated : c)),
         );
       } else {
-        const created = await this.createClientUseCase.execute(payload as CreateClientPayload);
+        const created = await firstValueFrom(
+          this.createClientUseCase.execute(payload as CreateClientPayload),
+        );
         this.clients.update((list) => [...list, created]);
         this.total.update((t) => t + 1);
       }
@@ -203,7 +208,7 @@ export class ClientsStore {
     this.error.set(null);
     try {
       const nextActive = !client.isActive;
-      await this.toggleClientStatusUseCase.execute(client.clientId, nextActive);
+      await firstValueFrom(this.toggleClientStatusUseCase.execute(client.clientId, nextActive));
       this.clients.update((list) =>
         list.map((c) => (c.clientId === client.clientId ? { ...c, isActive: nextActive } : c)),
       );

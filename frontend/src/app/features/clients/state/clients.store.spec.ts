@@ -8,12 +8,11 @@ import { CreateClientUseCase } from '@domain/usecases/client/create-client.useca
 import { UpdateClientUseCase } from '@domain/usecases/client/update-client.usecase';
 import { ToggleClientStatusUseCase } from '@domain/usecases/client/toggle-client-status.usecase';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
-import { ClientRepository } from '@domain/repositories/client.repository';
 import {
   Client,
+  ClientDetail,
   CreateClientPayload,
   UpdateClientPayload,
-  ClientQueryParams,
   PagedResult,
 } from '@domain/models/client.model';
 import {
@@ -23,8 +22,10 @@ import {
   ClientNotFoundError,
   ClientApiError,
 } from '@domain/models/client-errors';
+import { of, throwError } from 'rxjs';
+import { UserRole } from '@domain/enums/user-role.enum';
 
-const CLIENT_A: Client = {
+const CLIENT_A: ClientDetail = {
   clientId: 1,
   name: 'Acme Corp',
   taxId: '12345678A',
@@ -35,11 +36,9 @@ const CLIENT_A: Client = {
   phone: '600000001',
   email: 'acme@example.com',
   isActive: true,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
 };
 
-const CLIENT_B: Client = {
+const CLIENT_B: ClientDetail = {
   clientId: 2,
   name: 'Beta SL',
   taxId: '87654321B',
@@ -50,8 +49,6 @@ const CLIENT_B: Client = {
   phone: '600000002',
   email: 'beta@example.com',
   isActive: true,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
 };
 
 class MockAuthService {
@@ -60,28 +57,28 @@ class MockAuthService {
     email: 'admin@example.com',
     displayName: 'Admin',
     photoURL: null,
-    role: 'Administrator',
+    role: UserRole.Administrator,
   });
 }
 
 class MockGetClientsUseCase {
-  execute = vi.fn<(params: ClientQueryParams) => Promise<PagedResult<Client>>>();
+  execute = vi.fn().mockImplementation(() => of({ data: [], total: 0, page: 1, pageSize: 20 }));
 }
 
 class MockCreateClientUseCase {
-  execute = vi.fn<(payload: CreateClientPayload) => Promise<Client>>();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_B));
 }
 
 class MockUpdateClientUseCase {
-  execute = vi.fn<(id: number, payload: UpdateClientPayload) => Promise<Client>>();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_A));
 }
 
 class MockToggleClientStatusUseCase {
-  execute = vi.fn<(id: number, isActive: boolean) => Promise<void>>();
+  execute = vi.fn().mockImplementation(() => of(undefined));
 }
 
 class MockGetClientByIdUseCase {
-  execute = vi.fn<(id: number) => Promise<Client>>();
+  execute = vi.fn().mockImplementation(() => of(CLIENT_A));
 }
 
 describe('ClientsStore', () => {
@@ -121,7 +118,7 @@ describe('ClientsStore', () => {
       page: 1,
       pageSize: 20,
     };
-    getClientsUseCase.execute.mockResolvedValue(response);
+    getClientsUseCase.execute.mockReturnValue(of(response));
 
     await store.loadClients();
 
@@ -138,7 +135,7 @@ describe('ClientsStore', () => {
   });
 
   it('sets error when loading clients fails', async () => {
-    getClientsUseCase.execute.mockRejectedValueOnce(new Error('boom'));
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new Error('boom')));
 
     await store.loadClients();
 
@@ -147,7 +144,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps forbidden clients error to a specific message', async () => {
-    getClientsUseCase.execute.mockRejectedValueOnce(new ClientForbiddenError());
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new ClientForbiddenError()));
 
     await store.loadClients();
 
@@ -155,8 +152,8 @@ describe('ClientsStore', () => {
   });
 
   it('maps validation clients error to backend message', async () => {
-    createClientUseCase.execute.mockRejectedValueOnce(
-      new ClientValidationError({ field: 'taxId' }, 'Tax ID already exists.'),
+    createClientUseCase.execute.mockReturnValueOnce(
+      throwError(() => new ClientValidationError({ field: 'taxId' }, 'Tax ID already exists.')),
     );
 
     await store.saveClient({
@@ -184,7 +181,7 @@ describe('ClientsStore', () => {
       phone: '600000002',
       email: 'beta@example.com',
     };
-    createClientUseCase.execute.mockResolvedValueOnce(CLIENT_B);
+    createClientUseCase.execute.mockReturnValueOnce(of(CLIENT_B));
 
     store.clients.set([CLIENT_A]);
     store.total.set(1);
@@ -200,9 +197,9 @@ describe('ClientsStore', () => {
   });
 
   it('updates an existing client in edit mode', async () => {
-    const updated: Client = { ...CLIENT_A, name: 'Acme Corporation' };
+    const updated: ClientDetail = { ...CLIENT_A, name: 'Acme Corporation' };
     const payload: UpdateClientPayload = { name: 'Acme Corporation' };
-    updateClientUseCase.execute.mockResolvedValueOnce(updated);
+    updateClientUseCase.execute.mockReturnValueOnce(of(updated));
 
     store.clients.set([CLIENT_A]);
     store.selectedClient.set(CLIENT_A);
@@ -216,7 +213,7 @@ describe('ClientsStore', () => {
   });
 
   it('toggles status and closes confirm dialog', async () => {
-    toggleClientStatusUseCase.execute.mockResolvedValueOnce();
+    toggleClientStatusUseCase.execute.mockReturnValueOnce(of(undefined));
 
     store.clients.set([CLIENT_A]);
     store.clientToToggle.set(CLIENT_A);
@@ -231,7 +228,7 @@ describe('ClientsStore', () => {
   });
 
   it('loads client by ID successfully', async () => {
-    getClientByIdUseCase.execute.mockResolvedValueOnce(CLIENT_A);
+    getClientByIdUseCase.execute.mockReturnValueOnce(of(CLIENT_A));
 
     await store.loadClientById(1);
 
@@ -241,7 +238,7 @@ describe('ClientsStore', () => {
   });
 
   it('sets error when loading client by ID fails', async () => {
-    getClientByIdUseCase.execute.mockRejectedValueOnce(new Error('not found'));
+    getClientByIdUseCase.execute.mockReturnValueOnce(throwError(() => new Error('not found')));
 
     await store.loadClientById(1);
 
@@ -293,7 +290,7 @@ describe('ClientsStore', () => {
   });
 
   it('open edit dialog sets correct state', async () => {
-    getClientByIdUseCase.execute.mockResolvedValue(CLIENT_A);
+    getClientByIdUseCase.execute.mockReturnValue(of(CLIENT_A));
     
     await store.openEditDialog(CLIENT_A);
 
@@ -341,7 +338,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps unauthorized error to session expired message', async () => {
-    getClientsUseCase.execute.mockRejectedValueOnce(new ClientUnauthorizedError());
+    getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new ClientUnauthorizedError()));
 
     await store.loadClients();
 
@@ -349,7 +346,7 @@ describe('ClientsStore', () => {
   });
 
   it('maps not found error to specific message', async () => {
-    getClientByIdUseCase.execute.mockRejectedValueOnce(new ClientNotFoundError());
+    getClientByIdUseCase.execute.mockReturnValueOnce(throwError(() => new ClientNotFoundError()));
 
     await store.loadClientById(1);
 
@@ -357,7 +354,9 @@ describe('ClientsStore', () => {
   });
 
   it('maps API error to fallback message', async () => {
-    getClientsUseCase.execute.mockRejectedValueOnce(new ClientApiError('Service unavailable'));
+    getClientsUseCase.execute.mockReturnValueOnce(
+      throwError(() => new ClientApiError('Service unavailable')),
+    );
 
     await store.loadClients();
 
