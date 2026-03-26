@@ -1,9 +1,11 @@
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.purchases.domain.entities.purchase import Purchase
+from modules.purchases.domain.entities.purchase_line import PurchaseLine
 from modules.purchases.domain.interfaces.repositories.i_purchase_repository import (
     IPurchaseRepository,
 )
@@ -76,3 +78,60 @@ class PurchaseRepository(IPurchaseRepository):
         items = list(result.all())
 
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
+
+    async def generate_purchase_number(self) -> str:
+        year = datetime.now().year
+        prefix = f"COM-{year}-"
+        result = await self._db.execute(
+            text(
+                "SELECT MAX(purchase_number) FROM purchases "
+                "WHERE purchase_number LIKE :pattern"
+            ),
+            {"pattern": f"{prefix}%"},
+        )
+        max_number = result.scalar_one_or_none()
+        if max_number:
+            seq = int(max_number.split("-")[-1]) + 1
+        else:
+            seq = 1
+        return f"{prefix}{seq:04d}"
+
+    async def create(
+        self,
+        purchase_number: str,
+        supplier_id: int,
+        user_id: int,
+        warehouse_id: int,
+        status: str,
+        subtotal: Decimal,
+        taxes: Decimal,
+        total: Decimal,
+        lines: list[dict],
+    ) -> Purchase:
+        purchase = Purchase(
+            purchase_number=purchase_number,
+            supplier_id=supplier_id,
+            user_id=user_id,
+            warehouse_id=warehouse_id,
+            status=status,
+            subtotal=subtotal,
+            taxes=taxes,
+            total=total,
+        )
+        self._db.add(purchase)
+        await self._db.flush()
+
+        for line in lines:
+            purchase_line = PurchaseLine(
+                purchase_id=purchase.purchase_id,
+                product_id=line["product_id"],
+                quantity=line["quantity"],
+                unit_price=line["unit_price"],
+                discount=line["discount"],
+                line_subtotal=line["line_subtotal"],
+            )
+            self._db.add(purchase_line)
+
+        await self._db.flush()
+        await self._db.refresh(purchase, ["lines"])
+        return purchase

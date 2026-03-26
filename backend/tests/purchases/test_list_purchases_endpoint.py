@@ -16,6 +16,7 @@ from shared.domain.paginated_result import PaginatedResult
 def _mock_user():
     def override():
         return UserSession(
+            user_id=1,
             email="test@test.com",
             role="Employee",
             department_id=None,

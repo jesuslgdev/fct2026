@@ -147,8 +147,14 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.repos.client_repository import ClientRepository
+from modules.purchases.application.create_purchase_use_case import (
+    CreatePurchaseUseCase,
+)
 from modules.purchases.application.list_purchases_use_case import (
     ListPurchasesUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
+    ICreatePurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case import (
     IListPurchasesUseCase,
@@ -486,3 +492,13 @@ async def get_list_purchases_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IListPurchasesUseCase:
     return ListPurchasesUseCase(PurchaseRepository(db))
+
+
+async def get_create_purchase_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ICreatePurchaseUseCase:
+    return CreatePurchaseUseCase(
+        PurchaseRepository(db),
+        SupplierRepository(db),
+        ProductRepository(db),
+    )

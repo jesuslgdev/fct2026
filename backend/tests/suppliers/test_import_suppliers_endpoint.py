@@ -48,6 +48,7 @@ VALID_ROW = [
 def _mock_user(role: str):
     def override():
         return UserSession(
+            user_id=1,
             email="test@test.com",
             role=role,
             department_id=None,
