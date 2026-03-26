@@ -5,6 +5,9 @@ import { InputComponent } from '@shared/ui/input/input.component';
 import { ClientsStore } from '@features/clients/state/clients.store';
 import { CreateClientPayload, UpdateClientPayload } from '@domain/models/client.model';
 
+const TAX_ID_PATTERN =
+  /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJKLMNPQRSUVW][0-9]{7}[0-9A-J])$/;
+
 @Component({
   selector: 'app-client-form-dialog',
   standalone: true,
@@ -19,7 +22,7 @@ export class ClientFormDialogComponent {
 
   readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
-    taxId: ['', [Validators.required, Validators.pattern(/^[A-Z0-9]{8,10}[A-Z]$/i)]],
+    taxId: ['', [Validators.required, Validators.pattern(TAX_ID_PATTERN)]],
     address: ['', Validators.required],
     city: ['', Validators.required],
     province: ['', Validators.required],
