@@ -12,5 +12,4 @@ export abstract class CategoryRepository {
   abstract createCategory(payload: CreateCategoryPayload): Promise<Category>;
   abstract updateCategory(categoryId: number, payload: UpdateCategoryPayload): Promise<Category>;
   abstract deleteCategory(categoryId: number): Promise<void>;
-  abstract categoryHasProducts(categoryId: number): Promise<boolean>;
 }

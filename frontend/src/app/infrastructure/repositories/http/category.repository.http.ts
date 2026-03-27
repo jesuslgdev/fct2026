@@ -25,7 +25,7 @@ import {
 import { CategoryMapper } from '@infrastructure/mappers/category.mapper';
 import { environment } from 'environments/environment';
 
-const BASE_URL = `${environment.apiUrl}/catalog/categories`;
+const BASE_URL = `${environment.apiUrl}/api/v1/catalog/categories`;
 
 @Injectable()
 export class HttpCategoryRepository implements CategoryRepository {
@@ -149,22 +149,6 @@ export class HttpCategoryRepository implements CategoryRepository {
       await firstValueFrom(
         this.http.delete<void>(`${BASE_URL}/${categoryId}`)
       );
-    });
-  }
-
-  async categoryHasProducts(categoryId: number): Promise<boolean> {
-    return this.withErrorMapping(async () => {
-      try {
-        await firstValueFrom(
-          this.http.delete<void>(`${BASE_URL}/${categoryId}`)
-        );
-        return false;
-      } catch (error) {
-        if (error instanceof CategoryHasProductsError) {
-          return true;
-        }
-        throw error;
-      }
     });
   }
 }
