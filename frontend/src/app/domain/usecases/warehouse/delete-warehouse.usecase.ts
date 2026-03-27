@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -7,7 +8,7 @@ import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 export class DeleteWarehouseUseCase {
   private readonly warehouseRepository = inject(WarehouseRepository);
 
-  execute(warehouseId: number): Promise<void> {
+  execute(warehouseId: number): Observable<void> {
     return this.warehouseRepository.deleteWarehouse(warehouseId);
   }
 }
