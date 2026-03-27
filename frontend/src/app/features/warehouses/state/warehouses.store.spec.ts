@@ -3,7 +3,6 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { WarehousesStore } from '@features/warehouses/state/warehouses.store';
 import { AuthService } from '@core/services/auth.service';
-import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 import {
   Warehouse,
   CreateWarehousePayload,
@@ -14,6 +13,11 @@ import {
   WarehouseForbiddenError,
   WarehouseValidationError,
 } from '@domain/models/warehouse-errors';
+import { GetWarehousesUseCase } from '@domain/usecases/warehouse/get-warehouses.usecase';
+import { CreateWarehouseUseCase } from '@domain/usecases/warehouse/create-warehouse.usecase';
+import { UpdateWarehouseUseCase } from '@domain/usecases/warehouse/update-warehouse.usecase';
+import { DeleteWarehouseUseCase } from '@domain/usecases/warehouse/delete-warehouse.usecase';
+import { Observable, of, throwError } from 'rxjs';
 
 const WAREHOUSE_A: Warehouse = {
   warehouseId: 1,
@@ -39,69 +43,84 @@ class MockAuthService {
   });
 }
 
-class MockWarehouseRepository implements WarehouseRepository {
-  getWarehouses = vi.fn<() => Promise<WarehouseListResult>>();
-  getWarehouseById = vi.fn<(warehouseId: number) => Promise<Warehouse>>();
-  getWarehouseByName = vi.fn<(name: string) => Promise<Warehouse | null>>();
-  createWarehouse = vi.fn<(payload: CreateWarehousePayload) => Promise<Warehouse>>();
-  updateWarehouse = vi.fn<(warehouseId: number, payload: UpdateWarehousePayload) => Promise<Warehouse>>();
-  deleteWarehouse = vi.fn<(warehouseId: number) => Promise<void>>();
-  getWarehouseTotalStock = vi.fn<(warehouseId: number) => Promise<number>>();
+class MockGetWarehousesUseCase {
+  execute = vi.fn<() => Observable<WarehouseListResult>>();
+}
+
+class MockCreateWarehouseUseCase {
+  execute = vi.fn<(payload: CreateWarehousePayload) => Observable<Warehouse>>();
+}
+
+class MockUpdateWarehouseUseCase {
+  execute = vi.fn<(warehouseId: number, payload: UpdateWarehousePayload) => Observable<Warehouse>>();
+}
+
+class MockDeleteWarehouseUseCase {
+  execute = vi.fn<(warehouseId: number) => Observable<void>>();
 }
 
 describe('WarehousesStore', () => {
   let store: WarehousesStore;
-  let repo: MockWarehouseRepository;
+  let getWarehousesUseCase: MockGetWarehousesUseCase;
+  let createWarehouseUseCase: MockCreateWarehouseUseCase;
+  let updateWarehouseUseCase: MockUpdateWarehouseUseCase;
+  let deleteWarehouseUseCase: MockDeleteWarehouseUseCase;
 
   beforeEach(() => {
-    repo = new MockWarehouseRepository();
+    getWarehousesUseCase = new MockGetWarehousesUseCase();
+    createWarehouseUseCase = new MockCreateWarehouseUseCase();
+    updateWarehouseUseCase = new MockUpdateWarehouseUseCase();
+    deleteWarehouseUseCase = new MockDeleteWarehouseUseCase();
 
     TestBed.configureTestingModule({
       providers: [
         WarehousesStore,
         { provide: AuthService, useValue: new MockAuthService() },
-        { provide: WarehouseRepository, useValue: repo },
+        { provide: GetWarehousesUseCase, useValue: getWarehousesUseCase },
+        { provide: CreateWarehouseUseCase, useValue: createWarehouseUseCase },
+        { provide: UpdateWarehouseUseCase, useValue: updateWarehouseUseCase },
+        { provide: DeleteWarehouseUseCase, useValue: deleteWarehouseUseCase },
       ],
     });
 
     store = TestBed.inject(WarehousesStore);
   });
 
-  it('loads warehouses successfully', async () => {
+  it('loads warehouses successfully', () => {
     const warehouses: Warehouse[] = [WAREHOUSE_A, WAREHOUSE_B];
-    repo.getWarehouses.mockResolvedValueOnce(warehouses);
+    getWarehousesUseCase.execute.mockReturnValueOnce(of(warehouses));
 
-    await store.loadWarehouses();
+    store.loadWarehouses();
 
-    expect(repo.getWarehouses).toHaveBeenCalledOnce();
+    expect(getWarehousesUseCase.execute).toHaveBeenCalledOnce();
     expect(store.warehouses()).toEqual([WAREHOUSE_A, WAREHOUSE_B]);
     expect(store.loading()).toBe(false);
     expect(store.error()).toBeNull();
   });
 
-  it('sets error when loading warehouses fails', async () => {
-    repo.getWarehouses.mockRejectedValueOnce(new Error('boom'));
+  it('sets error when loading warehouses fails', () => {
+    getWarehousesUseCase.execute.mockReturnValueOnce(throwError(() => new Error('boom')));
 
-    await store.loadWarehouses();
+    store.loadWarehouses();
 
-    expect(store.error()).toBe('Failed to load warehouses.');
+    expect(store.error()).toBe('Error al cargar los almacenes.');
     expect(store.loading()).toBe(false);
   });
 
-  it('maps forbidden warehouse error to a specific message', async () => {
-    repo.getWarehouses.mockRejectedValueOnce(new WarehouseForbiddenError());
+  it('maps forbidden warehouse error to a specific message', () => {
+    getWarehousesUseCase.execute.mockReturnValueOnce(throwError(() => new WarehouseForbiddenError()));
 
-    await store.loadWarehouses();
+    store.loadWarehouses();
 
-    expect(store.error()).toBe('You do not have permissions to perform this action.');
+    expect(store.error()).toBe('No tienes permisos para realizar esta acción.');
   });
 
-  it('maps validation warehouse error to backend message', async () => {
-    repo.createWarehouse.mockRejectedValueOnce(
-      new WarehouseValidationError({ field: 'name' }, 'Name already exists.'),
+  it('maps validation warehouse error to backend message', () => {
+    createWarehouseUseCase.execute.mockReturnValueOnce(
+      throwError(() => new WarehouseValidationError({ field: 'name' }, 'Name already exists.'))
     );
 
-    await store.saveWarehouse({
+    store.saveWarehouse({
       name: 'Almacén Central',
       address: 'Calle Principal 123',
     });
@@ -109,76 +128,68 @@ describe('WarehousesStore', () => {
     expect(store.error()).toBe('Name already exists.');
   });
 
-  it('creates a new warehouse and updates state', async () => {
+  it('creates a new warehouse and updates state', () => {
     const payload: CreateWarehousePayload = {
       name: 'Almacén Sur',
       address: 'Avenida de la Industria 789, Valencia',
     };
 
-    // Mock warehouse creation
-    repo.createWarehouse.mockResolvedValueOnce(WAREHOUSE_B);
+    createWarehouseUseCase.execute.mockReturnValueOnce(of(WAREHOUSE_B));
 
     store.openCreateDialog();
-    await store.saveWarehouse(payload);
+    store.saveWarehouse(payload);
 
-    expect(repo.createWarehouse).toHaveBeenCalledWith(payload);
+    expect(createWarehouseUseCase.execute).toHaveBeenCalledWith(payload);
     expect(store.warehouses()).toEqual([WAREHOUSE_B]);
     expect(store.dialogVisible()).toBe(false);
     expect(store.selectedWarehouse()).toBeNull();
   });
 
-  it('updates an existing warehouse in edit mode', async () => {
+  it('updates an existing warehouse in edit mode', () => {
     const updated: Warehouse = { ...WAREHOUSE_A, name: 'Almacén Principal' };
-    const payload: UpdateWarehousePayload = { name: 'Almacén Principal' };
+    const payload: UpdateWarehousePayload = { name: 'Almacén Principal', address: WAREHOUSE_A.address };
     const expectedPayload: UpdateWarehousePayload = {
       name: 'Almacén Principal',
       address: WAREHOUSE_A.address,
     };
 
-    repo.getWarehouses.mockResolvedValueOnce([WAREHOUSE_A]);
-    await store.loadWarehouses();
+    getWarehousesUseCase.execute.mockReturnValueOnce(of([WAREHOUSE_A]));
+    store.loadWarehouses();
 
-    // Mock warehouse update
-    repo.updateWarehouse.mockResolvedValueOnce(updated);
+    updateWarehouseUseCase.execute.mockReturnValueOnce(of(updated));
 
     store.openEditDialog(WAREHOUSE_A);
-    await store.saveWarehouse(payload);
+    store.saveWarehouse(payload);
 
-    expect(repo.updateWarehouse).toHaveBeenCalledWith(WAREHOUSE_A.warehouseId, expectedPayload);
+    expect(updateWarehouseUseCase.execute).toHaveBeenCalledWith(WAREHOUSE_A.warehouseId, expectedPayload);
     expect(store.warehouses()).toEqual([updated]);
     expect(store.dialogVisible()).toBe(false);
   });
 
-  it('deletes warehouse and closes confirm dialog', async () => {
-    repo.getWarehouses.mockResolvedValueOnce([WAREHOUSE_A]);
-    await store.loadWarehouses();
+  it('deletes warehouse and closes confirm dialog', () => {
+    getWarehousesUseCase.execute.mockReturnValueOnce(of([WAREHOUSE_A]));
+    store.loadWarehouses();
 
-    // Mock warehouse deletion
-    repo.deleteWarehouse.mockResolvedValueOnce();
+    deleteWarehouseUseCase.execute.mockReturnValueOnce(of(undefined));
 
     store.requestDeleteWarehouse(WAREHOUSE_A);
-    await store.confirmDeleteWarehouse();
+    store.confirmDeleteWarehouse();
 
-    expect(repo.deleteWarehouse).toHaveBeenCalledWith(WAREHOUSE_A.warehouseId);
+    expect(deleteWarehouseUseCase.execute).toHaveBeenCalledWith(WAREHOUSE_A.warehouseId);
     expect(store.warehouses()).toEqual([]);
     expect(store.confirmDialogVisible()).toBe(false);
     expect(store.warehouseToDelete()).toBeNull();
   });
 
-  it('searches warehouse by name', async () => {
-    repo.getWarehouseByName.mockResolvedValueOnce(WAREHOUSE_A);
-
-    const result = await store.searchWarehouseByName('Almacén Central');
-
-    expect(repo.getWarehouseByName).toHaveBeenCalledWith('Almacén Central');
-    expect(result).toEqual(WAREHOUSE_A);
-  });
-
-  it('sets search query and triggers search', () => {
-    const query = 'Almacén';
+  it('sets search query and triggers search via computed signal', () => {
+    const query = 'Norte';
+    
+    getWarehousesUseCase.execute.mockReturnValueOnce(of([WAREHOUSE_A, WAREHOUSE_B]));
+    store.loadWarehouses();
     store.onSearch(query);
 
     expect(store.searchQuery()).toBe(query);
+    expect(store.filteredWarehouses()).toEqual([WAREHOUSE_B]);
   });
 
   it('opens create dialog correctly', () => {

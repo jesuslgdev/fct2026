@@ -11,8 +11,8 @@ export interface CreateWarehousePayload {
 }
 
 export interface UpdateWarehousePayload {
-  name?: string | null;
-  address?: string | null;
+  name: string;
+  address: string;
 }
 
 export type WarehouseListResult = Warehouse[];

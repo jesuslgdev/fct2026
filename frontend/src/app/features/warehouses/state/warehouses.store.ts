@@ -9,7 +9,6 @@ import { GetWarehousesUseCase } from '@domain/usecases/warehouse/get-warehouses.
 import { CreateWarehouseUseCase } from '@domain/usecases/warehouse/create-warehouse.usecase';
 import { UpdateWarehouseUseCase } from '@domain/usecases/warehouse/update-warehouse.usecase';
 import { DeleteWarehouseUseCase } from '@domain/usecases/warehouse/delete-warehouse.usecase';
-import { GetWarehouseByNameUseCase } from '@domain/usecases/warehouse/get-warehouse-by-name.usecase';
 import {
   WarehouseAlreadyExistsError,
   WarehouseApiError,
@@ -29,7 +28,6 @@ export class WarehousesStore {
   private readonly createWarehouseUseCase = inject(CreateWarehouseUseCase);
   private readonly updateWarehouseUseCase = inject(UpdateWarehouseUseCase);
   private readonly deleteWarehouseUseCase = inject(DeleteWarehouseUseCase);
-  private readonly getWarehouseByNameUseCase = inject(GetWarehouseByNameUseCase);
 
   // ── State ──────────────────────────────────────────────────────────
   readonly warehouses = signal<Warehouse[]>([]);
@@ -44,19 +42,27 @@ export class WarehousesStore {
 
   // ── Computed ───────────────────────────────────────────────────────
   readonly canEdit = computed(() => this.authService.user()?.role === 'Administrator');
+  
+  readonly filteredWarehouses = computed(() => {
+    const query = this.searchQuery().toLowerCase();
+    if (!query) return this.warehouses();
+    return this.warehouses().filter(w => w.name.toLowerCase().includes(query));
+  });
 
   // ── Data loading ───────────────────────────────────────────────────
-  async loadWarehouses(): Promise<void> {
+  loadWarehouses(): void {
     this.loading.set(true);
     this.error.set(null);
-    try {
-      const warehouses = await this.getWarehousesUseCase.execute();
-      this.warehouses.set(warehouses);
-    } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load warehouses.'));
-    } finally {
-      this.loading.set(false);
-    }
+    this.getWarehousesUseCase.execute().subscribe({
+      next: (warehouses) => {
+        this.warehouses.set(warehouses);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(this.resolveErrorMessage(err, 'Error al cargar los almacenes.'));
+        this.loading.set(false);
+      }
+    });
   }
 
   // ── Dialog ─────────────────────────────────────────────────────────────────
@@ -89,53 +95,65 @@ export class WarehousesStore {
   }
 
   // ── CRUD ───────────────────────────────────────────────────────────────────
-  async saveWarehouse(payload: CreateWarehousePayload | UpdateWarehousePayload): Promise<void> {
+  saveWarehouse(payload: CreateWarehousePayload | UpdateWarehousePayload): void {
     this.loading.set(true);
     this.error.set(null);
-    try {
-      if (this.dialogMode() === 'edit' && this.selectedWarehouse()) {
-        const current = this.selectedWarehouse()!;
-        const updatePayload: UpdateWarehousePayload = {
-          name: payload.name ?? current.name,
-          address: payload.address ?? current.address,
-        };
-        const updated = await this.updateWarehouseUseCase.execute(
-          current.warehouseId,
-          updatePayload,
-        );
-        this.warehouses.update((list) =>
-          list.map((w) => (w.warehouseId === updated.warehouseId ? updated : w)),
-        );
-      } else {
-        const created = await this.createWarehouseUseCase.execute(payload as CreateWarehousePayload);
-        this.warehouses.update((list) => [...list, created]);
-      }
-      this.closeDialog();
-    } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to save warehouse.'));
-    } finally {
-      this.loading.set(false);
+
+    if (this.dialogMode() === 'edit' && this.selectedWarehouse()) {
+      const current = this.selectedWarehouse()!;
+      const updatePayload: UpdateWarehousePayload = {
+        name: payload.name ?? current.name,
+        address: payload.address ?? current.address,
+      };
+
+      this.updateWarehouseUseCase.execute(current.warehouseId, updatePayload).subscribe({
+        next: (updated) => {
+          this.warehouses.update((list) =>
+            list.map((w) => (w.warehouseId === updated.warehouseId ? updated : w)),
+          );
+          this.closeDialog();
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(this.resolveErrorMessage(err, 'Error al guardar el almacén.'));
+          this.loading.set(false);
+        }
+      });
+    } else {
+      this.createWarehouseUseCase.execute(payload as CreateWarehousePayload).subscribe({
+        next: (created) => {
+          this.warehouses.update((list) => [...list, created]);
+          this.closeDialog();
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(this.resolveErrorMessage(err, 'Error al guardar el almacén.'));
+          this.loading.set(false);
+        }
+      });
     }
   }
 
-  async confirmDeleteWarehouse(): Promise<void> {
+  confirmDeleteWarehouse(): void {
     const warehouse = this.warehouseToDelete();
     if (!warehouse) return;
     
     this.loading.set(true);
     this.error.set(null);
-    try {
-      await this.deleteWarehouseUseCase.execute(warehouse.warehouseId);
-      this.warehouses.update((list) => 
-        list.filter((w) => w.warehouseId !== warehouse.warehouseId),
-      );
-      this.confirmDialogVisible.set(false);
-      this.warehouseToDelete.set(null);
-    } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to delete warehouse.'));
-    } finally {
-      this.loading.set(false);
-    }
+    this.deleteWarehouseUseCase.execute(warehouse.warehouseId).subscribe({
+      next: () => {
+        this.warehouses.update((list) => 
+          list.filter((w) => w.warehouseId !== warehouse.warehouseId),
+        );
+        this.confirmDialogVisible.set(false);
+        this.warehouseToDelete.set(null);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(this.resolveErrorMessage(err, 'Error al eliminar el almacén.'));
+        this.loading.set(false);
+      }
+    });
   }
 
   // ── Search ───────────────────────────────────────────────────────────────────
@@ -143,38 +161,29 @@ export class WarehousesStore {
     this.searchQuery.set(query);
   }
 
-  async searchWarehouseByName(name: string): Promise<Warehouse | null> {
-    try {
-      return await this.getWarehouseByNameUseCase.execute(name);
-    } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to search warehouse.'));
-      return null;
-    }
-  }
-
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof WarehouseValidationError) {
-      return err.message || 'Please check the submitted data.';
+      return err.message || 'Por favor, revisa los datos enviados.';
     }
 
     if (err instanceof WarehouseAlreadyExistsError) {
-      return 'A warehouse with this name already exists.';
+      return 'Ya existe un almacén con este nombre.';
     }
 
     if (err instanceof WarehouseHasStockError) {
-      return 'Cannot delete warehouse with existing stock.';
+      return 'No se puede eliminar un almacén con stock existente.';
     }
 
     if (err instanceof WarehouseUnauthorizedError) {
-      return 'Your session has expired. Please sign in again.';
+      return 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.';
     }
 
     if (err instanceof WarehouseForbiddenError) {
-      return 'You do not have permissions to perform this action.';
+      return 'No tienes permisos para realizar esta acción.';
     }
 
     if (err instanceof WarehouseNotFoundError) {
-      return 'The selected warehouse no longer exists.';
+      return 'El almacén seleccionado ya no existe.';
     }
 
     if (err instanceof WarehouseApiError) {
