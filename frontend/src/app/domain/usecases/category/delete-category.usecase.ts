@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 
 @Injectable({
@@ -7,7 +8,7 @@ import { CategoryRepository } from '@domain/repositories/category.repository';
 export class DeleteCategoryUseCase {
   private readonly categoryRepository = inject(CategoryRepository);
 
-  execute(categoryId: number): Promise<void> {
+  execute(categoryId: number): Observable<void> {
     return this.categoryRepository.deleteCategory(categoryId);
   }
 }

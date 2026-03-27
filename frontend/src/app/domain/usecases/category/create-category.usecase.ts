@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import { Category, CreateCategoryPayload } from '@domain/models/category.model';
 
@@ -8,7 +9,7 @@ import { Category, CreateCategoryPayload } from '@domain/models/category.model';
 export class CreateCategoryUseCase {
   private readonly categoryRepository = inject(CategoryRepository);
 
-  execute(payload: CreateCategoryPayload): Promise<Category> {
+  execute(payload: CreateCategoryPayload): Observable<Category> {
     return this.categoryRepository.createCategory(payload);
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import { Category } from '@domain/models/category.model';
 
@@ -8,9 +9,9 @@ import { Category } from '@domain/models/category.model';
 export class GetCategoryByNameUseCase {
   private readonly categoryRepository = inject(CategoryRepository);
 
-  execute(name: string): Promise<Category | null> {
+  execute(name: string): Observable<Category | null> {
     if (!name || name.trim().length === 0) {
-      return Promise.resolve(null);
+      return of(null);
     }
 
     return this.categoryRepository.getCategoryByName(name.trim());

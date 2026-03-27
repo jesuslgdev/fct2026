@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import {
   Category,
@@ -7,9 +8,9 @@ import {
   CategoryListResult,
 } from '@domain/models/category.model';
 import {
-  CategoryNotFoundError,
   CategoryAlreadyExistsError,
   CategoryHasProductsError,
+  CategoryNotFoundError,
 } from '@domain/models/category-errors';
 
 const INITIAL_MOCK_CATEGORIES: Category[] = [
@@ -48,46 +49,52 @@ export class MockCategoryRepository implements CategoryRepository {
     this.categories = INITIAL_MOCK_CATEGORIES.map((c) => ({ ...c }));
   }
 
-  async getCategories(): Promise<CategoryListResult> {
-    return [...this.categories];
+  getCategories(): Observable<CategoryListResult> {
+    return of([...this.categories]);
   }
 
-  async getCategoryById(categoryId: number): Promise<Category> {
+  getCategoryById(categoryId: number): Observable<Category> {
     const category = this.categories.find((c) => c.categoryId === categoryId);
-    if (!category) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
-    return { ...category };
+    if (!category) {
+      return throwError(() => new CategoryNotFoundError());
+    }
+    return of({ ...category });
   }
 
-  async getCategoryByName(name: string): Promise<Category | null> {
+  getCategoryByName(name: string): Observable<Category | null> {
     const category = this.categories.find(
       (c) => c.name.toLowerCase() === name.toLowerCase()
     );
-    return category ? { ...category } : null;
+    return of(category ? { ...category } : null);
   }
 
-  async createCategory(payload: CreateCategoryPayload): Promise<Category> {
+  createCategory(payload: CreateCategoryPayload): Observable<Category> {
     // Check if category with same name already exists
     const existing = this.categories.find(
       (c) => c.name.toLowerCase() === payload.name.toLowerCase()
     );
-    if (existing) throw new CategoryAlreadyExistsError(`Category with name "${payload.name}" already exists.`);
+    if (existing) {
+      return throwError(() => new CategoryAlreadyExistsError());
+    }
 
     const nextId = Math.max(0, ...this.categories.map((c) => c.categoryId)) + 1;
     const newCategory: Category = {
       categoryId: nextId,
       name: payload.name.trim(),
-      description: payload.description.trim(),
+      description: payload.description?.trim() ?? '',
     };
     this.categories = [...this.categories, newCategory];
-    return { ...newCategory };
+    return of({ ...newCategory });
   }
 
-  async updateCategory(
+  updateCategory(
     categoryId: number,
     payload: UpdateCategoryPayload
-  ): Promise<Category> {
+  ): Observable<Category> {
     const index = this.categories.findIndex((c) => c.categoryId === categoryId);
-    if (index === -1) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
+    if (index === -1) {
+      return throwError(() => new CategoryNotFoundError());
+    }
 
     const category = { ...this.categories[index] };
     if (payload.name !== undefined && payload.name !== null) {
@@ -98,19 +105,32 @@ export class MockCategoryRepository implements CategoryRepository {
     }
 
     this.categories[index] = category;
-    return { ...category };
+    return of({ ...category });
   }
 
-  async deleteCategory(categoryId: number): Promise<void> {
+  deleteCategory(categoryId: number): Observable<void> {
     const index = this.categories.findIndex((c) => c.categoryId === categoryId);
-    if (index === -1) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
+    if (index === -1) {
+      return throwError(() => new CategoryNotFoundError());
+    }
 
-    // Simulation of conflict for ID 1 (to be deterministic)
-    if (categoryId === 1) {
-      throw new CategoryHasProductsError('Cannot delete category with associated products.');
+    // Simulate check for associated products (random for demo)
+    const hasProducts = Math.random() > 0.7; // 30% chance of having products
+    if (hasProducts) {
+      return throwError(() => new CategoryHasProductsError());
     }
 
     this.categories = this.categories.filter((c) => c.categoryId !== categoryId);
+    return of(undefined);
   }
 
+  categoryHasProducts(categoryId: number): Observable<boolean> {
+    const category = this.categories.find((c) => c.categoryId === categoryId);
+    if (!category) {
+      return throwError(() => new CategoryNotFoundError());
+    }
+
+    // Simulate check for associated products (random for demo)
+    return of(Math.random() > 0.7); // 30% chance of having products
+  }
 }
