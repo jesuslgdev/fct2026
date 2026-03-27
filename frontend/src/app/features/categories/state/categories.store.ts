@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
-import { CategoryRepository } from '@domain/repositories/category.repository';
+import { UserRole } from '@domain/enums/user-role.enum';
 import {
   Category,
   CreateCategoryPayload,
@@ -17,7 +17,6 @@ export type DialogMode = 'create' | 'edit';
 @Injectable()
 export class CategoriesStore {
   private readonly authService = inject(AuthService);
-  private readonly categoryRepository = inject(CategoryRepository);
   private readonly getCategoriesUseCase = inject(GetCategoriesUseCase);
   private readonly getCategoryByIdUseCase = inject(GetCategoryByIdUseCase);
   private readonly createCategoryUseCase = inject(CreateCategoryUseCase);
@@ -36,7 +35,7 @@ export class CategoriesStore {
 
   readonly canEdit = computed(() => {
     const user = this.authService.user();
-    return user?.role === 'Administrator' || user?.role === 'Sales Manager';
+    return user?.role === UserRole.Administrator || user?.role === UserRole.Manager;
   });
 
   readonly filteredCategories = computed(() => {
@@ -47,7 +46,7 @@ export class CategoriesStore {
     
     return categories.filter(category =>
       category.name.toLowerCase().includes(query) ||
-      category.description.toLowerCase().includes(query)
+      (category.description ?? '').toLowerCase().includes(query)
     );
   });
 
@@ -178,12 +177,4 @@ export class CategoriesStore {
     this.searchQuery.set(query);
   }
 
-  async checkCategoryHasProducts(categoryId: number): Promise<boolean> {
-    try {
-      return await this.categoryRepository.categoryHasProducts(categoryId);
-    } catch (err) {
-      console.error('Error checking category products:', err);
-      return false;
-    }
-  }
 }
