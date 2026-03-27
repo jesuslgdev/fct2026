@@ -33,6 +33,7 @@ export class WarehousesStore {
   readonly warehouses = signal<Warehouse[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly dialogError = signal<string | null>(null);
   readonly searchQuery = signal('');
   readonly selectedWarehouse = signal<Warehouse | null>(null);
   readonly dialogVisible = signal(false);
@@ -44,9 +45,11 @@ export class WarehousesStore {
   readonly canEdit = computed(() => this.authService.user()?.role === 'Administrator');
   
   readonly filteredWarehouses = computed(() => {
-    const query = this.searchQuery().toLowerCase();
+    const query = this.searchQuery().trim().toLowerCase();
     if (!query) return this.warehouses();
-    return this.warehouses().filter(w => w.name.toLowerCase().includes(query));
+    return this.warehouses().filter(
+      w => w.name.toLowerCase().includes(query) || w.address.toLowerCase().includes(query)
+    );
   });
 
   // ── Data loading ───────────────────────────────────────────────────
@@ -69,17 +72,20 @@ export class WarehousesStore {
   openCreateDialog(): void {
     this.selectedWarehouse.set(null);
     this.dialogMode.set('create');
+    this.dialogError.set(null);
     this.dialogVisible.set(true);
   }
 
   openEditDialog(warehouse: Warehouse): void {
     this.selectedWarehouse.set(warehouse);
     this.dialogMode.set('edit');
+    this.dialogError.set(null);
     this.dialogVisible.set(true);
   }
 
   closeDialog(): void {
     this.dialogVisible.set(false);
+    this.dialogError.set(null);
     this.selectedWarehouse.set(null);
   }
 
@@ -97,7 +103,7 @@ export class WarehousesStore {
   // ── CRUD ───────────────────────────────────────────────────────────────────
   saveWarehouse(payload: CreateWarehousePayload | UpdateWarehousePayload): void {
     this.loading.set(true);
-    this.error.set(null);
+    this.dialogError.set(null);
 
     if (this.dialogMode() === 'edit' && this.selectedWarehouse()) {
       const current = this.selectedWarehouse()!;
@@ -115,7 +121,7 @@ export class WarehousesStore {
           this.loading.set(false);
         },
         error: (err) => {
-          this.error.set(this.resolveErrorMessage(err, 'Error al guardar el almacén.'));
+          this.dialogError.set(this.resolveErrorMessage(err, 'Error al guardar el almacén.'));
           this.loading.set(false);
         }
       });
@@ -127,7 +133,7 @@ export class WarehousesStore {
           this.loading.set(false);
         },
         error: (err) => {
-          this.error.set(this.resolveErrorMessage(err, 'Error al guardar el almacén.'));
+          this.dialogError.set(this.resolveErrorMessage(err, 'Error al guardar el almacén.'));
           this.loading.set(false);
         }
       });
