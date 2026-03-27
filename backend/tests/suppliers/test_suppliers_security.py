@@ -18,6 +18,7 @@ def _mock_user(role: str, department_id: int | None = None):
             department_id=department_id,
             firebase_uid="test-uid",
             name="Test User",
+            last_login_at=None,
         )
 
     return override

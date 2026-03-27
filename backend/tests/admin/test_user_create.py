@@ -17,11 +17,14 @@ async def test_create_user_success(admin_client: AsyncClient):
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["email"] == "jane@example.com"
+    # Newly created users are inactive pending first login; personal data is masked.
     assert data["first_name"] == "Jane"
+    assert data["email"] is None
+    assert data["last_name"] is None
     assert data["role"] == "Employee"
     assert "user_id" in data
-    assert data["is_active"] is True
+    assert data["is_active"] is False
+    assert data["last_login_at"] is None
 
 
 async def test_create_user_with_department(

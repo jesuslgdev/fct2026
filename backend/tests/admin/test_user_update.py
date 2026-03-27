@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,7 +34,12 @@ async def test_update_user_full(admin_client: AsyncClient, db_session: AsyncSess
 
 async def test_update_user_partial(admin_client: AsyncClient, db_session: AsyncSession):
     user = User(
-        first_name="John", last_name="Doe", email="partial@example.com", role="Employee"
+        first_name="John",
+        last_name="Doe",
+        email="partial@example.com",
+        role="Employee",
+        is_active=True,
+        last_login_at=datetime.now(UTC),
     )
     db_session.add(user)
     await db_session.flush()

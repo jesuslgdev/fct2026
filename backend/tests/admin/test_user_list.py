@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,11 +9,14 @@ from shared.domain.entities.user import User
 async def test_list_users_response_structure(
     admin_client: AsyncClient, db_session: AsyncSession
 ):
+    # Active user with last_login_at → personal data is visible.
     user = User(
         first_name="Struct",
         last_name="Test",
         email="struct@example.com",
         role="Employee",
+        is_active=True,
+        last_login_at=datetime.now(UTC),
     )
     db_session.add(user)
     await db_session.flush()

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 from shared.constants import ROLE_PATTERN
@@ -19,11 +21,12 @@ class DepartmentDTO(BaseModel):
 class UserDTO(BaseModel):
     user_id: int
     first_name: str
-    last_name: str
-    email: str
+    last_name: str | None
+    email: str | None
     role: str
     department_id: int | None
     is_active: bool
+    last_login_at: datetime | None
 
 
 class CreateUserDTO(BaseModel):

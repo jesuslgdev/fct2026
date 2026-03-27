@@ -133,6 +133,7 @@ async def admin_client(db_session: AsyncSession):
             department_id=None,
             firebase_uid="test-uid",
             name="Admin Test",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db

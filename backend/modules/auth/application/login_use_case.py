@@ -22,13 +22,24 @@ class LoginUseCase(ILoginUseCase):
             )
 
         email: str = claims["email"]
-        user = await self._repo.find_active_user_by_email(email)
+        user = await self._repo.find_user_by_email(email)
 
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found or inactive",
             )
+
+        if not user.is_active and user.last_login_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive",
+            )
+
+        if not user.is_active and user.last_login_at is None:
+            await self._repo.activate_user(user.user_id)
+        else:
+            await self._repo.update_last_login(user.user_id)
 
         return UserSession(
             user_id=user.user_id,
@@ -37,4 +48,5 @@ class LoginUseCase(ILoginUseCase):
             department_id=user.department_id,
             firebase_uid=claims["uid"],
             name=f"{user.first_name} {user.last_name}",
+            last_login_at=user.last_login_at,
         )

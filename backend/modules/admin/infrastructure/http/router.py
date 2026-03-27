@@ -61,14 +61,16 @@ router = APIRouter(prefix="/admin")
 
 
 def _to_user_dto(user: User) -> UserDTO:
+    pending_first_login = user.last_login_at is None
     return UserDTO(
         user_id=user.user_id,
         first_name=user.first_name,
-        last_name=user.last_name,
-        email=user.email,
+        last_name=None if pending_first_login else user.last_name,
+        email=None if pending_first_login else user.email,
         role=user.role,
         department_id=user.department_id,
         is_active=user.is_active,
+        last_login_at=user.last_login_at,
     )
 
 

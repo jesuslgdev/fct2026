@@ -21,6 +21,7 @@ async def admin_client(db_session: AsyncSession):
             department_id=None,
             firebase_uid="test-uid",
             name="Admin Test",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db
@@ -48,6 +49,7 @@ async def non_admin_client(db_session: AsyncSession):
             department_id=None,
             firebase_uid="test-uid-2",
             name="Manager Test",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db

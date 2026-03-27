@@ -23,6 +23,7 @@ async def any_user_client(db_session: AsyncSession):
             department_id=None,
             firebase_uid="uid-e",
             name="Employee Test",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db
@@ -56,6 +57,7 @@ async def sales_manager_client(db_session: AsyncSession):
             department_id=1,
             firebase_uid="uid-m",
             name="Sales Manager",
+            last_login_at=None,
         )
 
     def override_get_current_user():
@@ -66,6 +68,7 @@ async def sales_manager_client(db_session: AsyncSession):
             department_id=1,
             firebase_uid="uid-m",
             name="Sales Manager",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db
@@ -103,6 +106,7 @@ async def non_sales_client(db_session: AsyncSession):
             department_id=None,
             firebase_uid="uid-e",
             name="Employee Test",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db
