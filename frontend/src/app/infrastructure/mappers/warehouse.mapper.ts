@@ -28,8 +28,8 @@ export class WarehouseMapper {
 
   static toUpdateDto(payload: UpdateWarehousePayload): UpdateWarehouseDto {
     return {
-      ...(payload.name !== undefined && { name: payload.name }),
-      ...(payload.address !== undefined && { address: payload.address }),
+      name: payload.name,
+      address: payload.address,
     };
   }
 }

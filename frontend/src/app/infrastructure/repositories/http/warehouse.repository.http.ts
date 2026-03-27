@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 import {
   WarehouseApiError,
@@ -34,14 +34,6 @@ const WAREHOUSE_ERROR_CODES = {
 @Injectable()
 export class HttpWarehouseRepository implements WarehouseRepository {
   private readonly http = inject(HttpClient);
-
-  private async withErrorMapping<T>(operation: () => Promise<T>): Promise<T> {
-    try {
-      return await operation();
-    } catch (err) {
-      throw this.mapHttpError(err);
-    }
-  }
 
   private mapHttpError(err: unknown): Error {
     if (!(err instanceof HttpErrorResponse)) {
@@ -106,64 +98,37 @@ export class HttpWarehouseRepository implements WarehouseRepository {
     return typeof code === 'number' ? code : undefined;
   }
 
-  async getWarehouses(): Promise<WarehouseListResult> {
-    return this.withErrorMapping(async () => {
-      const response = await firstValueFrom(
-        this.http.get<WarehouseDto[]>(WAREHOUSES_URL),
-      );
-      return response.map(WarehouseMapper.fromDto);
-    });
+  getWarehouses(): Observable<WarehouseListResult> {
+    return this.http.get<WarehouseDto[]>(WAREHOUSES_URL).pipe(
+      map((response) => response.map(WarehouseMapper.fromDto)),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 
-  async getWarehouseById(warehouseId: number): Promise<Warehouse> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(this.http.get<WarehouseDto>(`${WAREHOUSES_URL}/${warehouseId}`));
-      return WarehouseMapper.fromDto(dto);
-    });
+  getWarehouseById(warehouseId: number): Observable<Warehouse> {
+    return this.http.get<WarehouseDto>(`${WAREHOUSES_URL}/${warehouseId}`).pipe(
+      map(WarehouseMapper.fromDto),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 
-  async getWarehouseByName(name: string): Promise<Warehouse | null> {
-    return this.withErrorMapping(async () => {
-      const allWarehouses = await firstValueFrom(
-        this.http.get<WarehouseDto[]>(WAREHOUSES_URL),
-      );
-      const searchTerm = name.toLowerCase();
-      return allWarehouses
-        .map(WarehouseMapper.fromDto)
-        .find(w => w.name.toLowerCase() === searchTerm) || null;
-    });
+  createWarehouse(payload: CreateWarehousePayload): Observable<Warehouse> {
+    return this.http.post<WarehouseDto>(WAREHOUSES_URL, WarehouseMapper.toCreateDto(payload)).pipe(
+      map(WarehouseMapper.fromDto),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 
-  async createWarehouse(payload: CreateWarehousePayload): Promise<Warehouse> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(
-        this.http.post<WarehouseDto>(WAREHOUSES_URL, WarehouseMapper.toCreateDto(payload)),
-      );
-      return WarehouseMapper.fromDto(dto);
-    });
+  updateWarehouse(warehouseId: number, payload: UpdateWarehousePayload): Observable<Warehouse> {
+    return this.http.put<WarehouseDto>(`${WAREHOUSES_URL}/${warehouseId}`, WarehouseMapper.toUpdateDto(payload)).pipe(
+      map(WarehouseMapper.fromDto),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 
-  async updateWarehouse(warehouseId: number, payload: UpdateWarehousePayload): Promise<Warehouse> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(
-        this.http.put<WarehouseDto>(`${WAREHOUSES_URL}/${warehouseId}`, WarehouseMapper.toUpdateDto(payload)),
-      );
-      return WarehouseMapper.fromDto(dto);
-    });
-  }
-
-  async deleteWarehouse(warehouseId: number): Promise<void> {
-    return this.withErrorMapping(async () => {
-      await firstValueFrom(this.http.delete<void>(`${WAREHOUSES_URL}/${warehouseId}`));
-    });
-  }
-
-  async getWarehouseTotalStock(warehouseId: number): Promise<number> {
-    return this.withErrorMapping(async () => {
-      const response = await firstValueFrom(
-        this.http.get<WarehouseDto>(`${WAREHOUSES_URL}/${warehouseId}`),
-      );
-      return response.total_stock;
-    });
+  deleteWarehouse(warehouseId: number): Observable<void> {
+    return this.http.delete<void>(`${WAREHOUSES_URL}/${warehouseId}`).pipe(
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 }

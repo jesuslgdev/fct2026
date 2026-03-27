@@ -11,6 +11,6 @@ export interface CreateWarehouseDto {
 }
 
 export interface UpdateWarehouseDto {
-  name?: string | null;
-  address?: string | null;
+  name: string;
+  address: string;
 }
