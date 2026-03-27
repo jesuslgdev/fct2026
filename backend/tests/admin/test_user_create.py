@@ -5,7 +5,11 @@ from modules.admin.domain.entities.department import Department
 from shared.domain.entities.user import User
 
 
-async def test_create_user_success(admin_client: AsyncClient):
+async def test_create_user_success(admin_client: AsyncClient, db_session: AsyncSession):
+    dept = Department(name="HR")
+    db_session.add(dept)
+    await db_session.flush()
+
     response = await admin_client.post(
         "/api/v1/admin/users",
         json={
@@ -13,6 +17,7 @@ async def test_create_user_success(admin_client: AsyncClient):
             "last_name": "Doe",
             "email": "jane@example.com",
             "role": "Employee",
+            "department_id": dept.department_id,
         },
     )
     assert response.status_code == 201
