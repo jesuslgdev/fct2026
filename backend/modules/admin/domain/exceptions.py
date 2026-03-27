@@ -33,6 +33,13 @@ class AdminExceptionInfo(AppExceptionInfo):
         "Department is required for Manager and Employee roles",
         422,
     )
+    USER_HAS_REFERENCES = (
+        1205,
+        "User has associated records and cannot be deleted",
+        409,
+    )
+    USER_ALREADY_ACTIVE = (1206, "User is already active", 409)
+    USER_ALREADY_INACTIVE = (1207, "User is already inactive", 409)
 
 
 class AdminException(AppException):

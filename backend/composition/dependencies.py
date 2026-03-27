@@ -16,12 +16,13 @@ from modules.admin.application.departments.list_departments_use_case import (
 from modules.admin.application.departments.update_department_use_case import (
     UpdateDepartmentUseCase,
 )
+from modules.admin.application.users.activate_user_use_case import ActivateUserUseCase
 from modules.admin.application.users.create_user_use_case import CreateUserUseCase
+from modules.admin.application.users.deactivate_user_use_case import (
+    DeactivateUserUseCase,
+)
 from modules.admin.application.users.get_user_use_case import GetUserUseCase
 from modules.admin.application.users.list_users_use_case import ListUsersUseCase
-from modules.admin.application.users.set_user_active_use_case import (
-    SetUserActiveUseCase,
-)
 from modules.admin.application.users.update_user_use_case import UpdateUserUseCase
 from modules.admin.domain.interfaces.use_cases.departments.i_create_department_use_case import (
     ICreateDepartmentUseCase,
@@ -38,17 +39,20 @@ from modules.admin.domain.interfaces.use_cases.departments.i_list_departments_us
 from modules.admin.domain.interfaces.use_cases.departments.i_update_department_use_case import (
     IUpdateDepartmentUseCase,
 )
+from modules.admin.domain.interfaces.use_cases.users.i_activate_user_use_case import (
+    IActivateUserUseCase,
+)
 from modules.admin.domain.interfaces.use_cases.users.i_create_user_use_case import (
     ICreateUserUseCase,
+)
+from modules.admin.domain.interfaces.use_cases.users.i_deactivate_user_use_case import (
+    IDeactivateUserUseCase,
 )
 from modules.admin.domain.interfaces.use_cases.users.i_get_user_use_case import (
     IGetUserUseCase,
 )
 from modules.admin.domain.interfaces.use_cases.users.i_list_users_use_case import (
     IListUsersUseCase,
-)
-from modules.admin.domain.interfaces.use_cases.users.i_set_user_active_use_case import (
-    ISetUserActiveUseCase,
 )
 from modules.admin.domain.interfaces.use_cases.users.i_update_user_use_case import (
     IUpdateUserUseCase,
@@ -395,10 +399,16 @@ async def get_update_user_use_case(
     return UpdateUserUseCase(UserRepository(db), DepartmentRepository(db))
 
 
-async def get_set_user_active_use_case(
+async def get_deactivate_user_use_case(
     db: AsyncSession = Depends(get_db),
-) -> ISetUserActiveUseCase:
-    return SetUserActiveUseCase(UserRepository(db))
+) -> IDeactivateUserUseCase:
+    return DeactivateUserUseCase(UserRepository(db))
+
+
+async def get_activate_user_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IActivateUserUseCase:
+    return ActivateUserUseCase(UserRepository(db))
 
 
 async def get_list_categories_use_case(
