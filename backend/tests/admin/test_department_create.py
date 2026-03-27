@@ -28,6 +28,30 @@ async def test_create_department_duplicate_name(
     assert response.status_code == 409
 
 
+async def test_create_department_duplicate_name_lowercase(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    db_session.add(Department(name="Finance"))
+    await db_session.flush()
+
+    response = await admin_client.post(
+        "/api/v1/admin/departments", json={"name": "finance"}
+    )
+    assert response.status_code == 409
+
+
+async def test_create_department_duplicate_name_uppercase(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    db_session.add(Department(name="Finance"))
+    await db_session.flush()
+
+    response = await admin_client.post(
+        "/api/v1/admin/departments", json={"name": "FINANCE"}
+    )
+    assert response.status_code == 409
+
+
 async def test_create_department_empty_name(
     admin_client: AsyncClient, db_session: AsyncSession
 ):

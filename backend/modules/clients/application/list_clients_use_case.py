@@ -7,7 +7,7 @@ from modules.clients.domain.interfaces.repositories.i_client_repository import (
 from modules.clients.domain.interfaces.use_cases.i_list_clients_use_case import (
     IListClientsUseCase,
 )
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
 
 
 class ListClientsUseCase(IListClientsUseCase):
@@ -26,15 +26,25 @@ class ListClientsUseCase(IListClientsUseCase):
         """
         self._repo = repo
 
-    async def execute(self, page: int, page_size: int) -> PaginatedResult[Client]:
+    async def execute(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        active: bool | None = None,
+    ) -> PaginatedResult[Client]:
         """Run the paginated client query.
 
         Args:
             page: Page number (1-based).
             page_size: Maximum number of records per page.
+            search: Optional text to filter by name, tax_id or email.
+            active: Optional flag to filter by active/inactive status.
 
         Returns:
             ``PaginatedResult`` containing the clients for the requested page
             and the total number of available records.
         """
-        return await self._repo.get_all_paginated(page, page_size)
+        return await self._repo.get_all_paginated(
+            page, page_size, search=search, active=active
+        )

@@ -17,6 +17,7 @@ class DummyAuthRepository implements AuthRepository {
     return Promise.resolve({ token: '', user: { uid: '', email: null, displayName: null, photoURL: null } });
   }
   signOut(): Promise<void> { return Promise.resolve(); }
+  restoreSession(): Promise<Session | null> { return Promise.resolve(null); }
 }
 
 describe('AppComponent', () => {

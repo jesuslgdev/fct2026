@@ -18,6 +18,7 @@ const MOCK_SESSION: Session = {
 class MockAuthRepository implements AuthRepository {
   signInWithGoogle = vi.fn().mockResolvedValue(MOCK_SESSION);
   signOut = vi.fn().mockResolvedValue(undefined);
+  restoreSession = vi.fn().mockResolvedValue(null);
 }
 
 describe('Auth Use Cases', () => {

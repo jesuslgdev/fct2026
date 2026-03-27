@@ -5,7 +5,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ButtonComponent } from '@shared/ui/button/button.component';
+import { ButtonComponent, CardComponent, GoogleLogoComponent } from '@shared/ui';
 import { AuthService } from '@core/services/auth.service';
 import { SignInWithGoogleUseCase } from '@domain/usecases/auth/sign-in-with-google.usecase';
 import { AccessDeniedError } from '@domain/models/auth-errors';
@@ -14,7 +14,7 @@ import { AccessDeniedError } from '@domain/models/auth-errors';
   selector: 'app-login-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent],
+  imports: [CardComponent, ButtonComponent, GoogleLogoComponent],
   templateUrl: './login.page.html',
 })
 export class LoginPage {
@@ -32,6 +32,12 @@ export class LoginPage {
     try {
       const session = await this.signInWithGoogle.execute();
       this.authService.setSession(session);
+
+      if (!this.authService.isAdmin()) {
+        await this.router.navigateByUrl('/legal/terms');
+        return;
+      }
+
       const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
       const safeUrl = returnUrl?.startsWith('/') ? returnUrl : '/';
       await this.router.navigateByUrl(safeUrl);
