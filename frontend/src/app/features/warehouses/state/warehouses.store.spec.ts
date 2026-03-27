@@ -125,7 +125,8 @@ describe('WarehousesStore', () => {
       address: 'Calle Principal 123',
     });
 
-    expect(store.error()).toBe('Name already exists.');
+    expect(store.dialogError()).toBe('Name already exists.');
+    expect(store.error()).toBeNull();
   });
 
   it('creates a new warehouse and updates state', () => {
