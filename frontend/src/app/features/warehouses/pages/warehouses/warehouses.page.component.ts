@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { InputComponent } from '@shared/ui/input/input.component';
 import { TableComponent } from '@shared/ui/table/table.component';
@@ -24,21 +24,6 @@ import { WarehouseFormDialogComponent } from '@features/warehouses/components/wa
 })
 export class WarehousesPageComponent implements OnInit {
   readonly store = inject(WarehousesStore);
-
-  readonly filteredWarehouses = computed(() => {
-    const query = this.store.searchQuery().trim().toLowerCase();
-    if (!query) {
-      return this.store.warehouses();
-    }
-
-    return this.store
-      .warehouses()
-      .filter(
-        (warehouse) =>
-          warehouse.name.toLowerCase().includes(query)
-          || warehouse.address.toLowerCase().includes(query),
-      );
-  });
 
   ngOnInit(): void {
     this.store.loadWarehouses();

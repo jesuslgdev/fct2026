@@ -9,6 +9,11 @@
   (cancelled)="onCancel()"
 >
   <form [formGroup]="form" class="dialog-form">
+
+    @if (store.dialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
     <label class="dialog-field">
       <span class="dialog-field-label">Nombre</span>
       <ui-input
@@ -38,5 +43,6 @@
         </span>
       }
     </label>
+
   </form>
 </ui-dialog>
