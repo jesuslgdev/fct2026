@@ -12,13 +12,14 @@ from composition.dependencies import (
 from composition.security import get_current_user, require_purchases_manager_or_admin
 from main import app
 from modules.suppliers.domain.entities.supplier import Supplier
-from shared.domain.entities.user_session import UserSession
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.dtos.user_session import UserSession
 
 
 def _mock_user(role: str = "Administrator"):
     def override():
         return UserSession(
+            user_id=1,
             email="test@test.com",
             role=role,
             department_id=None,
@@ -32,6 +33,7 @@ def _mock_user(role: str = "Administrator"):
 def _mock_purchases_auth():
     def override():
         return UserSession(
+            user_id=1,
             email="test@test.com",
             role="Administrator",
             department_id=None,
@@ -101,7 +103,7 @@ async def test_list_suppliers_pagination_params(auth_client: AsyncClient):
     response = await auth_client.get("/api/v1/suppliers?page=2&page_size=5")
     del app.dependency_overrides[get_list_suppliers_use_case]
     assert response.status_code == 200
-    mock.execute.assert_called_once_with(2, 5)
+    mock.execute.assert_called_once_with(2, 5, search=None, active=None)
 
 
 async def test_get_supplier_returns_detail(auth_client: AsyncClient):

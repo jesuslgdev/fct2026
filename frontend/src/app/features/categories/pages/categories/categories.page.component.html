@@ -87,7 +87,8 @@
 
 <!-- ── Confirm delete dialog ───────────────────────────────────────────────── -->
 <ui-dialog
-  [(visible)]="store.confirmDialogVisible"
+  [visible]="store.confirmDialogVisible()"
+  (closed)="store.cancelDelete()"
   header="Eliminar categoría"
   variant="warning"
   size="sm"

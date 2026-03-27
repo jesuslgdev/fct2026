@@ -151,20 +151,4 @@ export class HttpCategoryRepository implements CategoryRepository {
       );
     });
   }
-
-  async categoryHasProducts(categoryId: number): Promise<boolean> {
-    return this.withErrorMapping(async () => {
-      try {
-        await firstValueFrom(
-          this.http.delete<void>(`${BASE_URL}/${categoryId}`)
-        );
-        return false;
-      } catch (error) {
-        if (error instanceof CategoryHasProductsError) {
-          return true;
-        }
-        throw error;
-      }
-    });
-  }
 }

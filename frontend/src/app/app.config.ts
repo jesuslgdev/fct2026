@@ -1,5 +1,4 @@
-// Application configuration for Angular app
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -14,8 +13,15 @@ import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/fireba
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { HttpCategoryRepository } from '@infrastructure/repositories/http/category.repository.http';
 import { CategoryRepository } from '@domain/repositories/category.repository';
+import { ClientRepository } from '@domain/repositories/client.repository';
+import { HttpClientRepository } from '@infrastructure/repositories/http/client.repository.http';
+import { DepartmentRepository } from '@domain/repositories/department.repository';
+import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
+import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
+import { UserRepository } from '@domain/repositories/user.repository';
+import { AuthService } from '@core/services/auth.service';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -33,6 +39,16 @@ export const appConfig: ApplicationConfig = {
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: CategoryRepository, useClass: HttpCategoryRepository },
+    { provide: ClientRepository, useClass: HttpClientRepository },
+    { provide: UserRepository, useClass: HttpUserRepository },
+    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (authRepo: AuthRepository, authService: AuthService) =>
+        () => authRepo.restoreSession().then((session) => authService.setSession(session)),
+      deps: [AuthRepository, AuthService],
+      multi: true,
+    },
     providePrimeNG({
       ripple: true,
       theme: {
@@ -42,17 +58,12 @@ export const appConfig: ApplicationConfig = {
           darkModeSelector: 'none',
           cssLayer: {
             name: 'primeng',
-            // Layer order: theme → base → primeng → components → utilities
             order: 'theme, base, primeng, components, utilities',
           },
         },
       },
     }),
-
     MessageService,
     ConfirmationService,
-
-    // { provide: PurchaseRepository, useClass: PurchaseRepositoryMock },
-    // TODO add base url for API REST
   ],
 };

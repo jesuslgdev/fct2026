@@ -1,0 +1,153 @@
+<main class="page">
+
+  <!-- ── Header ──────────────────────────────────────────── -->
+  <header class="page-header">
+    <div>
+      <h1 class="text-style-title">Departamentos</h1>
+      <p class="text-style-subtitle">Gestiona la estructura de la organización</p>
+    </div>
+    @if (isAdmin()) {
+      <ui-button
+        label="Nuevo departamento"
+        icon="pi pi-plus"
+        (clicked)="openCreate()"
+      />
+    }
+  </header>
+
+  <!-- ── Table ────────────────────────────────────────────── -->
+  <section aria-label="Departamentos">
+    <ui-table
+      [value]="store.departments()"
+      [loading]="store.loading()"
+      dataKey="id"
+    >
+    <ng-template #header>
+      <tr>
+        <th>Nombre</th>
+        <th class="text-center">Usuarios</th>
+        @if (isAdmin()) {
+          <th class="text-right">Acciones</th>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-dept>
+      <tr>
+        <td class="font-semibold">{{ dept.name }}</td>
+        <td class="text-center">
+          <ui-badge
+            [label]="dept.userCount.toString()"
+            [variant]="dept.userCount > 0 ? 'info' : 'secondary'"
+          />
+        </td>
+        @if (isAdmin()) {
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-2">
+              <ui-button
+                icon="pi pi-pencil"
+                variant="ghost"
+                [rounded]="true"
+                pTooltip="Editar"
+                tooltipPosition="left"
+                (clicked)="openEdit(dept)"
+              />
+              <ui-button
+                icon="pi pi-trash"
+                variant="ghost"
+                [rounded]="true"
+                [pTooltip]="dept.userCount > 0 ? 'Reasigna los usuarios primero' : 'Eliminar'"
+                tooltipPosition="left"
+                (clicked)="openDelete(dept)"
+              />
+            </div>
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="3" class="text-center py-10 text-surface-500">
+          <i class="pi pi-building text-4xl text-surface-400 mb-2"></i>
+          No hay departamentos registrados
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+  </section>
+
+  <!-- ── Create / Edit dialog ─────────────────────────────── -->
+  <ui-dialog
+    [visible]="formVisible()"
+    (visibleChange)="formVisible.set($event)"
+    [header]="selectedDept() ? 'Editar departamento' : 'Nuevo departamento'"
+    confirmLabel="Guardar"
+    cancelLabel="Cancelar"
+    [confirmLoading]="saving()"
+    [confirmDisabled]="form.invalid || saving()"
+    (confirmed)="onSave()"
+    (cancelled)="formVisible.set(false)"
+  >
+    <form [formGroup]="form" class="space-y-4">
+      @if (formError()) {
+        <p class="text-danger">
+          <i class="pi pi-exclamation-circle"></i>{{ formError() }}
+        </p>
+      }
+
+      <div class="flex flex-col gap-1.5">
+        <label for="dept-name" class="text-sm font-medium text-surface-700">
+          Nombre <span class="text-danger">*</span>
+        </label>
+        <ui-input
+          id="dept-name"
+          formControlName="name"
+          placeholder="Ej. Tecnología"
+          [state]="form.controls.name.invalid && form.controls.name.touched ? 'error' : 'default'"
+        />
+        @if (form.controls.name.hasError('required') && form.controls.name.touched) {
+          <p class="text-danger text-sm">El nombre es obligatorio.</p>
+        } @else if (form.controls.name.hasError('maxlength') && form.controls.name.touched) {
+          <p class="text-danger text-sm">Máximo 100 caracteres.</p>
+        }
+      </div>
+    </form>
+  </ui-dialog>
+
+  <!-- ── Delete confirmation dialog ───────────────────────── -->
+  <ui-dialog
+    [visible]="deleteVisible()"
+    (visibleChange)="deleteVisible.set($event)"
+    header="Eliminar departamento"
+    variant="danger"
+    [confirmLabel]="canDelete() ? 'Eliminar' : ''"
+    cancelLabel="Cerrar"
+    [confirmLoading]="saving()"
+    (confirmed)="onDelete()"
+    (cancelled)="deleteVisible.set(false)"
+  >
+    <div class="pt-2">
+      @if (canDelete()) {
+        <p class="text-surface-700">
+          ¿Estás seguro de que deseas eliminar el departamento
+          <strong>{{ selectedDept()?.name }}</strong>?
+          Esta acción no se puede deshacer.
+        </p>
+      } @else {
+        <div class="flex items-start gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
+          <i class="pi pi-exclamation-triangle text-amber-500 text-lg mt-0.5"></i>
+          <div>
+            <p class="font-medium text-amber-800">No se puede eliminar</p>
+            <p class="text-sm text-amber-700 mt-1">
+              El departamento <strong>{{ selectedDept()?.name }}</strong> tiene
+              <strong>{{ selectedDept()?.userCount }}</strong> usuario(s) asignado(s).
+              Reasígnalos a otro departamento antes de eliminarlo.
+            </p>
+          </div>
+        </div>
+      }
+    </div>
+  </ui-dialog>
+
+</main>
