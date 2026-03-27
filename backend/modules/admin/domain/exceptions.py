@@ -28,6 +28,11 @@ class AdminExceptionInfo(AppExceptionInfo):
     USER_NOT_FOUND = (1201, "User not found", 404)
     USER_ALREADY_EXISTS = (1202, "User with this email already exists", 409)
     USER_DEPARTMENT_NOT_FOUND = (1203, "Department not found", 404)
+    USER_DEPARTMENT_REQUIRED = (
+        1204,
+        "Department is required for Manager and Employee roles",
+        422,
+    )
 
 
 class AdminException(AppException):
