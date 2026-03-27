@@ -1,13 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CategoriesPageComponent } from './categories.page.component';
-import { CategoriesStore } from '@features/categories/state/categories.store';
-import { CategoryRepository } from '@domain/repositories/category.repository';
-import { GetCategoriesUseCase } from '@domain/usecases/category/get-categories.usecase';
-import { CreateCategoryUseCase } from '@domain/usecases/category/create-category.usecase';
-import { UpdateCategoryUseCase } from '@domain/usecases/category/update-category.usecase';
-import { DeleteCategoryUseCase } from '@domain/usecases/category/delete-category.usecase';
-import { GetCategoryByIdUseCase } from '@domain/usecases/category/get-category-by-id.usecase';
-import { signal } from '@angular/core';
+import { CategoriesStore } from '../../state/categories.store';
+import { CategoryRepository } from '../../../../domain/repositories/category.repository';
+import { GetCategoriesUseCase } from '../../../../domain/usecases/category/get-categories.usecase';
+import { CreateCategoryUseCase } from '../../../../domain/usecases/category/create-category.usecase';
+import { UpdateCategoryUseCase } from '../../../../domain/usecases/category/update-category.usecase';
+import { DeleteCategoryUseCase } from '../../../../domain/usecases/category/delete-category.usecase';
+import { GetCategoryByIdUseCase } from '../../../../domain/usecases/category/get-category-by-id.usecase';
+import { signal, WritableSignal } from '@angular/core';
 import { vi } from 'vitest';
 
 interface MockStore {
@@ -25,7 +25,7 @@ interface MockStore {
   categoryToDelete: () => null;
   confirmDelete: ReturnType<typeof vi.fn>;
   cancelDelete: ReturnType<typeof vi.fn>;
-  error: () => null;
+  error: WritableSignal<string | null>;
   dialogVisible: () => boolean;
   dialogMode: () => string;
   selectedCategory: () => null;

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CategoryFormDialogComponent } from './category-form-dialog.component';
-import { CategoriesStore } from '@features/categories/state/categories.store';
+import { CategoriesStore } from '../../state/categories.store';
 import { signal, WritableSignal } from '@angular/core';
 import { vi } from 'vitest';
 
@@ -10,6 +10,7 @@ interface MockStore {
   dialogMode: WritableSignal<string>;
   selectedCategory: WritableSignal<{ categoryId: number; name: string; description: string } | null>;
   loading: WritableSignal<boolean>;
+  error: WritableSignal<string | null>;
   saveCategory: ReturnType<typeof vi.fn>;
   closeDialog: ReturnType<typeof vi.fn>;
 }
@@ -25,6 +26,7 @@ describe('CategoryFormDialogComponent', () => {
       dialogMode: signal('create'),
       selectedCategory: signal(null),
       loading: signal(false),
+      error: signal(null),
       saveCategory: vi.fn(),
       closeDialog: vi.fn(),
     };
