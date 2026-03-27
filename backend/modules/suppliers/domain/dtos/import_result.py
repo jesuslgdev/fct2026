@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class ImportRowError:
     row: int
     reason: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class ImportResult:
     total: int
     created: int

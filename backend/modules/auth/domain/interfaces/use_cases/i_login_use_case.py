@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 
 
 class ILoginUseCase(ABC):

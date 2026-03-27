@@ -36,6 +36,9 @@ from modules.clients.infrastructure.http.schemas import (
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
 
+# ── Client Management ───────────────────────────────────────────
+
+
 def _to_detail_dto(client: Client) -> ClientDetailDTO:
     """Map a Client ORM entity to a ClientDetailDTO.
 
@@ -50,16 +53,23 @@ def _to_detail_dto(client: Client) -> ClientDetailDTO:
 
 @router.get("", response_model=PaginatedResponse[ClientDTO])
 async def list_clients(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    search: str | None = Query(
+        None, max_length=255, description="Search by name, tax ID, city or email"
+    ),
+    active: bool | None = Query(
+        None,
+        description="Filter by active status. true = active only, false = inactive only, omit for all",
+    ),
     use_case: IListClientsUseCase = Depends(get_list_clients_use_case),
     _: dict = Depends(get_current_user),
 ):
-    """Return a paginated list of clients.
+    """Return a paginated list of clients with optional filters.
 
     Accessible by any authenticated user.
     """
-    result = await use_case.execute(page, page_size)
+    result = await use_case.execute(page, page_size, search=search, active=active)
     return PaginatedResponse(
         items=[ClientDTO.model_validate(c) for c in result.items],
         total=result.total,
