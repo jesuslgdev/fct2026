@@ -12,9 +12,10 @@
     }
   </div>
 
-  @if (store.error(); as errorMessage) {
+  @if (store.error() && !store.dialogVisible() && !store.confirmDialogVisible(); as errorMessage) {
     <p class="warning-text" role="alert">{{ errorMessage }}</p>
   }
+
 
   <!-- ── Filters ──────────────────────────────────────────────────────────── -->
   <div class="filters-row">
