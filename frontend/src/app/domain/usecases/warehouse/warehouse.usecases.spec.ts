@@ -12,8 +12,7 @@ import { GetWarehouseByIdUseCase } from '@domain/usecases/warehouse/get-warehous
 import { CreateWarehouseUseCase } from '@domain/usecases/warehouse/create-warehouse.usecase';
 import { UpdateWarehouseUseCase } from '@domain/usecases/warehouse/update-warehouse.usecase';
 import { DeleteWarehouseUseCase } from '@domain/usecases/warehouse/delete-warehouse.usecase';
-import { GetWarehouseByNameUseCase } from '@domain/usecases/warehouse/get-warehouse-by-name.usecase';
-import { GetWarehouseTotalStockUseCase } from '@domain/usecases/warehouse/get-warehouse-total-stock.usecase';
+import { Observable, of } from 'rxjs';
 
 const WAREHOUSE_MOCK: Warehouse = {
   warehouseId: 1,
@@ -23,13 +22,11 @@ const WAREHOUSE_MOCK: Warehouse = {
 };
 
 class MockWarehouseRepository implements WarehouseRepository {
-  getWarehouses = vi.fn<() => Promise<WarehouseListResult>>();
-  getWarehouseById = vi.fn<(warehouseId: number) => Promise<Warehouse>>();
-  getWarehouseByName = vi.fn<(name: string) => Promise<Warehouse | null>>();
-  createWarehouse = vi.fn<(payload: CreateWarehousePayload) => Promise<Warehouse>>();
-  updateWarehouse = vi.fn<(warehouseId: number, payload: UpdateWarehousePayload) => Promise<Warehouse>>();
-  deleteWarehouse = vi.fn<(warehouseId: number) => Promise<void>>();
-  getWarehouseTotalStock = vi.fn<(warehouseId: number) => Promise<number>>();
+  getWarehouses = vi.fn<() => Observable<WarehouseListResult>>();
+  getWarehouseById = vi.fn<(warehouseId: number) => Observable<Warehouse>>();
+  createWarehouse = vi.fn<(payload: CreateWarehousePayload) => Observable<Warehouse>>();
+  updateWarehouse = vi.fn<(warehouseId: number, payload: UpdateWarehousePayload) => Observable<Warehouse>>();
+  deleteWarehouse = vi.fn<(warehouseId: number) => Observable<void>>();
 }
 
 describe('Warehouse Use Cases', () => {
@@ -44,92 +41,69 @@ describe('Warehouse Use Cases', () => {
         CreateWarehouseUseCase,
         UpdateWarehouseUseCase,
         DeleteWarehouseUseCase,
-        GetWarehouseByNameUseCase,
-        GetWarehouseTotalStockUseCase,
         { provide: WarehouseRepository, useValue: repo },
       ],
     });
   });
 
-  it('GetWarehousesUseCase delegates to repository', async () => {
+  it('GetWarehousesUseCase delegates to repository', () => {
     const useCase = TestBed.inject(GetWarehousesUseCase);
     const resultMock: WarehouseListResult = [WAREHOUSE_MOCK];
-    repo.getWarehouses.mockResolvedValueOnce(resultMock);
+    repo.getWarehouses.mockReturnValueOnce(of(resultMock));
 
-    const result = await useCase.execute();
-
-    expect(repo.getWarehouses).toHaveBeenCalledOnce();
-    expect(result).toEqual(resultMock);
+    useCase.execute().subscribe((result) => {
+      expect(repo.getWarehouses).toHaveBeenCalledOnce();
+      expect(result).toEqual(resultMock);
+    });
   });
 
-  it('GetWarehouseByIdUseCase delegates to repository', async () => {
+  it('GetWarehouseByIdUseCase delegates to repository', () => {
     const useCase = TestBed.inject(GetWarehouseByIdUseCase);
-    repo.getWarehouseById.mockResolvedValueOnce(WAREHOUSE_MOCK);
+    repo.getWarehouseById.mockReturnValueOnce(of(WAREHOUSE_MOCK));
 
-    const result = await useCase.execute(1);
-
-    expect(repo.getWarehouseById).toHaveBeenCalledWith(1);
-    expect(result).toEqual(WAREHOUSE_MOCK);
+    useCase.execute(1).subscribe((result) => {
+      expect(repo.getWarehouseById).toHaveBeenCalledWith(1);
+      expect(result).toEqual(WAREHOUSE_MOCK);
+    });
   });
 
-
-  it('CreateWarehouseUseCase delegates to repository', async () => {
+  it('CreateWarehouseUseCase delegates to repository', () => {
     const useCase = TestBed.inject(CreateWarehouseUseCase);
     const payload: CreateWarehousePayload = {
       name: 'Almacén Central',
       address: 'Calle Principal 123',
     };
-    repo.createWarehouse.mockResolvedValueOnce(WAREHOUSE_MOCK);
+    repo.createWarehouse.mockReturnValueOnce(of(WAREHOUSE_MOCK));
 
-    const result = await useCase.execute(payload);
-
-    expect(repo.createWarehouse).toHaveBeenCalledWith(payload);
-    expect(result).toEqual(WAREHOUSE_MOCK);
+    useCase.execute(payload).subscribe((result) => {
+      expect(repo.createWarehouse).toHaveBeenCalledWith(payload);
+      expect(result).toEqual(WAREHOUSE_MOCK);
+    });
   });
 
-  it('UpdateWarehouseUseCase delegates to repository', async () => {
+  it('UpdateWarehouseUseCase delegates to repository', () => {
     const useCase = TestBed.inject(UpdateWarehouseUseCase);
     const payload: UpdateWarehousePayload = { 
       name: 'Almacén Principal',
       address: 'Calle Nueva 456'
     };
     const updated: Warehouse = { ...WAREHOUSE_MOCK, name: 'Almacén Principal', address: 'Calle Nueva 456' };
-    repo.updateWarehouse.mockResolvedValueOnce(updated);
+    repo.updateWarehouse.mockReturnValueOnce(of(updated));
 
-    const result = await useCase.execute(1, payload);
-
-    expect(repo.updateWarehouse).toHaveBeenCalledWith(1, payload);
-    expect(result).toEqual(updated);
+    useCase.execute(1, payload).subscribe((result) => {
+      expect(repo.updateWarehouse).toHaveBeenCalledWith(1, payload);
+      expect(result).toEqual(updated);
+    });
   });
 
-  it('DeleteWarehouseUseCase delegates to repository', async () => {
+  it('DeleteWarehouseUseCase delegates to repository', () => {
     const useCase = TestBed.inject(DeleteWarehouseUseCase);
-    repo.deleteWarehouse.mockResolvedValueOnce();
+    repo.deleteWarehouse.mockReturnValueOnce(of(undefined));
 
-    await useCase.execute(1);
-
-    expect(repo.deleteWarehouse).toHaveBeenCalledWith(1);
-    expect(repo.deleteWarehouse).toHaveBeenCalledOnce();
-  });
-
-  it('GetWarehouseByNameUseCase delegates to repository', async () => {
-    const useCase = TestBed.inject(GetWarehouseByNameUseCase);
-    repo.getWarehouseByName.mockResolvedValueOnce(WAREHOUSE_MOCK);
-
-    const result = await useCase.execute('Almacén Central');
-
-    expect(repo.getWarehouseByName).toHaveBeenCalledWith('Almacén Central');
-    expect(result).toEqual(WAREHOUSE_MOCK);
-  });
-
-  it('GetWarehouseTotalStockUseCase delegates to repository', async () => {
-    const useCase = TestBed.inject(GetWarehouseTotalStockUseCase);
-    repo.getWarehouseTotalStock.mockResolvedValueOnce(100);
-
-    const result = await useCase.execute(1);
-
-    expect(repo.getWarehouseTotalStock).toHaveBeenCalledWith(1);
-    expect(result).toBe(100);
+    useCase.execute(1).subscribe(() => {
+      expect(repo.deleteWarehouse).toHaveBeenCalledWith(1);
+      expect(repo.deleteWarehouse).toHaveBeenCalledOnce();
+    });
   });
 
 });
