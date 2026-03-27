@@ -1,5 +1,6 @@
 <ui-dialog
-  [(visible)]="store.dialogVisible"
+  [visible]="store.dialogVisible()"
+  (closed)="onCancel()"
   [header]="getDialogTitle()"
   [confirmLabel]="confirmLabel"
   cancelLabel="Cancelar"

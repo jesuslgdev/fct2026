@@ -6,6 +6,11 @@ import {
   UpdateCategoryPayload,
   CategoryListResult,
 } from '@domain/models/category.model';
+import {
+  CategoryNotFoundError,
+  CategoryAlreadyExistsError,
+  CategoryHasProductsError,
+} from '@domain/models/category-errors';
 
 const INITIAL_MOCK_CATEGORIES: Category[] = [
   {
@@ -49,7 +54,7 @@ export class MockCategoryRepository implements CategoryRepository {
 
   async getCategoryById(categoryId: number): Promise<Category> {
     const category = this.categories.find((c) => c.categoryId === categoryId);
-    if (!category) throw new Error(`Category with ID ${categoryId} not found.`);
+    if (!category) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
     return { ...category };
   }
 
@@ -65,7 +70,7 @@ export class MockCategoryRepository implements CategoryRepository {
     const existing = this.categories.find(
       (c) => c.name.toLowerCase() === payload.name.toLowerCase()
     );
-    if (existing) throw new Error(`Category with name "${payload.name}" already exists.`);
+    if (existing) throw new CategoryAlreadyExistsError(`Category with name "${payload.name}" already exists.`);
 
     const nextId = Math.max(0, ...this.categories.map((c) => c.categoryId)) + 1;
     const newCategory: Category = {
@@ -82,7 +87,7 @@ export class MockCategoryRepository implements CategoryRepository {
     payload: UpdateCategoryPayload
   ): Promise<Category> {
     const index = this.categories.findIndex((c) => c.categoryId === categoryId);
-    if (index === -1) throw new Error(`Category with ID ${categoryId} not found.`);
+    if (index === -1) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
 
     const category = { ...this.categories[index] };
     if (payload.name !== undefined && payload.name !== null) {
@@ -98,22 +103,14 @@ export class MockCategoryRepository implements CategoryRepository {
 
   async deleteCategory(categoryId: number): Promise<void> {
     const index = this.categories.findIndex((c) => c.categoryId === categoryId);
-    if (index === -1) throw new Error(`Category with ID ${categoryId} not found.`);
+    if (index === -1) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
 
-    // Simulate check for associated products (random for demo)
-    const hasProducts = Math.random() > 0.7; // 30% chance of having products
-    if (hasProducts) {
-      throw new Error('Cannot delete category with associated products.');
+    // Simulation of conflict for ID 1 (to be deterministic)
+    if (categoryId === 1) {
+      throw new CategoryHasProductsError('Cannot delete category with associated products.');
     }
 
     this.categories = this.categories.filter((c) => c.categoryId !== categoryId);
   }
 
-  async categoryHasProducts(categoryId: number): Promise<boolean> {
-    const category = this.categories.find((c) => c.categoryId === categoryId);
-    if (!category) throw new Error(`Category with ID ${categoryId} not found.`);
-
-    // Simulate check for associated products (random for demo)
-    return Math.random() > 0.7; // 30% chance of having products
-  }
 }

@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
-import { CategoryRepository } from '@domain/repositories/category.repository';
+import { UserRole } from '@domain/enums/user-role.enum';
 import {
   Category,
   CreateCategoryPayload,
@@ -17,26 +17,35 @@ export type DialogMode = 'create' | 'edit';
 @Injectable()
 export class CategoriesStore {
   private readonly authService = inject(AuthService);
-  private readonly categoryRepository = inject(CategoryRepository);
   private readonly getCategoriesUseCase = inject(GetCategoriesUseCase);
   private readonly getCategoryByIdUseCase = inject(GetCategoryByIdUseCase);
   private readonly createCategoryUseCase = inject(CreateCategoryUseCase);
   private readonly updateCategoryUseCase = inject(UpdateCategoryUseCase);
   private readonly deleteCategoryUseCase = inject(DeleteCategoryUseCase);
 
-  readonly categories = signal<Category[]>([]);
-  readonly loading = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly searchQuery = signal('');
-  readonly selectedCategory = signal<Category | null>(null);
-  readonly dialogVisible = signal(false);
-  readonly dialogMode = signal<DialogMode>('create');
-  readonly confirmDialogVisible = signal(false);
-  readonly categoryToDelete = signal<Category | null>(null);
+  private readonly _categories = signal<Category[]>([]);
+  private readonly _loading = signal(false);
+  private readonly _error = signal<string | null>(null);
+  private readonly _searchQuery = signal('');
+  private readonly _selectedCategory = signal<Category | null>(null);
+  private readonly _dialogVisible = signal(false);
+  private readonly _dialogMode = signal<DialogMode>('create');
+  private readonly _confirmDialogVisible = signal(false);
+  private readonly _categoryToDelete = signal<Category | null>(null);
+
+  readonly categories = this._categories.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly error = this._error.asReadonly();
+  readonly searchQuery = this._searchQuery.asReadonly();
+  readonly selectedCategory = this._selectedCategory.asReadonly();
+  readonly dialogVisible = this._dialogVisible.asReadonly();
+  readonly dialogMode = this._dialogMode.asReadonly();
+  readonly confirmDialogVisible = this._confirmDialogVisible.asReadonly();
+  readonly categoryToDelete = this._categoryToDelete.asReadonly();
 
   readonly canEdit = computed(() => {
     const user = this.authService.user();
-    return user?.role === 'Administrator' || user?.role === 'Sales Manager';
+    return user?.role === UserRole.Administrator || user?.role === UserRole.Manager;
   });
 
   readonly filteredCategories = computed(() => {
@@ -47,7 +56,7 @@ export class CategoriesStore {
     
     return categories.filter(category =>
       category.name.toLowerCase().includes(query) ||
-      category.description.toLowerCase().includes(query)
+      (category.description ?? '').toLowerCase().includes(query)
     );
   });
 
@@ -59,35 +68,35 @@ export class CategoriesStore {
   }
 
   async loadCategories(): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
+    this._loading.set(true);
+    this._error.set(null);
     try {
       const categories = await this.getCategoriesUseCase.execute();
-      this.categories.set(categories);
+      this._categories.set(categories);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load categories.'));
+      this._error.set(this.resolveErrorMessage(err, 'Failed to load categories.'));
     } finally {
-      this.loading.set(false);
+      this._loading.set(false);
     }
   }
 
   async loadCategoryById(id: number): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
+    this._loading.set(true);
+    this._error.set(null);
     try {
       const category = await this.getCategoryByIdUseCase.execute(id);
-      this.selectedCategory.set(category);
+      this._selectedCategory.set(category);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load category.'));
+      this._error.set(this.resolveErrorMessage(err, 'Failed to load category.'));
     } finally {
-      this.loading.set(false);
+      this._loading.set(false);
     }
   }
 
   openCreateDialog(): void {
-    this.selectedCategory.set(null);
-    this.dialogMode.set('create');
-    this.dialogVisible.set(true);
+    this._selectedCategory.set(null);
+    this._dialogMode.set('create');
+    this._dialogVisible.set(true);
   }
 
   openEditDialog(category: Category): void {
@@ -95,95 +104,87 @@ export class CategoriesStore {
   }
 
   private async loadCategoryForEdit(categoryId: number): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
+    this._loading.set(true);
+    this._error.set(null);
 
     try {
       const categoryData = await this.getCategoryByIdUseCase.execute(categoryId);
-      this.selectedCategory.set(categoryData);
-      this.dialogMode.set('edit');
-      this.dialogVisible.set(true);
+      this._selectedCategory.set(categoryData);
+      this._dialogMode.set('edit');
+      this._dialogVisible.set(true);
     } catch (err) {
-      this.error.set('Error loading category data');
+      this._error.set('Error loading category data');
       console.error('Error loading category for edit:', err);
     } finally {
-      this.loading.set(false);
+      this._loading.set(false);
     }
   }
 
   closeDialog(): void {
-    this.dialogVisible.set(false);
-    this.selectedCategory.set(null);
+    this._dialogVisible.set(false);
+    this._selectedCategory.set(null);
   }
 
   requestDelete(category: Category): void {
-    this.categoryToDelete.set(category);
-    this.error.set(null);
-    this.confirmDialogVisible.set(true);
+    this._categoryToDelete.set(category);
+    this._error.set(null);
+    this._confirmDialogVisible.set(true);
   }
 
   cancelDelete(): void {
-    this.categoryToDelete.set(null);
-    this.confirmDialogVisible.set(false);
-    this.error.set(null);
+    this._categoryToDelete.set(null);
+    this._confirmDialogVisible.set(false);
+    this._error.set(null);
   }
 
   async saveCategory(name: string, description: string): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
+    this._loading.set(true);
+    this._error.set(null);
     try {
-      if (this.dialogMode() === 'edit' && this.selectedCategory()) {
+      if (this._dialogMode() === 'edit' && this._selectedCategory()) {
         const payload: UpdateCategoryPayload = { name, description };
         const updated = await this.updateCategoryUseCase.execute(
-          this.selectedCategory()!.categoryId,
+          this._selectedCategory()!.categoryId,
           payload,
         );
-        this.categories.update((list) =>
+        this._categories.update((list) =>
           list.map((c) => (c.categoryId === updated.categoryId ? updated : c)),
         );
       } else {
         const payload: CreateCategoryPayload = { name, description };
         const created = await this.createCategoryUseCase.execute(payload);
-        this.categories.update((list) => [...list, created]);
+        this._categories.update((list) => [...list, created]);
       }
       this.closeDialog();
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to save category.'));
+      this._error.set(this.resolveErrorMessage(err, 'Failed to save category.'));
     } finally {
-      this.loading.set(false);
+      this._loading.set(false);
     }
   }
 
   async confirmDelete(): Promise<void> {
-    const category = this.categoryToDelete();
+    const category = this._categoryToDelete();
     if (!category) return;
     
-    this.loading.set(true);
-    this.error.set(null);
+    this._loading.set(true);
+    this._error.set(null);
     try {
       await this.deleteCategoryUseCase.execute(category.categoryId);
-      this.categories.update((list) =>
+      this._categories.update((list) =>
         list.filter((c) => c.categoryId !== category.categoryId),
       );
-      this.confirmDialogVisible.set(false);
-      this.categoryToDelete.set(null);
+      this._confirmDialogVisible.set(false);
+      this._categoryToDelete.set(null);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to delete category.'));
+      this._error.set(this.resolveErrorMessage(err, 'Failed to delete category.'));
     } finally {
-      this.loading.set(false);
+      this._loading.set(false);
     }
   }
 
   onSearch(query: string): void {
-    this.searchQuery.set(query);
+    this._searchQuery.set(query);
   }
 
-  async checkCategoryHasProducts(categoryId: number): Promise<boolean> {
-    try {
-      return await this.categoryRepository.categoryHasProducts(categoryId);
-    } catch (err) {
-      console.error('Error checking category products:', err);
-      return false;
-    }
-  }
 }
