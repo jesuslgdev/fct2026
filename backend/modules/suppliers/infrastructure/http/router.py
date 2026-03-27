@@ -200,8 +200,13 @@ async def create_supplier(
 async def list_suppliers(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
-    search: str | None = Query(None, max_length=255, description="Search by name, tax ID, city or email"),
-    active: bool | None = Query(None, description="Filter by active status. true = active only, false = inactive only, omit for all"),
+    search: str | None = Query(
+        None, max_length=255, description="Search by name, tax ID, city or email"
+    ),
+    active: bool | None = Query(
+        None,
+        description="Filter by active status. true = active only, false = inactive only, omit for all",
+    ),
     _: UserSession = Depends(get_current_user),
     use_case: IListSuppliersUseCase = Depends(get_list_suppliers_use_case),
 ):

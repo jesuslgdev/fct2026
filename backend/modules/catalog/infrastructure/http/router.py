@@ -176,9 +176,16 @@ async def list_products(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     category_id: int | None = Query(None, description="Filter by category ID"),
-    search: str | None = Query(None, max_length=255, description="Search by product name or product code"),
-    active: bool | None = Query(None, description="Filter by active status. true = active only, false = inactive only, omit for all"),
-    sort_field: Literal["name", "price"] = Query("name", description="Field to sort by"),
+    search: str | None = Query(
+        None, max_length=255, description="Search by product name or product code"
+    ),
+    active: bool | None = Query(
+        None,
+        description="Filter by active status. true = active only, false = inactive only, omit for all",
+    ),
+    sort_field: Literal["name", "price"] = Query(
+        "name", description="Field to sort by"
+    ),
     sort_order: Literal["asc", "desc"] = Query("asc", description="Sort direction"),
     use_case: IListProductsUseCase = Depends(get_list_products_use_case),
     _: UserSession = Depends(get_current_user),
