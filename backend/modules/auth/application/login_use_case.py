@@ -4,7 +4,7 @@ from modules.auth.domain.interfaces.repositories.i_auth_repository import (
     IAuthRepository,
 )
 from modules.auth.domain.interfaces.use_cases.i_login_use_case import ILoginUseCase
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
 
 
@@ -31,6 +31,7 @@ class LoginUseCase(ILoginUseCase):
             )
 
         return UserSession(
+            user_id=user.user_id,
             email=user.email,
             role=user.role,
             department_id=user.department_id,
