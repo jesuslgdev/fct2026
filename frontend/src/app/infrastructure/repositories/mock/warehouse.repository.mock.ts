@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 import { Warehouse,
   CreateWarehousePayload,
@@ -10,6 +11,7 @@ import {
   WarehouseHasStockError,
   WarehouseNotFoundError,
 } from '@domain/models/warehouse-errors';
+
 const INITIAL_MOCK_WAREHOUSES: Warehouse[] = [
   {
     warehouseId: 1,
@@ -56,64 +58,67 @@ export class MockWarehouseRepository implements WarehouseRepository {
     }
   }
 
-  async getWarehouses(): Promise<WarehouseListResult> {
-    return [...this.warehouses];
+  getWarehouses(): Observable<WarehouseListResult> {
+    return of([...this.warehouses]);
   }
 
-  async getWarehouseById(warehouseId: number): Promise<Warehouse> {
-    const warehouse = this.getWarehouseByIdOrThrow(warehouseId);
-    return { ...warehouse };
-  }
-
-  async getWarehouseByName(name: string): Promise<Warehouse | null> {
-    const warehouse = this.warehouses.find((w) => w.name.toLowerCase() === name.toLowerCase());
-    return warehouse ? { ...warehouse } : null;
-  }
-
-  async createWarehouse(payload: CreateWarehousePayload): Promise<Warehouse> {
-    this.assertNameIsUnique(payload.name);
-
-    const nextId = Math.max(0, ...this.warehouses.map((w) => w.warehouseId)) + 1;
-    const newWarehouse: Warehouse = {
-      warehouseId: nextId,
-      name: payload.name,
-      address: payload.address,
-      totalStock: 0,
-    };
-    this.warehouses = [...this.warehouses, newWarehouse];
-    return { ...newWarehouse };
-  }
-
-  async updateWarehouse(warehouseId: number, payload: UpdateWarehousePayload): Promise<Warehouse> {
-    const existing = this.getWarehouseByIdOrThrow(warehouseId);
-    const nextName = payload.name ?? existing.name;
-    this.assertNameIsUnique(nextName, warehouseId);
-
-    const updated: Warehouse = {
-      ...existing,
-      ...(payload.name !== undefined && {
-        name: payload.name ?? existing.name,
-      }),
-      ...(payload.address !== undefined && {
-        address: payload.address ?? existing.address,
-      }),
-    };
-
-    this.warehouses = this.warehouses.map((w) => (w.warehouseId === warehouseId ? updated : w));
-    return { ...updated };
-  }
-
-  async deleteWarehouse(warehouseId: number): Promise<void> {
-    const warehouse = this.getWarehouseByIdOrThrow(warehouseId);
-    if (warehouse.totalStock > 0) {
-      throw new WarehouseHasStockError();
+  getWarehouseById(warehouseId: number): Observable<Warehouse> {
+    try {
+      const warehouse = this.getWarehouseByIdOrThrow(warehouseId);
+      return of({ ...warehouse });
+    } catch (e) {
+      return throwError(() => e);
     }
-
-    this.warehouses = this.warehouses.filter((w) => w.warehouseId !== warehouseId);
   }
 
-  async getWarehouseTotalStock(warehouseId: number): Promise<number> {
-    const warehouse = this.getWarehouseByIdOrThrow(warehouseId);
-    return warehouse.totalStock;
+  createWarehouse(payload: CreateWarehousePayload): Observable<Warehouse> {
+    try {
+      this.assertNameIsUnique(payload.name);
+
+      const nextId = Math.max(0, ...this.warehouses.map((w) => w.warehouseId)) + 1;
+      const newWarehouse: Warehouse = {
+        warehouseId: nextId,
+        name: payload.name,
+        address: payload.address,
+        totalStock: 0,
+      };
+      this.warehouses = [...this.warehouses, newWarehouse];
+      return of({ ...newWarehouse });
+    } catch (e) {
+      return throwError(() => e);
+    }
+  }
+
+  updateWarehouse(warehouseId: number, payload: UpdateWarehousePayload): Observable<Warehouse> {
+    try {
+      const existing = this.getWarehouseByIdOrThrow(warehouseId);
+      const nextName = payload.name;
+      this.assertNameIsUnique(nextName, warehouseId);
+
+      const updated: Warehouse = {
+        ...existing,
+        name: payload.name,
+        address: payload.address,
+      };
+
+      this.warehouses = this.warehouses.map((w) => (w.warehouseId === warehouseId ? updated : w));
+      return of({ ...updated });
+    } catch (e) {
+      return throwError(() => e);
+    }
+  }
+
+  deleteWarehouse(warehouseId: number): Observable<void> {
+    try {
+      const warehouse = this.getWarehouseByIdOrThrow(warehouseId);
+      if (warehouse.totalStock > 0) {
+        throw new WarehouseHasStockError();
+      }
+
+      this.warehouses = this.warehouses.filter((w) => w.warehouseId !== warehouseId);
+      return of(undefined);
+    } catch (e) {
+      return throwError(() => e);
+    }
   }
 }
