@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query, Response
 
 from composition.dependencies import (
@@ -52,7 +54,6 @@ from modules.admin.infrastructure.http.schemas import (
     UpdateUserDTO,
     UserDTO,
 )
-from shared.constants import ROLE_PATTERN
 from shared.domain.entities.user import User
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
@@ -150,11 +151,18 @@ async def delete_department(
 
 @router.get("/users", response_model=PaginatedResponse[UserDTO], tags=["Admin - Users"])
 async def list_users(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    search: str | None = Query(None, max_length=255),
-    role: str | None = Query(None, pattern=ROLE_PATTERN),
-    active: bool | None = Query(None),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    search: str | None = Query(
+        None, max_length=255, description="Search by name or email"
+    ),
+    role: Literal["Administrator", "Manager", "Employee"] | None = Query(
+        None, description="Filter by role"
+    ),
+    active: bool | None = Query(
+        None,
+        description="Filter by active status. true = active only, false = inactive only, omit for all",
+    ),
     use_case: IListUsersUseCase = Depends(get_list_users_use_case),
     _: dict = Depends(require_admin),
 ):
