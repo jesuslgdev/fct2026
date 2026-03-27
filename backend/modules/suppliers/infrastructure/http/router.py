@@ -198,10 +198,15 @@ async def create_supplier(
 
 @router.get("", response_model=PaginatedResponse[SupplierDTO], tags=["Suppliers"])
 async def list_suppliers(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    search: str | None = Query(None, max_length=255),
-    active: bool | None = Query(None),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    search: str | None = Query(
+        None, max_length=255, description="Search by name, tax ID, city or email"
+    ),
+    active: bool | None = Query(
+        None,
+        description="Filter by active status. true = active only, false = inactive only, omit for all",
+    ),
     _: UserSession = Depends(get_current_user),
     use_case: IListSuppliersUseCase = Depends(get_list_suppliers_use_case),
 ):
@@ -336,8 +341,8 @@ async def add_product_to_supplier(
 )
 async def list_supplier_products(
     supplier_id: int,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     _: UserSession = Depends(get_current_user),
     use_case: IListSupplierProductsUseCase = Depends(
         get_list_supplier_products_use_case
@@ -400,8 +405,8 @@ async def remove_product_from_supplier(
 )
 async def list_product_suppliers(
     product_id: int,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     use_case: IListProductSuppliersUseCase = Depends(
         get_list_product_suppliers_use_case
     ),

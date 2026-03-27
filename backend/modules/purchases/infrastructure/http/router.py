@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 
@@ -88,15 +89,26 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
 
 @router.get("", response_model=PaginatedResponse[PurchaseDTO], tags=["Purchases"])
 async def list_purchases(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    sort_field: str = Query("created_at"),
-    sort_order: str = Query("desc"),
-    status: str | None = Query(None),
-    supplier_id: int | None = Query(None),
-    date_from: datetime | None = Query(None),
-    date_to: datetime | None = Query(None),
-    search: str | None = Query(None, max_length=255),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    sort_field: Literal[
+        "purchase_number", "supplier_name", "status", "created_at", "total"
+    ] = Query("created_at", description="Field to sort by"),
+    sort_order: Literal["asc", "desc"] = Query("desc", description="Sort direction"),
+    status: str | None = Query(
+        None, description="Filter by purchase status (e.g. Pending)"
+    ),
+    supplier_id: int | None = Query(None, description="Filter by supplier ID"),
+    date_from: datetime | None = Query(
+        None, description="Filter purchases from this date (e.g. 2024-01-01T00:00:00)"
+    ),
+    date_to: datetime | None = Query(
+        None,
+        description="Filter purchases up to this date (e.g. 2024-12-31T23:59:59)",
+    ),
+    search: str | None = Query(
+        None, max_length=255, description="Search by purchase number or supplier name"
+    ),
     _: UserSession = Depends(get_current_user),
     use_case: IListPurchasesUseCase = Depends(get_list_purchases_use_case),
 ):
