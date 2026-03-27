@@ -42,6 +42,9 @@ class IUserRepository(ABC):
     ) -> User: ...
 
     @abstractmethod
+    async def delete(self, user_id: int) -> None: ...
+
+    @abstractmethod
     async def deactivate(self, user_id: int) -> None: ...
 
     @abstractmethod

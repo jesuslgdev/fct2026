@@ -8,6 +8,7 @@ from composition.dependencies import (
     get_create_user_use_case,
     get_deactivate_user_use_case,
     get_delete_department_use_case,
+    get_delete_user_use_case,
     get_get_department_use_case,
     get_get_user_use_case,
     get_list_departments_use_case,
@@ -39,6 +40,9 @@ from modules.admin.domain.interfaces.use_cases.users.i_create_user_use_case impo
 )
 from modules.admin.domain.interfaces.use_cases.users.i_deactivate_user_use_case import (
     IDeactivateUserUseCase,
+)
+from modules.admin.domain.interfaces.use_cases.users.i_delete_user_use_case import (
+    IDeleteUserUseCase,
 )
 from modules.admin.domain.interfaces.use_cases.users.i_get_user_use_case import (
     IGetUserUseCase,
@@ -242,4 +246,15 @@ async def activate_user(
 ):
     """Activate a user, restoring their personal data."""
     await use_case.execute(user_id, body.first_name, body.last_name, body.email)
+    return Response(status_code=204)
+
+
+@router.delete("/users/{user_id}", status_code=204, tags=["Admin - Users"])
+async def delete_user(
+    user_id: int,
+    use_case: IDeleteUserUseCase = Depends(get_delete_user_use_case),
+    _: dict = Depends(require_admin),
+):
+    """Permanently delete a user with no purchase history."""
+    await use_case.execute(user_id)
     return Response(status_code=204)

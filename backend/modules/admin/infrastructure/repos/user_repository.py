@@ -114,6 +114,13 @@ class UserRepository(IUserRepository, IUserReader):
         await self._db.refresh(user)
         return user
 
+    async def delete(self, user_id: int) -> None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
+        await self._db.delete(user)
+        await self._db.flush()
+
     async def deactivate(self, user_id: int) -> None:
         user = await self.get_by_id(user_id)
         if user is None:
