@@ -13,5 +13,4 @@ export abstract class CategoryRepository {
   abstract createCategory(payload: CreateCategoryPayload): Observable<Category>;
   abstract updateCategory(categoryId: number, payload: UpdateCategoryPayload): Observable<Category>;
   abstract deleteCategory(categoryId: number): Observable<void>;
-  abstract categoryHasProducts(categoryId: number): Observable<boolean>;
 }

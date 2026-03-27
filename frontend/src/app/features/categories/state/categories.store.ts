@@ -46,15 +46,15 @@ export class CategoriesStore {
 
   readonly canEdit = computed(() => {
     const user = this.authService.user();
-    return user?.role === UserRole.Administrator || user?.role === UserRole.Manager;
+    return user?.role === UserRole.Administrator
   });
 
   readonly filteredCategories = computed(() => {
     const categories = this.categories();
     const query = this.searchQuery().toLowerCase();
-    
+
     if (!query) return categories;
-    
+
     return categories.filter(category =>
       category.name.toLowerCase().includes(query) ||
       (category.description ?? '').toLowerCase().includes(query)
@@ -169,7 +169,7 @@ export class CategoriesStore {
   async confirmDelete(): Promise<void> {
     const category = this._categoryToDelete();
     if (!category) return;
-    
+
     this._loading.set(true);
     this._error.set(null);
     try {
