@@ -16,12 +16,8 @@ import {
 import { UserRole } from '@domain/enums/user-role.enum';
 import {
   CategoryForbiddenError,
-  CategoryValidationError,
   CategoryUnauthorizedError,
-  CategoryNotFoundError,
-  CategoryApiError,
   CategoryAlreadyExistsError,
-  CategoryHasProductsError,
 } from '@domain/models/category-errors';
 
 const CATEGORY_A: Category = {
