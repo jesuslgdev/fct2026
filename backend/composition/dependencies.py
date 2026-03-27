@@ -343,7 +343,7 @@ from shared.infrastructure.database.connection import get_db
 async def get_login_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ILoginUseCase:
-    return LoginUseCase(AuthRepository(db))
+    return LoginUseCase(AuthRepository(db), DepartmentRepository(db))
 
 
 def get_logout_use_case() -> ILogoutUseCase:

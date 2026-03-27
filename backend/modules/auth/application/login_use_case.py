@@ -1,18 +1,38 @@
 from fastapi import HTTPException, status
 
+from modules.auth.domain.dtos.login_result import LoginResult
 from modules.auth.domain.interfaces.repositories.i_auth_repository import (
     IAuthRepository,
 )
 from modules.auth.domain.interfaces.use_cases.i_login_use_case import ILoginUseCase
 from shared.domain.dtos.user_session import UserSession
+from shared.domain.interfaces.i_department_reader import IDepartmentReader
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
 
 
-class LoginUseCase(ILoginUseCase):
-    def __init__(self, auth_repository: IAuthRepository) -> None:
-        self._repo = auth_repository
+def _compute_permissions(role: str, department_name: str | None) -> list[str]:
+    if role == "Administrator":
+        return ["admin", "purchases_manager", "sales_manager", "purchases_department"]
+    perms: list[str] = []
+    if role == "Manager" and department_name == "Purchases":
+        perms += ["purchases_manager", "purchases_department"]
+    elif role == "Manager" and department_name == "Sales":
+        perms += ["sales_manager"]
+    elif department_name == "Purchases":
+        perms += ["purchases_department"]
+    return perms
 
-    async def login(self, firebase_id_token: str) -> UserSession:
+
+class LoginUseCase(ILoginUseCase):
+    def __init__(
+        self,
+        auth_repository: IAuthRepository,
+        department_reader: IDepartmentReader,
+    ) -> None:
+        self._repo = auth_repository
+        self._dept_reader = department_reader
+
+    async def login(self, firebase_id_token: str) -> LoginResult:
         try:
             claims = verify_firebase_token(firebase_id_token)
         except Exception:
@@ -41,12 +61,22 @@ class LoginUseCase(ILoginUseCase):
         else:
             await self._repo.update_last_login(user.user_id)
 
-        return UserSession(
-            user_id=user.user_id,
-            email=user.email,
-            role=user.role,
-            department_id=user.department_id,
-            firebase_uid=claims["uid"],
-            name=f"{user.first_name} {user.last_name}",
-            last_login_at=user.last_login_at,
+        dept_name = (
+            await self._dept_reader.get_name_by_id(user.department_id)
+            if user.department_id
+            else None
+        )
+        permissions = _compute_permissions(user.role, dept_name)
+
+        return LoginResult(
+            session=UserSession(
+                user_id=user.user_id,
+                email=user.email,
+                role=user.role,
+                department_id=user.department_id,
+                firebase_uid=claims["uid"],
+                name=f"{user.first_name} {user.last_name}",
+                last_login_at=user.last_login_at,
+            ),
+            permissions=permissions,
         )
