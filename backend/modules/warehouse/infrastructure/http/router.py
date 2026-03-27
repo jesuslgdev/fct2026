@@ -170,10 +170,10 @@ async def delete_warehouse(
 
 @router.get("/stock", response_model=PaginatedResponse[StockDistributionItemDTO])
 async def list_stock_distribution(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    warehouse_id: int | None = Query(None),
-    product_id: int | None = Query(None),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    warehouse_id: int | None = Query(None, description="Filter by warehouse ID"),
+    product_id: int | None = Query(None, description="Filter by product ID"),
     use_case: IListStockDistributionUseCase = Depends(
         get_list_stock_distribution_use_case
     ),

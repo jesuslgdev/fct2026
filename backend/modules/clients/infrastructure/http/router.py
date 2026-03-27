@@ -53,10 +53,10 @@ def _to_detail_dto(client: Client) -> ClientDetailDTO:
 
 @router.get("", response_model=PaginatedResponse[ClientDTO])
 async def list_clients(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    search: str | None = Query(None, max_length=255),
-    active: bool | None = Query(None),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    search: str | None = Query(None, max_length=255, description="Search by name, tax ID, city or email"),
+    active: bool | None = Query(None, description="Filter by active status. true = active only, false = inactive only, omit for all"),
     use_case: IListClientsUseCase = Depends(get_list_clients_use_case),
     _: dict = Depends(get_current_user),
 ):
