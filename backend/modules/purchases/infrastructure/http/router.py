@@ -1,12 +1,14 @@
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
 from composition.dependencies import (
     get_add_purchase_line_use_case,
+    get_cancel_purchase_use_case,
     get_create_purchase_use_case,
     get_delete_purchase_line_use_case,
+    get_delete_purchase_use_case,
     get_get_purchase_use_case,
     get_get_supplier_price_use_case,
     get_list_purchases_use_case,
@@ -21,11 +23,17 @@ from modules.purchases.domain.entities.purchase_enriched import PurchaseEnriched
 from modules.purchases.domain.interfaces.use_cases.i_add_purchase_line_use_case import (
     IAddPurchaseLineUseCase,
 )
+from modules.purchases.domain.interfaces.use_cases.i_cancel_purchase_use_case import (
+    ICancelPurchaseUseCase,
+)
 from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
     ICreatePurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_delete_purchase_line_use_case import (
     IDeletePurchaseLineUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_delete_purchase_use_case import (
+    IDeletePurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_get_purchase_use_case import (
     IGetPurchaseUseCase,
@@ -70,6 +78,8 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
         subtotal=purchase.subtotal,
         taxes=purchase.taxes,
         total=purchase.total,
+        cancelled_at=purchase.cancelled_at,
+        cancelled_by_user_id=purchase.cancelled_by_user_id,
         created_at=purchase.created_at,
         updated_at=purchase.updated_at,
         lines=[
@@ -224,6 +234,32 @@ async def update_purchase(
         warehouse_id=body.warehouse_id,
     )
     return _purchase_detail(purchase)
+
+
+@router.patch(
+    "/{purchase_id}/cancel", response_model=PurchaseDetailDTO, tags=["Purchases"]
+)
+async def cancel_purchase(
+    purchase_id: int,
+    current_user: UserSession = Depends(require_purchases_department_or_admin),
+    use_case: ICancelPurchaseUseCase = Depends(get_cancel_purchase_use_case),
+):
+    """Cancel a purchase in Pending or Approved status. Cancelled is a final state."""
+    purchase = await use_case.execute(
+        purchase_id=purchase_id, user_id=current_user.user_id
+    )
+    return _purchase_detail(purchase)
+
+
+@router.delete("/{purchase_id}", status_code=204, tags=["Purchases"])
+async def delete_purchase(
+    purchase_id: int,
+    _: UserSession = Depends(require_purchases_department_or_admin),
+    use_case: IDeletePurchaseUseCase = Depends(get_delete_purchase_use_case),
+):
+    """Physically delete a purchase. Only allowed when status is Pending."""
+    await use_case.execute(purchase_id=purchase_id)
+    return Response(status_code=204)
 
 
 # ── Purchase Lines ──────────────────────────────────────────────

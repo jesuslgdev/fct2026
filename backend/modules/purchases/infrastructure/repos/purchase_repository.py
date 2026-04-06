@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select, text
@@ -247,6 +247,27 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         )
         for line in result.scalars().all():
             await self._db.delete(line)
+        await self._db.flush()
+
+    async def cancel_purchase(self, purchase_id: int, user_id: int) -> Purchase:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        purchase.status = "Cancelled"
+        purchase.cancelled_at = datetime.now(UTC)
+        purchase.cancelled_by_user_id = user_id
+        await self._db.flush()
+        await self._db.refresh(purchase, ["lines"])
+        return purchase
+
+    async def delete_purchase(self, purchase_id: int) -> None:
+        await self.delete_all_lines(purchase_id)
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        await self._db.delete(purchase)
         await self._db.flush()
 
     async def has_purchases_for_user(self, user_id: int) -> bool:

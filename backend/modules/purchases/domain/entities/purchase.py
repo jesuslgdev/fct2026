@@ -44,4 +44,9 @@ class Purchase(Base):
         nullable=False,
     )
 
+    cancelled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    cancelled_by_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     lines: Mapped[list[PurchaseLine]] = relationship("PurchaseLine", lazy="selectin")

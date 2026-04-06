@@ -77,6 +77,8 @@ class PurchaseDetailDTO(BaseModel):
     subtotal: Decimal
     taxes: Decimal
     total: Decimal
+    cancelled_at: datetime | None = None
+    cancelled_by_user_id: int | None = None
     created_at: datetime
     updated_at: datetime
     lines: list[PurchaseLineDTO]

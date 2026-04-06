@@ -161,12 +161,14 @@ from modules.clients.infrastructure.repos.client_repository import ClientReposit
 from modules.purchases.application.add_purchase_line_use_case import (
     AddPurchaseLineUseCase,
 )
+from modules.purchases.application.cancel_purchase_use_case import CancelPurchaseUseCase
 from modules.purchases.application.create_purchase_use_case import (
     CreatePurchaseUseCase,
 )
 from modules.purchases.application.delete_purchase_line_use_case import (
     DeletePurchaseLineUseCase,
 )
+from modules.purchases.application.delete_purchase_use_case import DeletePurchaseUseCase
 from modules.purchases.application.get_purchase_use_case import GetPurchaseUseCase
 from modules.purchases.application.get_supplier_price_use_case import (
     GetSupplierPriceUseCase,
@@ -181,11 +183,17 @@ from modules.purchases.application.update_purchase_use_case import UpdatePurchas
 from modules.purchases.domain.interfaces.use_cases.i_add_purchase_line_use_case import (
     IAddPurchaseLineUseCase,
 )
+from modules.purchases.domain.interfaces.use_cases.i_cancel_purchase_use_case import (
+    ICancelPurchaseUseCase,
+)
 from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
     ICreatePurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_delete_purchase_line_use_case import (
     IDeletePurchaseLineUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_delete_purchase_use_case import (
+    IDeletePurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_get_purchase_use_case import (
     IGetPurchaseUseCase,
@@ -644,6 +652,18 @@ async def get_delete_purchase_line_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IDeletePurchaseLineUseCase:
     return DeletePurchaseLineUseCase(PurchaseRepository(db))
+
+
+async def get_cancel_purchase_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ICancelPurchaseUseCase:
+    return CancelPurchaseUseCase(PurchaseRepository(db))
+
+
+async def get_delete_purchase_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IDeletePurchaseUseCase:
+    return DeletePurchaseUseCase(PurchaseRepository(db))
 
 
 async def get_update_purchase_use_case(
