@@ -46,23 +46,23 @@ export class HttpWarehouseRepository implements WarehouseRepository {
     switch (err.status) {
       case 400:
       case 422:
-        return new WarehouseValidationError(err.error, message ?? 'Validation failed.');
+        return new WarehouseValidationError(err.error, message ?? 'Validación fallida.');
       case 409:
         if (errorCode === WAREHOUSE_ERROR_CODES.NAME_DUPLICATE) {
-          return new WarehouseAlreadyExistsError(message ?? 'Warehouse name already exists.');
+          return new WarehouseAlreadyExistsError(message ?? 'Ya existe un almacén con este nombre.');
         }
         if (errorCode === WAREHOUSE_ERROR_CODES.HAS_STOCK) {
-          return new WarehouseHasStockError(message ?? 'Cannot delete warehouse with existing stock.');
+          return new WarehouseHasStockError(message ?? 'No se puede eliminar un almacén con stock existente.');
         }
-        return new WarehouseApiError(message ?? 'Warehouse request conflict.');
+        return new WarehouseApiError(message ?? 'Conflicto en la solicitud de almacenes.');
       case 401:
-        return new WarehouseUnauthorizedError(message ?? 'Authentication required.');
+        return new WarehouseUnauthorizedError(message ?? 'Autenticación requerida.');
       case 403:
-        return new WarehouseForbiddenError(message ?? 'Insufficient permissions.');
+        return new WarehouseForbiddenError(message ?? 'Permisos insuficientes.');
       case 404:
-        return new WarehouseNotFoundError(message ?? 'Warehouse not found.');
+        return new WarehouseNotFoundError(message ?? 'Almacén no encontrado.');
       default:
-        return new WarehouseApiError(message ?? 'Unexpected warehouse API error.');
+        return new WarehouseApiError(message ?? 'Error inesperado en la API de almacenes.');
     }
   }
 
