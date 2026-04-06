@@ -5,6 +5,7 @@ from modules.admin.domain.interfaces.repositories.i_user_repository import (
 from modules.admin.domain.interfaces.use_cases.users.i_activate_user_use_case import (
     IActivateUserUseCase,
 )
+from shared.constants import USER_DELETED_EMAIL_PREFIX, USER_DELETED_PLACEHOLDER
 
 
 class ActivateUserUseCase(IActivateUserUseCase):
@@ -18,6 +19,12 @@ class ActivateUserUseCase(IActivateUserUseCase):
         last_name: str,
         email: str,
     ) -> None:
+        if (
+            first_name == USER_DELETED_PLACEHOLDER
+            or last_name == USER_DELETED_PLACEHOLDER
+            or email.startswith(USER_DELETED_EMAIL_PREFIX)
+        ):
+            raise AdminException(AdminExceptionInfo.USER_INVALID_ACTIVATION_DATA)
         user = await self.user_repo.get_by_id(user_id)
         if user is None:
             raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
