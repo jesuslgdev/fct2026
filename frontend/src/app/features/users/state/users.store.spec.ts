@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 import { UsersStore } from '@features/users/state/users.store';
 import { AuthService } from '@core/services/auth.service';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
   User,
+  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -50,12 +52,13 @@ class MockAuthService {
 }
 
 class MockUserRepository implements UserRepository {
-  getUsers = vi.fn<(params: UserQueryParams) => Promise<PagedResult<User>>>();
-  getUserById = vi.fn<(id: number) => Promise<User>>();
-  createUser = vi.fn<(payload: CreateUserPayload) => Promise<User>>();
-  updateUser = vi.fn<(id: number, payload: UpdateUserPayload) => Promise<User>>();
-  toggleUserStatus = vi.fn<(id: number, active: boolean) => Promise<void>>();
-  getDepartments = vi.fn<() => Promise<Department[]>>();
+  getUsers = vi.fn<(params: UserQueryParams) => Observable<PagedResult<User>>>();
+  getUserById = vi.fn<(id: number) => Observable<User>>();
+  createUser = vi.fn<(payload: CreateUserPayload) => Observable<User>>();
+  updateUser = vi.fn<(id: number, payload: UpdateUserPayload) => Observable<User>>();
+  deactivateUser = vi.fn<(id: number) => Observable<void>>();
+  activateUser = vi.fn<(id: number, payload: ActivateUserPayload) => Observable<void>>();
+  getDepartments = vi.fn<() => Observable<Department[]>>();
 }
 
 describe('UsersStore', () => {
@@ -83,7 +86,7 @@ describe('UsersStore', () => {
       page: 1,
       pageSize: 20,
     };
-    repo.getUsers.mockResolvedValueOnce(response);
+    repo.getUsers.mockReturnValueOnce(of(response));
 
     await store.loadUsers();
 
@@ -101,7 +104,7 @@ describe('UsersStore', () => {
   });
 
   it('sets error when loading users fails', async () => {
-    repo.getUsers.mockRejectedValueOnce(new Error('boom'));
+    repo.getUsers.mockReturnValueOnce(throwError(() => new Error('boom')));
 
     await store.loadUsers();
 
@@ -110,7 +113,7 @@ describe('UsersStore', () => {
   });
 
   it('maps forbidden users error to a specific message', async () => {
-    repo.getUsers.mockRejectedValueOnce(new UserForbiddenError());
+    repo.getUsers.mockReturnValueOnce(throwError(() => new UserForbiddenError()));
 
     await store.loadUsers();
 
@@ -118,8 +121,8 @@ describe('UsersStore', () => {
   });
 
   it('maps validation users error to backend message', async () => {
-    repo.createUser.mockRejectedValueOnce(
-      new UserValidationError({ field: 'email' }, 'Email already exists.'),
+    repo.createUser.mockReturnValueOnce(
+      throwError(() => new UserValidationError({ field: 'email' }, 'Email already exists.')),
     );
 
     await store.saveUser({
@@ -143,11 +146,11 @@ describe('UsersStore', () => {
     };
     
     // Mock initial users load
-    repo.getUsers.mockResolvedValueOnce({ data: [USER_A], total: 1, page: 1, pageSize: 20 });
+    repo.getUsers.mockReturnValueOnce(of({ data: [USER_A], total: 1, page: 1, pageSize: 20 }));
     await store.loadUsers();
     
     // Mock user creation
-    repo.createUser.mockResolvedValueOnce(USER_B);
+    repo.createUser.mockReturnValueOnce(of(USER_B));
     
     // Open dialog and save user
     store.openCreateDialog();
@@ -164,10 +167,10 @@ describe('UsersStore', () => {
     const updated: User = { ...USER_A, lastName: 'Gonzalez' };
     const payload: UpdateUserPayload = { lastName: 'Gonzalez' };
     
-    repo.getUsers.mockResolvedValueOnce({ data: [USER_A], total: 1, page: 1, pageSize: 20 });
+    repo.getUsers.mockReturnValueOnce(of({ data: [USER_A], total: 1, page: 1, pageSize: 20 }));
     await store.loadUsers();
     
-    repo.updateUser.mockResolvedValueOnce(updated);
+    repo.updateUser.mockReturnValueOnce(of(updated));
     
     store.openEditDialog(USER_A);
     await store.saveUser(payload);
@@ -177,18 +180,61 @@ describe('UsersStore', () => {
     expect(store.dialogVisible()).toBe(false);
   });
 
-  it('toggles status and closes confirm dialog', async () => {
-    repo.getUsers.mockResolvedValueOnce({ data: [USER_A], total: 1, page: 1, pageSize: 20 });
+  it('deactivates an active user and refreshes the list', async () => {
+    repo.getUsers.mockReturnValueOnce(of({ data: [USER_A], total: 1, page: 1, pageSize: 20 }));
     await store.loadUsers();
-    
-    repo.toggleUserStatus.mockResolvedValueOnce();
+
+    repo.deactivateUser.mockReturnValueOnce(of(void 0));
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
     
     store.requestToggleStatus(USER_A);
     await store.confirmToggleStatus();
 
-    expect(repo.toggleUserStatus).toHaveBeenCalledWith(USER_A.id, false);
-    expect(store.users()[0].active).toBe(false);
+    expect(repo.deactivateUser).toHaveBeenCalledWith(USER_A.id);
+    expect(refreshSpy).toHaveBeenCalledOnce();
     expect(store.confirmDialogVisible()).toBe(false);
+    expect(store.userToToggle()).toBeNull();
+  });
+
+  it('opens reactivation dialog when requesting status change on inactive user', () => {
+    const inactiveUser: User = {
+      ...USER_A,
+      id: 10,
+      active: false,
+      lastName: null,
+      email: null,
+    };
+
+    store.requestToggleStatus(inactiveUser);
+
+    expect(store.reactivateDialogVisible()).toBe(true);
+    expect(store.confirmDialogVisible()).toBe(false);
+    expect(store.userToToggle()).toEqual(inactiveUser);
+  });
+
+  it('reactivates an inactive user and refreshes the list', async () => {
+    const inactiveUser: User = {
+      ...USER_A,
+      id: 11,
+      active: false,
+      lastName: null,
+      email: null,
+    };
+    const payload: ActivateUserPayload = {
+      firstName: 'Ana',
+      lastName: 'Garcia',
+      email: 'ana@example.com',
+    };
+
+    store.requestToggleStatus(inactiveUser);
+    repo.activateUser.mockReturnValueOnce(of(void 0));
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+
+    await store.confirmReactivateUser(payload);
+
+    expect(repo.activateUser).toHaveBeenCalledWith(inactiveUser.id, payload);
+    expect(refreshSpy).toHaveBeenCalledOnce();
+    expect(store.reactivateDialogVisible()).toBe(false);
     expect(store.userToToggle()).toBeNull();
   });
 
@@ -208,7 +254,7 @@ describe('UsersStore', () => {
       { id: 1, name: 'Tecnologia' },
       { id: 2, name: 'Ventas' },
     ];
-    repo.getDepartments.mockResolvedValueOnce(departments);
+    repo.getDepartments.mockReturnValueOnce(of(departments));
 
     await store.loadDepartments();
 

@@ -1,15 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { UserRepository } from '@domain/repositories/user.repository';
-import { User, CreateUserPayload } from '@domain/models/user.model';
+import { ActivateUserPayload } from '@domain/models/user.model';
 import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
-export class CreateUserUseCase {
+export class ActivateUserUseCase {
   private readonly userRepository = inject(UserRepository);
 
-  execute(payload: CreateUserPayload): Observable<User> {
-    return this.userRepository.createUser(payload);
+  execute(id: number, payload: ActivateUserPayload): Observable<void> {
+    return this.userRepository.activateUser(id, payload);
   }
 }

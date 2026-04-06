@@ -3,11 +3,12 @@ import { UserRole } from '@domain/enums/user-role.enum';
 export interface UserDto {
   user_id: number;
   first_name: string;
-  last_name: string;
-  email: string;
+  last_name: string | null;
+  email: string | null;
   role: UserRole;
   department_id: number | null;
   is_active: boolean;
+  last_login_at: string | null;
 }
 
 export interface CreateUserDto {
@@ -25,8 +26,10 @@ export interface UpdateUserDto {
   department_id?: number | null;
 }
 
-export interface SetUserActiveDto {
-  is_active: boolean;
+export interface ActivateUserDto {
+  first_name: string;
+  last_name: string;
+  email: string;
 }
 
 export interface UsersPageDto {

@@ -15,7 +15,21 @@ import { BadgeComponent } from '@shared/ui/badge/badge.component';
 })
 export class UserStatusBadgeComponent {
   active = input.required<boolean>();
+  pendingFirstLogin = input<boolean>(false);
 
-  readonly label = computed(() => (this.active() ? 'Activo' : 'Inactivo'));
-  readonly variant = computed(() => (this.active() ? 'success' as const : 'danger' as const));
+  readonly label = computed(() => {
+    if (this.pendingFirstLogin()) {
+      return 'Pendiente de primer login';
+    }
+
+    return this.active() ? 'Activo' : 'Inactivo';
+  });
+
+  readonly variant = computed(() => {
+    if (this.pendingFirstLogin()) {
+      return 'warning' as const;
+    }
+
+    return this.active() ? 'success' as const : 'danger' as const;
+  });
 }
