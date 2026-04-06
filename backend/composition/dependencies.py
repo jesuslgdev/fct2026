@@ -131,7 +131,6 @@ from modules.catalog.domain.interfaces.use_cases.products.i_update_product_use_c
     IUpdateProductUseCase,
 )
 from modules.catalog.infrastructure.repos.category_repository import CategoryRepository
-from modules.catalog.infrastructure.repos.product_reader import ProductReader
 from modules.catalog.infrastructure.repos.product_repository import ProductRepository
 from modules.catalog.infrastructure.repos.product_stock_updater import (
     ProductStockUpdater,
@@ -199,7 +198,6 @@ from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case imp
 from modules.purchases.domain.interfaces.use_cases.i_update_purchase_line_use_case import (
     IUpdatePurchaseLineUseCase,
 )
-from modules.purchases.infrastructure.repos.purchase_reader import PurchaseReader
 from modules.purchases.infrastructure.repos.purchase_repository import (
     PurchaseRepository,
 )
@@ -419,7 +417,7 @@ async def get_activate_user_use_case(
 async def get_delete_user_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IDeleteUserUseCase:
-    return DeleteUserUseCase(UserRepository(db), PurchaseReader(db))
+    return DeleteUserUseCase(UserRepository(db), PurchaseRepository(db))
 
 
 async def get_list_categories_use_case(
@@ -661,7 +659,7 @@ async def get_get_product_stock_overview_use_case(
 ) -> IGetProductStockOverviewUseCase:
     """Build the stock overview use case with its dependencies."""
     return GetProductStockOverviewUseCase(
-        WarehouseStockRepository(db), ProductReader(db)
+        WarehouseStockRepository(db), ProductRepository(db)
     )
 
 
@@ -708,6 +706,6 @@ async def get_adjust_stock_use_case(
         warehouse_repo=WarehouseRepository(db),
         stock_repo=WarehouseStockRepository(db),
         movement_repo=StockMovementRepository(db),
-        product_reader=ProductReader(db),
+        product_reader=ProductRepository(db),
         stock_updater=ProductStockUpdater(db),
     )

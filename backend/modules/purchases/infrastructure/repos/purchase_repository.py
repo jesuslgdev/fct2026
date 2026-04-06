@@ -11,6 +11,7 @@ from modules.purchases.domain.interfaces.repositories.i_purchase_repository impo
 )
 from modules.suppliers.domain.entities.supplier import Supplier
 from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.interfaces.i_purchase_reader import IPurchaseReader
 
 SORT_FIELDS = {
     "purchase_number": Purchase.purchase_number,
@@ -21,7 +22,7 @@ SORT_FIELDS = {
 }
 
 
-class PurchaseRepository(IPurchaseRepository):
+class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
@@ -223,3 +224,11 @@ class PurchaseRepository(IPurchaseRepository):
         await self._db.flush()
         await self._db.refresh(purchase, ["lines"])
         return purchase
+
+    async def has_purchases_for_user(self, user_id: int) -> bool:
+        result = await self._db.execute(
+            select(func.count())
+            .select_from(Purchase)
+            .where(Purchase.user_id == user_id)
+        )
+        return result.scalar_one() > 0
