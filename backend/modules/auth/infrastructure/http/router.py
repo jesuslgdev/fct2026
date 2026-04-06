@@ -19,11 +19,12 @@ async def login(
     use_case: ILoginUseCase = Depends(get_login_use_case),
 ) -> LoginResponseDTO:
     """Authenticate a user with a Firebase ID token."""
-    session = await use_case.login(body.firebase_id_token)
+    result = await use_case.login(body.firebase_id_token)
     return LoginResponseDTO(
-        role=session.role,
-        department_id=session.department_id,
-        name=session.name,
+        role=result.session.role,
+        department_id=result.session.department_id,
+        name=result.session.name,
+        permissions=result.permissions,
     )
 
 
