@@ -21,6 +21,8 @@ import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
+import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
+import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
 import { AuthService } from '@core/services/auth.service';
 
 const firebaseApp = initializeApp(environment.firebase);
@@ -41,6 +43,7 @@ export const appConfig: ApplicationConfig = {
     { provide: CategoryRepository, useClass: HttpCategoryRepository },
     { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
+    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     {
       provide: APP_INITIALIZER,

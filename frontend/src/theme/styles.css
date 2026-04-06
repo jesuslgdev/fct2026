@@ -63,6 +63,14 @@
   color: var(--p-red-500);
 }
 
+@utility bg-danger-subtle {
+  background-color: color-mix(in srgb, var(--p-red-500) 10%, transparent);
+}
+
+@utility border-danger-subtle {
+  border-color: color-mix(in srgb, var(--p-red-500) 25%, transparent);
+}
+
 @utility text-success {
   color: var(--p-green-600);
 }
@@ -114,7 +122,7 @@
   }
 
   .nav-link.active {
-    background-color: var(--p-primary-50, #E6EEF7);
+    background-color: var(--p-primary-50);
     color: var(--p-primary-color);
     font-weight: 600;
   }
@@ -281,3 +289,6 @@
   }
 }
 
+.dialog-error-banner {
+  @apply text-sm font-medium text-danger bg-danger-subtle border border-danger-subtle rounded-md px-3 py-2;
+}
