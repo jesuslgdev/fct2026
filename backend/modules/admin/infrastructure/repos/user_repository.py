@@ -5,6 +5,7 @@ from modules.admin.domain.exceptions import AdminException, AdminExceptionInfo
 from modules.admin.domain.interfaces.repositories.i_user_repository import (
     IUserRepository,
 )
+from shared.constants import USER_DELETED_EMAIL_PREFIX, USER_DELETED_PLACEHOLDER
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.entities.user import User
 from shared.domain.interfaces.i_user_reader import IUserReader
@@ -126,9 +127,9 @@ class UserRepository(IUserRepository, IUserReader):
         if user is None:
             raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
         user.is_active = False
-        user.first_name = "DELETED"
-        user.last_name = "DELETED"
-        user.email = f"deleted_{user_id}@deleted.com"
+        user.first_name = USER_DELETED_PLACEHOLDER
+        user.last_name = USER_DELETED_PLACEHOLDER
+        user.email = f"{USER_DELETED_EMAIL_PREFIX}{user_id}@deleted.com"
         await self._db.flush()
 
     async def activate(
