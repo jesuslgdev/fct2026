@@ -52,12 +52,14 @@
             <div>
               <ui-button
                 icon="pi pi-pencil"
+                ariaLabel="Editar almacen"
                 variant="ghost"
                 size="sm"
                 (clicked)="store.openEditDialog(warehouse)"
               />
               <ui-button
                 icon="pi pi-trash"
+                ariaLabel="Eliminar almacen"
                 variant="destructive"
                 size="sm"
                 (clicked)="store.requestDeleteWarehouse(warehouse)"

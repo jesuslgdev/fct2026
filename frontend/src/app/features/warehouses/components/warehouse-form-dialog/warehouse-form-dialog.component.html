@@ -24,6 +24,7 @@
       @if (name.invalid && name.touched) {
         <span class="dialog-field-error">
           @if (name.hasError('required')) { El nombre es obligatorio. }
+          @else if (name.hasError('whitespace')) { El nombre no puede contener solo espacios. }
           @else { El nombre no puede superar 100 caracteres. }
         </span>
       }
