@@ -89,16 +89,17 @@ export class HttpCategoryRepository implements CategoryRepository {
     );
   }
 
-  getCategoryByName(name: string): Observable<Category | null> {
-    return this.http.get<CategoryDto[]>(`${BASE_URL}?search=${encodeURIComponent(name)}`).pipe(
-      map((dtos) => {
-        const found = dtos.find((dto) => dto.name.toLowerCase() === name.toLowerCase());
+  async getCategoryByName(name: string): Promise<Category | null> {
+    return this.withErrorMapping(async () => {
+      try {
+          const dtos = await firstValueFrom(
+          this.http.get<CategoryDto[]>(`${BASE_URL}?search=${encodeURIComponent(name)}`)
+        );
+        const found = dtos.find(dto => dto.name.toLowerCase() === name.toLowerCase());
         return found ? CategoryMapper.fromDto(found) : null;
-      }),
-      catchError((err) => {
-        const mapped = this.mapHttpError(err);
-        if (mapped instanceof CategoryNotFoundError) {
-          return of(null);
+      } catch (error) {
+        if (error instanceof HttpErrorResponse && error.status === 404) {
+          return null;
         }
         return throwError(() => mapped);
       })
