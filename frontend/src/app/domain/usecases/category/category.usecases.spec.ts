@@ -26,7 +26,6 @@ class MockCategoryRepository implements CategoryRepository {
   createCategory = vi.fn<(payload: CreateCategoryPayload) => Promise<Category>>();
   updateCategory = vi.fn<(categoryId: number, payload: UpdateCategoryPayload) => Promise<Category>>();
   deleteCategory = vi.fn<(id: number) => Promise<void>>();
-  categoryHasProducts = vi.fn<(id: number) => Promise<boolean>>();
 }
 
 describe('Category Use Cases', () => {

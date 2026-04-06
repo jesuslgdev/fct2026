@@ -1,0 +1,116 @@
+import { Injectable } from '@angular/core';
+import { CategoryRepository } from '@domain/repositories/category.repository';
+import {
+  Category,
+  CreateCategoryPayload,
+  UpdateCategoryPayload,
+  CategoryListResult,
+} from '@domain/models/category.model';
+import {
+  CategoryNotFoundError,
+  CategoryAlreadyExistsError,
+  CategoryHasProductsError,
+} from '@domain/models/category-errors';
+
+const INITIAL_MOCK_CATEGORIES: Category[] = [
+  {
+    categoryId: 1,
+    name: 'Electronics',
+    description: 'Electronic devices and accessories',
+  },
+  {
+    categoryId: 2,
+    name: 'Clothing',
+    description: 'Apparel and fashion items',
+  },
+  {
+    categoryId: 3,
+    name: 'Books',
+    description: 'Books and educational materials',
+  },
+  {
+    categoryId: 4,
+    name: 'Home & Garden',
+    description: 'Home improvement and garden supplies',
+  },
+  {
+    categoryId: 5,
+    name: 'Sports',
+    description: 'Sports equipment and accessories',
+  },
+];
+
+@Injectable()
+export class MockCategoryRepository implements CategoryRepository {
+  private categories: Category[];
+
+  constructor() {
+    this.categories = INITIAL_MOCK_CATEGORIES.map((c) => ({ ...c }));
+  }
+
+  async getCategories(): Promise<CategoryListResult> {
+    return [...this.categories];
+  }
+
+  async getCategoryById(categoryId: number): Promise<Category> {
+    const category = this.categories.find((c) => c.categoryId === categoryId);
+    if (!category) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
+    return { ...category };
+  }
+
+  async getCategoryByName(name: string): Promise<Category | null> {
+    const category = this.categories.find(
+      (c) => c.name.toLowerCase() === name.toLowerCase()
+    );
+    return category ? { ...category } : null;
+  }
+
+  async createCategory(payload: CreateCategoryPayload): Promise<Category> {
+    // Check if category with same name already exists
+    const existing = this.categories.find(
+      (c) => c.name.toLowerCase() === payload.name.toLowerCase()
+    );
+    if (existing) throw new CategoryAlreadyExistsError(`Category with name "${payload.name}" already exists.`);
+
+    const nextId = Math.max(0, ...this.categories.map((c) => c.categoryId)) + 1;
+    const newCategory: Category = {
+      categoryId: nextId,
+      name: payload.name.trim(),
+      description: payload.description.trim(),
+    };
+    this.categories = [...this.categories, newCategory];
+    return { ...newCategory };
+  }
+
+  async updateCategory(
+    categoryId: number,
+    payload: UpdateCategoryPayload
+  ): Promise<Category> {
+    const index = this.categories.findIndex((c) => c.categoryId === categoryId);
+    if (index === -1) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
+
+    const category = { ...this.categories[index] };
+    if (payload.name !== undefined && payload.name !== null) {
+      category.name = payload.name.trim();
+    }
+    if (payload.description !== undefined && payload.description !== null) {
+      category.description = payload.description.trim();
+    }
+
+    this.categories[index] = category;
+    return { ...category };
+  }
+
+  async deleteCategory(categoryId: number): Promise<void> {
+    const index = this.categories.findIndex((c) => c.categoryId === categoryId);
+    if (index === -1) throw new CategoryNotFoundError(`Category with ID ${categoryId} not found.`);
+
+    // Simulation of conflict for ID 1 (to be deterministic)
+    if (categoryId === 1) {
+      throw new CategoryHasProductsError('Cannot delete category with associated products.');
+    }
+
+    this.categories = this.categories.filter((c) => c.categoryId !== categoryId);
+  }
+
+}

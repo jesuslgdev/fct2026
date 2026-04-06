@@ -1,0 +1,113 @@
+<section class="page">
+
+  <!-- ── Header ───────────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <h1 class="text-style-title">Categorías</h1>
+    @if (store.canEdit()) {
+      <ui-button
+        label="Nueva categoría"
+        icon="pi pi-plus"
+        (clicked)="store.openCreateDialog()"
+      />
+    }
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
+  <div class="filters-row">
+    <ui-input
+      type="text"
+      placeholder="Buscar por nombre o descripción…"
+      styleClass="flex-1 min-w-64"
+      [ngModel]="store.searchQuery()"
+      (valueChange)="store.onSearch($event)"
+    />
+  </div>
+
+  <!-- ── Table ────────────────────────────────────────────────────────────── -->
+  <ui-table
+    [value]="store.filteredCategories()"
+    [loading]="store.loading()"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="categoryId"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        @if (store.canEdit()) {
+          <th>Acciones</th>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-category>
+      <tr>
+        <td>{{ category.name }}</td>
+        <td>{{ category.description }}</td>
+        @if (store.canEdit()) {
+          <td>
+            <div class="table-actions">
+              <!-- Botón de editar -->
+              <ui-button
+                icon="pi pi-pencil"
+                variant="ghost"
+                size="sm"
+                (clicked)="store.openEditDialog(category)"
+              />
+              <!-- Botón de eliminar -->
+              <ui-button
+                icon="pi pi-trash"
+                variant="destructive"
+                size="sm"
+                (clicked)="store.requestDelete(category)"
+              />
+            </div>
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td [attr.colspan]="store.canEdit() ? 3 : 2" class="empty-state">
+          No se encontraron categorías.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+
+</section>
+
+<!-- ── Create / Edit category dialog ────────────────────────────────────────── -->
+<app-category-form-dialog />
+
+<!-- ── Confirm delete dialog ───────────────────────────────────────────────── -->
+<ui-dialog
+  [visible]="store.confirmDialogVisible()"
+  (closed)="store.cancelDelete()"
+  header="Eliminar categoría"
+  variant="warning"
+  size="sm"
+  confirmLabel="Confirmar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmDelete()"
+  (cancelled)="store.cancelDelete()"
+>
+  @if (store.categoryToDelete(); as category) {
+    <p class="warning-text">
+      ¿Está seguro de que desea eliminar la categoría
+      <strong>{{ category.name }}</strong>?
+    </p>
+    
+    @if (store.error(); as errorMessage) {
+      <p class="text-sm text-danger font-medium mt-3" role="alert">
+        {{ errorMessage }}
+      </p>
+    }
+  }
+</ui-dialog>
