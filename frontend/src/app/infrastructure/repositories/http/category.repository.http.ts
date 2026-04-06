@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import {
   CategoryApiError,
@@ -31,14 +31,6 @@ const BASE_URL = `${environment.apiUrl}/api/v1/catalog/categories`;
 export class HttpCategoryRepository implements CategoryRepository {
   private readonly http = inject(HttpClient);
 
-  private async withErrorMapping<T>(operation: () => Promise<T>): Promise<T> {
-    try {
-      return await operation();
-    } catch (err) {
-      throw this.mapHttpError(err);
-    }
-  }
-
   private mapHttpError(err: unknown): Error {
     if (!(err instanceof HttpErrorResponse)) {
       return err instanceof Error ? err : new CategoryApiError();
@@ -49,23 +41,23 @@ export class HttpCategoryRepository implements CategoryRepository {
     switch (err.status) {
       case 400:
       case 422:
-        return new CategoryValidationError(err.error, message ?? 'Validation failed.');
+        return new CategoryValidationError(err.error, message ?? 'La validación falló.');
       case 401:
-        return new CategoryUnauthorizedError(message ?? 'Authentication required.');
+        return new CategoryUnauthorizedError(message ?? 'Autenticación requerida.');
       case 403:
-        return new CategoryForbiddenError(message ?? 'Admin permissions required.');
+        return new CategoryForbiddenError(message ?? 'Permisos de administrador requeridos.');
       case 404:
-        return new CategoryNotFoundError(message ?? 'Category not found.');
+        return new CategoryNotFoundError(message ?? 'Categoría no encontrada.');
       case 409:
         if (message?.includes('already exists')) {
-          return new CategoryAlreadyExistsError(message);
+          return new CategoryAlreadyExistsError('El nombre de la categoría ya existe.');
         }
         if (message?.includes('products')) {
-          return new CategoryHasProductsError(message);
+          return new CategoryHasProductsError('La categoría tiene productos asociados.');
         }
-        return new CategoryApiError(message ?? 'Category conflict.');
+        return new CategoryApiError(message ?? 'Conflicto en la categoría.');
       default:
-        return new CategoryApiError(message ?? 'Unexpected categories API error.');
+        return new CategoryApiError(message ?? 'Error inesperado en la API.');
     }
   }
 
@@ -83,22 +75,18 @@ export class HttpCategoryRepository implements CategoryRepository {
     return undefined;
   }
 
-  async getCategories(): Promise<CategoryListResult> {
-    return this.withErrorMapping(async () => {
-      const dtos = await firstValueFrom(
-        this.http.get<CategoryDto[]>(BASE_URL)
-      );
-      return CategoryMapper.fromListDto(dtos);
-    });
+  getCategories(): Observable<CategoryListResult> {
+    return this.http.get<CategoryDto[]>(BASE_URL).pipe(
+      map((dtos) => CategoryMapper.fromListDto(dtos)),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 
-  async getCategoryById(categoryId: number): Promise<Category> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(
-        this.http.get<CategoryDto>(`${BASE_URL}/${categoryId}`)
-      );
-      return CategoryMapper.fromDto(dto);
-    });
+  getCategoryById(categoryId: number): Observable<Category> {
+    return this.http.get<CategoryDto>(`${BASE_URL}/${categoryId}`).pipe(
+      map((dto) => CategoryMapper.fromDto(dto)),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 
   async getCategoryByName(name: string): Promise<Category | null> {
@@ -113,42 +101,41 @@ export class HttpCategoryRepository implements CategoryRepository {
         if (error instanceof HttpErrorResponse && error.status === 404) {
           return null;
         }
-        throw error;
-      }
-    });
+        return throwError(() => mapped);
+      })
+    );
   }
 
-  async createCategory(payload: CreateCategoryPayload): Promise<Category> {
-    return this.withErrorMapping(async () => {
-      const dto: CreateCategoryDto = { name: payload.name, description: payload.description };
-      const response = await firstValueFrom(
-        this.http.post<CategoryDto>(BASE_URL, dto)
-      );
-      return CategoryMapper.fromDto(response);
-    });
+  createCategory(payload: CreateCategoryPayload): Observable<Category> {
+    const dto: CreateCategoryDto = { 
+      name: payload.name, 
+      description: payload.description ?? '' 
+    };
+    return this.http.post<CategoryDto>(BASE_URL, dto).pipe(
+      map((response) => CategoryMapper.fromDto(response)),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 
-  async updateCategory(
+  updateCategory(
     categoryId: number,
     payload: UpdateCategoryPayload
-  ): Promise<Category> {
-    return this.withErrorMapping(async () => {
-      const dto: UpdateCategoryDto = {};
-      if (payload.name !== undefined && payload.name !== null) dto.name = payload.name;
-      if (payload.description !== undefined && payload.description !== null) dto.description = payload.description;
+  ): Observable<Category> {
+    const dto: UpdateCategoryDto = {};
+    if (payload.name !== undefined && payload.name !== null) dto.name = payload.name;
+    if (payload.description !== undefined && payload.description !== null) {
+      dto.description = payload.description;
+    }
 
-      const response = await firstValueFrom(
-        this.http.put<CategoryDto>(`${BASE_URL}/${categoryId}`, dto)
-      );
-      return CategoryMapper.fromDto(response);
-    });
+    return this.http.put<CategoryDto>(`${BASE_URL}/${categoryId}`, dto).pipe(
+      map((response) => CategoryMapper.fromDto(response)),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 
-  async deleteCategory(categoryId: number): Promise<void> {
-    return this.withErrorMapping(async () => {
-      await firstValueFrom(
-        this.http.delete<void>(`${BASE_URL}/${categoryId}`)
-      );
-    });
+  deleteCategory(categoryId: number): Observable<void> {
+    return this.http.delete<void>(`${BASE_URL}/${categoryId}`).pipe(
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
   }
 }

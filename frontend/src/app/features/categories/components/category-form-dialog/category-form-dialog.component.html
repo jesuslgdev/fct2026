@@ -11,6 +11,9 @@
   (cancelled)="onCancel()"
 >
   <form [formGroup]="form" class="dialog-form">
+    @if (store.error(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
 
     <!-- Nombre -->
     <div class="dialog-field">

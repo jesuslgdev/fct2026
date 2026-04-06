@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import {
   Category,
   CreateCategoryPayload,
@@ -6,10 +7,10 @@ import {
 } from '@domain/models/category.model';
 
 export abstract class CategoryRepository {
-  abstract getCategories(): Promise<CategoryListResult>;
-  abstract getCategoryById(categoryId: number): Promise<Category>;
-  abstract getCategoryByName(name: string): Promise<Category | null>;
-  abstract createCategory(payload: CreateCategoryPayload): Promise<Category>;
-  abstract updateCategory(categoryId: number, payload: UpdateCategoryPayload): Promise<Category>;
-  abstract deleteCategory(categoryId: number): Promise<void>;
+  abstract getCategories(): Observable<CategoryListResult>;
+  abstract getCategoryById(categoryId: number): Observable<Category>;
+  abstract getCategoryByName(name: string): Observable<Category | null>;
+  abstract createCategory(payload: CreateCategoryPayload): Observable<Category>;
+  abstract updateCategory(categoryId: number, payload: UpdateCategoryPayload): Observable<Category>;
+  abstract deleteCategory(categoryId: number): Observable<void>;
 }

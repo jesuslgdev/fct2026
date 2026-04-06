@@ -23,7 +23,7 @@ export class CategoryMapper {
   static toCreateDto(payload: CreateCategoryPayload): CreateCategoryDto {
     return {
       name: payload.name,
-      description: payload.description,
+      description: payload.description ?? '',
     };
   }
 

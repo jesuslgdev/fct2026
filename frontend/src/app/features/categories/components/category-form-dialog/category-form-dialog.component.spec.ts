@@ -10,6 +10,7 @@ interface MockStore {
   dialogMode: WritableSignal<string>;
   selectedCategory: WritableSignal<{ categoryId: number; name: string; description: string } | null>;
   loading: WritableSignal<boolean>;
+  error: WritableSignal<string | null>;
   saveCategory: ReturnType<typeof vi.fn>;
   closeDialog: ReturnType<typeof vi.fn>;
 }
@@ -25,6 +26,7 @@ describe('CategoryFormDialogComponent', () => {
       dialogMode: signal('create'),
       selectedCategory: signal(null),
       loading: signal(false),
+      error: signal(null),
       saveCategory: vi.fn(),
       closeDialog: vi.fn(),
     };

@@ -16,20 +16,25 @@ import {
 import { UserRole } from '@domain/enums/user-role.enum';
 import {
   CategoryForbiddenError,
+  CategoryValidationError,
   CategoryUnauthorizedError,
+  CategoryNotFoundError,
+  CategoryApiError,
   CategoryAlreadyExistsError,
+  CategoryHasProductsError,
 } from '@domain/models/category-errors';
+import { Observable, of, throwError } from 'rxjs';
 
 const CATEGORY_A: Category = {
   categoryId: 1,
   name: 'Electronics',
-  description: 'Electronic devices',
+  description: 'Electronic devices and accessories',
 };
 
 const CATEGORY_B: Category = {
   categoryId: 2,
-  name: 'Books',
-  description: 'Printed books',
+  name: 'Clothing',
+  description: 'Apparel and fashion items',
 };
 
 class MockAuthService {
@@ -43,23 +48,23 @@ class MockAuthService {
 }
 
 class MockGetCategoriesUseCase {
-  execute = vi.fn<() => Promise<Category[]>>();
+  execute = vi.fn<() => Observable<Category[]>>();
 }
 
 class MockGetCategoryByIdUseCase {
-  execute = vi.fn<(id: number) => Promise<Category>>();
+  execute = vi.fn<(id: number) => Observable<Category>>();
 }
 
 class MockCreateCategoryUseCase {
-  execute = vi.fn<(payload: CreateCategoryPayload) => Promise<Category>>();
+  execute = vi.fn<(payload: CreateCategoryPayload) => Observable<Category>>();
 }
 
 class MockUpdateCategoryUseCase {
-  execute = vi.fn<(id: number, payload: UpdateCategoryPayload) => Promise<Category>>();
+  execute = vi.fn<(id: number, payload: UpdateCategoryPayload) => Observable<Category>>();
 }
 
 class MockDeleteCategoryUseCase {
-  execute = vi.fn<(id: number) => Promise<void>>();
+  execute = vi.fn<(id: number) => Observable<void>>();
 }
 
 describe('CategoriesStore', () => {
@@ -93,107 +98,231 @@ describe('CategoriesStore', () => {
   });
 
   it('loads categories successfully', async () => {
-    const list = [CATEGORY_A, CATEGORY_B];
-    getCategoriesUseCase.execute.mockResolvedValueOnce(list);
+    const categories = [CATEGORY_A, CATEGORY_B];
+    getCategoriesUseCase.execute.mockReturnValue(of(categories));
 
     await store.loadCategories();
 
     expect(getCategoriesUseCase.execute).toHaveBeenCalled();
-    expect(store.categories()).toEqual(list);
+    expect(store.categories()).toEqual(categories);
     expect(store.loading()).toBe(false);
     expect(store.error()).toBeNull();
   });
 
-  it('handles load categories error', async () => {
-    getCategoriesUseCase.execute.mockRejectedValueOnce(new Error('Failed load'));
+  it('sets error when loading categories fails', async () => {
+    getCategoriesUseCase.execute.mockReturnValueOnce(throwError(() => new Error()));
 
     await store.loadCategories();
 
-    expect(store.error()).toBe('Failed load');
+    expect(store.error()).toBe('No se pudieron cargar las categorías.');
     expect(store.loading()).toBe(false);
   });
 
   it('maps forbidden categories error to specific message', async () => {
-    getCategoriesUseCase.execute.mockRejectedValueOnce(new CategoryForbiddenError());
+    getCategoriesUseCase.execute.mockReturnValueOnce(throwError(() => new CategoryForbiddenError()));
+
     await store.loadCategories();
-    expect(store.error()).toBe('Admin permissions required.');
+
+    expect(store.error()).toBe('Se requieren permisos de administrador.');
   });
 
-  it('creates a new category', async () => {
+  it('maps validation categories error to backend message', async () => {
+    createCategoryUseCase.execute.mockReturnValueOnce(
+      throwError(() => new CategoryValidationError({ field: 'name' }, 'Name already exists.')),
+    );
+
+    await store.saveCategory('Electronics', 'Test description');
+
+    expect(store.error()).toBe('Name already exists.');
+  });
+
+  it('creates a new category and updates state', async () => {
     const payload: CreateCategoryPayload = {
-      name: 'Books',
-      description: 'Printed books',
+      name: 'Clothing',
+      description: 'Apparel and fashion items',
     };
-    
-    // Mock initial load vs creation
-    createCategoryUseCase.execute.mockResolvedValueOnce(CATEGORY_B);
-    
+    getCategoriesUseCase.execute.mockReturnValueOnce(of([CATEGORY_A]));
+    await store.loadCategories();
+
+    createCategoryUseCase.execute.mockReturnValueOnce(of(CATEGORY_B));
     store.openCreateDialog();
-    await store.saveCategory(payload.name, payload.description);
+    await store.saveCategory('Clothing', 'Apparel and fashion items');
 
     expect(createCategoryUseCase.execute).toHaveBeenCalledWith(payload);
-    expect(store.categories()).toEqual([CATEGORY_B]);
+    expect(store.categories()).toEqual([CATEGORY_A, CATEGORY_B]);
     expect(store.dialogVisible()).toBe(false);
+    expect(store.selectedCategory()).toBeNull();
   });
 
-  it('updates an existing category', async () => {
-    const updated: Category = { ...CATEGORY_A, name: 'Electro' };
-    
-    // Setup initial state through load
-    getCategoriesUseCase.execute.mockResolvedValueOnce([CATEGORY_A]);
-    await store.loadCategories();
-    
-    // Mocking the sequence for Edit Dialog which calls loadCategoryById internally
-    getCategoryByIdUseCase.execute.mockResolvedValueOnce(CATEGORY_A);
-    updateCategoryUseCase.execute.mockResolvedValueOnce(updated);
-    
-    await store.openEditDialog(CATEGORY_A);
-    await store.saveCategory('Electro', CATEGORY_A.description);
+  it('updates an existing category in edit mode', async () => {
+    const updated: Category = { ...CATEGORY_A, name: 'Updated Electronics' };
+    const payload: UpdateCategoryPayload = { name: 'Updated Electronics', description: 'Updated description' };
 
-    expect(updateCategoryUseCase.execute).toHaveBeenCalledWith(CATEGORY_A.categoryId, {
-        name: 'Electro',
-        description: CATEGORY_A.description
-    });
+    getCategoriesUseCase.execute.mockReturnValueOnce(of([CATEGORY_A]));
+    await store.loadCategories();
+
+    getCategoryByIdUseCase.execute.mockReturnValue(of(CATEGORY_A));
+    await store.openEditDialog(CATEGORY_A);
+
+    updateCategoryUseCase.execute.mockReturnValueOnce(of(updated));
+    await store.saveCategory('Updated Electronics', 'Updated description');
+
+    expect(updateCategoryUseCase.execute).toHaveBeenCalledWith(CATEGORY_A.categoryId, payload);
     expect(store.categories()).toEqual([updated]);
     expect(store.dialogVisible()).toBe(false);
   });
 
-  it('deletes a category', async () => {
-    getCategoriesUseCase.execute.mockResolvedValueOnce([CATEGORY_A]);
+  it('deletes category and closes confirm dialog', async () => {
+    getCategoriesUseCase.execute.mockReturnValueOnce(of([CATEGORY_A, CATEGORY_B]));
     await store.loadCategories();
-    
-    deleteCategoryUseCase.execute.mockResolvedValueOnce();
-    
+
+    deleteCategoryUseCase.execute.mockReturnValueOnce(of(undefined));
     store.requestDelete(CATEGORY_A);
     await store.confirmDelete();
 
     expect(deleteCategoryUseCase.execute).toHaveBeenCalledWith(CATEGORY_A.categoryId);
-    expect(store.categories()).toEqual([]);
+    expect(store.categories()).toEqual([CATEGORY_B]);
     expect(store.confirmDialogVisible()).toBe(false);
     expect(store.categoryToDelete()).toBeNull();
   });
 
-  it('filters categories by search query', async () => {
-    getCategoriesUseCase.execute.mockResolvedValueOnce([CATEGORY_A, CATEGORY_B]);
-    await store.loadCategories();
-    
-    store.onSearch('book');
+  it('loads category by ID successfully', async () => {
+    getCategoryByIdUseCase.execute.mockReturnValueOnce(of(CATEGORY_A));
 
-    expect(store.searchQuery()).toBe('book');
+    await store.loadCategoryById(1);
+
+    expect(getCategoryByIdUseCase.execute).toHaveBeenCalledWith(1);
+    expect(store.selectedCategory()).toEqual(CATEGORY_A);
+    expect(store.loading()).toBe(false);
+  });
+
+  it('sets error when loading category by ID fails', async () => {
+    getCategoryByIdUseCase.execute.mockReturnValueOnce(throwError(() => new Error()));
+
+    await store.loadCategoryById(1);
+
+    expect(store.error()).toBe('No se pudo cargar la categoría.');
+    expect(store.loading()).toBe(false);
+  });
+
+  it('search filters categories correctly', async () => {
+    getCategoriesUseCase.execute.mockReturnValueOnce(of([CATEGORY_A, CATEGORY_B]));
+    await store.loadCategories();
+
+    store.onSearch('electronic');
+
+    expect(store.searchQuery()).toBe('electronic');
+    expect(store.filteredCategories()).toEqual([CATEGORY_A]);
+  });
+
+  it('open create dialog sets correct state', async () => {
+    getCategoryByIdUseCase.execute.mockReturnValue(of(CATEGORY_A));
+    await store.openEditDialog(CATEGORY_A);
+
+    store.openCreateDialog();
+
+    expect(store.selectedCategory()).toBeNull();
+    expect(store.dialogMode()).toBe('create');
+    expect(store.dialogVisible()).toBe(true);
+  });
+
+  it('open edit dialog sets correct state', async () => {
+    getCategoryByIdUseCase.execute.mockReturnValue(of(CATEGORY_A));
+
+    await store.openEditDialog(CATEGORY_A);
+
+    expect(store.selectedCategory()).toEqual(CATEGORY_A);
+    expect(store.dialogMode()).toBe('edit');
+    expect(store.dialogVisible()).toBe(true);
+  });
+
+  it('close dialog resets state', async () => {
+    getCategoryByIdUseCase.execute.mockReturnValue(of(CATEGORY_A));
+    await store.openEditDialog(CATEGORY_A);
+
+    store.closeDialog();
+
+    expect(store.dialogVisible()).toBe(false);
+    expect(store.selectedCategory()).toBeNull();
+  });
+
+  it('request delete sets confirm dialog', () => {
+    store.requestDelete(CATEGORY_A);
+
+    expect(store.categoryToDelete()).toEqual(CATEGORY_A);
+    expect(store.confirmDialogVisible()).toBe(true);
+  });
+
+  it('cancel delete resets confirm dialog', () => {
+    store.requestDelete(CATEGORY_A);
+    store.cancelDelete();
+
+    expect(store.confirmDialogVisible()).toBe(false);
+    expect(store.categoryToDelete()).toBeNull();
+  });
+
+  it('canEdit returns true for Administrator', () => {
+    expect(store.canEdit()).toBe(true);
+  });
+
+  it('filtered categories returns all when no search query', async () => {
+    getCategoriesUseCase.execute.mockReturnValueOnce(of([CATEGORY_A, CATEGORY_B]));
+    await store.loadCategories();
+
+    expect(store.filteredCategories()).toEqual([CATEGORY_A, CATEGORY_B]);
+  });
+
+  it('filtered categories filters by name and description', async () => {
+    getCategoriesUseCase.execute.mockReturnValueOnce(of([CATEGORY_A, CATEGORY_B]));
+    await store.loadCategories();
+
+    store.onSearch('clothing');
+
     expect(store.filteredCategories()).toEqual([CATEGORY_B]);
   });
 
   it('maps unauthorized error to session expired message', async () => {
-    getCategoriesUseCase.execute.mockRejectedValueOnce(new CategoryUnauthorizedError('Session expired'));
+    getCategoriesUseCase.execute.mockReturnValueOnce(throwError(() => new CategoryUnauthorizedError()));
+
     await store.loadCategories();
-    expect(store.error()).toBe('Session expired');
+
+    expect(store.error()).toBe('Autenticación requerida.');
+  });
+
+  it('maps not found error to specific message', async () => {
+    getCategoryByIdUseCase.execute.mockReturnValueOnce(throwError(() => new CategoryNotFoundError()));
+
+    await store.loadCategoryById(1);
+
+    expect(store.error()).toBe('Categoría no encontrada.');
   });
 
   it('maps already exists error to specific message', async () => {
-    createCategoryUseCase.execute.mockRejectedValueOnce(
-      new CategoryAlreadyExistsError('Name taken'),
+    createCategoryUseCase.execute.mockReturnValueOnce(
+      throwError(() => new CategoryAlreadyExistsError('Category already exists')),
     );
-    await store.saveCategory('Electronics', 'description');
-    expect(store.error()).toBe('Name taken');
+
+    await store.saveCategory('Electronics', 'Test');
+
+    expect(store.error()).toBe('Category already exists');
+  });
+
+  it('maps has products error to specific message', async () => {
+    deleteCategoryUseCase.execute.mockReturnValueOnce(
+      throwError(() => new CategoryHasProductsError('Cannot delete category with products')),
+    );
+
+    store.requestDelete(CATEGORY_A);
+    await store.confirmDelete();
+
+    expect(store.error()).toBe('Cannot delete category with products');
+  });
+
+  it('maps API error to fallback message', async () => {
+    getCategoriesUseCase.execute.mockReturnValueOnce(throwError(() => new CategoryApiError('Service unavailable')));
+
+    await store.loadCategories();
+
+    expect(store.error()).toBe('Service unavailable');
   });
 });

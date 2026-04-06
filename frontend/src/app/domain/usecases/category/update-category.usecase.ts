@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import { Category, UpdateCategoryPayload } from '@domain/models/category.model';
 
@@ -8,7 +9,7 @@ import { Category, UpdateCategoryPayload } from '@domain/models/category.model';
 export class UpdateCategoryUseCase {
   private readonly categoryRepository = inject(CategoryRepository);
 
-  execute(categoryId: number, payload: UpdateCategoryPayload): Promise<Category> {
+  execute(categoryId: number, payload: UpdateCategoryPayload): Observable<Category> {
     return this.categoryRepository.updateCategory(categoryId, payload);
   }
 }
