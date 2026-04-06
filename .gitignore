@@ -4,9 +4,14 @@ frontend/environments
 .env
 .DS_Store
 
-# Claude Code (asistente IA)
+# AI assistants
 .claude/
 CLAUDE.md
+AGENTS.md
+.agents/
+
+# Node (root)
+package-lock.json
 
 # Node
 node_modules/

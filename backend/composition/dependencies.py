@@ -606,6 +606,7 @@ async def get_get_purchase_use_case(
         SupplierRepository(db),
         UserRepository(db),
         ProductRepository(db),
+        WarehouseRepository(db),
     )
 
 
