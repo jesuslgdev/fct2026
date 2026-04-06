@@ -1,12 +1,14 @@
-
 import {
   ChangeDetectionStrategy,
   Component,
   input,
   output,
   computed,
+  ContentChild,
+  TemplateRef,
 } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
+import { CommonModule } from '@angular/common';
 
 // Button variant types
 export type ButtonVariant =
@@ -47,7 +49,7 @@ const SIZE_MAP: Record<ButtonSize, 'small' | 'large' | undefined> = {
   selector: 'ui-button',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule],
+  imports: [ButtonModule, CommonModule],
   templateUrl: './button.component.html',
 })
 export class ButtonComponent {
@@ -67,7 +69,11 @@ export class ButtonComponent {
   // Output
   clicked = output<MouseEvent>(); // Emits click event
 
+  // Content child for custom content
+  @ContentChild(TemplateRef) contentTemplate?: TemplateRef<unknown>;
+
   // Computed properties
   options = computed(() => VARIANT_MAP[this.variant()]); // PrimeNG options for variant
   resolvedSize = computed(() => SIZE_MAP[this.size()]); // PrimeNG size option
+  hasCustomContent = computed(() => !!this.contentTemplate);
 }

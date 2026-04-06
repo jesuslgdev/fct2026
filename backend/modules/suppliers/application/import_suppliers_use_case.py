@@ -3,7 +3,7 @@ from io import BytesIO
 
 from openpyxl import load_workbook
 
-from modules.suppliers.domain.entities.import_result import (
+from modules.suppliers.domain.dtos.import_result import (
     ImportResult,
     ImportRowError,
 )
@@ -91,12 +91,15 @@ class ImportSuppliersUseCase(IImportSuppliersUseCase):
                 )
 
             errors: list[ImportRowError] = []
-            parsed: list[Supplier] = []
+            parsed: list[tuple[int, Supplier]] = []
             seen_tax_ids: set[str] = set()
             total = 0
 
             for i, row in enumerate(row_iter, start=2):
                 total += 1
+                if not any(row):
+                    total -= 1
+                    continue
                 row_errors = self._validate_row(row, i, seen_tax_ids)
                 if row_errors:
                     errors.extend(row_errors)
@@ -106,18 +109,18 @@ class ImportSuppliersUseCase(IImportSuppliersUseCase):
                         for col_idx, db_field in enumerate(COLUMN_MAP.values())
                     }
                     fields["tax_id"] = fields["tax_id"].upper()
-                    parsed.append(Supplier(**fields))
+                    parsed.append((i, Supplier(**fields)))
                     seen_tax_ids.add(fields["tax_id"])
 
             if parsed and not errors:
                 existing = await self._repo.get_existing_tax_ids(
-                    [s.tax_id for s in parsed]
+                    [s.tax_id for _, s in parsed]
                 )
-                for s in parsed:
+                for row_num, s in parsed:
                     if s.tax_id in existing:
                         errors.append(
                             ImportRowError(
-                                row=0,
+                                row=row_num,
                                 reason=f"CIF {s.tax_id} already exists in database",
                             )
                         )
@@ -125,7 +128,7 @@ class ImportSuppliersUseCase(IImportSuppliersUseCase):
             if errors:
                 return ImportResult(total=total, created=0, errors=errors)
 
-            created = await self._repo.bulk_create(parsed)
+            created = await self._repo.bulk_create([s for _, s in parsed])
             return ImportResult(total=total, created=created, errors=[])
         finally:
             wb.close()

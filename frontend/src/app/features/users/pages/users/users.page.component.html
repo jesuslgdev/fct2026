@@ -73,12 +73,15 @@
 
     <ng-template #body let-user>
       <tr>
-        <td>{{ user.firstName }} {{ user.lastName }}</td>
-        <td>{{ user.email }}</td>
+        <td>{{ user.fullName }}</td>
+        <td>{{ user.emailDisplay }}</td>
         <td>{{ getRoleLabel(user.role) }}</td>
         <td>{{ user.departmentName }}</td>
         <td>
-          <ui-user-status-badge [active]="user.active" />
+          <ui-user-status-badge
+            [active]="user.active"
+            [pendingFirstLogin]="user.pendingFirstLogin"
+          />
         </td>
         @if (store.canEdit()) {
           <td>
@@ -114,30 +117,26 @@
 
 <!-- ── Create / Edit user dialog ────────────────────────────────────────── -->
 <app-user-form-dialog />
+<app-user-reactivate-dialog />
 
 <!-- ── Confirm toggle status dialog ─────────────────────────────────────── -->
 <ui-dialog
   [(visible)]="store.confirmDialogVisible"
-  [header]="store.userToToggle()?.active ? 'Desactivar usuario' : 'Activar usuario'"
+  header="Desactivar usuario"
   variant="warning"
   size="sm"
-  confirmLabel="Confirmar"
+  confirmLabel="Desactivar"
   cancelLabel="Cancelar"
   [confirmLoading]="store.loading()"
   (confirmed)="store.confirmToggleStatus()"
   (cancelled)="store.cancelToggleStatus()"
 >
   @if (store.userToToggle(); as user) {
-    <!-- párrafo de advertencia con clase global -->
     <p class="warning-text">
-      @if (user.active) {
-        ¿Está seguro de que desea desactivar
-        <strong>{{ user.firstName }} {{ user.lastName }}</strong>?
-        Sus sesiones activas serán invalidadas.
-      } @else {
-        ¿Está seguro de que desea reactivar
-        <strong>{{ user.firstName }} {{ user.lastName }}</strong>?
-      }
+      ¿Está seguro de que desea desactivar
+      <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>?
+      Sus datos personales se eliminarán y, para reactivar su cuenta,
+      será necesario introducirlos manualmente.
     </p>
   }
 </ui-dialog>

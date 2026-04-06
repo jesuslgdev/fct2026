@@ -31,6 +31,9 @@ class CreateUserUseCase(ICreateUserUseCase):
         if await self.user_repo.get_by_email(email) is not None:
             raise AdminException(AdminExceptionInfo.USER_ALREADY_EXISTS)
 
+        if role != "Administrator" and department_id is None:
+            raise AdminException(AdminExceptionInfo.USER_DEPARTMENT_REQUIRED)
+
         if department_id is not None:
             if await self.department_repo.get_by_id(department_id) is None:
                 raise AdminException(AdminExceptionInfo.USER_DEPARTMENT_NOT_FOUND)

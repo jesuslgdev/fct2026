@@ -10,7 +10,11 @@
 >
   <form [formGroup]="form" class="dialog-form">
 
-    <!-- Nombre + Apellidos -->
+ 
+    @if (store.dialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
     <div class="dialog-form-grid">
       <label class="dialog-field">
         <span class="dialog-field-label">Nombre</span>
@@ -36,7 +40,7 @@
       </label>
     </div>
 
-    <!-- Correo electrónico (solo en creación) -->
+  
     @if (store.dialogMode() === 'create') {
       <label class="dialog-field">
         <span class="dialog-field-label">Correo electrónico</span>
@@ -74,7 +78,7 @@
       }
     </div>
 
-    <!-- Departamento -->
+
     <div class="dialog-field">
       <span class="dialog-field-label">Departamento</span>
       @if (renderSelects()) {

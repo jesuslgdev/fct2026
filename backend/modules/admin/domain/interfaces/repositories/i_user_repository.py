@@ -1,13 +1,18 @@
 from abc import ABC, abstractmethod
 
+from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.entities.user import User
-from shared.domain.paginated_result import PaginatedResult
 
 
 class IUserRepository(ABC):
     @abstractmethod
     async def get_all_paginated(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        role: str | None = None,
+        active: bool | None = None,
     ) -> PaginatedResult[User]: ...
 
     @abstractmethod
@@ -37,4 +42,16 @@ class IUserRepository(ABC):
     ) -> User: ...
 
     @abstractmethod
-    async def set_active(self, user_id: int, is_active: bool) -> None: ...
+    async def delete(self, user_id: int) -> None: ...
+
+    @abstractmethod
+    async def deactivate(self, user_id: int) -> None: ...
+
+    @abstractmethod
+    async def activate(
+        self,
+        user_id: int,
+        first_name: str,
+        last_name: str,
+        email: str,
+    ) -> None: ...
