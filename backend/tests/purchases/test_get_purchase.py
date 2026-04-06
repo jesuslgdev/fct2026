@@ -48,6 +48,17 @@ async def test_get_purchase_has_user_name(auth_client: AsyncClient):
     assert response.json()["user_name"] == "Juan García"
 
 
+async def test_get_purchase_has_warehouse_name(auth_client: AsyncClient):
+    enriched = make_enriched(warehouse_name="Almacén Central")
+    mock = MagicMock()
+    mock.execute = AsyncMock(return_value=enriched)
+    app.dependency_overrides[get_get_purchase_use_case] = lambda: mock
+    response = await auth_client.get("/api/v1/purchases/1")
+    del app.dependency_overrides[get_get_purchase_use_case]
+    assert response.status_code == 200
+    assert response.json()["warehouse_name"] == "Almacén Central"
+
+
 async def test_get_purchase_warehouse_name_is_none(auth_client: AsyncClient):
     enriched = make_enriched(warehouse_name=None)
     mock = MagicMock()

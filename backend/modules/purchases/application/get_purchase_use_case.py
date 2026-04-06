@@ -9,6 +9,7 @@ from modules.purchases.domain.interfaces.use_cases.i_get_purchase_use_case impor
 from shared.domain.interfaces.i_product_reader import IProductReader
 from shared.domain.interfaces.i_supplier_reader import ISupplierReader
 from shared.domain.interfaces.i_user_reader import IUserReader
+from shared.domain.interfaces.i_warehouse_reader import IWarehouseReader
 
 
 class GetPurchaseUseCase(IGetPurchaseUseCase):
@@ -24,6 +25,7 @@ class GetPurchaseUseCase(IGetPurchaseUseCase):
         supplier_reader: ISupplierReader,
         user_reader: IUserReader,
         product_reader: IProductReader,
+        warehouse_reader: IWarehouseReader,
     ) -> None:
         """Initialise the use case with its repository and cross-module readers.
 
@@ -33,11 +35,13 @@ class GetPurchaseUseCase(IGetPurchaseUseCase):
             supplier_reader: Reader used to resolve the supplier name.
             user_reader: Reader used to resolve the creator's full name.
             product_reader: Reader used to resolve product names for each line.
+            warehouse_reader: Reader used to resolve the destination warehouse name.
         """
         self._repo = repo
         self._supplier_reader = supplier_reader
         self._user_reader = user_reader
         self._product_reader = product_reader
+        self._warehouse_reader = warehouse_reader
 
     async def execute(self, purchase_id: int) -> PurchaseEnriched:
         """Fetch the purchase with the given identifier and resolve display names.
@@ -59,6 +63,9 @@ class GetPurchaseUseCase(IGetPurchaseUseCase):
 
         supplier_name = await self._supplier_reader.get_name_by_id(purchase.supplier_id)
         user_name = await self._user_reader.get_name_by_id(purchase.user_id)
+        warehouse_name = await self._warehouse_reader.get_name_by_id(
+            purchase.warehouse_id
+        )
 
         product_names: dict[int, str | None] = {}
         for line in purchase.lines:
@@ -70,6 +77,6 @@ class GetPurchaseUseCase(IGetPurchaseUseCase):
             purchase=purchase,
             supplier_name=supplier_name,
             user_name=user_name,
-            warehouse_name=None,
+            warehouse_name=warehouse_name,
             product_names=product_names,
         )

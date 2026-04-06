@@ -6,9 +6,10 @@ from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from modules.warehouse.domain.interfaces.repositories.i_warehouse_repository import (
     IWarehouseRepository,
 )
+from shared.domain.interfaces.i_warehouse_reader import IWarehouseReader
 
 
-class WarehouseRepository(IWarehouseRepository):
+class WarehouseRepository(IWarehouseRepository, IWarehouseReader):
     """SQLAlchemy implementation of the warehouse CRUD repository."""
 
     def __init__(self, db: AsyncSession) -> None:
@@ -58,3 +59,7 @@ class WarehouseRepository(IWarehouseRepository):
             )
         )
         return result.scalar_one()
+
+    async def get_name_by_id(self, warehouse_id: int) -> str | None:
+        warehouse = await self.get_by_id(warehouse_id)
+        return warehouse.name if warehouse else None
