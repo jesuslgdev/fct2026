@@ -1,5 +1,12 @@
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { InputComponent } from '@shared/ui/input/input.component';
 import { WarehousesStore } from '@features/warehouses/state/warehouses.store';
@@ -14,10 +21,21 @@ import { CreateWarehousePayload, UpdateWarehousePayload } from '@domain/models/w
 })
 export class WarehouseFormDialogComponent {
   readonly store = inject(WarehousesStore);
-  private readonly fb = inject(FormBuilder);
+  private readonly formBuilder = inject(FormBuilder);
 
-  readonly form = this.fb.group({
-    name: ['', [Validators.required, Validators.maxLength(100)]],
+  private readonly nonBlankValidator: ValidatorFn = (
+    control: AbstractControl,
+  ): ValidationErrors | null => {
+    const value = control.value;
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    return value.trim().length > 0 ? null : { whitespace: true };
+  };
+
+  readonly form = this.formBuilder.group({
+    name: ['', [Validators.required, this.nonBlankValidator, Validators.maxLength(100)]],
     address: ['', [Validators.required, Validators.maxLength(255)]],
   });
 

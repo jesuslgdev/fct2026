@@ -2,7 +2,7 @@ export class WarehouseValidationError extends Error {
   override readonly name = 'WarehouseValidationError';
 
   constructor(
-    public readonly details: unknown,
+    public readonly field: string,
     message = 'Validation failed.',
   ) {
     super(message);
