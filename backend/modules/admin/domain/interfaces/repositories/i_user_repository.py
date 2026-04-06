@@ -42,4 +42,16 @@ class IUserRepository(ABC):
     ) -> User: ...
 
     @abstractmethod
-    async def set_active(self, user_id: int, is_active: bool) -> None: ...
+    async def delete(self, user_id: int) -> None: ...
+
+    @abstractmethod
+    async def deactivate(self, user_id: int) -> None: ...
+
+    @abstractmethod
+    async def activate(
+        self,
+        user_id: int,
+        first_name: str,
+        last_name: str,
+        email: str,
+    ) -> None: ...

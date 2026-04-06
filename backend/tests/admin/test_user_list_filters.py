@@ -1,7 +1,11 @@
+from datetime import UTC, datetime
+
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.domain.entities.user import User
+
+_NOW = datetime.now(UTC)
 
 
 async def _seed_users(db: AsyncSession) -> list[User]:
@@ -12,6 +16,7 @@ async def _seed_users(db: AsyncSession) -> list[User]:
             email="alice@example.com",
             role="Employee",
             is_active=True,
+            last_login_at=_NOW,
         ),
         User(
             first_name="Bob",
@@ -19,6 +24,7 @@ async def _seed_users(db: AsyncSession) -> list[User]:
             email="bob@example.com",
             role="Manager",
             is_active=True,
+            last_login_at=_NOW,
         ),
         User(
             first_name="Carlos",
@@ -26,6 +32,7 @@ async def _seed_users(db: AsyncSession) -> list[User]:
             email="carlos@example.com",
             role="Administrator",
             is_active=False,
+            last_login_at=_NOW,
         ),
         User(
             first_name="Diana",
@@ -33,6 +40,7 @@ async def _seed_users(db: AsyncSession) -> list[User]:
             email="diana@example.com",
             role="Employee",
             is_active=False,
+            last_login_at=_NOW,
         ),
     ]
     for u in users:

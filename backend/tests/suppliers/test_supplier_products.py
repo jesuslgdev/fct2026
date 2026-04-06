@@ -35,6 +35,7 @@ def _mock_user(role: str = "Administrator"):
             department_id=None,
             firebase_uid="test-uid",
             name="Test User",
+            last_login_at=None,
         )
 
     return override
@@ -49,6 +50,7 @@ def _mock_purchases_auth():
             department_id=None,
             firebase_uid="test-uid",
             name="Test User",
+            last_login_at=None,
         )
 
     return override

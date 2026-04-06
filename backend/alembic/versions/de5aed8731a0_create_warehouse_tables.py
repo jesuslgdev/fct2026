@@ -1,7 +1,7 @@
 """create warehouse and warehouse_stock tables
 
 Revision ID: de5aed8731a0
-Revises: 6420ed7a69c6, a1b2c3d4e5f6
+Revises: fa7e9d7ef5bd
 Create Date: 2026-03-16 12:00:00.000000
 
 """
@@ -14,7 +14,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "de5aed8731a0"
-down_revision: str | Sequence[str] | None = ("6420ed7a69c6", "a1b2c3d4e5f6")
+down_revision: str | Sequence[str] | None = "fa7e9d7ef5bd"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

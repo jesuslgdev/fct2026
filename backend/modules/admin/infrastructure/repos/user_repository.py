@@ -114,9 +114,35 @@ class UserRepository(IUserRepository, IUserReader):
         await self._db.refresh(user)
         return user
 
-    async def set_active(self, user_id: int, is_active: bool) -> None:
+    async def delete(self, user_id: int) -> None:
         user = await self.get_by_id(user_id)
         if user is None:
             raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
-        user.is_active = is_active
+        await self._db.delete(user)
+        await self._db.flush()
+
+    async def deactivate(self, user_id: int) -> None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
+        user.is_active = False
+        user.first_name = "DELETED"
+        user.last_name = "DELETED"
+        user.email = f"deleted_{user_id}@deleted.com"
+        await self._db.flush()
+
+    async def activate(
+        self,
+        user_id: int,
+        first_name: str,
+        last_name: str,
+        email: str,
+    ) -> None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
+        user.is_active = True
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
         await self._db.flush()

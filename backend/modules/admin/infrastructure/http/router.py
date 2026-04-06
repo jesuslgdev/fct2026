@@ -3,14 +3,16 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query, Response
 
 from composition.dependencies import (
+    get_activate_user_use_case,
     get_create_department_use_case,
     get_create_user_use_case,
+    get_deactivate_user_use_case,
     get_delete_department_use_case,
+    get_delete_user_use_case,
     get_get_department_use_case,
     get_get_user_use_case,
     get_list_departments_use_case,
     get_list_users_use_case,
-    get_set_user_active_use_case,
     get_update_department_use_case,
     get_update_user_use_case,
 )
@@ -30,8 +32,17 @@ from modules.admin.domain.interfaces.use_cases.departments.i_list_departments_us
 from modules.admin.domain.interfaces.use_cases.departments.i_update_department_use_case import (
     IUpdateDepartmentUseCase,
 )
+from modules.admin.domain.interfaces.use_cases.users.i_activate_user_use_case import (
+    IActivateUserUseCase,
+)
 from modules.admin.domain.interfaces.use_cases.users.i_create_user_use_case import (
     ICreateUserUseCase,
+)
+from modules.admin.domain.interfaces.use_cases.users.i_deactivate_user_use_case import (
+    IDeactivateUserUseCase,
+)
+from modules.admin.domain.interfaces.use_cases.users.i_delete_user_use_case import (
+    IDeleteUserUseCase,
 )
 from modules.admin.domain.interfaces.use_cases.users.i_get_user_use_case import (
     IGetUserUseCase,
@@ -39,17 +50,14 @@ from modules.admin.domain.interfaces.use_cases.users.i_get_user_use_case import 
 from modules.admin.domain.interfaces.use_cases.users.i_list_users_use_case import (
     IListUsersUseCase,
 )
-from modules.admin.domain.interfaces.use_cases.users.i_set_user_active_use_case import (
-    ISetUserActiveUseCase,
-)
 from modules.admin.domain.interfaces.use_cases.users.i_update_user_use_case import (
     IUpdateUserUseCase,
 )
 from modules.admin.infrastructure.http.schemas import (
+    ActivateUserDTO,
     CreateDepartmentDTO,
     CreateUserDTO,
     DepartmentDTO,
-    SetUserActiveDTO,
     UpdateDepartmentDTO,
     UpdateUserDTO,
     UserDTO,
@@ -61,14 +69,16 @@ router = APIRouter(prefix="/admin")
 
 
 def _to_user_dto(user: User) -> UserDTO:
+    pending_first_login = user.last_login_at is None
     return UserDTO(
         user_id=user.user_id,
         first_name=user.first_name,
-        last_name=user.last_name,
-        email=user.email,
+        last_name=None if pending_first_login else user.last_name,
+        email=None if pending_first_login else user.email,
         role=user.role,
         department_id=user.department_id,
         is_active=user.is_active,
+        last_login_at=user.last_login_at,
     )
 
 
@@ -216,13 +226,35 @@ async def update_user(
     return _to_user_dto(result)
 
 
-@router.patch("/users/{user_id}/active", status_code=204, tags=["Admin - Users"])
-async def set_user_active(
+@router.patch("/users/{user_id}/deactivate", status_code=204, tags=["Admin - Users"])
+async def deactivate_user(
     user_id: int,
-    body: SetUserActiveDTO,
-    use_case: ISetUserActiveUseCase = Depends(get_set_user_active_use_case),
+    use_case: IDeactivateUserUseCase = Depends(get_deactivate_user_use_case),
     _: dict = Depends(require_admin),
 ):
-    """Activate or deactivate a user."""
-    await use_case.execute(user_id, body.is_active)
+    """Deactivate a user and erase their personal data."""
+    await use_case.execute(user_id)
+    return Response(status_code=204)
+
+
+@router.patch("/users/{user_id}/activate", status_code=204, tags=["Admin - Users"])
+async def activate_user(
+    user_id: int,
+    body: ActivateUserDTO,
+    use_case: IActivateUserUseCase = Depends(get_activate_user_use_case),
+    _: dict = Depends(require_admin),
+):
+    """Activate a user, restoring their personal data."""
+    await use_case.execute(user_id, body.first_name, body.last_name, body.email)
+    return Response(status_code=204)
+
+
+@router.delete("/users/{user_id}", status_code=204, tags=["Admin - Users"])
+async def delete_user(
+    user_id: int,
+    use_case: IDeleteUserUseCase = Depends(get_delete_user_use_case),
+    _: dict = Depends(require_admin),
+):
+    """Permanently delete a user with no purchase history."""
+    await use_case.execute(user_id)
     return Response(status_code=204)

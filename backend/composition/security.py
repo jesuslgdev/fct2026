@@ -23,9 +23,9 @@ async def get_current_user(
             detail="Invalid or expired token",
         )
 
-    user = await AuthRepository(db).find_active_user_by_email(claims["email"])
+    user = await AuthRepository(db).find_user_by_email(claims["email"])
 
-    if user is None:
+    if user is None or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
@@ -38,6 +38,7 @@ async def get_current_user(
         department_id=user.department_id,
         firebase_uid=claims["uid"],
         name=f"{user.first_name} {user.last_name}",
+        last_login_at=user.last_login_at,
     )
 
 

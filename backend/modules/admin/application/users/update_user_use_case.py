@@ -28,12 +28,20 @@ class UpdateUserUseCase(IUpdateUserUseCase):
         role: str | None,
         department_id: int | None,
     ) -> User:
-        if await self.user_repo.get_by_id(user_id) is None:
+        existing = await self.user_repo.get_by_id(user_id)
+        if existing is None:
             raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
 
         if department_id is not None:
             if await self.department_repo.get_by_id(department_id) is None:
                 raise AdminException(AdminExceptionInfo.USER_DEPARTMENT_NOT_FOUND)
+
+        effective_role = role if role is not None else existing.role
+        effective_department_id = (
+            department_id if department_id is not None else existing.department_id
+        )
+        if effective_role != "Administrator" and effective_department_id is None:
+            raise AdminException(AdminExceptionInfo.USER_DEPARTMENT_REQUIRED)
 
         return await self.user_repo.update(
             user_id, first_name, last_name, role, department_id
