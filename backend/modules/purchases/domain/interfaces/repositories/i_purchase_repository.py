@@ -77,3 +77,14 @@ class IPurchaseRepository(ABC):
         taxes: Decimal,
         total: Decimal,
     ) -> Purchase: ...
+
+    @abstractmethod
+    async def update_header(
+        self,
+        purchase_id: int,
+        supplier_id: int,
+        warehouse_id: int,
+    ) -> Purchase: ...
+
+    @abstractmethod
+    async def delete_all_lines(self, purchase_id: int) -> None: ...

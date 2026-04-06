@@ -11,6 +11,7 @@ from composition.dependencies import (
     get_get_supplier_price_use_case,
     get_list_purchases_use_case,
     get_update_purchase_line_use_case,
+    get_update_purchase_use_case,
 )
 from composition.security import (
     get_current_user,
@@ -38,6 +39,9 @@ from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case imp
 from modules.purchases.domain.interfaces.use_cases.i_update_purchase_line_use_case import (
     IUpdatePurchaseLineUseCase,
 )
+from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case import (
+    IUpdatePurchaseUseCase,
+)
 from modules.purchases.infrastructure.http.schemas import (
     AddPurchaseLineRequest,
     CreatePurchaseRequest,
@@ -46,6 +50,7 @@ from modules.purchases.infrastructure.http.schemas import (
     PurchaseLineDTO,
     SupplierPriceDTO,
     UpdatePurchaseLineRequest,
+    UpdatePurchaseRequest,
 )
 from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
@@ -201,6 +206,22 @@ async def create_purchase(
         user_id=current_user.user_id,
         warehouse_id=body.warehouse_id,
         lines=[line.model_dump() for line in body.lines],
+    )
+    return _purchase_detail(purchase)
+
+
+@router.put("/{purchase_id}", response_model=PurchaseDetailDTO, tags=["Purchases"])
+async def update_purchase(
+    purchase_id: int,
+    body: UpdatePurchaseRequest,
+    _: UserSession = Depends(require_purchases_department_or_admin),
+    use_case: IUpdatePurchaseUseCase = Depends(get_update_purchase_use_case),
+):
+    """Update the supplier and warehouse of a pending purchase. If the supplier changes, all lines are cleared."""
+    purchase = await use_case.execute(
+        purchase_id=purchase_id,
+        supplier_id=body.supplier_id,
+        warehouse_id=body.warehouse_id,
     )
     return _purchase_detail(purchase)
 

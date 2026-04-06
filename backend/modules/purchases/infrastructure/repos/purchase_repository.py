@@ -225,6 +225,30 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         await self._db.refresh(purchase, ["lines"])
         return purchase
 
+    async def update_header(
+        self,
+        purchase_id: int,
+        supplier_id: int,
+        warehouse_id: int,
+    ) -> Purchase:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        purchase.supplier_id = supplier_id
+        purchase.warehouse_id = warehouse_id
+        await self._db.flush()
+        await self._db.refresh(purchase, ["lines"])
+        return purchase
+
+    async def delete_all_lines(self, purchase_id: int) -> None:
+        result = await self._db.execute(
+            select(PurchaseLine).where(PurchaseLine.purchase_id == purchase_id)
+        )
+        for line in result.scalars().all():
+            await self._db.delete(line)
+        await self._db.flush()
+
     async def has_purchases_for_user(self, user_id: int) -> bool:
         result = await self._db.execute(
             select(func.count())
