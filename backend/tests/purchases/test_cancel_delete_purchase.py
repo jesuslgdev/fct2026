@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 from httpx import AsyncClient
@@ -77,6 +78,38 @@ async def test_cancel_purchase_not_cancellable(auth_client: AsyncClient):
     del app.dependency_overrides[get_cancel_purchase_use_case]
     del app.dependency_overrides[require_purchases_department_or_admin]
     assert response.status_code == 400
+
+
+async def test_cancel_purchase_passes_user_id_to_use_case(auth_client: AsyncClient):
+    purchase = make_purchase(status="Cancelled")
+    mock = MagicMock()
+    mock.execute = AsyncMock(return_value=purchase)
+    app.dependency_overrides[get_cancel_purchase_use_case] = lambda: mock
+    app.dependency_overrides[require_purchases_department_or_admin] = _purchases_user
+    await auth_client.patch("/api/v1/purchases/1/cancel")
+    del app.dependency_overrides[get_cancel_purchase_use_case]
+    del app.dependency_overrides[require_purchases_department_or_admin]
+    mock.execute.assert_called_once_with(purchase_id=1, user_id=1)
+
+
+async def test_cancel_purchase_response_includes_audit_fields(auth_client: AsyncClient):
+    cancelled_at = datetime(2026, 4, 6, 12, 0, 0, tzinfo=UTC)
+    purchase = make_purchase(
+        status="Cancelled",
+        cancelled_at=cancelled_at,
+        cancelled_by_user_id=1,
+    )
+    mock = MagicMock()
+    mock.execute = AsyncMock(return_value=purchase)
+    app.dependency_overrides[get_cancel_purchase_use_case] = lambda: mock
+    app.dependency_overrides[require_purchases_department_or_admin] = _purchases_user
+    response = await auth_client.patch("/api/v1/purchases/1/cancel")
+    del app.dependency_overrides[get_cancel_purchase_use_case]
+    del app.dependency_overrides[require_purchases_department_or_admin]
+    assert response.status_code == 200
+    body = response.json()
+    assert body["cancelled_by_user_id"] == 1
+    assert body["cancelled_at"] is not None
 
 
 async def test_cancel_purchase_unauthenticated(unauthenticated_client: AsyncClient):
