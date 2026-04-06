@@ -15,16 +15,16 @@ export class CreateWarehouseUseCase {
     const address = payload.address?.trim() ?? '';
 
     if (name.length === 0) {
-      return throwError(() => new WarehouseValidationError('name', 'The name is required.'));
+      return throwError(() => new WarehouseValidationError('name', 'El nombre es obligatorio.'));
     }
     if (name.length < 2 || name.length > 100) {
-      return throwError(() => new WarehouseValidationError('name', 'The name must be between 2 and 100 characters.'));
+      return throwError(() => new WarehouseValidationError('name', 'El nombre debe tener entre 2 y 100 caracteres.'));
     }
     if (address.length === 0) {
-      return throwError(() => new WarehouseValidationError('address', 'The address is required.'));
+      return throwError(() => new WarehouseValidationError('address', 'La dirección es obligatoria.'));
     }
     if (address.length < 5 || address.length > 255) {
-      return throwError(() => new WarehouseValidationError('address', 'The address must be between 5 and 255 characters.'));
+      return throwError(() => new WarehouseValidationError('address', 'La dirección debe tener entre 5 y 255 caracteres.'));
     }
 
     return this.warehouseRepository.createWarehouse({ name, address });
