@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, map, of, throwError } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import {
   CategoryApiError,
@@ -89,27 +89,22 @@ export class HttpCategoryRepository implements CategoryRepository {
     );
   }
 
-  async getCategoryByName(name: string): Promise<Category | null> {
-    return this.withErrorMapping(async () => {
-      try {
-          const dtos = await firstValueFrom(
-          this.http.get<CategoryDto[]>(`${BASE_URL}?search=${encodeURIComponent(name)}`)
+  getCategoryByName(name: string): Observable<Category | null> {
+    return this.http.get<CategoryDto[]>(BASE_URL).pipe(
+      map((dtos) => {
+        const found = dtos.find(
+          (dto) => dto.name.toLowerCase() === name.toLowerCase()
         );
-        const found = dtos.find(dto => dto.name.toLowerCase() === name.toLowerCase());
         return found ? CategoryMapper.fromDto(found) : null;
-      } catch (error) {
-        if (error instanceof HttpErrorResponse && error.status === 404) {
-          return null;
-        }
-        return throwError(() => mapped);
-      })
+      }),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
     );
   }
 
   createCategory(payload: CreateCategoryPayload): Observable<Category> {
-    const dto: CreateCategoryDto = { 
-      name: payload.name, 
-      description: payload.description ?? '' 
+    const dto: CreateCategoryDto = {
+      name: payload.name,
+      description: payload.description ?? ''
     };
     return this.http.post<CategoryDto>(BASE_URL, dto).pipe(
       map((response) => CategoryMapper.fromDto(response)),
