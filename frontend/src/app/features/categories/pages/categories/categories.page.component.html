@@ -12,7 +12,7 @@
     }
   </div>
 
-  @if (store.error() && !store.dialogVisible() && !store.confirmDialogVisible(); as errorMessage) {
+  @if (!store.dialogVisible() && !store.confirmDialogVisible() && store.error(); as errorMessage) {
     <p class="warning-text" role="alert">{{ errorMessage }}</p>
   }
 

@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { CategoryRepository } from '../../repositories/category.repository';
+import { CategoryRepository } from '@domain/repositories/category.repository';
 import {
   Category,
   CreateCategoryPayload,
   CategoryListResult,
   UpdateCategoryPayload,
-} from '../../models/category.model';
+} from '@domain/models/category.model';
 import { GetCategoriesUseCase } from './get-categories.usecase';
 import { GetCategoryByIdUseCase } from './get-category-by-id.usecase';
 import { GetCategoryByNameUseCase } from './get-category-by-name.usecase';

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CategoryFormDialogComponent } from './category-form-dialog.component';
-import { CategoriesStore } from '../../state/categories.store';
+import { CategoriesStore } from '@features/categories/state/categories.store';
 import { signal, WritableSignal } from '@angular/core';
 import { vi } from 'vitest';
 

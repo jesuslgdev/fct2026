@@ -114,8 +114,8 @@ export class MockCategoryRepository implements CategoryRepository {
       return throwError(() => new CategoryNotFoundError());
     }
 
-    // Simulate check for associated products (random for demo)
-    const hasProducts = Math.random() > 0.7; // 30% chance of having products
+    // Simulate check for associated products (deterministic logic: IDs 1 and 2 have products)
+    const hasProducts = [1, 2].includes(categoryId);
     if (hasProducts) {
       return throwError(() => new CategoryHasProductsError());
     }
@@ -130,7 +130,7 @@ export class MockCategoryRepository implements CategoryRepository {
       return throwError(() => new CategoryNotFoundError());
     }
 
-    // Simulate check for associated products (random for demo)
-    return of(Math.random() > 0.7); // 30% chance of having products
+    // Simulate check for associated products (deterministic logic: IDs 1 and 2 have products)
+    return of([1, 2].includes(categoryId));
   }
 }
