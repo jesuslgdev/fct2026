@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable, throwError } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import { Category, CreateCategoryPayload } from '@domain/models/category.model';
 import { CategoryValidationError } from '@domain/models/category-errors';
@@ -9,13 +10,17 @@ import { CategoryValidationError } from '@domain/models/category-errors';
 export class CreateCategoryUseCase {
   private readonly categoryRepository = inject(CategoryRepository);
 
-  async execute(payload: CreateCategoryPayload): Promise<Category> {
+  execute(payload: CreateCategoryPayload): Observable<Category> {
     const normalizedPayload: CreateCategoryPayload = {
       name: payload.name?.trim() ?? '',
       description: payload.description?.trim() ?? '',
     };
 
-    this.validate(normalizedPayload);
+    try {
+      this.validate(normalizedPayload);
+    } catch (error) {
+      return throwError(() => error);
+    }
 
     return this.categoryRepository.createCategory(normalizedPayload);
   }
@@ -32,7 +37,7 @@ export class CreateCategoryUseCase {
       );
     }
 
-    if (payload.description.length > 500) {
+    if (payload.description && payload.description.length > 500) {
       throw new CategoryValidationError(
         { field: 'description' },
         'Description cannot exceed 500 characters.'

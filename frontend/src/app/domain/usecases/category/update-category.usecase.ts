@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable, throwError } from 'rxjs';
 import { CategoryRepository } from '@domain/repositories/category.repository';
 import { Category, UpdateCategoryPayload } from '@domain/models/category.model';
 import { CategoryValidationError } from '@domain/models/category-errors';
@@ -9,14 +10,18 @@ import { CategoryValidationError } from '@domain/models/category-errors';
 export class UpdateCategoryUseCase {
   private readonly categoryRepository = inject(CategoryRepository);
 
-  async execute(categoryId: number, payload: UpdateCategoryPayload): Promise<Category> {
+  execute(categoryId: number, payload: UpdateCategoryPayload): Observable<Category> {
     const normalizedPayload: UpdateCategoryPayload = {
       ...payload,
       name: payload.name !== undefined ? payload.name?.trim() : undefined,
       description: payload.description !== undefined ? payload.description?.trim() : undefined,
     };
 
-    this.validate(normalizedPayload);
+    try {
+      this.validate(normalizedPayload);
+    } catch (error) {
+      return throwError(() => error);
+    }
 
     return this.categoryRepository.updateCategory(categoryId, normalizedPayload);
   }
@@ -38,7 +43,7 @@ export class UpdateCategoryUseCase {
       }
     }
 
-    if (payload.description !== undefined && payload.description !== null && payload.description.length > 500) {
+    if (payload.description && payload.description.length > 500) {
       throw new CategoryValidationError(
         { field: 'description' },
         'Description cannot exceed 500 characters.'

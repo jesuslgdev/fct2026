@@ -4,6 +4,7 @@ import { CategoryRepository } from '@domain/repositories/category.repository';
 import {
   Category,
   CreateCategoryPayload,
+  CategoryListResult,
   UpdateCategoryPayload,
 } from '@domain/models/category.model';
 import { GetCategoriesUseCase } from './get-categories.usecase';
@@ -12,6 +13,7 @@ import { GetCategoryByNameUseCase } from './get-category-by-name.usecase';
 import { CreateCategoryUseCase } from './create-category.usecase';
 import { UpdateCategoryUseCase } from './update-category.usecase';
 import { DeleteCategoryUseCase } from './delete-category.usecase';
+import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 
 const CATEGORY_MOCK: Category = {
   categoryId: 1,
@@ -20,12 +22,12 @@ const CATEGORY_MOCK: Category = {
 };
 
 class MockCategoryRepository implements CategoryRepository {
-  getCategories = vi.fn<() => Promise<Category[]>>();
-  getCategoryById = vi.fn<(id: number) => Promise<Category>>();
-  getCategoryByName = vi.fn<(name: string) => Promise<Category | null>>();
-  createCategory = vi.fn<(payload: CreateCategoryPayload) => Promise<Category>>();
-  updateCategory = vi.fn<(categoryId: number, payload: UpdateCategoryPayload) => Promise<Category>>();
-  deleteCategory = vi.fn<(id: number) => Promise<void>>();
+  getCategories = vi.fn<() => Observable<CategoryListResult>>();
+  getCategoryById = vi.fn<(id: number) => Observable<Category>>();
+  getCategoryByName = vi.fn<(name: string) => Observable<Category | null>>();
+  createCategory = vi.fn<(payload: CreateCategoryPayload) => Observable<Category>>();
+  updateCategory = vi.fn<(categoryId: number, payload: UpdateCategoryPayload) => Observable<Category>>();
+  deleteCategory = vi.fn<(id: number) => Observable<void>>();
 }
 
 describe('Category Use Cases', () => {
@@ -49,9 +51,9 @@ describe('Category Use Cases', () => {
   describe('GetCategoriesUseCase', () => {
     it('should delegate to repository', async () => {
       const useCase = TestBed.inject(GetCategoriesUseCase);
-      repo.getCategories.mockResolvedValueOnce([CATEGORY_MOCK]);
+      repo.getCategories.mockReturnValue(of([CATEGORY_MOCK]));
 
-      const result = await useCase.execute();
+      const result = await firstValueFrom(useCase.execute());
 
       expect(repo.getCategories).toHaveBeenCalledOnce();
       expect(result).toEqual([CATEGORY_MOCK]);
@@ -61,19 +63,19 @@ describe('Category Use Cases', () => {
   describe('GetCategoryByIdUseCase', () => {
     it('should return category when found', async () => {
       const useCase = TestBed.inject(GetCategoryByIdUseCase);
-      repo.getCategoryById.mockResolvedValueOnce(CATEGORY_MOCK);
+      repo.getCategoryById.mockReturnValue(of(CATEGORY_MOCK));
 
-      const result = await useCase.execute(1);
+      const result = await firstValueFrom(useCase.execute(1));
 
       expect(repo.getCategoryById).toHaveBeenCalledWith(1);
       expect(result).toEqual(CATEGORY_MOCK);
     });
 
-    it('should throw CategoryNotFoundError when not found', async () => {
+    it('should propagate error from repository when not found', async () => {
       const useCase = TestBed.inject(GetCategoryByIdUseCase);
-      repo.getCategoryById.mockResolvedValueOnce(null as unknown as Category);
+      repo.getCategoryById.mockReturnValue(throwError(() => new Error('Category not found.')));
 
-      await expect(useCase.execute(1)).rejects.toThrowError('Category not found.');
+      await expect(firstValueFrom(useCase.execute(1))).rejects.toThrow('Category not found.');
     });
   });
 
@@ -81,7 +83,7 @@ describe('Category Use Cases', () => {
     it('should return null for empty name', async () => {
       const useCase = TestBed.inject(GetCategoryByNameUseCase);
 
-      const result = await useCase.execute('');
+      const result = await firstValueFrom(useCase.execute(''));
 
       expect(result).toBeNull();
       expect(repo.getCategoryByName).not.toHaveBeenCalled();
@@ -89,9 +91,9 @@ describe('Category Use Cases', () => {
 
     it('should delegate to repository for valid name', async () => {
       const useCase = TestBed.inject(GetCategoryByNameUseCase);
-      repo.getCategoryByName.mockResolvedValueOnce(CATEGORY_MOCK);
+      repo.getCategoryByName.mockReturnValue(of(CATEGORY_MOCK));
 
-      const result = await useCase.execute('Electronics');
+      const result = await firstValueFrom(useCase.execute('Electronics'));
 
       expect(repo.getCategoryByName).toHaveBeenCalledWith('Electronics');
       expect(result).toEqual(CATEGORY_MOCK);
@@ -109,9 +111,9 @@ describe('Category Use Cases', () => {
         name: 'New Category',
         description: 'Description',
       };
-      repo.createCategory.mockResolvedValueOnce(CATEGORY_MOCK);
+      repo.createCategory.mockReturnValue(of(CATEGORY_MOCK));
 
-      const result = await useCase.execute(payload);
+      const result = await firstValueFrom(useCase.execute(payload));
 
       expect(repo.createCategory).toHaveBeenCalledWith(normalizedPayload);
       expect(result).toEqual(CATEGORY_MOCK);
@@ -121,7 +123,7 @@ describe('Category Use Cases', () => {
       const useCase = TestBed.inject(CreateCategoryUseCase);
       const payload: CreateCategoryPayload = { name: '   ', description: '' };
 
-      await expect(useCase.execute(payload)).rejects.toThrowError('Category name is required.');
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow('Category name is required.');
       expect(repo.createCategory).not.toHaveBeenCalled();
     });
 
@@ -129,7 +131,7 @@ describe('Category Use Cases', () => {
       const useCase = TestBed.inject(CreateCategoryUseCase);
       const payload: CreateCategoryPayload = { name: 'a'.repeat(101), description: '' };
 
-      await expect(useCase.execute(payload)).rejects.toThrowError(
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow(
         'Category name cannot exceed 100 characters.'
       );
     });
@@ -138,9 +140,21 @@ describe('Category Use Cases', () => {
       const useCase = TestBed.inject(CreateCategoryUseCase);
       const payload: CreateCategoryPayload = { name: 'Valid Name', description: 'a'.repeat(501) };
 
-      await expect(useCase.execute(payload)).rejects.toThrowError(
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow(
         'Description cannot exceed 500 characters.'
       );
+    });
+
+    it('should propagate repository errors', async () => {
+      const useCase = TestBed.inject(CreateCategoryUseCase);
+      const payload: CreateCategoryPayload = {
+        name: 'New Category',
+        description: 'Description',
+      };
+      repo.createCategory.mockReturnValue(throwError(() => new Error('Repository error')));
+
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow('Repository error');
+      expect(repo.createCategory).toHaveBeenCalled();
     });
   });
 
@@ -150,9 +164,9 @@ describe('Category Use Cases', () => {
       const payload: UpdateCategoryPayload = { name: '  Updated Category  ' };
       const normalizedPayload: UpdateCategoryPayload = { name: 'Updated Category' };
       const updated: Category = { ...CATEGORY_MOCK, name: 'Updated Category' };
-      repo.updateCategory.mockResolvedValueOnce(updated);
+      repo.updateCategory.mockReturnValue(of(updated));
 
-      const result = await useCase.execute(1, payload);
+      const result = await firstValueFrom(useCase.execute(1, payload));
 
       expect(repo.updateCategory).toHaveBeenCalledWith(1, normalizedPayload);
       expect(result).toEqual(updated);
@@ -162,32 +176,37 @@ describe('Category Use Cases', () => {
       const useCase = TestBed.inject(UpdateCategoryUseCase);
       const payload: UpdateCategoryPayload = { name: '   ' };
 
-      await expect(useCase.execute(1, payload)).rejects.toThrowError(
+      await expect(firstValueFrom(useCase.execute(1, payload))).rejects.toThrow(
         'Category name cannot be empty.'
       );
+    });
+
+    it('should propagate repository errors', async () => {
+      const useCase = TestBed.inject(UpdateCategoryUseCase);
+      const payload: UpdateCategoryPayload = { name: 'Updated Category' };
+      repo.updateCategory.mockReturnValue(throwError(() => new Error('Repository error')));
+
+      await expect(firstValueFrom(useCase.execute(1, payload))).rejects.toThrow('Repository error');
+      expect(repo.updateCategory).toHaveBeenCalled();
     });
   });
 
   describe('DeleteCategoryUseCase', () => {
-    it('should delete when category has no products', async () => {
+    it('should delete category', async () => {
       const useCase = TestBed.inject(DeleteCategoryUseCase);
-      repo.categoryHasProducts.mockResolvedValueOnce(false);
-      repo.deleteCategory.mockResolvedValueOnce();
+      repo.deleteCategory.mockReturnValue(of(undefined));
 
-      await useCase.execute(1);
+      await firstValueFrom(useCase.execute(1));
 
-      expect(repo.categoryHasProducts).toHaveBeenCalledWith(1);
       expect(repo.deleteCategory).toHaveBeenCalledWith(1);
     });
 
-    it('should throw CategoryHasProductsError when category has products', async () => {
+    it('should propagate repository errors from deleteCategory', async () => {
       const useCase = TestBed.inject(DeleteCategoryUseCase);
-      repo.categoryHasProducts.mockResolvedValueOnce(true);
+      repo.deleteCategory.mockReturnValue(throwError(() => new Error('Repository error')));
 
-      await expect(useCase.execute(1)).rejects.toThrowError(
-        'Category has associated products.'
-      );
-      expect(repo.deleteCategory).not.toHaveBeenCalled();
+      await expect(firstValueFrom(useCase.execute(1))).rejects.toThrow('Repository error');
+      expect(repo.deleteCategory).toHaveBeenCalledWith(1);
     });
   });
 });

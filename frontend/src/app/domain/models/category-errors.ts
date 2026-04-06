@@ -3,7 +3,7 @@ export class CategoryValidationError extends Error {
 
   constructor(
     public readonly details: unknown,
-    message = 'Category validation failed.',
+    message = 'La validación de la categoría falló.',
   ) {
     super(message);
   }
@@ -12,7 +12,7 @@ export class CategoryValidationError extends Error {
 export class CategoryNotFoundError extends Error {
   override readonly name = 'CategoryNotFoundError';
 
-  constructor(message = 'Category not found.') {
+  constructor(message = 'Categoría no encontrada.') {
     super(message);
   }
 }
@@ -20,7 +20,7 @@ export class CategoryNotFoundError extends Error {
 export class CategoryAlreadyExistsError extends Error {
   override readonly name = 'CategoryAlreadyExistsError';
 
-  constructor(message = 'Category name already exists.') {
+  constructor(message = 'El nombre de la categoría ya existe.') {
     super(message);
   }
 }
@@ -28,7 +28,7 @@ export class CategoryAlreadyExistsError extends Error {
 export class CategoryHasProductsError extends Error {
   override readonly name = 'CategoryHasProductsError';
 
-  constructor(message = 'Category has associated products.') {
+  constructor(message = 'La categoría tiene productos asociados.') {
     super(message);
   }
 }
@@ -36,7 +36,7 @@ export class CategoryHasProductsError extends Error {
 export class CategoryUnauthorizedError extends Error {
   override readonly name = 'CategoryUnauthorizedError';
 
-  constructor(message = 'Authentication required.') {
+  constructor(message = 'Autenticación requerida.') {
     super(message);
   }
 }
@@ -44,7 +44,7 @@ export class CategoryUnauthorizedError extends Error {
 export class CategoryForbiddenError extends Error {
   override readonly name = 'CategoryForbiddenError';
 
-  constructor(message = 'Admin permissions required.') {
+  constructor(message = 'Se requieren permisos de administrador.') {
     super(message);
   }
 }
@@ -52,7 +52,7 @@ export class CategoryForbiddenError extends Error {
 export class CategoryApiError extends Error {
   override readonly name = 'CategoryApiError';
 
-  constructor(message = 'Unexpected categories API error.') {
+  constructor(message = 'Error inesperado en la API de categorías.') {
     super(message);
   }
 }
