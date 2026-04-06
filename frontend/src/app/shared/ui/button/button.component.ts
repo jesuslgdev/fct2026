@@ -62,6 +62,7 @@ export class ButtonComponent {
   loading = input<boolean>(false); // Loading state
   rounded = input<boolean>(false); // Rounded corners
   styleClass = input<string>(''); // Custom style class
+  ariaLabel = input<string>(''); // Accessible label for icon-only buttons
 
   // Output
   clicked = output<MouseEvent>(); // Emits click event
