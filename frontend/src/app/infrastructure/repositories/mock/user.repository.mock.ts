@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
   User,
+  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -9,6 +10,7 @@ import {
 } from '@domain/models/user.model';
 import { Department } from '@domain/models/department.model';
 import { UserRole } from '@domain/enums/user-role.enum';
+import { Observable, of, throwError } from 'rxjs';
 
 // Minimal departments needed for the user form selector.
 // When the Departments feature is implemented, getDepartments() will
@@ -29,6 +31,7 @@ const INITIAL_MOCK_USERS: User[] = [
     role: UserRole.Administrator,
     departmentId: 4,
     active: true,
+    lastLoginAt: '2026-03-15T09:00:00Z',
   },
   {
     id: 2,
@@ -38,6 +41,7 @@ const INITIAL_MOCK_USERS: User[] = [
     role: UserRole.Manager,
     departmentId: 1,
     active: true,
+    lastLoginAt: '2026-03-15T09:00:00Z',
   },
   {
     id: 3,
@@ -47,6 +51,7 @@ const INITIAL_MOCK_USERS: User[] = [
     role: UserRole.Employee,
     departmentId: 2,
     active: true,
+    lastLoginAt: '2026-03-15T09:00:00Z',
   },
   {
     id: 4,
@@ -56,15 +61,17 @@ const INITIAL_MOCK_USERS: User[] = [
     role: UserRole.Employee,
     departmentId: 3,
     active: true,
+    lastLoginAt: '2026-03-15T09:00:00Z',
   },
   {
     id: 5,
     firstName: 'Maria',
-    lastName: 'Fernandez',
-    email: 'maria.fernandez@empresa.com',
+    lastName: null,
+    email: null,
     role: UserRole.Employee,
     departmentId: 3,
     active: false,
+    lastLoginAt: null,
   },
   {
     id: 6,
@@ -74,6 +81,7 @@ const INITIAL_MOCK_USERS: User[] = [
     role: UserRole.Manager,
     departmentId: 2,
     active: true,
+    lastLoginAt: '2026-03-15T09:00:00Z',
   },
   {
     id: 7,
@@ -83,15 +91,17 @@ const INITIAL_MOCK_USERS: User[] = [
     role: UserRole.Employee,
     departmentId: 1,
     active: true,
+    lastLoginAt: '2026-03-15T09:00:00Z',
   },
   {
     id: 8,
-    firstName: 'Diego',
-    lastName: 'Morales',
-    email: 'diego.morales@empresa.com',
+    firstName: 'DELETED',
+    lastName: 'DELETED',
+    email: 'deleted_8@deleted.com',
     role: UserRole.Employee,
     departmentId: 1,
     active: false,
+    lastLoginAt: '2026-03-20T09:00:00Z',
   },
 ];
 
@@ -100,17 +110,15 @@ export class MockUserRepository implements UserRepository {
   private users: User[];
 
   constructor() {
-  
     this.users = INITIAL_MOCK_USERS.map((u) => ({ ...u }));
   }
 
-  private getUserByIdOrThrow(id: number): User {
+  private getUserByIdOrThrow(id: number): User | null {
     const user = this.users.find((u) => u.id === id);
-    if (!user) throw new Error(`Usuario con id "${id}" no encontrado`);
-    return user;
+    return user ?? null;
   }
 
-  async getUsers(params: UserQueryParams): Promise<PagedResult<User>> {
+  getUsers(params: UserQueryParams): Observable<PagedResult<User>> {
     let filtered = [...this.users];
 
     if (params.search) {
@@ -118,8 +126,8 @@ export class MockUserRepository implements UserRepository {
       filtered = filtered.filter(
         (u) =>
           u.firstName.toLowerCase().includes(term) ||
-          u.lastName.toLowerCase().includes(term) ||
-          u.email.toLowerCase().includes(term),
+          (u.lastName ?? '').toLowerCase().includes(term) ||
+          (u.email ?? '').toLowerCase().includes(term),
       );
     }
 
@@ -135,31 +143,40 @@ export class MockUserRepository implements UserRepository {
     const start = (params.page - 1) * params.pageSize;
     const data = filtered.slice(start, start + params.pageSize);
 
-    return { data, total, page: params.page, pageSize: params.pageSize };
+    return of({ data, total, page: params.page, pageSize: params.pageSize });
   }
 
-  async getUserById(id: number): Promise<User> {
+  getUserById(id: number): Observable<User> {
     const user = this.getUserByIdOrThrow(id);
-    return { ...user };
+    if (!user) {
+      return throwError(() => new Error(`Usuario con id "${id}" no encontrado`));
+    }
+
+    return of({ ...user });
   }
 
-  async createUser(payload: CreateUserPayload): Promise<User> {
+  createUser(payload: CreateUserPayload): Observable<User> {
     const nextId = Math.max(0, ...this.users.map((u) => u.id)) + 1;
     const newUser: User = {
       id: nextId,
       firstName: payload.firstName,
-      lastName: payload.lastName,
-      email: payload.email,
+      // Mimics backend masking for users pending their first login.
+      lastName: null,
+      email: null,
       role: payload.role,
       departmentId: payload.departmentId,
-      active: true,
+      active: false,
+      lastLoginAt: null,
     };
     this.users = [...this.users, newUser];
-    return { ...newUser };
+    return of({ ...newUser });
   }
 
-  async updateUser(id: number, payload: UpdateUserPayload): Promise<User> {
+  updateUser(id: number, payload: UpdateUserPayload): Observable<User> {
     const existing = this.getUserByIdOrThrow(id);
+    if (!existing) {
+      return throwError(() => new Error(`Usuario con id "${id}" no encontrado`));
+    }
 
     const updated: User = {
       ...existing,
@@ -174,16 +191,51 @@ export class MockUserRepository implements UserRepository {
     };
 
     this.users = this.users.map((u) => (u.id === id ? updated : u));
-    return { ...updated };
+    return of({ ...updated });
   }
 
-  async toggleUserStatus(id: number, active: boolean): Promise<void> {
-    this.getUserByIdOrThrow(id);
-    this.users = this.users.map((u) => (u.id === id ? { ...u, active } : u));
+  deactivateUser(id: number): Observable<void> {
+    if (!this.getUserByIdOrThrow(id)) {
+      return throwError(() => new Error(`Usuario con id "${id}" no encontrado`));
+    }
+
+    this.users = this.users.map((u) =>
+      u.id === id
+        ? {
+            ...u,
+            active: false,
+            firstName: 'DELETED',
+            lastName: 'DELETED',
+            email: `deleted_${id}@deleted.com`,
+          }
+        : u,
+    );
+
+    return of(void 0);
   }
 
-  async getDepartments(): Promise<Department[]> {
+  activateUser(id: number, payload: ActivateUserPayload): Observable<void> {
+    if (!this.getUserByIdOrThrow(id)) {
+      return throwError(() => new Error(`Usuario con id "${id}" no encontrado`));
+    }
+
+    this.users = this.users.map((u) =>
+      u.id === id
+        ? {
+            ...u,
+            active: true,
+            firstName: payload.firstName,
+            lastName: payload.lastName,
+            email: payload.email,
+          }
+        : u,
+    );
+
+    return of(void 0);
+  }
+
+  getDepartments(): Observable<Department[]> {
     // TODO: replace with DepartmentRepository when Departments feature becomes available
-    return INITIAL_MOCK_DEPARTMENTS.map((d) => ({ ...d }));
+    return of(INITIAL_MOCK_DEPARTMENTS.map((d) => ({ ...d })));
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
   UserAlreadyExistsError,
@@ -12,13 +12,14 @@ import {
 } from '@domain/models/user-errors';
 import {
   User,
+  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
   PagedResult,
 } from '@domain/models/user.model';
 import { Department } from '@domain/models/department.model';
-import { UserDto, UsersPageDto, SetUserActiveDto } from '@infrastructure/dtos/user.dto';
+import { UserDto, UsersPageDto } from '@infrastructure/dtos/user.dto';
 import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 import { UserMapper } from '@infrastructure/mappers/user.mapper';
 import { environment } from 'environments/environment';
@@ -30,12 +31,10 @@ const DEPARTMENTS_URL = `${environment.apiUrl}/api/v1/admin/departments`;
 export class HttpUserRepository implements UserRepository {
   private readonly http = inject(HttpClient);
 
-  private async withErrorMapping<T>(operation: () => Promise<T>): Promise<T> {
-    try {
-      return await operation();
-    } catch (err) {
-      throw this.mapHttpError(err);
-    }
+  private withErrorMapping<T>(operation: () => Observable<T>): Observable<T> {
+    return operation().pipe(
+      catchError((err) => throwError(() => this.mapHttpError(err))),
+    );
   }
 
   private mapHttpError(err: unknown): Error {
@@ -44,6 +43,7 @@ export class HttpUserRepository implements UserRepository {
     }
 
     const message = this.extractErrorMessage(err);
+    const code = this.extractErrorCode(err);
 
     switch (err.status) {
       case 400:
@@ -56,10 +56,23 @@ export class HttpUserRepository implements UserRepository {
       case 404:
         return new UserNotFoundError(message ?? 'User not found.');
       case 409:
-        return new UserAlreadyExistsError(message);
+        if (code === 1202) {
+          return new UserAlreadyExistsError(message);
+        }
+        return new UserApiError(message ?? 'Users operation conflict.');
       default:
         return new UserApiError(message ?? 'Unexpected users API error.');
     }
+  }
+
+  private extractErrorCode(err: HttpErrorResponse): number | undefined {
+    if (!err.error || typeof err.error !== 'object') {
+      return undefined;
+    }
+
+    const payload = err.error as Record<string, unknown>;
+    const raw = payload['error_code'];
+    return typeof raw === 'number' ? raw : undefined;
   }
 
   private extractErrorMessage(err: HttpErrorResponse): string | undefined {
@@ -84,8 +97,8 @@ export class HttpUserRepository implements UserRepository {
     return undefined;
   }
 
-  async getUsers(params: UserQueryParams): Promise<PagedResult<User>> {
-    return this.withErrorMapping(async () => {
+  getUsers(params: UserQueryParams): Observable<PagedResult<User>> {
+    return this.withErrorMapping(() => {
       const query: Record<string, string | number | boolean> = {
         page: params.page,
         page_size: params.pageSize,
@@ -95,73 +108,76 @@ export class HttpUserRepository implements UserRepository {
       if (params.role !== undefined) query['role'] = params.role;
       if (params.active !== undefined) query['active'] = params.active;
 
-      const response = await firstValueFrom(
-        this.http.get<UsersPageDto>(BASE_URL, { params: query }),
+      return this.http.get<UsersPageDto>(BASE_URL, { params: query }).pipe(
+        map((response) => ({
+          data: response.items.map(UserMapper.fromDto),
+          total: response.total,
+          page: response.page,
+          pageSize: response.page_size,
+        })),
       );
-
-      return {
-        data: response.items.map(UserMapper.fromDto),
-        total: response.total,
-        page: response.page,
-        pageSize: response.page_size,
-      };
     });
   }
 
-  async getUserById(id: number): Promise<User> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(this.http.get<UserDto>(`${BASE_URL}/${id}`));
-      return UserMapper.fromDto(dto);
-    });
+  getUserById(id: number): Observable<User> {
+    return this.withErrorMapping(() =>
+      this.http.get<UserDto>(`${BASE_URL}/${id}`).pipe(
+        map((dto) => UserMapper.fromDto(dto)),
+      ),
+    );
   }
 
-  async createUser(payload: CreateUserPayload): Promise<User> {
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(
-        this.http.post<UserDto>(BASE_URL, UserMapper.toCreateDto(payload)),
-      );
-      return UserMapper.fromDto(dto);
-    });
+  createUser(payload: CreateUserPayload): Observable<User> {
+    return this.withErrorMapping(() =>
+      this.http.post<UserDto>(BASE_URL, UserMapper.toCreateDto(payload)).pipe(
+        map((dto) => UserMapper.fromDto(dto)),
+      ),
+    );
   }
 
-  async updateUser(id: number, payload: UpdateUserPayload): Promise<User> {
+  updateUser(id: number, payload: UpdateUserPayload): Observable<User> {
     // Uses PUT to update the user. This is the current backend contract and
     // matches the OpenAPI spec (PUT /api/v1/admin/users/{user_id}).
     //
     // If the backend is later changed to support PATCH for partial updates,
     // use `updateUserPartial()` instead.
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(
-        this.http.put<UserDto>(`${BASE_URL}/${id}`, UserMapper.toUpdateDto(payload)),
-      );
-      return UserMapper.fromDto(dto);
-    });
+    return this.withErrorMapping(() =>
+      this.http.put<UserDto>(`${BASE_URL}/${id}`, UserMapper.toUpdateDto(payload)).pipe(
+        map((dto) => UserMapper.fromDto(dto)),
+      ),
+    );
   }
 
-  async updateUserPartial(id: number, payload: UpdateUserPayload): Promise<User> {
+  updateUserPartial(id: number, payload: UpdateUserPayload): Observable<User> {
     // Prepared for a future endpoint that supports partial updates.
     // This sends only the fields present in `payload` using PATCH.
-    return this.withErrorMapping(async () => {
-      const dto = await firstValueFrom(
-        this.http.patch<UserDto>(`${BASE_URL}/${id}`, UserMapper.toUpdateDto(payload)),
-      );
-      return UserMapper.fromDto(dto);
-    });
+    return this.withErrorMapping(() =>
+      this.http.patch<UserDto>(`${BASE_URL}/${id}`, UserMapper.toUpdateDto(payload)).pipe(
+        map((dto) => UserMapper.fromDto(dto)),
+      ),
+    );
   }
 
-  async toggleUserStatus(id: number, active: boolean): Promise<void> {
-    return this.withErrorMapping(async () => {
-      const body: SetUserActiveDto = { is_active: active };
-      await firstValueFrom(this.http.patch<void>(`${BASE_URL}/${id}/active`, body));
-    });
+  deactivateUser(id: number): Observable<void> {
+    return this.withErrorMapping(() =>
+      this.http.patch<void>(`${BASE_URL}/${id}/deactivate`, null),
+    );
   }
 
-  async getDepartments(): Promise<Department[]> {
-    return this.withErrorMapping(async () => {
-      const dtos = await firstValueFrom(
-        this.http.get<DepartmentDto[]>(DEPARTMENTS_URL),
-      );
-      return dtos.map(UserMapper.departmentFromDto);
-    });
+  activateUser(id: number, payload: ActivateUserPayload): Observable<void> {
+    return this.withErrorMapping(() =>
+      this.http.patch<void>(
+        `${BASE_URL}/${id}/activate`,
+        UserMapper.toActivateDto(payload),
+      ),
+    );
+  }
+
+  getDepartments(): Observable<Department[]> {
+    return this.withErrorMapping(() =>
+      this.http.get<DepartmentDto[]>(DEPARTMENTS_URL).pipe(
+        map((dtos) => dtos.map(UserMapper.departmentFromDto)),
+      ),
+    );
   }
 }
