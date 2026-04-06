@@ -117,7 +117,7 @@ describe('WarehousesStore', () => {
 
   it('maps validation warehouse error to backend message', () => {
     createWarehouseUseCase.execute.mockReturnValueOnce(
-      throwError(() => new WarehouseValidationError({ field: 'name' }, 'Name already exists.'))
+      throwError(() => new WarehouseValidationError('name', 'Name already exists.'))
     );
 
     store.saveWarehouse({

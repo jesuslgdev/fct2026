@@ -303,7 +303,7 @@ describe('HttpWarehouseRepository', () => {
       );
       const err = await promise.catch((e) => e);
       expect(err).toBeInstanceOf(WarehouseApiError);
-      expect(err.message).toBe('Unexpected warehouse API error.');
+      expect(err.message).toBe('Error inesperado en la API de almacenes.');
     });
   });
 });
