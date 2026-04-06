@@ -114,23 +114,12 @@ export class MockCategoryRepository implements CategoryRepository {
       return throwError(() => new CategoryNotFoundError());
     }
 
-    // Simulate check for associated products (deterministic logic: IDs 1 and 2 have products)
-    const hasProducts = [1, 2].includes(categoryId);
-    if (hasProducts) {
+    // Simulate backend rejection (409 Conflict) for categories with products
+    if ([1, 2].includes(categoryId)) {
       return throwError(() => new CategoryHasProductsError());
     }
 
     this.categories = this.categories.filter((c) => c.categoryId !== categoryId);
     return of(undefined);
-  }
-
-  categoryHasProducts(categoryId: number): Observable<boolean> {
-    const category = this.categories.find((c) => c.categoryId === categoryId);
-    if (!category) {
-      return throwError(() => new CategoryNotFoundError());
-    }
-
-    // Simulate check for associated products (deterministic logic: IDs 1 and 2 have products)
-    return of([1, 2].includes(categoryId));
   }
 }
