@@ -270,6 +270,16 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         await self._db.delete(purchase)
         await self._db.flush()
 
+    async def advance_status(self, purchase_id: int, new_status: str) -> Purchase:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        purchase.status = new_status
+        await self._db.flush()
+        await self._db.refresh(purchase, ["lines"])
+        return purchase
+
     async def has_purchases_for_user(self, user_id: int) -> bool:
         result = await self._db.execute(
             select(func.count())

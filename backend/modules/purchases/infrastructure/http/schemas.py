@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -56,6 +57,10 @@ class UpdatePurchaseLineRequest(BaseModel):
     quantity: int = Field(gt=0)
     unit_price: Decimal = Field(gt=0, decimal_places=2)
     discount: Decimal = Field(default=0, ge=0, decimal_places=2)
+
+
+class AdvancePurchaseStatusRequest(BaseModel):
+    status: Literal["Approved", "In Process", "Sent", "Received"]
 
 
 class SupplierPriceDTO(BaseModel):

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, Response
 
 from composition.dependencies import (
     get_add_purchase_line_use_case,
+    get_advance_purchase_status_use_case,
     get_cancel_purchase_use_case,
     get_create_purchase_use_case,
     get_delete_purchase_line_use_case,
@@ -22,6 +23,9 @@ from composition.security import (
 from modules.purchases.domain.entities.purchase_enriched import PurchaseEnriched
 from modules.purchases.domain.interfaces.use_cases.i_add_purchase_line_use_case import (
     IAddPurchaseLineUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_advance_purchase_status_use_case import (
+    IAdvancePurchaseStatusUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_cancel_purchase_use_case import (
     ICancelPurchaseUseCase,
@@ -52,6 +56,7 @@ from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case im
 )
 from modules.purchases.infrastructure.http.schemas import (
     AddPurchaseLineRequest,
+    AdvancePurchaseStatusRequest,
     CreatePurchaseRequest,
     PurchaseDetailDTO,
     PurchaseDTO,
@@ -232,6 +237,26 @@ async def update_purchase(
         purchase_id=purchase_id,
         supplier_id=body.supplier_id,
         warehouse_id=body.warehouse_id,
+    )
+    return _purchase_detail(purchase)
+
+
+@router.patch(
+    "/{purchase_id}/status", response_model=PurchaseDetailDTO, tags=["Purchases"]
+)
+async def advance_purchase_status(
+    purchase_id: int,
+    body: AdvancePurchaseStatusRequest,
+    current_user: UserSession = Depends(require_purchases_department_or_admin),
+    use_case: IAdvancePurchaseStatusUseCase = Depends(
+        get_advance_purchase_status_use_case
+    ),
+):
+    """Advance a purchase to the next valid status. Received triggers automatic stock entry."""
+    purchase = await use_case.execute(
+        purchase_id=purchase_id,
+        new_status=body.status,
+        user_email=current_user.email,
     )
     return _purchase_detail(purchase)
 

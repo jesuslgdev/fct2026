@@ -94,3 +94,6 @@ class IPurchaseRepository(ABC):
 
     @abstractmethod
     async def delete_purchase(self, purchase_id: int) -> None: ...
+
+    @abstractmethod
+    async def advance_status(self, purchase_id: int, new_status: str) -> Purchase: ...
