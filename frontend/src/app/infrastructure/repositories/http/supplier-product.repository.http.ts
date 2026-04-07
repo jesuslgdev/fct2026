@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { SupplierProductRepository } from '@domain/repositories/supplier-product.repository';
 import {
   SupplierProductValidationError,
@@ -31,12 +31,10 @@ const BASE_URL = `${environment.apiUrl}/api/v1/suppliers`;
 export class HttpSupplierProductRepository implements SupplierProductRepository {
   private readonly http = inject(HttpClient);
 
-  private async withErrorMapping<T>(operation: () => Promise<T>): Promise<T> {
-    try {
-      return await operation();
-    } catch (err) {
-      throw this.mapHttpError(err);
-    }
+  private withErrorMapping<T>(source$: Observable<T>): Observable<T> {
+    return source$.pipe(
+      catchError((err) => throwError(() => this.mapHttpError(err))),
+    );
   }
 
   private mapHttpError(err: unknown): Error {
@@ -101,82 +99,52 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
     }
   }
 
-  async getSupplierProducts(supplierId: number): Promise<SupplierProduct[]> {
-    return this.withErrorMapping(async () => {
-      const response = await firstValueFrom(
-        this.http.get<SupplierProductsPageDto>(`${BASE_URL}/${supplierId}/products`),
-      );
-
-      const result = SupplierProductMapper.fromPageDto(response, supplierId);
-      return result.data;
-    });
+  getSupplierProducts(supplierId: number): Observable<SupplierProduct[]> {
+    return this.withErrorMapping(
+      this.http
+        .get<SupplierProductsPageDto>(`${BASE_URL}/${supplierId}/products`)
+        .pipe(map((response) => SupplierProductMapper.fromPageDto(response))),
+    );
   }
 
-  async addProductToSupplier(supplierId: number, request: AddSupplierProductRequest): Promise<SupplierProduct> {
-    return this.withErrorMapping(async () => {
-      this.validatePrice(request.supplierPrice);
+  addProductToSupplier(supplierId: number, request: AddSupplierProductRequest): Observable<SupplierProduct> {
+    this.validatePrice(request.supplierPrice);
 
-      const dto = SupplierProductMapper.toAddDto(request);
-      const response = await firstValueFrom(
-        this.http.post<SupplierProductDto>(`${BASE_URL}/${supplierId}/products`, dto),
-      );
+    const dto = SupplierProductMapper.toAddDto(request);
 
-      const result = SupplierProductMapper.fromDto(response);
-      return {
-        ...result,
-        supplierId,
-      };
-    });
+    return this.withErrorMapping(
+      this.http
+        .post<SupplierProductDto>(`${BASE_URL}/${supplierId}/products`, dto)
+        .pipe(map((response) => SupplierProductMapper.fromDto(response))),
+    );
   }
 
-  async updateSupplierProductPrice(supplierId: number, productId: number, request: UpdateSupplierProductPriceRequest): Promise<SupplierProduct> {
-    return this.withErrorMapping(async () => {
-      this.validatePrice(request.supplierPrice);
+  updateSupplierProductPrice(supplierId: number, productId: number, request: UpdateSupplierProductPriceRequest): Observable<SupplierProduct> {
+    this.validatePrice(request.supplierPrice);
 
-      const dto = SupplierProductMapper.toUpdateDto(request);
-      const response = await firstValueFrom(
-        this.http.put<SupplierProductDto>(`${BASE_URL}/${supplierId}/products/${productId}`, dto),
-      );
+    const dto = SupplierProductMapper.toUpdateDto(request);
 
-      const result = SupplierProductMapper.fromDto(response);
-      return {
-        ...result,
-        supplierId,
-      };
-    });
+    return this.withErrorMapping(
+      this.http
+        .put<SupplierProductDto>(`${BASE_URL}/${supplierId}/products/${productId}`, dto)
+        .pipe(map((response) => SupplierProductMapper.fromDto(response))),
+    );
   }
 
-  async removeProductFromSupplier(supplierId: number, productId: number): Promise<void> {
-    return this.withErrorMapping(async () => {
-      await firstValueFrom(
-        this.http.delete<void>(`${BASE_URL}/${supplierId}/products/${productId}`),
-      );
-    });
+  removeProductFromSupplier(supplierId: number, productId: number): Observable<void> {
+    return this.withErrorMapping(
+      this.http.delete<void>(`${BASE_URL}/${supplierId}/products/${productId}`),
+    );
   }
 
-  async importSupplierProducts(supplierId: number, request: ImportSupplierProductsRequest): Promise<ImportResult> {
-    return this.withErrorMapping(async () => {
-      // Validar todos los precios antes de enviar
-      for (const [index, product] of request.products.entries()) {
-        if (!product.productCode || product.productCode.trim() === '') {
-          throw new SupplierProductValidationError(
-            { row: index + 1, productCode: product.productCode },
-            `Row ${index + 1}: Product code is required`
-          );
-        }
+  importSupplierProducts(supplierId: number, request: ImportSupplierProductsRequest): Observable<ImportResult> {
+    const formData = new FormData();
+    formData.append('file', request.file);
 
-        this.validatePrice(product.supplierPrice);
-      }
-
-      const importData = SupplierProductMapper.toImportResultDto(request);
-      const formData = new FormData();
-      formData.append('products', JSON.stringify(importData.products));
-
-      const response = await firstValueFrom(
-        this.http.post<ImportResultDto>(`${BASE_URL}/${supplierId}/products/import`, formData),
-      );
-
-      return SupplierProductMapper.importResultFromDto(response);
-    });
+    return this.withErrorMapping(
+      this.http
+        .post<ImportResultDto>(`${BASE_URL}/${supplierId}/products/import`, formData)
+        .pipe(map((response) => SupplierProductMapper.importResultFromDto(response))),
+    );
   }
 }

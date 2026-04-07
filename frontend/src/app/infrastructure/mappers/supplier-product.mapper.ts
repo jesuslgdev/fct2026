@@ -2,7 +2,6 @@ import {
   SupplierProduct,
   AddSupplierProductRequest,
   UpdateSupplierProductPriceRequest,
-  ImportSupplierProductsRequest,
   ImportResult,
   ImportError,
 } from '@domain/models/supplier-product.model';
@@ -16,34 +15,28 @@ import {
 } from '@infrastructure/dtos/supplier-product.dto';
 
 export class SupplierProductMapper {
+  private static toNumber(value: number | string): number {
+    const parsed = typeof value === 'string' ? Number(value) : value;
+
+    if (!Number.isFinite(parsed)) {
+      throw new Error('Invalid decimal value received from API.');
+    }
+
+    return parsed;
+  }
+
   static fromDto(dto: SupplierProductDto): SupplierProduct {
     return {
-      supplierId: dto.product_id, 
       productId: dto.product_id,
-      productCode: dto.product_code || '',
-      productName: dto.product_name || '',
-      categoryName: dto.category_name,
-      supplierPrice: dto.supplier_price,
-      createdAt: new Date().toISOString(), 
-      updatedAt: new Date().toISOString(),
+      productCode: dto.product_code ?? null,
+      productName: dto.product_name ?? null,
+      categoryName: dto.category_name ?? null,
+      supplierPrice: this.toNumber(dto.supplier_price),
     };
   }
 
-  static fromPageDto(dto: SupplierProductsPageDto, supplierId: number): {
-    data: SupplierProduct[];
-    total: number;
-    page: number;
-    pageSize: number;
-  } {
-    return {
-      data: dto.items.map(item => ({
-        ...this.fromDto(item),
-        supplierId,
-      })),
-      total: dto.total,
-      page: dto.page,
-      pageSize: dto.page_size,
-    };
+  static fromPageDto(dto: SupplierProductsPageDto): SupplierProduct[] {
+    return dto.items.map((item) => this.fromDto(item));
   }
 
   static toAddDto(request: AddSupplierProductRequest): AddSupplierProductDto {
@@ -59,22 +52,12 @@ export class SupplierProductMapper {
     };
   }
 
-  static toImportResultDto(request: ImportSupplierProductsRequest): {
-    products: { product_code: string; supplier_price: number }[];
-  } {
-    return {
-      products: request.products.map(product => ({
-        product_code: product.productCode,
-        supplier_price: product.supplierPrice,
-      })),
-    };
-  }
-
   static importResultFromDto(dto: ImportResultDto): ImportResult {
     return {
       total: dto.total,
       created: dto.created,
-      errors: dto.error_detail.map(this.importErrorFromDto),
+      errors: dto.errors,
+      error_detail: dto.error_detail.map((item) => this.importErrorFromDto(item)),
     };
   }
 

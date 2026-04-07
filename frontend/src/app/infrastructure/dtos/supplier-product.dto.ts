@@ -1,18 +1,20 @@
+type ApiDecimal = number | string;
+
 export interface SupplierProductDto {
   product_id: number;
   product_name?: string;
   product_code?: string;
   category_name?: string;
-  supplier_price: number;
+  supplier_price: ApiDecimal;
 }
 
 export interface AddSupplierProductDto {
   product_id: number;
-  supplier_price: number;
+  supplier_price: ApiDecimal;
 }
 
 export interface UpdateSupplierProductPriceDto {
-  supplier_price: number;
+  supplier_price: ApiDecimal;
 }
 
 export interface SupplierProductsPageDto {

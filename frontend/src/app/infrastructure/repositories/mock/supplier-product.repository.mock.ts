@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { SupplierProductRepository } from '@domain/repositories/supplier-product.repository';
 import {
   SupplierProduct,
@@ -13,42 +14,47 @@ import {
   SupplierProductDuplicateError,
 } from '@domain/models/supplier-product-errors';
 
-const INITIAL_MOCK_SUPPLIER_PRODUCTS: SupplierProduct[] = [
+interface MockSupplierProductRecord {
+  supplierId: number;
+  product: SupplierProduct;
+}
+
+const INITIAL_MOCK_SUPPLIER_PRODUCTS: MockSupplierProductRecord[] = [
   {
     supplierId: 1,
-    productId: 1,
-    productCode: 'PROD001',
-    productName: 'Laptop Dell XPS 15',
-    categoryName: 'Electrónica',
-    supplierPrice: 1200.50,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
+    product: {
+      productId: 1,
+      productCode: 'PROD001',
+      productName: 'Laptop Dell XPS 15',
+      categoryName: 'Electrónica',
+      supplierPrice: 1200.5,
+    },
   },
   {
     supplierId: 1,
-    productId: 2,
-    productCode: 'PROD002',
-    productName: 'Mouse Logitech MX Master',
-    categoryName: 'Accesorios',
-    supplierPrice: 89.99,
-    createdAt: '2024-01-02T00:00:00Z',
-    updatedAt: '2024-01-02T00:00:00Z',
+    product: {
+      productId: 2,
+      productCode: 'PROD002',
+      productName: 'Mouse Logitech MX Master',
+      categoryName: 'Accesorios',
+      supplierPrice: 89.99,
+    },
   },
   {
     supplierId: 2,
-    productId: 3,
-    productCode: 'PROD003',
-    productName: 'Monitor LG 27"',
-    categoryName: 'Electrónica',
-    supplierPrice: 350.00,
-    createdAt: '2024-01-03T00:00:00Z',
-    updatedAt: '2024-01-03T00:00:00Z',
+    product: {
+      productId: 3,
+      productCode: 'PROD003',
+      productName: 'Monitor LG 27"',
+      categoryName: 'Electrónica',
+      supplierPrice: 350,
+    },
   },
 ];
 
 @Injectable()
 export class MockSupplierProductRepository implements SupplierProductRepository {
-  private supplierProducts: SupplierProduct[];
+  private supplierProducts: MockSupplierProductRecord[];
 
   constructor() {
     this.supplierProducts = INITIAL_MOCK_SUPPLIER_PRODUCTS.map(sp => ({ ...sp }));
@@ -70,11 +76,11 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
     }
   }
 
-  private findSupplierProduct(supplierId: number, productId: number): SupplierProduct | undefined {
-    return this.supplierProducts.find(sp => sp.supplierId === supplierId && sp.productId === productId);
+  private findSupplierProduct(supplierId: number, productId: number): MockSupplierProductRecord | undefined {
+    return this.supplierProducts.find((sp) => sp.supplierId === supplierId && sp.product.productId === productId);
   }
 
-  private findSupplierProductOrThrow(supplierId: number, productId: number): SupplierProduct {
+  private findSupplierProductOrThrow(supplierId: number, productId: number): MockSupplierProductRecord {
     const supplierProduct = this.findSupplierProduct(supplierId, productId);
     if (!supplierProduct) {
       throw new SupplierProductNotFoundError('Supplier product association not found');
@@ -82,13 +88,15 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
     return supplierProduct;
   }
 
-  async getSupplierProducts(supplierId: number): Promise<SupplierProduct[]> {
-    return this.supplierProducts
-      .filter(sp => sp.supplierId === supplierId)
-      .map(sp => ({ ...sp }));
+  getSupplierProducts(supplierId: number): Observable<SupplierProduct[]> {
+    return of(
+      this.supplierProducts
+        .filter((sp) => sp.supplierId === supplierId)
+        .map((sp) => ({ ...sp.product })),
+    );
   }
 
-  async addProductToSupplier(supplierId: number, request: AddSupplierProductRequest): Promise<SupplierProduct> {
+  addProductToSupplier(supplierId: number, request: AddSupplierProductRequest): Observable<SupplierProduct> {
     this.validatePrice(request.supplierPrice);
 
     // Check if product already exists for this supplier
@@ -98,87 +106,61 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
     }
 
     const newSupplierProduct: SupplierProduct = {
-      supplierId,
       productId: request.productId,
       productCode: `PROD${request.productId.toString().padStart(3, '0')}`,
       productName: `Product ${request.productId}`,
       categoryName: 'General',
       supplierPrice: request.supplierPrice,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
-    this.supplierProducts = [...this.supplierProducts, newSupplierProduct];
-    return { ...newSupplierProduct };
+    this.supplierProducts = [
+      ...this.supplierProducts,
+      {
+        supplierId,
+        product: newSupplierProduct,
+      },
+    ];
+
+    return of({ ...newSupplierProduct });
   }
 
-  async updateSupplierProductPrice(supplierId: number, productId: number, request: UpdateSupplierProductPriceRequest): Promise<SupplierProduct> {
+  updateSupplierProductPrice(supplierId: number, productId: number, request: UpdateSupplierProductPriceRequest): Observable<SupplierProduct> {
     this.validatePrice(request.supplierPrice);
 
     const existing = this.findSupplierProductOrThrow(supplierId, productId);
 
     const updated: SupplierProduct = {
-      ...existing,
+      ...existing.product,
       supplierPrice: request.supplierPrice,
-      updatedAt: new Date().toISOString(),
     };
 
-    this.supplierProducts = this.supplierProducts.map(sp => 
-      sp.supplierId === supplierId && sp.productId === productId ? updated : sp
+    this.supplierProducts = this.supplierProducts.map((sp) =>
+      sp.supplierId === supplierId && sp.product.productId === productId
+        ? { ...sp, product: updated }
+        : sp
     );
 
-    return { ...updated };
+    return of({ ...updated });
   }
 
-  async removeProductFromSupplier(supplierId: number, productId: number): Promise<void> {
+  removeProductFromSupplier(supplierId: number, productId: number): Observable<void> {
     this.findSupplierProductOrThrow(supplierId, productId);
 
-    this.supplierProducts = this.supplierProducts.filter(sp => 
-      !(sp.supplierId === supplierId && sp.productId === productId)
+    this.supplierProducts = this.supplierProducts.filter((sp) =>
+      !(sp.supplierId === supplierId && sp.product.productId === productId)
     );
+
+    return of(void 0);
   }
 
-  async importSupplierProducts(supplierId: number, request: ImportSupplierProductsRequest): Promise<ImportResult> {
-    const errors: { row: number; reason: string }[] = [];
-    let created = 0;
+  importSupplierProducts(supplierId: number, _request: ImportSupplierProductsRequest): Observable<ImportResult> {
+    const currentCount = this.supplierProducts.filter((sp) => sp.supplierId === supplierId).length;
 
-    for (const [index, product] of request.products.entries()) {
-      try {
-        // Validar productCode
-        if (!product.productCode || product.productCode.trim() === '') {
-          errors.push({
-            row: index + 1,
-            reason: 'Product code is required',
-          });
-          continue;
-        }
-
-        // Validar precio
-        this.validatePrice(product.supplierPrice);
-
-        // Simular productId basado en productCode
-        const productId = parseInt(product.productCode.replace('PROD', ''));
-
-        // Intentar añadir el producto
-        await this.addProductToSupplier(supplierId, {
-          productId,
-          supplierPrice: product.supplierPrice,
-        });
-
-        created++;
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : 'Unknown error';
-        errors.push({
-          row: index + 1,
-          reason,
-        });
-      }
-    }
-
-    return {
-      total: request.products.length,
-      created,
-      errors,
-    };
+    return of({
+      total: currentCount,
+      created: 0,
+      errors: 0,
+      error_detail: [],
+    });
   }
 }
