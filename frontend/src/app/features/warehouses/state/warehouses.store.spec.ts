@@ -13,6 +13,7 @@ import {
   WarehouseForbiddenError,
   WarehouseValidationError,
 } from '@domain/models/warehouse-errors';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import { GetWarehousesUseCase } from '@domain/usecases/warehouse/get-warehouses.usecase';
 import { CreateWarehouseUseCase } from '@domain/usecases/warehouse/create-warehouse.usecase';
 import { UpdateWarehouseUseCase } from '@domain/usecases/warehouse/update-warehouse.usecase';
@@ -40,7 +41,13 @@ class MockAuthService {
     displayName: 'Admin',
     photoURL: null,
     role: 'Administrator' as const,
+    permissions: [UserPermission.Admin],
   });
+  readonly permissions = signal([UserPermission.Admin]);
+  hasPermission(permission: UserPermission | UserPermission[]): boolean {
+    const p = Array.isArray(permission) ? permission : [permission];
+    return p.some((perm) => (this.permissions() as UserPermission[]).includes(perm));
+  }
 }
 
 class MockGetWarehousesUseCase {

@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
-import { UserRole } from '@domain/enums/user-role.enum';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import {
   Client,
   ClientDetail,
@@ -49,11 +49,9 @@ export class ClientsStore {
   readonly confirmDialogVisible = signal(false);
   readonly clientToToggle = signal<Client | null>(null);
 
-  readonly canEdit = computed(() => {
-    const user = this.authService.user();
-    if (user?.role === UserRole.Administrator) return true;
-    return false;
-  });
+  readonly canEdit = computed(() =>
+    this.authService.hasPermission([UserPermission.Admin, UserPermission.SalesManager])
+  );
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
 

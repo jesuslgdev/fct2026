@@ -5,6 +5,7 @@ import { of, throwError } from 'rxjs';
 import { ClientsStore } from './clients.store';
 import { AuthService } from '@core/services/auth.service';
 import { UserRole } from '@domain/enums/user-role.enum';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
 import { CreateClientUseCase } from '@domain/usecases/client/create-client.usecase';
 import { UpdateClientUseCase } from '@domain/usecases/client/update-client.usecase';
@@ -75,7 +76,13 @@ class MockAuthService {
     displayName: 'Admin',
     photoURL: null,
     role: UserRole.Administrator,
+    permissions: [UserPermission.Admin],
   });
+  readonly permissions = signal([UserPermission.Admin]);
+  hasPermission(permission: UserPermission | UserPermission[]): boolean {
+    const p = Array.isArray(permission) ? permission : [permission];
+    return p.some((perm) => (this.permissions() as UserPermission[]).includes(perm));
+  }
 }
 
 class MockGetClientsUseCase {
@@ -351,25 +358,13 @@ describe('ClientsStore', () => {
     expect(store.canEdit()).toBe(true);
   });
 
-  it('canEdit returns false for Sales Manager', () => {
-    authServiceMock.user.set({
-      uid: 'u1',
-      email: 'm@sales.com',
-      displayName: 'Sales Mgr',
-      photoURL: null,
-      role: UserRole.Manager,
-    });
-    expect(store.canEdit()).toBe(false);
+  it('canEdit returns true for Sales Manager', () => {
+    authServiceMock.permissions.set([UserPermission.SalesManager]);
+    expect(store.canEdit()).toBe(true);
   });
 
   it('canEdit returns false for Non-Sales Manager', () => {
-    authServiceMock.user.set({
-      uid: 'u2',
-      email: 'm@other.com',
-      displayName: 'Other Mgr',
-      photoURL: null,
-      role: UserRole.Manager,
-    });
+    authServiceMock.permissions.set([UserPermission.PurchasesManager]);
     expect(store.canEdit()).toBe(false);
   });
 

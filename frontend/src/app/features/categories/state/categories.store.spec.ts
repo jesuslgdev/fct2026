@@ -14,6 +14,7 @@ import {
   UpdateCategoryPayload,
 } from '@domain/models/category.model';
 import { UserRole } from '@domain/enums/user-role.enum';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import {
   CategoryForbiddenError,
   CategoryValidationError,
@@ -44,7 +45,13 @@ class MockAuthService {
     displayName: 'Admin',
     photoURL: null,
     role: UserRole.Administrator,
+    permissions: [UserPermission.Admin],
   });
+  readonly permissions = signal([UserPermission.Admin]);
+  hasPermission(permission: UserPermission | UserPermission[]): boolean {
+    const p = Array.isArray(permission) ? permission : [permission];
+    return p.some((perm) => (this.permissions() as UserPermission[]).includes(perm));
+  }
 }
 
 class MockGetCategoriesUseCase {
@@ -262,7 +269,20 @@ describe('CategoriesStore', () => {
   });
 
   it('canEdit returns true for Administrator', () => {
+    store.canEdit();
     expect(store.canEdit()).toBe(true);
+  });
+
+  it('canEdit returns true for Purchases Manager', () => {
+    const authService = TestBed.inject(AuthService) as unknown as MockAuthService;
+    authService.permissions.set([UserPermission.PurchasesManager]);
+    expect(store.canEdit()).toBe(true);
+  });
+
+  it('canEdit returns false for Sales Manager', () => {
+    const authService = TestBed.inject(AuthService) as unknown as MockAuthService;
+    authService.permissions.set([UserPermission.SalesManager]);
+    expect(store.canEdit()).toBe(false);
   });
 
   it('filtered categories returns all when no search query', async () => {
