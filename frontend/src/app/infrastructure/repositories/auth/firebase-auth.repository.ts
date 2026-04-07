@@ -14,10 +14,13 @@ import { AccessDeniedError } from '@domain/models/auth-errors';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { environment } from 'environments/environment';
 import { UserRole } from '@domain/enums/user-role.enum';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 
 interface LoginResponse {
   role: string;
+  department_id: number | null;
   name: string;
+  permissions: string[];
 }
 
 @Injectable()
@@ -49,6 +52,8 @@ export class FirebaseAuthRepository implements AuthRepository {
           displayName: response.name || credential.user.displayName,
           photoURL: credential.user.photoURL,
           role,
+          departmentId: response.department_id,
+          permissions: response.permissions as UserPermission[],
         },
       };
     } catch (err) {
@@ -99,6 +104,8 @@ export class FirebaseAuthRepository implements AuthRepository {
               displayName: response.name || user.displayName,
               photoURL: user.photoURL,
               role,
+              departmentId: response.department_id,
+              permissions: response.permissions as UserPermission[],
             },
           });
         } catch {
