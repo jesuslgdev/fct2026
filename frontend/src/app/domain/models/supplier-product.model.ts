@@ -1,12 +1,9 @@
 export interface SupplierProduct {
-  supplierId: number;
   productId: number;
-  productCode: string;
-  productName: string;
-  categoryName?: string;
+  productCode?: string | null;
+  productName?: string | null;
+  categoryName?: string | null;
   supplierPrice: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 // Request DTOs (I - Interface Segregation)
@@ -20,17 +17,15 @@ export interface UpdateSupplierProductPriceRequest {
 }
 
 export interface ImportSupplierProductsRequest {
-  products: {
-    productCode: string;
-    supplierPrice: number;
-  }[];
+  file: File;
 }
 
 // Response DTOs
 export interface ImportResult {
   total: number;
   created: number;
-  errors: ImportError[];
+  errors: number;
+  error_detail: ImportError[];
 }
 
 export interface ImportError {
