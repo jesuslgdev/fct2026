@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import {
   Warehouse,
   CreateWarehousePayload,
@@ -42,7 +43,9 @@ export class WarehousesStore {
   readonly warehouseToDelete = signal<Warehouse | null>(null);
 
   // ── Computed ───────────────────────────────────────────────────────
-  readonly canEdit = computed(() => this.authService.user()?.role === 'Administrator');
+  readonly canEdit = computed(() => 
+    this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager])
+  );
   
   readonly filteredWarehouses = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();

@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
-import { UserRole } from '@domain/enums/user-role.enum';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import {
   Category,
   CreateCategoryPayload,
@@ -44,10 +44,9 @@ export class CategoriesStore {
   readonly confirmDialogVisible = this._confirmDialogVisible.asReadonly();
   readonly categoryToDelete = this._categoryToDelete.asReadonly();
 
-  readonly canEdit = computed(() => {
-    const user = this.authService.user();
-    return user?.role === UserRole.Administrator
-  });
+  readonly canEdit = computed(() =>
+    this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager])
+  );
 
   readonly filteredCategories = computed(() => {
     const categories = this.categories();
