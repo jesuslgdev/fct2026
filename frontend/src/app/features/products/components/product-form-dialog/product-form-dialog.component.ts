@@ -81,6 +81,7 @@ export class ProductFormDialogComponent {
       } else {
         this.form.enable({ emitEvent: false });
         this.code.disable({ emitEvent: false });
+        this.stock.disable({ emitEvent: false });
       }
     });
   }
@@ -122,7 +123,6 @@ export class ProductFormDialogComponent {
       description: value.description ?? undefined,
       categoryId: value.categoryId ?? undefined,
       price: value.price ?? undefined,
-      stock: value.stock ?? undefined,
       minStock: value.minStock ?? undefined,
     };
 
