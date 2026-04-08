@@ -3,8 +3,6 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.catalog.domain.entities.category import Category
-from modules.catalog.domain.entities.product import Product
 from modules.suppliers.domain.dtos.product_supplier_detail import (
     ProductSupplierDetail,
 )
@@ -19,6 +17,7 @@ from modules.suppliers.domain.interfaces.repositories.i_supplier_repository impo
 )
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_supplier_reader import ISupplierReader
+from shared.infrastructure.database.read_tables import categories_table, products_table
 
 
 class SupplierRepository(ISupplierRepository, ISupplierReader):
@@ -218,17 +217,22 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
     ) -> list[SupplierProductDetail]:
         result = await self._db.execute(
             select(
-                Product.product_id,
-                Product.name.label("product_name"),
-                Product.product_code,
-                Category.name.label("category_name"),
+                products_table.c.product_id,
+                products_table.c.name.label("product_name"),
+                products_table.c.product_code,
+                categories_table.c.name.label("category_name"),
                 SupplierProduct.supplier_price,
             )
             .select_from(SupplierProduct)
-            .join(Product, SupplierProduct.product_id == Product.product_id)
-            .outerjoin(Category, Product.category_id == Category.category_id)
+            .join(
+                products_table, SupplierProduct.product_id == products_table.c.product_id
+            )
+            .outerjoin(
+                categories_table,
+                products_table.c.category_id == categories_table.c.category_id,
+            )
             .where(SupplierProduct.supplier_id == supplier_id)
-            .order_by(Product.name)
+            .order_by(products_table.c.name)
         )
         return [
             SupplierProductDetail(
@@ -254,17 +258,22 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         offset = (page - 1) * page_size
         result = await self._db.execute(
             select(
-                Product.product_id,
-                Product.name.label("product_name"),
-                Product.product_code,
-                Category.name.label("category_name"),
+                products_table.c.product_id,
+                products_table.c.name.label("product_name"),
+                products_table.c.product_code,
+                categories_table.c.name.label("category_name"),
                 SupplierProduct.supplier_price,
             )
             .select_from(SupplierProduct)
-            .join(Product, SupplierProduct.product_id == Product.product_id)
-            .outerjoin(Category, Product.category_id == Category.category_id)
+            .join(
+                products_table, SupplierProduct.product_id == products_table.c.product_id
+            )
+            .outerjoin(
+                categories_table,
+                products_table.c.category_id == categories_table.c.category_id,
+            )
             .where(SupplierProduct.supplier_id == supplier_id)
-            .order_by(Product.name)
+            .order_by(products_table.c.name)
             .limit(page_size)
             .offset(offset)
         )
