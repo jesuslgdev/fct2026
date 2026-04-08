@@ -13,49 +13,37 @@ import {
   ProviderProductDto,
   ProviderProductsDto,
 } from '@infrastructure/dtos/provider.dto';
+import { ProviderStatus } from '@domain/enums/provider-status.enum';
 
 export class ProviderMapper {
+  private static resolveProviderId(dto: ProviderDto): string {
+    const rawId = dto.supplier_id ?? dto.provider_id;
+    return (rawId ?? '').toString();
+  }
+
   // DTO → Domain
   static fromDto(dto: ProviderDto): Provider {
     return {
-<<<<<<< Updated upstream
-      id: dto.provider_id.toString(),
-=======
-      id: dto.supplier_id.toString(),
+      id: ProviderMapper.resolveProviderId(dto),
       name: dto.name,
       taxId: dto.tax_id,
-      email: '', // El endpoint lista no devuelve email
-      phone: '', // El endpoint lista no devuelve phone
-      address: '', // El endpoint lista no devuelve address
-      province: '', // El endpoint lista no devuelve province
-      postalCode: '', // El endpoint lista no devuelve postal_code
-      contactPerson: undefined, // Backend no tiene contact_person
-      isActive: dto.is_active,
-      status: dto.is_active ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE,
-      createdAt: new Date(), // Backend no proporciona timestamps en lista
-      updatedAt: new Date(),
-    };
-  }
-
-  // DTO Detail → Domain (detalle individual)
-  static fromDetailDto(dto: ProviderDetailDto): Provider {
-    return {
-      id: dto.supplier_id.toString(),
->>>>>>> Stashed changes
-      name: dto.name,
-      taxId: dto.tax_id,
-      email: dto.email,
+      email: dto.email ?? '',
       phone: dto.phone ?? undefined,
       address: dto.address ?? undefined,
       contactPerson: dto.contact_person ?? undefined,
       isActive: dto.is_active,
-      status: dto.status,
-      createdAt: new Date(dto.created_at),
-      updatedAt: new Date(dto.updated_at),
+      status: dto.status ?? (dto.is_active ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE),
+      createdAt: dto.created_at ? new Date(dto.created_at) : new Date(),
+      updatedAt: dto.updated_at ? new Date(dto.updated_at) : new Date(),
     };
   }
 
-  // Entidad auxiliar DTO → Domain
+  // DTO Detail → Domain
+  static fromDetailDto(dto: ProviderDto): Provider {
+    return ProviderMapper.fromDto(dto);
+  }
+
+  // Helper entity DTO → Domain
   static productFromDto(dto: ProviderProductDto): ProviderProduct {
     return {
       id: dto.id.toString(),
@@ -68,7 +56,7 @@ export class ProviderMapper {
     };
   }
 
-  // Domain → DTO (para crear)
+  // Domain → DTO (for create payload)
   static toCreateDto(payload: CreateProviderRequest): CreateProviderDto {
     return {
       name: payload.name,
@@ -80,7 +68,7 @@ export class ProviderMapper {
     };
   }
 
-  // Domain → DTO (para actualizar, solo campos presentes)
+  // Domain → DTO (for update payload, only present fields)
   static toUpdateDto(payload: UpdateProviderRequest): UpdateProviderDto {
     return {
       ...(payload.name !== undefined && { name: payload.name }),
@@ -93,14 +81,14 @@ export class ProviderMapper {
     };
   }
 
-  // Domain → DTO (para paginación)
+  // Domain → DTO (for active flag payload)
   static toSetActiveDto(isActive: boolean): SetProviderActiveDto {
     return {
       is_active: isActive,
     };
   }
 
-  // DTO de página → Domain
+  // Page DTO → Domain
   static fromPageDto(dto: ProvidersPageDto): {
     data: Provider[];
     total: number;
@@ -111,7 +99,7 @@ export class ProviderMapper {
     };
   }
 
-  // DTO de productos → Domain
+  // Products DTO → Domain
   static fromProductsDto(dto: ProviderProductsDto): ProviderProduct[] {
     return dto.items.map(ProviderMapper.productFromDto);
   }

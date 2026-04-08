@@ -1,34 +1,23 @@
-<<<<<<< Updated upstream
 import { ProviderStatus } from '@domain/enums/provider-status.enum';
-=======
-// DTO de lectura (lo que devuelve el API) - basado en backend real
-export interface ProviderDto {
-  supplier_id: number;
-  name: string;
-  tax_id: string;
-  city: string;
-  is_active: boolean;
-  // NOTA: El endpoint GET /suppliers solo devuelve estos campos
-  // Los campos email, phone, address, province solo vienen en el detalle individual
-}
->>>>>>> Stashed changes
 
-// DTO de lectura (lo que devuelve el API)
+// Read DTO for list responses (returned by the API at /providers)
 export interface ProviderDto {
-  provider_id: number;
+  supplier_id?: number;
+  provider_id?: number;
   name: string;
   tax_id: string;
-  email: string;
+  city?: string;
+  is_active: boolean;
+  email?: string | null;
   phone?: string | null;
   address?: string | null;
   contact_person?: string | null;
-  is_active: boolean;
-  status: ProviderStatus;
-  created_at: string;
-  updated_at: string;
+  status?: ProviderStatus;
+  created_at?: string;
+  updated_at?: string;
 }
 
-// DTO de creación (lo que se envía al API para crear)
+// Create DTO (payload sent to the API to create a provider)
 export interface CreateProviderDto {
   name: string;
   tax_id: string;
@@ -38,7 +27,7 @@ export interface CreateProviderDto {
   contact_person?: string | null;
 }
 
-// DTO de actualización
+// Update DTO
 export interface UpdateProviderDto {
   name?: string | null;
   tax_id?: string | null;
@@ -49,7 +38,7 @@ export interface UpdateProviderDto {
   is_active?: boolean | null;
 }
 
-// DTOs auxiliares
+// Helper DTOs
 export interface SetProviderActiveDto {
   is_active: boolean;
 }
@@ -61,7 +50,7 @@ export interface ProvidersPageDto {
   page_size: number;
 }
 
-// DTOs para productos de proveedor
+// DTOs for provider products
 export interface ProviderProductDto {
   id: number;
   product_id: number;

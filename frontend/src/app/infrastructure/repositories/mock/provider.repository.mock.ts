@@ -127,10 +127,10 @@ export class MockProviderRepository implements ProviderRepository {
   }> {
     let filtered = [...this.providers];
 
-    // Filtrado por búsqueda (simulado)
+    // Search filtering (simulated)
     // TODO: implement search filtering when search functionality is added
 
-    // Paginación client-side
+    // Client-side pagination
     const total = filtered.length;
     if (pageEvent?.first !== undefined && pageEvent?.rows !== undefined) {
       const start = pageEvent.first;

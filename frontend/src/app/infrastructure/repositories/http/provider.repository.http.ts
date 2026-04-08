@@ -24,7 +24,7 @@ const BASE_URL = `${environment.apiUrl}/api/v1/providers`;
 export class HttpProviderRepository implements ProviderRepository {
   private readonly http = inject(HttpClient);
 
-  // ── Error mapping centralizado ─────────────────────────────────────────
+  // ── Centralized error mapping ──────────────────────────────────────────
   private async withErrorMapping<T>(operation: () => Promise<T>): Promise<T> {
     try {
       return await operation();
@@ -69,7 +69,7 @@ export class HttpProviderRepository implements ProviderRepository {
     return undefined;
   }
 
-  // ── Operaciones CRUD ───────────────────────────────────────────────────
+  // ── CRUD operations ────────────────────────────────────────────────────
   async getProviders(pageEvent?: PageEvent): Promise<{
     data: Provider[];
     total: number;
@@ -142,7 +142,9 @@ export class HttpProviderRepository implements ProviderRepository {
       );
       
       // For now, return the provider with products attached
-      const provider = await firstValueFrom(this.http.get<ProviderDto>(`${BASE_URL}/${providerId}`));
+      const provider = await firstValueFrom(
+        this.http.get<ProviderDto>(`${BASE_URL}/${providerId}`),
+      );
       const providerWithProducts = {
         ...ProviderMapper.fromDto(provider),
         products: ProviderMapper.fromProductsDto(dto),
