@@ -432,24 +432,18 @@ describe('SuppliersStore', () => {
       expect(mockGetProvidersUseCase.execute).toHaveBeenCalled();
     });
 
-<<<<<<< Updated upstream
-    it('should handle page change', async () => {
-      mockGetProvidersUseCase.execute.mockResolvedValue({ data: [], total: 0 });
-      const pageEvent: PageEvent = { page: 1, rows: 10, first: 10 };
-=======
     it('should handle page change', () => {
       const pageEvent: PageEvent = { first: 10, rows: 10, page: 2 };
       mockGetProvidersUseCase.execute.mockResolvedValue({
         data: [],
         total: 0,
       });
->>>>>>> Stashed changes
 
       store.onPageChange(pageEvent);
 
       expect(store.page()).toBe(2);
       expect(store.pageSize()).toBe(10);
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith(pageEvent);
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ page: 2, rows: 10 });
     });
   });
 
