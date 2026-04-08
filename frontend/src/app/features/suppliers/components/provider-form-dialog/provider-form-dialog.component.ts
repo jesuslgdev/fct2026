@@ -17,7 +17,7 @@ export class ProviderFormDialogComponent {
   private readonly fb = inject(FormBuilder);
   readonly renderSelects = signal(true);
 
-  // Formulario tipado con FormBuilder
+  // Typed form using FormBuilder
   readonly form = this.fb.group({
     name: ['', Validators.required],
     taxId: ['', Validators.required],
@@ -27,7 +27,7 @@ export class ProviderFormDialogComponent {
     contactPerson: [''],
   });
 
-  // Getters para acceso rápido a controles
+  // Getters for quick access to controls
   get name() { return this.form.controls.name; }
   get taxId() { return this.form.controls.taxId; }
   get email() { return this.form.controls.email; }
@@ -36,7 +36,7 @@ export class ProviderFormDialogComponent {
   get contactPerson() { return this.form.controls.contactPerson; }
 
   constructor() {
-    // Effect: sincroniza form cuando cambia el modo/proveedor seleccionado
+    // Effect: keeps the form in sync when mode/selected provider changes
     effect(() => {
       const provider = this.store.selectedProvider();
       const mode = this.store.dialogMode();
@@ -52,7 +52,7 @@ export class ProviderFormDialogComponent {
       } else {
         this.form.reset();
       }
-      // Workaround: forzar remount de p-select para limpiar estado interno
+      // Workaround: force p-select remount to clear internal state
       this.renderSelects.set(false);
       queueMicrotask(() => this.renderSelects.set(true));
     });

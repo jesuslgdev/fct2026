@@ -443,8 +443,8 @@ describe('SuppliersStore', () => {
 
       expect(store.page()).toBe(2); // PrimeNG base 0 + 1 = store base 1
       expect(store.pageSize()).toBe(10);
-      // El evento se modifica para incluir page: 2 (base 1 del store)
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ ...pageEvent, page: 2 });
+      // The event payload is normalized to include page: 2 (store uses 1-based page)
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ page: 2, rows: 10 });
     });
   });
 

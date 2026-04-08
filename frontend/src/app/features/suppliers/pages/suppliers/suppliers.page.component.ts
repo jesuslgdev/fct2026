@@ -12,14 +12,14 @@ import { ProviderFormDialogComponent } from '@features/suppliers/components/prov
 import { ProviderStatus } from '@domain/enums/provider-status.enum';
 import { Provider } from '@domain/models/provider.model';
 
-// Tipos para los selects de filtros
+// Types for filter selects
 interface StatusOption { label: string; value: ProviderStatus | null; }
 
 @Component({
   selector: 'app-suppliers-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [SuppliersStore],    // ← Store provisto a nivel de componente
+  providers: [SuppliersStore],
   imports: [
     FormsModule,
     Select,
@@ -36,7 +36,7 @@ interface StatusOption { label: string; value: ProviderStatus | null; }
 export class SuppliersPageComponent implements OnInit {
   readonly store = inject(SuppliersStore);
 
-  // Opciones de filtros (con opción "todos" como null)
+  // Filter options (with "all" represented as null)
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos los estados', value: null },
     { label: 'Activo', value: ProviderStatus.ACTIVE },
@@ -51,7 +51,7 @@ export class SuppliersPageComponent implements OnInit {
     return parseInt(provider.id);
   }
 
-  // Mapeo de etiquetas (inglés → español)
+  // Status label mapping (enum -> UI text)
   getStatusLabel(status: Provider['status']): string {
     switch (status) {
       case ProviderStatus.ACTIVE: return 'Activo';
@@ -60,7 +60,7 @@ export class SuppliersPageComponent implements OnInit {
     }
   }
 
-  // Helper para badge variant según estado
+  // Helper for badge variant by status
   getStatusBadgeVariant(status: Provider['status']): 'success' | 'danger' {
     return status === ProviderStatus.ACTIVE ? 'success' : 'danger';
   }
