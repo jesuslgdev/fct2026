@@ -63,5 +63,7 @@ export const appConfig: ApplicationConfig = {
     }),
     MessageService,
     ConfirmationService,
+
+    // TODO add base url for API REST
   ],
 };
