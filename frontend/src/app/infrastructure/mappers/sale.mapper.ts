@@ -1,6 +1,6 @@
 import { SaleStatus } from '../../domain/enums/sale-status.enum';
-import { CreateSale, Sale, SaleDetail, SaleLine } from '../../domain/models/sale.model';
-import { CreateSaleRequestDTO, SaleDetailDTO, SaleDTO, SaleLineDTO } from '../dtos/sale.dto';
+import { CreateSale, Sale, SaleDetail, SaleFilters, SaleLine, SalePagedResult } from '../../domain/models/sale.model';
+import { CreateSaleRequestDTO, SaleDetailDTO, SaleDTO, SaleLineDTO, SalesPageDto } from '../dtos/sale.dto';
 
 export class SaleMapper {
   static toDomain(dto: SaleDTO): Sale {
@@ -54,6 +54,20 @@ export class SaleMapper {
         product_id: line.productId,
         quantity: line.quantity,
       })),
+    };
+  }
+
+  static toPagedResult(response: SalesPageDto | SaleDTO[], filters: SaleFilters): SalePagedResult {
+    const items = Array.isArray(response) ? response : response.items;
+    const total = Array.isArray(response) ? response.length : response.total;
+    const page = Array.isArray(response) ? filters.page : response.page;
+    const pageSize = Array.isArray(response) ? filters.pageSize : response.page_size;
+
+    return {
+      data: items.map((dto) => this.toDomain(dto)),
+      total,
+      page,
+      pageSize,
     };
   }
 }

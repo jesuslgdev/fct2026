@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { SaleRepository } from '../../repositories/sale.repository';
-import { Sale, SaleFilters } from '../../models/sale.model';
+import { SaleFilters, SalePagedResult } from '../../models/sale.model';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +9,7 @@ import { Sale, SaleFilters } from '../../models/sale.model';
 export class ListSalesUseCase {
   private readonly saleRepository = inject(SaleRepository);
 
-  execute(filters: SaleFilters): Observable<{ data: Sale[]; total: number }> {
+  execute(filters: SaleFilters): Observable<SalePagedResult> {
     return this.saleRepository.list(filters);
   }
 }

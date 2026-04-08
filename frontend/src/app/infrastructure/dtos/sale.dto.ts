@@ -45,3 +45,10 @@ export interface CreateSaleRequestDTO {
   client_id: number;
   lines: CreateSaleLineRequestDTO[];
 }
+
+export interface SalesPageDto {
+  items: SaleDTO[];
+  total: number;
+  page: number;
+  page_size: number;
+}

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 import { SaleRepository } from '../../repositories/sale.repository';
-import { Sale, SaleDetail, CreateSale, SaleFilters } from '../../models/sale.model';
+import { Sale, SaleDetail, CreateSale, SaleFilters, SalePagedResult } from '../../models/sale.model';
 import { SaleStatus } from '../../enums/sale-status.enum';
 import { ListSalesUseCase } from './list-sales.usecase';
 import { GetSaleUseCase } from './get-sale.usecase';
@@ -42,7 +42,7 @@ const SALE_DETAIL_MOCK: SaleDetail = {
 };
 
 class MockSaleRepository implements SaleRepository {
-  list = vi.fn<(filters: SaleFilters) => Observable<{ data: Sale[]; total: number }>>();
+  list = vi.fn<(filters: SaleFilters) => Observable<SalePagedResult>>();
   getById = vi.fn<(id: number) => Observable<SaleDetail>>();
   create = vi.fn<(data: CreateSale) => Observable<SaleDetail>>();
 }
@@ -66,7 +66,7 @@ describe('Sales Use Cases', () => {
     it('should delegate to repository', async () => {
       const useCase = TestBed.inject(ListSalesUseCase);
       const filters: SaleFilters = { page: 1, pageSize: 10 };
-      const response = { data: [SALE_MOCK], total: 1 };
+      const response: SalePagedResult = { data: [SALE_MOCK], total: 1, page: 1, pageSize: 10 };
       repo.list.mockReturnValue(of(response));
 
       const result = await firstValueFrom(useCase.execute(filters));

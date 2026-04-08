@@ -23,6 +23,8 @@ import { HttpUserRepository } from '@infrastructure/repositories/http/user.repos
 import { UserRepository } from '@domain/repositories/user.repository';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
+import { SaleRepository } from '@domain/repositories/sale.repository';
+import { HttpSaleRepository } from '@infrastructure/repositories/http/sale.repository.http';
 import { AuthService } from '@core/services/auth.service';
 
 const firebaseApp = initializeApp(environment.firebase);
@@ -44,6 +46,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
     { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
+    { provide: SaleRepository, useClass: HttpSaleRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     {
       provide: APP_INITIALIZER,
