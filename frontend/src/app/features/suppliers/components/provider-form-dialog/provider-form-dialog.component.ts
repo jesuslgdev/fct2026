@@ -27,7 +27,6 @@ export class ProviderFormDialogComponent {
     city: [''],
     province: [''],
     postalCode: [''],
-    contactPerson: [''],
   });
 
 // Getters for quick access to controls
@@ -39,7 +38,6 @@ export class ProviderFormDialogComponent {
   get city() { return this.form.controls.city; }
   get province() { return this.form.controls.province; }
   get postalCode() { return this.form.controls.postalCode; }
-  get contactPerson() { return this.form.controls.contactPerson; }
 
   constructor() {
     // Effect: keeps the form in sync when mode/selected provider changes
@@ -56,7 +54,6 @@ export class ProviderFormDialogComponent {
           city: provider.city ?? '',
           province: provider.province ?? '',
           postalCode: provider.postalCode ?? '',
-          contactPerson: provider.contactPerson ?? '',
         });
       } else {
         this.form.reset();
@@ -84,7 +81,6 @@ export class ProviderFormDialogComponent {
         city: v.city || undefined,
         province: v.province || undefined,
         postalCode: v.postalCode || undefined,
-        contactPerson: v.contactPerson || undefined,
       };
       this.store.saveProvider(payload);
     } else {
@@ -97,7 +93,6 @@ export class ProviderFormDialogComponent {
         city: v.city || undefined,
         province: v.province || undefined,
         postalCode: v.postalCode || undefined,
-        contactPerson: v.contactPerson || undefined,
       };
       this.store.saveProvider(payload);
     }

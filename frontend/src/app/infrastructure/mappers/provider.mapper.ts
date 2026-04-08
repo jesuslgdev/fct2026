@@ -36,7 +36,6 @@ export class ProviderMapper {
       city: dto.city ?? undefined,
       province: dto.province ?? undefined,
       postalCode: dto.postal_code ?? undefined,
-      contactPerson: dto.contact_person ?? undefined,
     isActive,
     status: dto.status ?? (isActive ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE),
     createdAt: dto.created_at ? new Date(dto.created_at) : new Date(),
@@ -103,7 +102,6 @@ export class ProviderMapper {
       ...(payload.province !== undefined && { province: payload.province }),
       ...(payload.postalCode !== undefined && { postal_code: payload.postalCode }),
       // Note: Backend does not allow tax_id updates
-      // Note: Backend does not expose contact_person
     };
   }
 

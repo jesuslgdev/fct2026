@@ -93,16 +93,5 @@
       </div>
     </div>
 
-    <!-- Grid de 2 columnas para campos opcionales -->
-    <div class="dialog-form-grid">
-      <div class="dialog-field">
-        <label for="contactPerson" class="dialog-field-label">Persona de contacto</label>
-        <ui-input id="contactPerson" formControlName="contactPerson" placeholder="Nombre del contacto"
-          [state]="contactPerson.invalid && contactPerson.touched ? 'error' : 'default'" />
-        @if (contactPerson.invalid && contactPerson.touched) {
-          <span class="dialog-field-error">El nombre de contacto no es válido.</span>
-        }
-      </div>
-    </div>
   </form>
 </ui-dialog>

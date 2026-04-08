@@ -18,7 +18,6 @@ const MOCK_PROVIDER: Provider = {
   city: 'Test City',
   province: '',
   postalCode: '',
-  contactPerson: 'Contact Person',
   isActive: true,
   status: ProviderStatus.ACTIVE,
   createdAt: new Date(),
@@ -72,7 +71,6 @@ describe('ProviderFormDialogComponent', () => {
     expect(component.form.contains('email')).toBe(true);
     expect(component.form.contains('phone')).toBe(true);
     expect(component.form.contains('address')).toBe(true);
-    expect(component.form.contains('contactPerson')).toBe(true);
   });
 
   it('should have proper validators on required fields', () => {
@@ -92,7 +90,6 @@ describe('ProviderFormDialogComponent', () => {
     expect(component.email).toBe(component.form.get('email'));
     expect(component.phone).toBe(component.form.get('phone'));
     expect(component.address).toBe(component.form.get('address'));
-    expect(component.contactPerson).toBe(component.form.get('contactPerson'));
   });
 
   it('should reset form when mode is create', () => {
@@ -115,7 +112,6 @@ describe('ProviderFormDialogComponent', () => {
       city: null,
       province: null,
       postalCode: null,
-      contactPerson: null,
     });
   });
 
@@ -130,7 +126,6 @@ describe('ProviderFormDialogComponent', () => {
       city: MOCK_PROVIDER.city ?? '',
       province: MOCK_PROVIDER.province ?? '',
       postalCode: MOCK_PROVIDER.postalCode ?? '',
-      contactPerson: MOCK_PROVIDER.contactPerson ?? '',
     });
     fixture.detectChanges();
 
@@ -143,7 +138,6 @@ describe('ProviderFormDialogComponent', () => {
       city: MOCK_PROVIDER.city,
       province: MOCK_PROVIDER.province,
       postalCode: MOCK_PROVIDER.postalCode,
-      contactPerson: MOCK_PROVIDER.contactPerson,
     });
   });
 
@@ -152,7 +146,6 @@ describe('ProviderFormDialogComponent', () => {
       ...MOCK_PROVIDER,
       phone: null,
       address: null,
-      contactPerson: null,
     };
 
     // Manually trigger the patchValue to simulate the effect
@@ -165,7 +158,6 @@ describe('ProviderFormDialogComponent', () => {
       city: '',
       province: '',
       postalCode: '',
-      contactPerson: '',
     });
     fixture.detectChanges();
 
@@ -178,7 +170,6 @@ describe('ProviderFormDialogComponent', () => {
       city: '',
       province: '',
       postalCode: '',
-      contactPerson: '',
     });
   });
 
@@ -201,7 +192,6 @@ describe('ProviderFormDialogComponent', () => {
       city: 'New City',
       province: 'New Province',
       postalCode: '28001',
-      contactPerson: 'New Contact',
     });
 
     mockStore.dialogMode.mockReturnValue('create');
@@ -218,7 +208,6 @@ describe('ProviderFormDialogComponent', () => {
       city: 'New City',
       province: 'New Province',
       postalCode: '28001',
-      contactPerson: 'New Contact',
     });
   });
 
@@ -232,7 +221,6 @@ describe('ProviderFormDialogComponent', () => {
       city: 'Updated City',
       province: 'Updated Province',
       postalCode: '28002',
-      contactPerson: 'Updated Contact',
     });
 
     mockStore.dialogMode.mockReturnValue('edit');
@@ -249,7 +237,6 @@ describe('ProviderFormDialogComponent', () => {
       city: 'Updated City',
       province: 'Updated Province',
       postalCode: '28002',
-      contactPerson: 'Updated Contact',
     });
   });
 

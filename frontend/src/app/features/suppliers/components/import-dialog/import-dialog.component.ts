@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, output, EventEmitter, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExcelImportService, ExcelImportResult, ImportError } from '@features/suppliers/services/excel-import.service';
 import { ButtonComponent } from '@shared/ui/button/button.component';
@@ -224,9 +224,9 @@ export class ImportDialogComponent {
 
   getSuccessMessage(): string {
     const result = this.importResult();
-    if (!result || !result.importedProviders) return '';
-    
-    return `Se han importado ${result.importedProviders.length} proveedores correctamente`;
+    if (!result) return '';
+
+    return `Se han importado ${result.validRecords} proveedores correctamente`;
   }
 
   getCurrentDate(): string {

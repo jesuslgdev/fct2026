@@ -13,7 +13,6 @@ export interface ProviderDto {
   address?: string | null;
   province?: string | null;
   postal_code?: string | null;
-  contact_person?: string | null;
   status?: ProviderStatus;
   created_at?: string;
   updated_at?: string;

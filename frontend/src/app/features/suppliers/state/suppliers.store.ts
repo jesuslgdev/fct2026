@@ -67,56 +67,30 @@ export class SuppliersStore {
     })),
   );
 
-<<<<<<< HEAD
-  // Filtered providers for UI (display only, not for pagination)
-  readonly filteredProviders = computed(() => {
-    // In lazy mode, data comes filtered from server
-    // Only apply local filters if not in lazy mode or for quick search
-    if (this.searchQuery() || this.statusFilter()) {
-      let filtered = [...this.providers()];
-      
-      // Search filter (if backend doesn't support it)
-=======
-  // Proveedores filtrados para UI (solo para display, no para paginación)
-  readonly filteredProviders = computed(() => {
-    // En modo lazy, los datos ya vienen filtrados del servidor
-    // Solo aplicamos filtros locales si no estamos en modo lazy o para búsqueda rápida
-    if (this.searchQuery() || this.statusFilter()) {
-      let filtered = [...this.providers()];
-      
-      // Filtro por búsqueda (si el backend no lo soporta)
->>>>>>> 98b531fd (fix: resolve pagination issues in suppliers feature)
-      const search = this.searchQuery().toLowerCase();
-      if (search) {
-        filtered = filtered.filter(
-          (provider) =>
-            provider.name.toLowerCase().includes(search) ||
-            provider.email.toLowerCase().includes(search) ||
-            provider.taxId.toLowerCase().includes(search) ||
-            (provider.contactPerson?.toLowerCase().includes(search) ?? false),
-        );
-      }
+  // Table data comes already filtered from backend when lazy mode is enabled.
+  readonly filteredProviders = computed(() => this.providers());
 
-<<<<<<< HEAD
-      // Status filter (if backend doesn't support it)
-=======
-      // Filtro por estado (si el backend no lo soporta)
->>>>>>> 98b531fd (fix: resolve pagination issues in suppliers feature)
-      const statusFilter = this.statusFilter();
-      if (statusFilter) {
-        filtered = filtered.filter((provider) => provider.status === statusFilter);
-      }
+  private buildProvidersPageEvent(pageEvent?: PageEvent): PageEvent {
+    const rows = pageEvent?.rows ?? this.pageSize();
+    const page = pageEvent?.page ?? this.page();
+    const first = pageEvent?.first ?? Math.max((page - 1) * rows, 0);
+    const query = this.searchQuery().trim();
+    const status = this.statusFilter();
 
-      return filtered;
-    }
-    
-<<<<<<< HEAD
-    // If no local filters, return server data
-=======
-    // Si no hay filtros locales, devolver los datos del servidor
->>>>>>> 98b531fd (fix: resolve pagination issues in suppliers feature)
-    return this.providers();
-  });
+    return {
+      ...pageEvent,
+      page,
+      rows,
+      first,
+      ...(query ? { query } : {}),
+      ...(status
+        ? {
+            status,
+            isActive: status === ProviderStatus.ACTIVE,
+          }
+        : {}),
+    };
+  }
 
   // ── Error mapping (Domain → UI messages) ───────────────────────────────────
   private resolveErrorMessage(err: unknown, fallback: string): string {
@@ -144,16 +118,17 @@ export class SuppliersStore {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const result = await this.getProvidersUseCase.execute(pageEvent);
+      const request = this.buildProvidersPageEvent(pageEvent);
+      const result = await this.getProvidersUseCase.execute(request);
       this.providers.set(result.data);
       this.total.set(result.total);
 
       // Update pagination if comes from event
-      if (pageEvent?.page !== undefined) {
-        this.page.set(pageEvent.page);
+      if (request.page !== undefined) {
+        this.page.set(request.page);
       }
-      if (pageEvent?.rows !== undefined) {
-        this.pageSize.set(pageEvent.rows);
+      if (request.rows !== undefined) {
+        this.pageSize.set(request.rows);
       }
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Failed to load providers.'));
@@ -293,13 +268,13 @@ export class SuppliersStore {
   onSearch(query: string): void {
     this.searchQuery.set(query);
     this.page.set(1); // Reset to first page
-    this.loadProviders();
+    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
   }
 
   onStatusFilterChange(status: ProviderStatus | null): void {
     this.statusFilter.set(status);
     this.page.set(1);
-    this.loadProviders();
+    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
   }
 
   onPageChange(event: PageEvent): void {
@@ -327,6 +302,6 @@ export class SuppliersStore {
     this.searchQuery.set('');
     this.statusFilter.set(null);
     this.page.set(1);
-    this.loadProviders();
+    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
   }
 }

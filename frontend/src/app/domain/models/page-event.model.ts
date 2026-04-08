@@ -3,4 +3,7 @@ export interface PageEvent {
   rows?: number;
   page?: number;
   pageCount?: number;
+  query?: string;
+  status?: string;
+  isActive?: boolean;
 }

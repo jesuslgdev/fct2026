@@ -35,6 +35,13 @@ export interface ExcelTemplate {
   data: ArrayBuffer;
 }
 
+interface SupplierImportApiResponse {
+  total: number;
+  created: number;
+  errors: number;
+  error_detail: { row: number; reason: string }[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -57,7 +64,7 @@ export class ExcelImportService {
         filename,
         data
       };
-    } catch (error) {
+    } catch {
       // Fallback a template generada localmente si el endpoint falla
       const templateData = this.generateTemplateData();
       const filename = 'plantilla_proveedores.xlsx';
@@ -134,7 +141,7 @@ export class ExcelImportService {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = (e) => reject(new Error('Error al leer el archivo'));
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
       reader.readAsText(file, 'utf-8');
     });
   }
@@ -286,19 +293,11 @@ export class ExcelImportService {
 
       // Llamar al endpoint real del backend
       const response = await firstValueFrom(
-        this.http.post<any>(`${environment.apiUrl}/api/v1/suppliers/import`, formData)
+        this.http.post<SupplierImportApiResponse>(`${environment.apiUrl}/api/v1/suppliers/import`, formData)
       );
 
       // Mapear respuesta del backend a nuestro formato
-      const backendResult = response as {
-        total: number;
-        created: number;
-        errors: number;
-        error_detail: Array<{
-          row: number;
-          reason: string;
-        }>;
-      };
+      const backendResult = response;
 
       // Convertir errores del backend al formato del frontend
       const errors: ImportError[] = backendResult.error_detail.map(error => ({

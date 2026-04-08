@@ -11,7 +11,6 @@ export interface Provider {
   city?: string;
   province?: string;
   postalCode?: string;
-  contactPerson?: string;
   isActive: boolean;
   status: ProviderStatus;
   createdAt: Date;
@@ -28,7 +27,6 @@ export interface CreateProviderRequest {
   city?: string;
   province?: string;
   postalCode?: string;
-  contactPerson?: string;
 }
 
 export interface UpdateProviderRequest {
@@ -40,6 +38,5 @@ export interface UpdateProviderRequest {
   city?: string;
   province?: string;
   postalCode?: string;
-  contactPerson?: string;
   isActive?: boolean;
 }
