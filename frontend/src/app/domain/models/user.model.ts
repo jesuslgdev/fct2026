@@ -46,3 +46,7 @@ export interface PagedResult<T> {
   page: number;
   pageSize: number;
 }
+
+export function isDepartmentRequiredForRole(role: UserRole | null): boolean {
+  return role === UserRole.Employee || role === UserRole.Manager;
+}
