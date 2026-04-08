@@ -6,6 +6,7 @@ from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from modules.warehouse.domain.interfaces.repositories.i_warehouse_repository import (
     IWarehouseRepository,
 )
+from shared.domain.dtos.address import Address
 from shared.domain.interfaces.i_warehouse_reader import IWarehouseReader
 
 
@@ -29,19 +30,21 @@ class WarehouseRepository(IWarehouseRepository, IWarehouseReader):
         result = await self._db.execute(select(Warehouse).where(Warehouse.name == name))
         return result.scalar_one_or_none()
 
-    async def create(self, name: str, address: str) -> Warehouse:
-        obj = Warehouse(name=name, address=address)
+    async def create(self, name: str, address_data: Address) -> Warehouse:
+        obj = Warehouse(name=name, address_data=address_data)
         self._db.add(obj)
         await self._db.flush()
         await self._db.refresh(obj)
         return obj
 
-    async def update(self, warehouse_id: int, name: str, address: str) -> Warehouse:
+    async def update(
+        self, warehouse_id: int, name: str, address_data: Address
+    ) -> Warehouse:
         obj = await self.get_by_id(warehouse_id)
         if obj is None:
             raise ValueError("Warehouse not found")
         obj.name = name
-        obj.address = address
+        obj.address_data = address_data
         await self._db.flush()
         await self._db.refresh(obj)
         return obj

@@ -10,7 +10,7 @@ async def _seed_clients(db: AsyncSession) -> None:
         Client(
             name="Acme Corp",
             tax_id="12345678A",
-            address="Calle Mayor 1",
+            street="Calle Mayor 1",
             city="Madrid",
             province="Madrid",
             postal_code="28001",
@@ -21,7 +21,7 @@ async def _seed_clients(db: AsyncSession) -> None:
         Client(
             name="Beta SL",
             tax_id="B1234567A",
-            address="Avenida Diagonal 2",
+            street="Avenida Diagonal 2",
             city="Barcelona",
             province="Barcelona",
             postal_code="08001",
@@ -32,7 +32,7 @@ async def _seed_clients(db: AsyncSession) -> None:
         Client(
             name="Gamma SA",
             tax_id="12345679B",
-            address="Plaza España 3",
+            street="Plaza España 3",
             city="Seville",
             province="Sevilla",
             postal_code="41001",

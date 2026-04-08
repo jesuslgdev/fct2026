@@ -2,6 +2,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.admin.domain.entities.department import Department
+from shared.domain.dtos.address import Address
 from shared.domain.entities.user import User
 
 
@@ -53,7 +54,7 @@ async def test_delete_user_has_purchases(
     supplier = Supplier(
         name="Test Supplier",
         tax_id="TAX12345",
-        address="123 Main St",
+        street="123 Main St",
         city="Barcelona",
         province="Catalonia",
         postal_code="08001",
@@ -61,7 +62,15 @@ async def test_delete_user_has_purchases(
         email="supplier@example.com",
     )
     db_session.add(supplier)
-    warehouse = Warehouse(name="Main", address="HQ")
+    warehouse = Warehouse(
+        name="Main",
+        address_data=Address(
+            street="HQ",
+            city="Madrid",
+            province="Madrid",
+            postal_code="28001",
+        ),
+    )
     db_session.add(warehouse)
     await db_session.flush()
 
