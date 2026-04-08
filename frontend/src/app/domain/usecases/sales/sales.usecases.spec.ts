@@ -7,7 +7,7 @@ import { SaleStatus } from '../../enums/sale-status.enum';
 import { ListSalesUseCase } from './list-sales.usecase';
 import { GetSaleUseCase } from './get-sale.usecase';
 import { CreateSaleUseCase } from './create-sale.usecase';
-import { SaleEmptyLinesError, SaleValidationError } from '../../models/sale-errors';
+import { SaleEmptyLinesError, SaleNotFoundError, SaleValidationError } from '../../models/sale-errors';
 
 const SALE_MOCK: Sale = {
   id: 1,
@@ -89,9 +89,10 @@ describe('Sales Use Cases', () => {
 
     it('should propagate error from repository', async () => {
       const useCase = TestBed.inject(GetSaleUseCase);
-      repo.getById.mockReturnValue(throwError(() => new Error('Not found')));
+      const error = new SaleNotFoundError();
+      repo.getById.mockReturnValue(throwError(() => error));
 
-      await expect(firstValueFrom(useCase.execute(1))).rejects.toThrow('Not found');
+      await expect(firstValueFrom(useCase.execute(1))).rejects.toThrow(SaleNotFoundError);
     });
   });
 
@@ -114,7 +115,7 @@ describe('Sales Use Cases', () => {
       const useCase = TestBed.inject(CreateSaleUseCase);
       const data: CreateSale = { clientId: 0, lines: [{ productId: 1, quantity: 5 }] };
 
-      await expect(firstValueFrom(useCase.execute(data))).rejects.toThrow('Client ID is required.');
+      await expect(firstValueFrom(useCase.execute(data))).rejects.toThrow(SaleValidationError);
       expect(repo.create).not.toHaveBeenCalled();
     });
 
@@ -133,7 +134,7 @@ describe('Sales Use Cases', () => {
         lines: [{ productId: 1, quantity: 0 }],
       };
 
-      await expect(firstValueFrom(useCase.execute(data))).rejects.toThrow('All quantities must be greater than 0.');
+      await expect(firstValueFrom(useCase.execute(data))).rejects.toThrow(SaleValidationError);
       expect(repo.create).not.toHaveBeenCalled();
     });
   });
