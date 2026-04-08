@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { firstValueFrom, Observable, of } from 'rxjs';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
 import {
@@ -39,18 +40,20 @@ const CATEGORY_MOCK: ProductCategory = {
 };
 
 class MockProductRepository implements ProductRepository {
-  getProducts = vi.fn<(params: ProductQueryParams) => Promise<import('@domain/models/user.model').PagedResult<Product>>>();
-  getProductById = vi.fn<(id: number) => Promise<Product>>();
-  createProduct = vi.fn<(payload: CreateProductPayload) => Promise<Product>>();
-  updateProduct = vi.fn<(id: number, payload: UpdateProductPayload) => Promise<Product>>();
-  toggleProductStatus = vi.fn<(id: number, active: boolean) => Promise<void>>();
-  checkCodeExists = vi.fn<(code: string) => Promise<boolean>>();
-  getLowStockProducts = vi.fn<() => Promise<Product[]>>();
+  getProducts = vi.fn<
+    (params: ProductQueryParams) => Observable<import('@domain/models/user.model').PagedResult<Product>>
+  >();
+  getProductById = vi.fn<(id: number) => Observable<Product>>();
+  createProduct = vi.fn<(payload: CreateProductPayload) => Observable<Product>>();
+  updateProduct = vi.fn<(id: number, payload: UpdateProductPayload) => Observable<Product>>();
+  toggleProductStatus = vi.fn<(id: number, active: boolean) => Observable<void>>();
+  checkCodeExists = vi.fn<(code: string) => Observable<boolean>>();
+  getLowStockProducts = vi.fn<() => Observable<Product[]>>();
 }
 
 class MockProductCategoryRepository implements ProductCategoryRepository {
-  getCategories = vi.fn<() => Promise<ProductCategory[]>>();
-  getCategoryById = vi.fn<(categoryId: number) => Promise<ProductCategory>>();
+  getCategories = vi.fn<() => Observable<ProductCategory[]>>();
+  getCategoryById = vi.fn<(categoryId: number) => Observable<ProductCategory>>();
 }
 
 describe('Product Use Cases', () => {
@@ -60,7 +63,7 @@ describe('Product Use Cases', () => {
   beforeEach(() => {
     repo = new MockProductRepository();
     categoryRepo = new MockProductCategoryRepository();
-    categoryRepo.getCategories.mockResolvedValue([CATEGORY_MOCK]);
+    categoryRepo.getCategories.mockReturnValue(of([CATEGORY_MOCK]));
 
     TestBed.configureTestingModule({
       providers: [
@@ -82,9 +85,9 @@ describe('Product Use Cases', () => {
     const useCase = TestBed.inject(GetProductsUseCase);
     const params: ProductQueryParams = { page: 1, pageSize: 20 };
     const resultMock = { data: [PRODUCT_MOCK], total: 1, page: 1, pageSize: 20 };
-    repo.getProducts.mockResolvedValueOnce(resultMock);
+    repo.getProducts.mockReturnValueOnce(of(resultMock));
 
-    const result = await useCase.execute(params);
+    const result = await firstValueFrom(useCase.execute(params));
 
     expect(repo.getProducts).toHaveBeenCalledOnce();
     expect(repo.getProducts).toHaveBeenCalledWith(params);
@@ -93,9 +96,9 @@ describe('Product Use Cases', () => {
 
   it('GetProductByIdUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(GetProductByIdUseCase);
-    repo.getProductById.mockResolvedValueOnce(PRODUCT_MOCK);
+    repo.getProductById.mockReturnValueOnce(of(PRODUCT_MOCK));
 
-    const result = await useCase.execute(1);
+    const result = await firstValueFrom(useCase.execute(1));
 
     expect(repo.getProductById).toHaveBeenCalledWith(1);
     expect(result).toEqual(PRODUCT_MOCK);
@@ -112,9 +115,9 @@ describe('Product Use Cases', () => {
       stock: 5,
       minStock: 2,
     };
-    repo.createProduct.mockResolvedValueOnce(PRODUCT_MOCK);
+    repo.createProduct.mockReturnValueOnce(of(PRODUCT_MOCK));
 
-    const result = await useCase.execute(payload);
+    const result = await firstValueFrom(useCase.execute(payload));
 
     expect(repo.createProduct).toHaveBeenCalledWith(payload);
     expect(result).toEqual(PRODUCT_MOCK);
@@ -124,9 +127,9 @@ describe('Product Use Cases', () => {
     const useCase = TestBed.inject(UpdateProductUseCase);
     const payload: UpdateProductPayload = { name: 'Nuevo nombre' };
     const updated = { ...PRODUCT_MOCK, name: 'Nuevo nombre' };
-    repo.updateProduct.mockResolvedValueOnce(updated);
+    repo.updateProduct.mockReturnValueOnce(of(updated));
 
-    const result = await useCase.execute(1, payload);
+    const result = await firstValueFrom(useCase.execute(1, payload));
 
     expect(repo.updateProduct).toHaveBeenCalledWith(1, payload);
     expect(result).toEqual(updated);
@@ -134,9 +137,9 @@ describe('Product Use Cases', () => {
 
   it('ToggleProductStatusUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(ToggleProductStatusUseCase);
-    repo.toggleProductStatus.mockResolvedValueOnce();
+    repo.toggleProductStatus.mockReturnValueOnce(of(undefined));
 
-    await useCase.execute(1, false);
+    await firstValueFrom(useCase.execute(1, false));
 
     expect(repo.toggleProductStatus).toHaveBeenCalledWith(1, false);
     expect(repo.toggleProductStatus).toHaveBeenCalledOnce();
@@ -144,9 +147,9 @@ describe('Product Use Cases', () => {
 
   it('CheckProductCodeUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(CheckProductCodeUseCase);
-    repo.checkCodeExists.mockResolvedValueOnce(true);
+    repo.checkCodeExists.mockReturnValueOnce(of(true));
 
-    const result = await useCase.execute('P-0001');
+    const result = await firstValueFrom(useCase.execute('P-0001'));
 
     expect(repo.checkCodeExists).toHaveBeenCalledWith('P-0001');
     expect(result).toEqual(true);
@@ -154,9 +157,9 @@ describe('Product Use Cases', () => {
 
   it('GetLowStockProductsUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(GetLowStockProductsUseCase);
-    repo.getLowStockProducts.mockResolvedValueOnce([PRODUCT_MOCK]);
+    repo.getLowStockProducts.mockReturnValueOnce(of([PRODUCT_MOCK]));
 
-    const result = await useCase.execute();
+    const result = await firstValueFrom(useCase.execute());
 
     expect(repo.getLowStockProducts).toHaveBeenCalledOnce();
     expect(result).toEqual([PRODUCT_MOCK]);
@@ -165,7 +168,7 @@ describe('Product Use Cases', () => {
   it('GetProductCategoriesUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(GetProductCategoriesUseCase);
 
-    const result = await useCase.execute();
+    const result = await firstValueFrom(useCase.execute());
 
     expect(categoryRepo.getCategories).toHaveBeenCalledOnce();
     expect(result).toEqual([CATEGORY_MOCK]);

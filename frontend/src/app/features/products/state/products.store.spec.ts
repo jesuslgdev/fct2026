@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { Observable, of, throwError } from 'rxjs';
 import { ProductsStore } from './products.store';
 import { AuthService } from '@core/services/auth.service';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
@@ -24,35 +25,35 @@ class MockAuthService {
 }
 
 class MockGetProductsUseCase {
-  execute = vi.fn<(params: ProductQueryParams) => Promise<PagedResult<Product>>>();
+  execute = vi.fn<(params: ProductQueryParams) => Observable<PagedResult<Product>>>();
 }
 
 class MockCreateProductUseCase {
-  execute = vi.fn<(payload: CreateProductPayload) => Promise<Product>>();
+  execute = vi.fn<(payload: CreateProductPayload) => Observable<Product>>();
 }
 
 class MockUpdateProductUseCase {
-  execute = vi.fn<(id: number, payload: UpdateProductPayload) => Promise<Product>>();
+  execute = vi.fn<(id: number, payload: UpdateProductPayload) => Observable<Product>>();
 }
 
 class MockToggleProductStatusUseCase {
-  execute = vi.fn<(id: number, active: boolean) => Promise<void>>();
+  execute = vi.fn<(id: number, active: boolean) => Observable<void>>();
 }
 
 class MockGetProductByIdUseCase {
-  execute = vi.fn<(id: number) => Promise<Product>>();
+  execute = vi.fn<(id: number) => Observable<Product>>();
 }
 
 class MockCheckProductCodeUseCase {
-  execute = vi.fn<(code: string) => Promise<boolean>>();
+  execute = vi.fn<(code: string) => Observable<boolean>>();
 }
 
 class MockGetLowStockProductsUseCase {
-  execute = vi.fn<() => Promise<Product[]>>();
+  execute = vi.fn<() => Observable<Product[]>>();
 }
 
 class MockGetProductCategoriesUseCase {
-  execute = vi.fn<() => Promise<ProductCategory[]>>();
+  execute = vi.fn<() => Observable<ProductCategory[]>>();
 }
 
 describe('ProductsStore', () => {
@@ -182,7 +183,7 @@ describe('ProductsStore', () => {
         page: 1,
         pageSize: 20,
       };
-      getProductsUseCase.execute.mockResolvedValue(mockResult);
+      getProductsUseCase.execute.mockReturnValue(of(mockResult));
 
       await store.loadProducts();
 
@@ -194,7 +195,7 @@ describe('ProductsStore', () => {
 
     it('should handle loading errors', async () => {
       const error = new ProductValidationError('Test error');
-      getProductsUseCase.execute.mockRejectedValue(error);
+      getProductsUseCase.execute.mockReturnValue(throwError(() => error));
 
       await store.loadProducts();
 
@@ -203,7 +204,7 @@ describe('ProductsStore', () => {
     });
 
     it('should load categories successfully', async () => {
-      getProductCategoriesUseCase.execute.mockResolvedValue([mockCategory]);
+      getProductCategoriesUseCase.execute.mockReturnValue(of([mockCategory]));
 
       await store.loadCategories();
 
@@ -211,7 +212,7 @@ describe('ProductsStore', () => {
     });
 
     it('should load low stock products', async () => {
-      getLowStockProductsUseCase.execute.mockResolvedValue([mockProduct]);
+      getLowStockProductsUseCase.execute.mockReturnValue(of([mockProduct]));
 
       await store.loadLowStockProducts();
 
@@ -231,13 +232,13 @@ describe('ProductsStore', () => {
         minStock: 10,
       };
       
-      createProductUseCase.execute.mockResolvedValue(mockProduct);
-      getProductsUseCase.execute.mockResolvedValue({
+      createProductUseCase.execute.mockReturnValue(of(mockProduct));
+      getProductsUseCase.execute.mockReturnValue(of({
         data: [mockProduct],
         total: 1,
         page: 1,
         pageSize: 20,
-      });
+      }));
 
       await store.createProduct(payload);
 
@@ -250,13 +251,13 @@ describe('ProductsStore', () => {
         name: 'Updated Product',
       };
       
-      updateProductUseCase.execute.mockResolvedValue(mockProduct);
-      getProductsUseCase.execute.mockResolvedValue({
+      updateProductUseCase.execute.mockReturnValue(of(mockProduct));
+      getProductsUseCase.execute.mockReturnValue(of({
         data: [mockProduct],
         total: 1,
         page: 1,
         pageSize: 20,
-      });
+      }));
 
       await store.updateProduct(1, payload);
 
@@ -267,13 +268,13 @@ describe('ProductsStore', () => {
     it('should toggle product status successfully', async () => {
       const inactiveProduct = { ...mockProduct, isActive: false };
       
-      toggleProductStatusUseCase.execute.mockResolvedValue();
-      getProductsUseCase.execute.mockResolvedValue({
+      toggleProductStatusUseCase.execute.mockReturnValue(of(undefined));
+      getProductsUseCase.execute.mockReturnValue(of({
         data: [inactiveProduct],
         total: 1,
         page: 1,
         pageSize: 20,
-      });
+      }));
 
       await store.toggleProductStatus(mockProduct);
 
@@ -282,7 +283,7 @@ describe('ProductsStore', () => {
     });
 
     it('should load product by id successfully', async () => {
-      getProductByIdUseCase.execute.mockResolvedValue(mockProduct);
+      getProductByIdUseCase.execute.mockReturnValue(of(mockProduct));
 
       await store.loadProductById(1);
 
@@ -293,7 +294,7 @@ describe('ProductsStore', () => {
 
   describe('Validation', () => {
     it('should validate product code successfully', async () => {
-      checkProductCodeUseCase.execute.mockResolvedValue(false);
+      checkProductCodeUseCase.execute.mockReturnValue(of(false));
 
       await store.validateProductCode('NEW001');
 
@@ -303,7 +304,7 @@ describe('ProductsStore', () => {
     });
 
     it('should show error for duplicate code', async () => {
-      checkProductCodeUseCase.execute.mockResolvedValue(true);
+      checkProductCodeUseCase.execute.mockReturnValue(of(true));
 
       await store.validateProductCode('DUPLICATE001');
 
@@ -327,7 +328,7 @@ describe('ProductsStore', () => {
     });
 
     it('should open edit dialog and load product', async () => {
-      getProductByIdUseCase.execute.mockResolvedValue(mockProduct);
+      getProductByIdUseCase.execute.mockReturnValue(of(mockProduct));
 
       await store.openEditDialog(1);
 
@@ -338,7 +339,7 @@ describe('ProductsStore', () => {
     });
 
     it('should open view dialog', async () => {
-      getProductByIdUseCase.execute.mockResolvedValue(mockProduct);
+      getProductByIdUseCase.execute.mockReturnValue(of(mockProduct));
 
       store.openViewDialog(1);
 
@@ -403,12 +404,12 @@ describe('ProductsStore', () => {
     });
 
     it('should handle page change', async () => {
-      getProductsUseCase.execute.mockResolvedValue({
+      getProductsUseCase.execute.mockReturnValue(of({
         data: [],
         total: 0,
         page: 2,
         pageSize: 20,
-      });
+      }));
 
       await store.onPageChange(2);
 
@@ -417,12 +418,12 @@ describe('ProductsStore', () => {
     });
 
     it('should handle page size change', async () => {
-      getProductsUseCase.execute.mockResolvedValue({
+      getProductsUseCase.execute.mockReturnValue(of({
         data: [],
         total: 0,
         page: 1,
         pageSize: 50,
-      });
+      }));
 
       await store.onPageSizeChange(50);
 
@@ -434,13 +435,13 @@ describe('ProductsStore', () => {
 
   describe('Utilities', () => {
     it('should refresh products and low stock', async () => {
-      getProductsUseCase.execute.mockResolvedValue({
+      getProductsUseCase.execute.mockReturnValue(of({
         data: [],
         total: 0,
         page: 1,
         pageSize: 20,
-      });
-      getLowStockProductsUseCase.execute.mockResolvedValue([]);
+      }));
+      getLowStockProductsUseCase.execute.mockReturnValue(of([]));
 
       await store.refresh();
 
