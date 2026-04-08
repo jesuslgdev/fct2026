@@ -5,6 +5,7 @@ import { ClientRepository } from '@domain/repositories/client.repository';
 import {
   ClientAlreadyExistsError,
   ClientApiError,
+  ClientEmailAlreadyExistsError,
   ClientForbiddenError,
   ClientNotFoundError,
   ClientUnauthorizedError,
@@ -50,6 +51,10 @@ export class HttpClientRepository implements ClientRepository {
       case 404:
         return new ClientNotFoundError(message ?? 'Client not found.');
       case 409:
+        const errorMsg = message ?? '';
+        if (errorMsg.toLowerCase().includes('email')) {
+          return new ClientEmailAlreadyExistsError(message ?? 'A client with this email already exists.');
+        }
         return new ClientAlreadyExistsError(message ?? 'A client with this tax ID already exists.');
       default:
         return new ClientApiError(message ?? 'Unexpected clients API error.');
