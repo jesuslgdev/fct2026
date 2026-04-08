@@ -1,6 +1,5 @@
 from httpx import AsyncClient
 
-from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.warehouse import Warehouse
 from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 
@@ -27,8 +26,8 @@ async def test_list_distribution_empty(client: AsyncClient):
 async def test_list_distribution_with_data(
     client: AsyncClient,
     stock_distribution_seed: list[WarehouseStock],
-    sample_product: Product,
-    second_product: Product,
+    sample_product,
+    second_product,
     warehouse_a: Warehouse,
     warehouse_b: Warehouse,
 ):
@@ -84,7 +83,7 @@ async def test_filter_by_warehouse(
 async def test_filter_by_product(
     client: AsyncClient,
     stock_distribution_seed: list[WarehouseStock],
-    sample_product: Product,
+    sample_product,
 ):
     """Filtering by product_id returns only that product's records."""
     response = await client.get(BASE, params={"product_id": sample_product.product_id})
@@ -101,7 +100,7 @@ async def test_filter_by_warehouse_and_product(
     client: AsyncClient,
     stock_distribution_seed: list[WarehouseStock],
     warehouse_a: Warehouse,
-    second_product: Product,
+    second_product,
 ):
     """Combined warehouse + product filter returns exactly one record."""
     response = await client.get(
@@ -149,6 +148,19 @@ async def test_pagination_second_page(
     assert data["total"] == 3
     assert len(data["items"]) == 1
     assert data["page"] == 2
+
+
+async def test_list_distribution_ordered_by_warehouse_and_product_name(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+):
+    """Rows are ordered by warehouse name and then product name."""
+    response = await client.get(BASE)
+
+    assert response.status_code == 200
+    items = response.json()["items"]
+    ordered_pairs = [(item["warehouse_name"], item["product_name"]) for item in items]
+    assert ordered_pairs == sorted(ordered_pairs)
 
 
 # ── Auth ───────────────────────────────────────────────────────────
