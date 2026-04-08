@@ -225,7 +225,8 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
             )
             .select_from(SupplierProduct)
             .join(
-                products_table, SupplierProduct.product_id == products_table.c.product_id
+                products_table,
+                SupplierProduct.product_id == products_table.c.product_id,
             )
             .outerjoin(
                 categories_table,
@@ -266,7 +267,8 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
             )
             .select_from(SupplierProduct)
             .join(
-                products_table, SupplierProduct.product_id == products_table.c.product_id
+                products_table,
+                SupplierProduct.product_id == products_table.c.product_id,
             )
             .outerjoin(
                 categories_table,
