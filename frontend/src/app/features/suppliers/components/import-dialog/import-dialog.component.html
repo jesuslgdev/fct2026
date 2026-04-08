@@ -12,13 +12,13 @@
   <!-- ── Step 1: Upload ──────────────────────────────────────────────────── -->
   @if (currentStep() === 'upload') {
     <div class="space-y-6">
-      <!-- Información inicial -->
+      <!-- Initial information -->
       <ui-card class="border-blue-200 bg-blue-50">
         <div class="space-y-3">
           <h3 class="text-lg font-semibold text-blue-800">Importación Masiva de Proveedores</h3>
           <p class="text-gray-600">
             Importa múltiples proveedores desde un archivo Excel o CSV. 
-            Antes de importar, el sistema validará todos los datos y te mostrará un resumen.
+            El sistema valida todos los datos antes de importar y muestra un resumen.
           </p>
           
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -31,13 +31,13 @@
               <div><strong>Dirección</strong> - Dirección postal</div>
               <div><strong>Ciudad</strong> - Ciudad</div>
               <div><strong>Provincia</strong> - Provincia</div>
-              <div><strong>Código postal</strong> - CP de 5 dígitos</div>
+              <div><strong>Código postal</strong> - Código postal de 5 dígitos</div>
             </div>
           </div>
         </div>
       </ui-card>
 
-      <!-- Descargar plantilla -->
+      <!-- Download template -->
       <div class="flex justify-center">
         <ui-button
           label="📥 Descargar Plantilla Excel"
@@ -47,7 +47,7 @@
         />
       </div>
 
-      <!-- Upload de archivo -->
+      <!-- File upload -->
       <ui-card>
         <div class="space-y-4">
           <h4 class="font-medium">Seleccionar Archivo</h4>
@@ -77,7 +77,7 @@
             </div>
           </div>
 
-          <!-- Archivo seleccionado -->
+          <!-- Selected file -->
           @if (selectedFile()) {
             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
               <div class="flex items-center justify-between">
@@ -107,7 +107,7 @@
   @if (currentStep() === 'validation') {
     @if (importResult(); as result) {
       <div class="space-y-6">
-        <!-- Resumen de validación -->
+        <!-- Validation summary -->
         <ui-card class="border-green-200 bg-green-50">
           <div class="space-y-4">
             <h4 class="font-semibold text-lg">Resumen de Validación</h4>
@@ -138,7 +138,7 @@
           </div>
         </ui-card>
 
-        <!-- Errores de validación -->
+        <!-- Validation errors -->
         @if (result.errors.length > 0) {
           <ui-card class="border-red-200 bg-red-50">
             <div class="space-y-4">
@@ -163,7 +163,7 @@
           </ui-card>
         }
 
-        <!-- Acciones -->
+        <!-- Actions -->
         <div class="flex justify-between">
           <ui-button
             label="Volver"

@@ -48,7 +48,7 @@ interface SupplierImportApiResponse {
 export class ExcelImportService {
   private readonly http = inject(HttpClient);
 
-  // ── Descargar plantilla Excel ─────────────────────────────────────────────
+  // ── Download Excel template ─────────────────────────────────────────────
   async downloadTemplate(): Promise<ExcelTemplate> {
     try {
       const response = await firstValueFrom(
@@ -65,7 +65,7 @@ export class ExcelImportService {
         data
       };
     } catch {
-      // Fallback a template generada localmente si el endpoint falla
+      // Fallback to a locally generated template if the endpoint fails
       const templateData = this.generateTemplateData();
       const filename = 'plantilla_proveedores.xlsx';
       
@@ -76,10 +76,10 @@ export class ExcelImportService {
     }
   }
 
-  // ── Generar datos de plantilla (simulado) ───────────────────────────────────
+  // ── Generate template data (simulated) ───────────────────────────────────
   private generateTemplateData(): ArrayBuffer {
-    // En un caso real, esto podría venir del backend o usar una librería como xlsx
-    const templateContent = this.createCsvTemplate(); // Simplificado como CSV
+    // In a real case, this could come from the backend or use a library like xlsx
+    const templateContent = this.createCsvTemplate(); // Simplified as CSV
     const encoder = new TextEncoder();
     return encoder.encode(templateContent).buffer;
   }
@@ -113,7 +113,7 @@ export class ExcelImportService {
     ].join('\n');
   }
 
-  // ── Parsear archivo Excel/CSV ───────────────────────────────────────────────
+  // ── Parse Excel/CSV file ───────────────────────────────────────────────
   async parseFile(file: File): Promise<ImportedProvider[]> {
     const content = await this.readFileContent(file);
     const lines = content.split('\n').filter(line => line.trim());
@@ -167,22 +167,22 @@ export class ExcelImportService {
       }
     });
 
-    // Validar campos requeridos
+    // Validate required fields
     if (!provider.name || !provider.taxId || !provider.email) {
-      console.warn(`Fila ${rowNumber}: Campos requeridos faltantes`);
+      console.warn(`Row ${rowNumber}: Missing required fields`);
       return null;
     }
 
     return provider as ImportedProvider;
   }
 
-  // ── Validar datos de proveedores ───────────────────────────────────────────
+  // ── Validate supplier data ───────────────────────────────────────────────
   validateProviders(providers: ImportedProvider[]): ExcelImportResult {
     const errors: ImportError[] = [];
     const validProviders: ImportedProvider[] = [];
 
     providers.forEach((provider, index) => {
-      const rowNumber = index + 2; // +2 porque la fila 1 es el encabezado
+      const rowNumber = index + 2; // +2 because row 1 is the header
       const providerErrors = this.validateProvider(provider, rowNumber);
       
       if (providerErrors.length === 0) {
@@ -205,7 +205,7 @@ export class ExcelImportService {
   private validateProvider(provider: ImportedProvider, rowNumber: number): ImportError[] {
     const errors: ImportError[] = [];
 
-    // Validar nombre
+    // Validate name
     if (!provider.name || provider.name.trim().length === 0) {
       errors.push({
         row: rowNumber,
@@ -222,7 +222,7 @@ export class ExcelImportService {
       });
     }
 
-    // Validar CIF
+    // Validate tax ID
     if (!provider.taxId || provider.taxId.trim().length === 0) {
       errors.push({
         row: rowNumber,
@@ -239,7 +239,7 @@ export class ExcelImportService {
       });
     }
 
-    // Validar email
+    // Validate email
     if (!provider.email || provider.email.trim().length === 0) {
       errors.push({
         row: rowNumber,
@@ -256,7 +256,7 @@ export class ExcelImportService {
       });
     }
 
-    // Validar teléfono (opcional)
+    // Validate phone (optional)
     if (provider.phone && !/^[0-9]{9}$/.test(provider.phone.replace(/\s/g, ''))) {
       errors.push({
         row: rowNumber,
@@ -266,7 +266,7 @@ export class ExcelImportService {
       });
     }
 
-    // Validar código postal (opcional)
+    // Validate postal code (optional)
     if (provider.postalCode && !/^[0-9]{5}$/.test(provider.postalCode)) {
       errors.push({
         row: rowNumber,
@@ -279,7 +279,7 @@ export class ExcelImportService {
     return errors;
   }
 
-  // ── Importar proveedores al backend ───────────────────────────────────────
+  // ── Import suppliers to backend ───────────────────────────────────────
   async importProviders(file: File): Promise<{
     success: boolean;
     importedCount: number;
@@ -287,22 +287,22 @@ export class ExcelImportService {
     errors?: ImportError[];
   }> {
     try {
-      // Crear FormData para el multipart/form-data
+      // Create FormData for multipart/form-data
       const formData = new FormData();
       formData.append('file', file);
 
-      // Llamar al endpoint real del backend
+      // Call the real backend endpoint
       const response = await firstValueFrom(
         this.http.post<SupplierImportApiResponse>(`${environment.apiUrl}/api/v1/suppliers/import`, formData)
       );
 
-      // Mapear respuesta del backend a nuestro formato
+      // Map backend response to our format
       const backendResult = response;
 
-      // Convertir errores del backend al formato del frontend
+      // Convert backend errors to frontend format
       const errors: ImportError[] = backendResult.error_detail.map(error => ({
         row: error.row,
-        field: 'general', // El backend no especifica el campo
+        field: 'general', // Backend does not specify the field
         value: '',
         message: error.reason
       }));
@@ -325,7 +325,7 @@ export class ExcelImportService {
     }
   }
 
-  // ── Descargar archivo en navegador ─────────────────────────────────────────
+  // ── Download file in browser ─────────────────────────────────────────
   downloadFile(data: ArrayBuffer, filename: string): void {
     const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = window.URL.createObjectURL(blob);

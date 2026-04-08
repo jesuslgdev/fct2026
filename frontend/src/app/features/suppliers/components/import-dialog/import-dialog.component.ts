@@ -20,17 +20,17 @@ import { CardComponent } from '@shared/ui/card/card.component';
 export class ImportDialogComponent {
   private readonly excelImportService = inject(ExcelImportService);
 
-  // Signals para el estado del diálogo
+  // Dialog state signals
   readonly visible = signal(false);
   readonly loading = signal(false);
   readonly selectedFile = signal<File | null>(null);
   readonly importResult = signal<ExcelImportResult | null>(null);
   readonly currentStep = signal<'upload' | 'validation' | 'success'>('upload');
 
-  // Output para notificar a la página principal cuando la importación se complete
+  // Output to notify the main page when import completes
   @Output() importCompleted = new EventEmitter<void>();
 
-  // ── Acciones del diálogo ───────────────────────────────────────────────────
+  // ── Dialog actions ───────────────────────────────────────────────────────
   open(): void {
     this.visible.set(true);
     this.currentStep.set('upload');
@@ -50,18 +50,18 @@ export class ImportDialogComponent {
     this.loading.set(false);
   }
 
-  // ── Manejo de archivos ─────────────────────────────────────────────────────
+  // ── File handling ───────────────────────────────────────────────────────
   onFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     
     if (file) {
-      // Validar tipo de archivo
+      // Validate file type
       const validTypes = [
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
         'application/vnd.ms-excel', // .xls
         'text/csv', // .csv
-        'application/csv' // .csv (alternativo)
+        'application/csv' // .csv (alternative)
       ];
 
       if (!validTypes.includes(file.type)) {
@@ -94,12 +94,12 @@ export class ImportDialogComponent {
     if (files && files.length > 0) {
       const file = files[0];
       
-      // Validar tipo de archivo
+      // Validate file type
       const validTypes = [
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
         'application/vnd.ms-excel', // .xls
         'text/csv', // .csv
-        'application/csv' // .csv (alternativo)
+        'application/csv' // .csv (alternative)
       ];
 
       if (!validTypes.includes(file.type)) {
@@ -112,7 +112,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Descargar plantilla ───────────────────────────────────────────────────
+  // ── Download template ───────────────────────────────────────────────────
   async downloadTemplate(): Promise<void> {
     try {
       this.loading.set(true);
@@ -126,7 +126,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Validar archivo ───────────────────────────────────────────────────────
+  // ── Validate file ───────────────────────────────────────────────────────
   async validateFile(): Promise<void> {
     const file = this.selectedFile();
     if (!file) {
@@ -137,10 +137,10 @@ export class ImportDialogComponent {
     try {
       this.loading.set(true);
       
-      // Parsear archivo
+      // Parse file
       const providers = await this.excelImportService.parseFile(file);
       
-      // Validar datos
+      // Validate data
       const result = this.excelImportService.validateProviders(providers);
       
       this.importResult.set(result);
@@ -154,7 +154,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Importar proveedores ───────────────────────────────────────────────────
+  // ── Import suppliers ───────────────────────────────────────────────────
   async importProviders(): Promise<void> {
     const file = this.selectedFile();
     if (!file) {
@@ -169,7 +169,7 @@ export class ImportDialogComponent {
       
       if (importResult.success) {
         this.currentStep.set('success');
-        // Actualizar el resultado para mostrar en el step de éxito
+        // Update result for success step
         this.importResult.set({
           success: true,
           totalRecords: importResult.importedCount,
@@ -179,10 +179,10 @@ export class ImportDialogComponent {
           importedProviders: [] // No necesitamos los detalles para el éxito
         });
         
-        // Emitir evento para que la página principal recargue los datos
+        // Emit event so the main page can refresh data
         this.importCompleted.emit();
       } else {
-        // Mostrar errores del backend
+        // Show backend errors
         this.importResult.set({
           success: false,
           totalRecords: 0,
@@ -202,7 +202,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Acciones de navegación ───────────────────────────────────────────────
+  // ── Navigation actions ───────────────────────────────────────────────────
   goBack(): void {
     if (this.currentStep() === 'validation') {
       this.currentStep.set('upload');
@@ -210,7 +210,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Utilidades ─────────────────────────────────────────────────────────────
+  // ── Utilities ───────────────────────────────────────────────────────────
   getErrorMessage(error: ImportError): string {
     return `Fila ${error.row} - ${error.field}: ${error.message}`;
   }
@@ -233,13 +233,13 @@ export class ImportDialogComponent {
     return new Date().toLocaleDateString('es-ES');
   }
 
-  // ─── Helpers para UI ───────────────────────────────────────────────────────
+  // ─── UI helpers ──────────────────────────────────────────────────────────
   canValidate(): boolean {
     return this.selectedFile() !== null && !this.loading();
   }
 
   canImport(): boolean {
-    // Ahora podemos importar directamente si tenemos un archivo válido
+    // Now we can import directly if we have a valid file
     return this.selectedFile() !== null && !this.loading();
   }
 
