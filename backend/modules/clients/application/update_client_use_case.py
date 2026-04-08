@@ -55,10 +55,18 @@ class UpdateClientUseCase(IUpdateClientUseCase):
         Raises:
             ClientException: With code ``4101`` (``CLIENT_NOT_FOUND``) if no
                 client exists with that ``client_id``.
+            ClientException: With code ``4104``
+                (``CLIENT_EMAIL_ALREADY_EXISTS``) if another client is already
+                using the provided ``email``.
         """
         client = await self._repo.get_by_id(client_id)
         if client is None:
             raise ClientException(ClientExceptionInfo.CLIENT_NOT_FOUND)
+
+        if email is not None:
+            existing_email = await self._repo.get_by_email(email)
+            if existing_email is not None and existing_email.client_id != client_id:
+                raise ClientException(ClientExceptionInfo.CLIENT_EMAIL_ALREADY_EXISTS)
 
         return await self._repo.update(
             client_id=client_id,
