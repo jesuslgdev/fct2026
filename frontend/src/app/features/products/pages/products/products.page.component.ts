@@ -68,9 +68,12 @@ export class ProductsPageComponent implements OnInit {
   }
 
   onPageChange(event: TablePageEvent): void {
-    const nextPage = Math.floor(event.first / event.rows) + 1;
-    if (event.rows !== this.store.pageSize()) {
-      this.store.onPageSizeChange(event.rows);
+    const rows = event.rows ?? this.store.pageSize();
+    const first = event.first ?? 0;
+    const nextPage = Math.floor(first / rows) + 1;
+
+    if (rows !== this.store.pageSize()) {
+      this.store.onPageSizeChange(rows);
       return;
     }
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import type { TablePageEvent } from 'primeng/table';
 import { ProductsPageComponent } from './products.page.component';
 import { ProductsStore } from '@features/products/state/products.store';
 import { signal } from '@angular/core';
@@ -75,5 +76,25 @@ describe('ProductsPageComponent', () => {
 
     component.onPageChange({ first: 20, rows: 20 });
     expect(store.onPageChange).toHaveBeenCalledWith(2);
+  });
+
+  it('calls onPageSizeChange when rows value changes', () => {
+    const fixture = TestBed.createComponent(ProductsPageComponent);
+    const component = fixture.componentInstance;
+
+    component.onPageChange({ first: 0, rows: 50 });
+
+    expect(store.onPageSizeChange).toHaveBeenCalledWith(50);
+    expect(store.onPageChange).not.toHaveBeenCalled();
+  });
+
+  it('uses safe defaults when page event has missing values', () => {
+    const fixture = TestBed.createComponent(ProductsPageComponent);
+    const component = fixture.componentInstance;
+    const event = {} as unknown as TablePageEvent;
+
+    component.onPageChange(event);
+
+    expect(store.onPageChange).toHaveBeenCalledWith(1);
   });
 });
