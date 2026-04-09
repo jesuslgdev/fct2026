@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { UserPermission } from '@domain/enums/user-permission.enum';
 import {
@@ -10,6 +10,7 @@ import {
   ProductSupplierQueryParams,
   UpdateSupplierProductPriceRequest,
 } from '@domain/models/supplier-product.model';
+import { SupplierProductValidationError } from '@domain/models/supplier-product-errors';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
 import { GetProductSuppliersUseCase } from '@domain/usecases/supplier-product/get-product-suppliers.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
@@ -113,6 +114,17 @@ describe('ProductSuppliersStore', () => {
 
     expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
     expect(store.error()).toBe('No hay producto seleccionado.');
+  });
+
+  it('mapea validacion de decimales con punto final desde use case', async () => {
+    store.productId.set(1);
+    addProductToSupplierUseCase.execute.mockReturnValue(
+      throwError(() => new SupplierProductValidationError({}, 'Supplier price must have maximum 2 decimal places.')),
+    );
+
+    await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 10.123 });
+
+    expect(store.error()).toBe('El precio del proveedor debe tener maximo 2 decimales.');
   });
 
   it('agrega proveedor y recarga la lista', async () => {
