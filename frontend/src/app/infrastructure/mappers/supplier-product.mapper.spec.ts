@@ -4,7 +4,10 @@ import {
   SupplierProductDto,
   SupplierProductsPageDto,
   ImportResultDto,
+  ProductSupplierDto,
+  ProductSuppliersPageDto,
 } from '@infrastructure/dtos/supplier-product.dto';
+
 
 describe('SupplierProductMapper', () => {
   it('maps DTO to domain model and parses decimal strings', () => {
@@ -27,7 +30,7 @@ describe('SupplierProductMapper', () => {
     });
   });
 
-  it('maps page DTO to list of domain models', () => {
+  it('maps page DTO to paginated result', () => {
     const dto: SupplierProductsPageDto = {
       items: [
         {
@@ -43,11 +46,14 @@ describe('SupplierProductMapper', () => {
       page_size: 20,
     };
 
-    const result = SupplierProductMapper.fromPageDto(dto);
+    const result = SupplierProductMapper.fromSupplierProductsPageDto(dto);
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.productId).toBe(1);
-    expect(result[0]?.supplierPrice).toBe(9.99);
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]?.productId).toBe(1);
+    expect(result.data[0]?.supplierPrice).toBe(9.99);
+    expect(result.total).toBe(1);
+    expect(result.page).toBe(1);
+    expect(result.pageSize).toBe(20);
   });
 
   it('maps import result DTO to domain shape', () => {
@@ -75,5 +81,48 @@ describe('SupplierProductMapper', () => {
     };
 
     expect(() => SupplierProductMapper.fromDto(dto)).toThrow('Invalid decimal value received from API.');
+  });
+
+  it('maps ProductSupplierDto to ProductSupplier', () => {
+    const dto: ProductSupplierDto = {
+      supplier_id: 1,
+      supplier_name: 'Supplier 1',
+      tax_id: 'B12345678',
+      supplier_price: '100.50',
+    };
+
+    const result = SupplierProductMapper.fromProductSupplierDto(dto);
+
+    expect(result.supplierId).toBe(1);
+    expect(result.supplierName).toBe('Supplier 1');
+    expect(result.taxId).toBe('B12345678');
+    expect(result.supplierPrice).toBe(100.50);
+  });
+
+  it('maps ProductSuppliersPageDto to PagedResult<ProductSupplier>', () => {
+    const dto: ProductSuppliersPageDto = {
+      items: [
+        {
+          supplier_id: 1,
+          supplier_name: 'Supplier 1',
+          tax_id: 'B12345678',
+          supplier_price: '100.50',
+        }
+      ],
+      total: 1,
+      page: 1,
+      page_size: 10,
+    };
+
+    const result = SupplierProductMapper.fromProductSuppliersPageDto(dto);
+
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]?.supplierId).toBe(1);
+    expect(result.data[0]?.supplierName).toBe('Supplier 1');
+    expect(result.data[0]?.taxId).toBe('B12345678');
+    expect(result.data[0]?.supplierPrice).toBe(100.50);
+    expect(result.total).toBe(1);
+    expect(result.page).toBe(1);
+    expect(result.pageSize).toBe(10);
   });
 });

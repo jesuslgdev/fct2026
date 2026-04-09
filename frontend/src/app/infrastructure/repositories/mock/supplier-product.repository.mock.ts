@@ -7,6 +7,10 @@ import {
   UpdateSupplierProductPriceRequest,
   ImportSupplierProductsRequest,
   ImportResult,
+  ProductSupplier,
+  PagedResult,
+  SupplierProductQueryParams,
+  ProductSupplierQueryParams,
 } from '@domain/models/supplier-product.model';
 import {
   SupplierProductValidationError,
@@ -69,7 +73,7 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
       throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must be less than 999999.99');
     }
 
-    // Validar que tenga máximo 2 decimales
+    
     const decimalPlaces = (price.toString().split('.')[1] || '').length;
     if (decimalPlaces > 2) {
       throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must have maximum 2 decimal places');
@@ -88,12 +92,17 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
     return supplierProduct;
   }
 
-  getSupplierProducts(supplierId: number): Observable<SupplierProduct[]> {
-    return of(
-      this.supplierProducts
-        .filter((sp) => sp.supplierId === supplierId)
-        .map((sp) => ({ ...sp.product })),
-    );
+  getSupplierProducts(supplierId: number, params?: SupplierProductQueryParams): Observable<PagedResult<SupplierProduct>> {
+    const queryParams = params || { page: 1, pageSize: 10 };
+    const filtered = this.supplierProducts.filter((sp) => sp.supplierId === supplierId);
+    const start = (queryParams.page - 1) * queryParams.pageSize;
+    const items = filtered.slice(start, start + queryParams.pageSize);
+    return of({
+      data: items.map((sp) => ({ ...sp.product })),
+      total: filtered.length,
+      page: queryParams.page,
+      pageSize: queryParams.pageSize,
+    });
   }
 
   addProductToSupplier(supplierId: number, request: AddSupplierProductRequest): Observable<SupplierProduct> {
@@ -153,14 +162,42 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
     return of(void 0);
   }
 
-  importSupplierProducts(supplierId: number, _request: ImportSupplierProductsRequest): Observable<ImportResult> {
+  importSupplierProducts(supplierId: number, request: ImportSupplierProductsRequest): Observable<ImportResult> {
     const currentCount = this.supplierProducts.filter((sp) => sp.supplierId === supplierId).length;
+    // Mock implementation: simulate processing the file from request
+    const fileData = request.file;
+    const fileSize = fileData.size;
 
     return of({
       total: currentCount,
-      created: 0,
+      created: Math.floor(fileSize / 1000), // Simulate created count based on file size
       errors: 0,
       error_detail: [],
+    });
+  }
+
+  downloadTemplate(supplierId: number): Observable<Blob> {
+    // Generate different mock content based on supplierId
+    const supplierPrefix = supplierId.toString(16).padStart(2, '0');
+    const mockContent = new Uint8Array([0x50, 0x4b, 0x03, 0x04, parseInt(supplierPrefix, 16)]);
+    return of(new Blob([mockContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  }
+
+  getProductSuppliers(productId: number, params?: ProductSupplierQueryParams): Observable<PagedResult<ProductSupplier>> {
+    const queryParams = params || { page: 1, pageSize: 10 };
+    const filtered = this.supplierProducts.filter((sp) => sp.product.productId === productId);
+    const start = (queryParams.page - 1) * queryParams.pageSize;
+    const items = filtered.slice(start, start + queryParams.pageSize);
+    return of({
+      data: items.map(sp => ({
+        supplierId: sp.supplierId,
+        supplierName: `Supplier ${sp.supplierId}`,
+        taxId: 'B12345678',
+        supplierPrice: sp.product.supplierPrice,
+      })),
+      total: filtered.length,
+      page: queryParams.page,
+      pageSize: queryParams.pageSize,
     });
   }
 }

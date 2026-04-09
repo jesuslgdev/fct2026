@@ -35,3 +35,17 @@ export interface ImportResultDto {
   errors: number;
   error_detail: ImportErrorDto[];
 }
+
+export interface ProductSupplierDto {
+  supplier_id: number;
+  supplier_name: string;
+  tax_id: string;
+  supplier_price: ApiDecimal;
+}
+
+export interface ProductSuppliersPageDto {
+  items: ProductSupplierDto[];
+  total: number;
+  page: number;
+  page_size: number;
+}

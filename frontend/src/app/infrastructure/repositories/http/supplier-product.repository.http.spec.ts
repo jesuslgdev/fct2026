@@ -31,10 +31,10 @@ describe('HttpSupplierProductRepository', () => {
   });
 
   it('lists supplier products and maps response', async () => {
-    const promise = firstValueFrom(repository.getSupplierProducts(5));
+    const promise = firstValueFrom(repository.getSupplierProducts(5, { page: 1, pageSize: 20 }));
 
     const req = httpMock.expectOne((request) =>
-      request.method === 'GET' && request.url.endsWith('/api/v1/suppliers/5/products'),
+      request.method === 'GET' && request.url.endsWith('/api/v1/suppliers/5/products') && request.params.get('page') === '1' && request.params.get('page_size') === '20',
     );
 
     req.flush({
@@ -54,7 +54,7 @@ describe('HttpSupplierProductRepository', () => {
 
     const result = await promise;
 
-    expect(result).toEqual([
+    expect(result.data).toEqual([
       {
         productId: 7,
         productName: 'Teclado',
@@ -63,6 +63,9 @@ describe('HttpSupplierProductRepository', () => {
         supplierPrice: 19.5,
       },
     ]);
+    expect(result.total).toBe(1);
+    expect(result.page).toBe(1);
+    expect(result.pageSize).toBe(20);
   });
 
   it('throws validation error before HTTP call when price is invalid', () => {
@@ -116,5 +119,53 @@ describe('HttpSupplierProductRepository', () => {
     expect(result.created).toBe(4);
     expect(result.errors).toBe(1);
     expect(result.error_detail).toEqual([{ row: 4, reason: 'Invalid product code' }]);
+  });
+
+  it('downloads template as blob', async () => {
+    const promise = firstValueFrom(repository.downloadTemplate(1));
+
+    const req = httpMock.expectOne((request) =>
+      request.method === 'GET' && request.url.endsWith('/api/v1/suppliers/1/products/template'),
+    );
+
+    const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    req.flush(mockBlob, { status: 200, statusText: 'OK' });
+
+    const result = await promise;
+
+    expect(result).toBe(mockBlob);
+  });
+
+  it('gets product suppliers with pagination', async () => {
+    const promise = firstValueFrom(repository.getProductSuppliers(2, { page: 1, pageSize: 10 }));
+
+    const req = httpMock.expectOne((request) =>
+      request.method === 'GET' && request.url.endsWith('/api/v1/suppliers/products/2/suppliers') && request.params.get('page') === '1' && request.params.get('page_size') === '10',
+    );
+
+    req.flush({
+      items: [
+        {
+          supplier_id: 1,
+          supplier_name: 'Supplier 1',
+          tax_id: 'B12345678',
+          supplier_price: '100.50',
+        }
+      ],
+      total: 1,
+      page: 1,
+      page_size: 10,
+    });
+
+    const result = await promise;
+
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]?.supplierId).toBe(1);
+    expect(result.data[0]?.supplierName).toBe('Supplier 1');
+    expect(result.data[0]?.taxId).toBe('B12345678');
+    expect(result.data[0]?.supplierPrice).toBe(100.50);
+    expect(result.total).toBe(1);
+    expect(result.page).toBe(1);
+    expect(result.pageSize).toBe(10);
   });
 });

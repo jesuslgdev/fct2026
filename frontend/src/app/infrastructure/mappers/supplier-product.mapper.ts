@@ -4,12 +4,16 @@ import {
   UpdateSupplierProductPriceRequest,
   ImportResult,
   ImportError,
+  ProductSupplier,
+  PagedResult,
 } from '@domain/models/supplier-product.model';
 import {
   SupplierProductDto,
   AddSupplierProductDto,
   UpdateSupplierProductPriceDto,
   SupplierProductsPageDto,
+  ProductSupplierDto,
+  ProductSuppliersPageDto,
   ImportErrorDto,
   ImportResultDto,
 } from '@infrastructure/dtos/supplier-product.dto';
@@ -35,8 +39,31 @@ export class SupplierProductMapper {
     };
   }
 
-  static fromPageDto(dto: SupplierProductsPageDto): SupplierProduct[] {
-    return dto.items.map((item) => this.fromDto(item));
+  static fromSupplierProductsPageDto(dto: SupplierProductsPageDto): PagedResult<SupplierProduct> {
+    return {
+      data: dto.items.map((item) => this.fromDto(item)),
+      total: dto.total,
+      page: dto.page,
+      pageSize: dto.page_size,
+    };
+  }
+
+  static fromProductSupplierDto(dto: ProductSupplierDto): ProductSupplier {
+    return {
+      supplierId: dto.supplier_id,
+      supplierName: dto.supplier_name,
+      taxId: dto.tax_id,
+      supplierPrice: this.toNumber(dto.supplier_price),
+    };
+  }
+
+  static fromProductSuppliersPageDto(dto: ProductSuppliersPageDto): PagedResult<ProductSupplier> {
+    return {
+      data: dto.items.map((item) => this.fromProductSupplierDto(item)),
+      total: dto.total,
+      page: dto.page,
+      pageSize: dto.page_size,
+    };
   }
 
   static toAddDto(request: AddSupplierProductRequest): AddSupplierProductDto {

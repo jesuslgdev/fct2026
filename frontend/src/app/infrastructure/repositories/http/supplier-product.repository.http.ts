@@ -16,11 +16,16 @@ import {
   UpdateSupplierProductPriceRequest,
   ImportSupplierProductsRequest,
   ImportResult,
+  ProductSupplier,
+  PagedResult,
+  SupplierProductQueryParams,
+  ProductSupplierQueryParams,
 } from '@domain/models/supplier-product.model';
 import {
   SupplierProductDto,
   SupplierProductsPageDto,
   ImportResultDto,
+  ProductSuppliersPageDto,
 } from '@infrastructure/dtos/supplier-product.dto';
 import { SupplierProductMapper } from '@infrastructure/mappers/supplier-product.mapper';
 import { environment } from 'environments/environment';
@@ -99,11 +104,13 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
     }
   }
 
-  getSupplierProducts(supplierId: number): Observable<SupplierProduct[]> {
+  getSupplierProducts(supplierId: number, params?: SupplierProductQueryParams): Observable<PagedResult<SupplierProduct>> {
+    const queryParams = params || { page: 1, pageSize: 10 };
+    const httpParams = { page: queryParams.page.toString(), page_size: queryParams.pageSize.toString() };
     return this.withErrorMapping(
       this.http
-        .get<SupplierProductsPageDto>(`${BASE_URL}/${supplierId}/products`)
-        .pipe(map((response) => SupplierProductMapper.fromPageDto(response))),
+        .get<SupplierProductsPageDto>(`${BASE_URL}/${supplierId}/products`, { params: httpParams })
+        .pipe(map((response) => SupplierProductMapper.fromSupplierProductsPageDto(response))),
     );
   }
 
@@ -145,6 +152,24 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
       this.http
         .post<ImportResultDto>(`${BASE_URL}/${supplierId}/products/import`, formData)
         .pipe(map((response) => SupplierProductMapper.importResultFromDto(response))),
+    );
+  }
+
+  downloadTemplate(supplierId: number): Observable<Blob> {
+    return this.withErrorMapping(
+      this.http.get<Blob>(`${BASE_URL}/${supplierId}/products/template`, {
+        responseType: 'blob' as 'json',
+      })
+    );
+  }
+
+  getProductSuppliers(productId: number, params?: ProductSupplierQueryParams): Observable<PagedResult<ProductSupplier>> {
+    const queryParams = params || { page: 1, pageSize: 10 };
+    const httpParams = { page: queryParams.page.toString(), page_size: queryParams.pageSize.toString() };
+    return this.withErrorMapping(
+      this.http
+        .get<ProductSuppliersPageDto>(`${BASE_URL}/products/${productId}/suppliers`, { params: httpParams })
+        .pipe(map((response) => SupplierProductMapper.fromProductSuppliersPageDto(response))),
     );
   }
 }
