@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { InputComponent } from '@shared/ui/input/input.component';
 import { UsersStore } from '@features/users/state/users.store';
 import { UserRole } from '@domain/enums/user-role.enum';
-import { CreateUserPayload, UpdateUserPayload } from '@domain/models/user.model';
+import { isDepartmentRequiredForRole, CreateUserPayload, UpdateUserPayload } from '@domain/models/user.model';
 
 interface RoleOption { label: string; value: UserRole; }
 
@@ -26,13 +27,13 @@ export class UserFormDialogComponent {
     lastName:     ['', Validators.required],
     email:        ['', [Validators.required, Validators.email]],
     role:         [null as UserRole | null, Validators.required],
-    departmentId: [null as number | null, Validators.required],
+    departmentId: [null as number | null],
   });
 
   readonly roleOptions: RoleOption[] = [
-    { label: 'Empleado',      value: 'Employee'      },
-    { label: 'Gerente',       value: 'Manager'       },
-    { label: 'Administrador', value: 'Administrator' },
+    { label: 'Empleado',      value: UserRole.Employee      },
+    { label: 'Gerente',       value: UserRole.Manager       },
+    { label: 'Administrador', value: UserRole.Administrator },
   ];
 
   get firstName()    { return this.form.controls.firstName;    }
@@ -41,10 +42,34 @@ export class UserFormDialogComponent {
   get role()         { return this.form.controls.role;         }
   get departmentId() { return this.form.controls.departmentId; }
 
+  readonly roleValue = toSignal(this.role.valueChanges, { initialValue: this.role.value });
+
+  readonly isDepartmentRequired = computed(() => isDepartmentRequiredForRole(this.roleValue()));
+
+  readonly departmentPlaceholder = computed(() => 
+    this.isDepartmentRequired()
+      ? 'Selecciona un departamento'
+      : 'Selecciona un departamento (opcional)'
+  );
+
   constructor() {
     effect(() => {
+      if (this.isDepartmentRequired()) {
+        this.departmentId.setValidators(Validators.required);
+      } else {
+        this.departmentId.clearValidators();
+      }
+      this.departmentId.updateValueAndValidity();
+    });
+
+    effect(() => {
+      const visible = this.store.dialogVisible();
       const user = this.store.selectedUser();
       const mode = this.store.dialogMode();
+
+      
+      if (!visible) return;
+
       if (mode === 'edit' && user) {
         this.form.patchValue({
           firstName:    user.firstName,
@@ -78,7 +103,7 @@ export class UserFormDialogComponent {
         lastName:     v.lastName!,
         email:        v.email!,
         role:         v.role!,
-        departmentId: v.departmentId!,
+        departmentId: v.departmentId,
       };
       this.store.saveUser(payload);
     } else {

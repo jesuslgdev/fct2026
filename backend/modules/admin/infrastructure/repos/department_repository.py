@@ -8,9 +8,10 @@ from modules.admin.domain.interfaces.repositories.i_department_repository import
     IDepartmentRepository,
 )
 from shared.domain.entities.user import User
+from shared.domain.interfaces.i_department_reader import IDepartmentReader
 
 
-class DepartmentRepository(IDepartmentRepository):
+class DepartmentRepository(IDepartmentRepository, IDepartmentReader):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
@@ -57,3 +58,9 @@ class DepartmentRepository(IDepartmentRepository):
             select(User).where(User.department_id == department_id)
         )
         return result.scalar_one_or_none() is not None
+
+    async def get_name_by_id(self, department_id: int) -> str | None:
+        result = await self._db.execute(
+            select(Department.name).where(Department.department_id == department_id)
+        )
+        return result.scalar_one_or_none()

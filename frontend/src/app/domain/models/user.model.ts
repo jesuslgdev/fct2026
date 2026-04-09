@@ -3,16 +3,18 @@ import { UserRole } from '@domain/enums/user-role.enum';
 export interface User {
   id: number;
   firstName: string;
-  lastName: string;
-  email: string;
+  lastName: string | null;
+  email: string | null;
   role: UserRole;
   departmentId: number | null;
   active: boolean;
+  lastLoginAt?: string | null;
 }
 
-export interface Department {
-  id: number;
-  name: string;
+export interface ActivateUserPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
 }
 
 export interface CreateUserPayload {
@@ -43,4 +45,8 @@ export interface PagedResult<T> {
   total: number;
   page: number;
   pageSize: number;
+}
+
+export function isDepartmentRequiredForRole(role: UserRole | null): boolean {
+  return role === UserRole.Employee || role === UserRole.Manager;
 }

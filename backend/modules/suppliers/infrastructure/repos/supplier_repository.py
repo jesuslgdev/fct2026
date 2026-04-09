@@ -1,31 +1,60 @@
+from decimal import Decimal
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from modules.catalog.domain.entities.category import Category
+from modules.catalog.domain.entities.product import Product
+from modules.suppliers.domain.dtos.product_supplier_detail import (
+    ProductSupplierDetail,
+)
+from modules.suppliers.domain.dtos.supplier_product_detail import (
+    SupplierProductDetail,
+)
 from modules.suppliers.domain.entities.supplier import Supplier
 from modules.suppliers.domain.entities.supplier_product import SupplierProduct
 from modules.suppliers.domain.exceptions import SupplierException, SupplierExceptionInfo
 from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
     ISupplierRepository,
 )
-from shared.domain.paginated_result import PaginatedResult
+from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.interfaces.i_supplier_reader import ISupplierReader
 
 
-class SupplierRepository(ISupplierRepository):
+class SupplierRepository(ISupplierRepository, ISupplierReader):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
     async def get_all_paginated(
-        self, page: int, page_size: int
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        active: bool | None = None,
     ) -> PaginatedResult[Supplier]:
-        total_result = await self._db.execute(
-            select(func.count()).select_from(Supplier)
-        )
+        base_query = select(Supplier)
+        count_query = select(func.count()).select_from(Supplier)
+
+        if search:
+            pattern = f"%{search}%"
+            search_filter = (
+                Supplier.name.ilike(pattern)
+                | Supplier.tax_id.ilike(pattern)
+                | Supplier.email.ilike(pattern)
+            )
+            base_query = base_query.where(search_filter)
+            count_query = count_query.where(search_filter)
+
+        if active is not None:
+            base_query = base_query.where(Supplier.is_active == active)
+            count_query = count_query.where(Supplier.is_active == active)
+
+        total_result = await self._db.execute(count_query)
         total = total_result.scalar_one()
 
         offset = (page - 1) * page_size
         result = await self._db.execute(
-            select(Supplier)
-            .order_by(Supplier.name, Supplier.supplier_id)
+            base_query.order_by(Supplier.name, Supplier.supplier_id)
             .limit(page_size)
             .offset(offset)
         )
@@ -36,6 +65,12 @@ class SupplierRepository(ISupplierRepository):
     async def get_by_id(self, supplier_id: int) -> Supplier | None:
         result = await self._db.execute(
             select(Supplier).where(Supplier.supplier_id == supplier_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_name_by_id(self, supplier_id: int) -> str | None:
+        result = await self._db.execute(
+            select(Supplier.name).where(Supplier.supplier_id == supplier_id)
         )
         return result.scalar_one_or_none()
 
@@ -126,3 +161,166 @@ class SupplierRepository(ISupplierRepository):
         self._db.add_all(suppliers)
         await self._db.flush()
         return len(suppliers)
+
+    # --- ISupplierReader methods ---
+
+    async def is_active(self, supplier_id: int) -> bool:
+        supplier = await self.get_by_id(supplier_id)
+        return supplier is not None and supplier.is_active
+
+    async def add_product(
+        self, supplier_id: int, product_id: int, price: Decimal
+    ) -> SupplierProduct:
+        association = SupplierProduct(
+            supplier_id=supplier_id, product_id=product_id, supplier_price=price
+        )
+        self._db.add(association)
+        await self._db.flush()
+        return association
+
+    async def update_product_price(
+        self, supplier_id: int, product_id: int, price: Decimal
+    ) -> SupplierProduct:
+        association = await self.get_association(supplier_id, product_id)
+        if association is None:
+            raise SupplierException(SupplierExceptionInfo.ASSOCIATION_NOT_FOUND)
+        association.supplier_price = price
+        await self._db.flush()
+        await self._db.refresh(association)
+        return association
+
+    async def remove_product(self, supplier_id: int, product_id: int) -> None:
+        association = await self.get_association(supplier_id, product_id)
+        if association is None:
+            raise SupplierException(SupplierExceptionInfo.ASSOCIATION_NOT_FOUND)
+        await self._db.delete(association)
+        await self._db.flush()
+
+    async def get_association(
+        self, supplier_id: int, product_id: int
+    ) -> SupplierProduct | None:
+        result = await self._db.execute(
+            select(SupplierProduct).where(
+                SupplierProduct.supplier_id == supplier_id,
+                SupplierProduct.product_id == product_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_suppliers_by_product(self, product_id: int) -> list[SupplierProduct]:
+        result = await self._db.execute(
+            select(SupplierProduct).where(SupplierProduct.product_id == product_id)
+        )
+        return list(result.scalars().all())
+
+    async def get_products_by_supplier_detailed(
+        self, supplier_id: int
+    ) -> list[SupplierProductDetail]:
+        result = await self._db.execute(
+            select(
+                Product.product_id,
+                Product.name.label("product_name"),
+                Product.product_code,
+                Category.name.label("category_name"),
+                SupplierProduct.supplier_price,
+            )
+            .select_from(SupplierProduct)
+            .join(Product, SupplierProduct.product_id == Product.product_id)
+            .outerjoin(Category, Product.category_id == Category.category_id)
+            .where(SupplierProduct.supplier_id == supplier_id)
+            .order_by(Product.name)
+        )
+        return [
+            SupplierProductDetail(
+                product_id=row.product_id,
+                product_name=row.product_name,
+                product_code=row.product_code,
+                category_name=row.category_name,
+                supplier_price=row.supplier_price,
+            )
+            for row in result.all()
+        ]
+
+    async def get_products_by_supplier_paginated(
+        self, supplier_id: int, page: int, page_size: int
+    ) -> PaginatedResult[SupplierProductDetail]:
+        total_result = await self._db.execute(
+            select(func.count())
+            .select_from(SupplierProduct)
+            .where(SupplierProduct.supplier_id == supplier_id)
+        )
+        total = total_result.scalar_one()
+
+        offset = (page - 1) * page_size
+        result = await self._db.execute(
+            select(
+                Product.product_id,
+                Product.name.label("product_name"),
+                Product.product_code,
+                Category.name.label("category_name"),
+                SupplierProduct.supplier_price,
+            )
+            .select_from(SupplierProduct)
+            .join(Product, SupplierProduct.product_id == Product.product_id)
+            .outerjoin(Category, Product.category_id == Category.category_id)
+            .where(SupplierProduct.supplier_id == supplier_id)
+            .order_by(Product.name)
+            .limit(page_size)
+            .offset(offset)
+        )
+        rows = result.all()
+        items = [
+            SupplierProductDetail(
+                product_id=row.product_id,
+                product_name=row.product_name,
+                product_code=row.product_code,
+                category_name=row.category_name,
+                supplier_price=row.supplier_price,
+            )
+            for row in rows
+        ]
+
+        return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
+
+    async def get_suppliers_by_product_paginated(
+        self, product_id: int, page: int, page_size: int
+    ) -> PaginatedResult[ProductSupplierDetail]:
+        total_result = await self._db.execute(
+            select(func.count())
+            .select_from(SupplierProduct)
+            .where(SupplierProduct.product_id == product_id)
+        )
+        total = total_result.scalar_one()
+
+        offset = (page - 1) * page_size
+        result = await self._db.execute(
+            select(
+                Supplier.supplier_id,
+                Supplier.name.label("supplier_name"),
+                Supplier.tax_id,
+                SupplierProduct.supplier_price,
+            )
+            .select_from(SupplierProduct)
+            .join(Supplier, SupplierProduct.supplier_id == Supplier.supplier_id)
+            .where(SupplierProduct.product_id == product_id)
+            .order_by(Supplier.name)
+            .limit(page_size)
+            .offset(offset)
+        )
+        rows = result.all()
+        items = [
+            ProductSupplierDetail(
+                supplier_id=row.supplier_id,
+                supplier_name=row.supplier_name,
+                tax_id=row.tax_id,
+                supplier_price=row.supplier_price,
+            )
+            for row in rows
+        ]
+
+        return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
+
+    async def bulk_create_products(self, associations: list[SupplierProduct]) -> int:
+        self._db.add_all(associations)
+        await self._db.flush()
+        return len(associations)
