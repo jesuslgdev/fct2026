@@ -25,6 +25,8 @@ import { HttpProductRepository } from '@infrastructure/repositories/http/product
 import { HttpProductCategoryRepository } from '@infrastructure/repositories/http/product-category.repository.http';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
+import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
+import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -47,6 +49,7 @@ export const appConfig: ApplicationConfig = {
     { provide: UserRepository, useClass: HttpUserRepository },
     { provide: ProductRepository, useClass: HttpProductRepository },
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
+    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
     providePrimeNG({
       ripple: true,
       theme: {
