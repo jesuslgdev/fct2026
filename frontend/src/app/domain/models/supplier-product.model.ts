@@ -32,3 +32,30 @@ export interface ImportError {
   row: number;
   reason: string;
 }
+
+export interface PagedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+
+export interface SupplierProductQueryParams {
+  page: number;
+  pageSize: number;
+}
+
+
+export interface ProductSupplierQueryParams {
+  page: number;
+  pageSize: number;
+}
+
+
+export interface ProductSupplier {
+  supplierId: number;
+  supplierName: string;
+  taxId: string;
+  supplierPrice: number;
+}

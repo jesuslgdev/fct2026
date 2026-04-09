@@ -1,19 +1,19 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { SupplierProductRepository } from '@domain/repositories/supplier-product.repository';
-import { SupplierProduct, PagedResult, SupplierProductQueryParams } from '@domain/models/supplier-product.model';
+import { ProductSupplier, PagedResult, ProductSupplierQueryParams } from '@domain/models/supplier-product.model';
 import { SupplierProductValidationError } from '@domain/models/supplier-product-errors';
 
 @Injectable({ providedIn: 'root' })
-export class GetSupplierProductsUseCase {
+export class GetProductSuppliersUseCase {
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
-  execute(supplierId: number, params?: SupplierProductQueryParams): Observable<PagedResult<SupplierProduct>> {
-    if (supplierId <= 0) {
-      throw new SupplierProductValidationError({ supplierId }, 'Invalid supplier ID.');
+  execute(productId: number, params?: ProductSupplierQueryParams): Observable<PagedResult<ProductSupplier>> {
+    if (productId <= 0) {
+      throw new SupplierProductValidationError({ productId }, 'Invalid product ID.');
     }
 
-    const queryParams: SupplierProductQueryParams = params || { page: 1, pageSize: 10 };
+    const queryParams: ProductSupplierQueryParams = params || { page: 1, pageSize: 10 };
 
     if (queryParams.page < 1) {
       throw new SupplierProductValidationError({ page: queryParams.page }, 'Page must be greater than 0.');
@@ -22,6 +22,6 @@ export class GetSupplierProductsUseCase {
       throw new SupplierProductValidationError({ pageSize: queryParams.pageSize }, 'Page size must be between 1 and 100.');
     }
 
-    return this.supplierProductRepository.getSupplierProducts(supplierId, queryParams);
+    return this.supplierProductRepository.getProductSuppliers(productId, queryParams);
   }
 }

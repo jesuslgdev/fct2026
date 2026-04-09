@@ -8,6 +8,10 @@ import {
   UpdateSupplierProductPriceRequest,
   ImportSupplierProductsRequest,
   ImportResult,
+  ProductSupplier,
+  PagedResult,
+  SupplierProductQueryParams,
+  ProductSupplierQueryParams,
 } from '@domain/models/supplier-product.model';
 import { SupplierProductValidationError } from '@domain/models/supplier-product-errors';
 import { GetSupplierProductsUseCase } from './get-supplier-products.usecase';
@@ -15,6 +19,8 @@ import { AddProductToSupplierUseCase } from './add-product-to-supplier.usecase';
 import { UpdateSupplierProductPriceUseCase } from './update-supplier-product-price.usecase';
 import { RemoveProductFromSupplierUseCase } from './remove-product-from-supplier.usecase';
 import { ImportSupplierProductsUseCase } from './import-supplier-products.usecase';
+import { DownloadTemplateUseCase } from './download-template.usecase';
+import { GetProductSuppliersUseCase } from './get-product-suppliers.usecase';
 
 const SUPPLIER_PRODUCT_MOCK: SupplierProduct = {
   productId: 1,
@@ -30,6 +36,8 @@ class MockSupplierProductRepository implements SupplierProductRepository {
   updateSupplierProductPrice = vi.fn();
   removeProductFromSupplier = vi.fn();
   importSupplierProducts = vi.fn();
+  downloadTemplate = vi.fn();
+  getProductSuppliers = vi.fn();
 }
 
 describe('Supplier Product Use Cases', () => {
@@ -39,6 +47,8 @@ describe('Supplier Product Use Cases', () => {
   let updateSupplierProductPriceUseCase: UpdateSupplierProductPriceUseCase;
   let removeProductFromSupplierUseCase: RemoveProductFromSupplierUseCase;
   let importSupplierProductsUseCase: ImportSupplierProductsUseCase;
+  let downloadTemplateUseCase: DownloadTemplateUseCase;
+  let getProductSuppliersUseCase: GetProductSuppliersUseCase;
 
   beforeEach(() => {
     repo = new MockSupplierProductRepository();
@@ -49,6 +59,8 @@ describe('Supplier Product Use Cases', () => {
         UpdateSupplierProductPriceUseCase,
         RemoveProductFromSupplierUseCase,
         ImportSupplierProductsUseCase,
+        DownloadTemplateUseCase,
+        GetProductSuppliersUseCase,
         { provide: SupplierProductRepository, useValue: repo }
       ]
     });
@@ -58,23 +70,57 @@ describe('Supplier Product Use Cases', () => {
     updateSupplierProductPriceUseCase = TestBed.inject(UpdateSupplierProductPriceUseCase);
     removeProductFromSupplierUseCase = TestBed.inject(RemoveProductFromSupplierUseCase);
     importSupplierProductsUseCase = TestBed.inject(ImportSupplierProductsUseCase);
+    downloadTemplateUseCase = TestBed.inject(DownloadTemplateUseCase);
+    getProductSuppliersUseCase = TestBed.inject(GetProductSuppliersUseCase);
   });
 
   describe('GetSupplierProductsUseCase', () => {
-    it('should delegate to repository', async () => {
+    it('should delegate to repository with pagination', async () => {
       const supplierId = 1;
-      const expectedProducts = [SUPPLIER_PRODUCT_MOCK];
-      repo.getSupplierProducts.mockReturnValue(of(expectedProducts));
+      const params: SupplierProductQueryParams = { page: 1, pageSize: 10 };
+      const expectedPagedResult: PagedResult<SupplierProduct> = {
+        data: [SUPPLIER_PRODUCT_MOCK],
+        total: 1,
+        page: params.page,
+        pageSize: params.pageSize,
+      };
+      repo.getSupplierProducts.mockReturnValue(of(expectedPagedResult));
+
+      const result = await firstValueFrom(getSupplierProductsUseCase.execute(supplierId, params));
+
+      expect(repo.getSupplierProducts).toHaveBeenCalledWith(supplierId, params);
+      expect(result).toEqual(expectedPagedResult);
+    });
+
+    it('should use default params when not provided', async () => {
+      const supplierId = 1;
+      const expectedPagedResult: PagedResult<SupplierProduct> = {
+        data: [SUPPLIER_PRODUCT_MOCK],
+        total: 1,
+        page: 1,
+        pageSize: 10,
+      };
+      repo.getSupplierProducts.mockReturnValue(of(expectedPagedResult));
 
       const result = await firstValueFrom(getSupplierProductsUseCase.execute(supplierId));
 
-      expect(repo.getSupplierProducts).toHaveBeenCalledWith(supplierId);
-      expect(result).toEqual(expectedProducts);
+      expect(repo.getSupplierProducts).toHaveBeenCalledWith(supplierId, { page: 1, pageSize: 10 });
+      expect(result).toEqual(expectedPagedResult);
     });
 
     it('should throw ValidationError if supplierId is invalid', () => {
       expect(() => getSupplierProductsUseCase.execute(0)).toThrow(SupplierProductValidationError);
       expect(() => getSupplierProductsUseCase.execute(-1)).toThrow(SupplierProductValidationError);
+    });
+
+    it('should throw ValidationError if page is invalid', () => {
+      expect(() => getSupplierProductsUseCase.execute(1, { page: 0, pageSize: 10 })).toThrow(SupplierProductValidationError);
+      expect(() => getSupplierProductsUseCase.execute(1, { page: -1, pageSize: 10 })).toThrow(SupplierProductValidationError);
+    });
+
+    it('should throw ValidationError if pageSize is invalid', () => {
+      expect(() => getSupplierProductsUseCase.execute(1, { page: 1, pageSize: 0 })).toThrow(SupplierProductValidationError);
+      expect(() => getSupplierProductsUseCase.execute(1, { page: 1, pageSize: 101 })).toThrow(SupplierProductValidationError);
     });
 
     it('should propagate repository errors', async () => {
@@ -220,6 +266,102 @@ describe('Supplier Product Use Cases', () => {
       repo.importSupplierProducts.mockReturnValue(throwError(() => new Error(errorMessage)));
 
       await expect(firstValueFrom(importSupplierProductsUseCase.execute(supplierId, request))).rejects.toThrow(errorMessage);
+    });
+  });
+
+  describe('DownloadTemplateUseCase', () => {
+    it('should delegate to repository', async () => {
+      const supplierId = 1;
+      const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      repo.downloadTemplate.mockReturnValue(of(mockBlob));
+
+      const result = await firstValueFrom(downloadTemplateUseCase.execute(supplierId));
+
+      expect(repo.downloadTemplate).toHaveBeenCalledWith(supplierId);
+      expect(result).toBe(mockBlob);
+    });
+
+    it('should throw ValidationError if supplierId is invalid', () => {
+      expect(() => downloadTemplateUseCase.execute(0)).toThrow(SupplierProductValidationError);
+      expect(() => downloadTemplateUseCase.execute(-1)).toThrow(SupplierProductValidationError);
+    });
+
+    it('should propagate repository errors', async () => {
+      const supplierId = 1;
+      const errorMessage = 'Repository error';
+      repo.downloadTemplate.mockReturnValue(throwError(() => new Error(errorMessage)));
+
+      await expect(firstValueFrom(downloadTemplateUseCase.execute(supplierId))).rejects.toThrow(errorMessage);
+    });
+  });
+
+  describe('GetProductSuppliersUseCase', () => {
+    it('should delegate to repository with pagination', async () => {
+      const productId = 1;
+      const params: ProductSupplierQueryParams = { page: 1, pageSize: 10 };
+      const mockProductSupplier: ProductSupplier = {
+        supplierId: 1,
+        supplierName: 'Supplier 1',
+        taxId: 'B12345678',
+        supplierPrice: 100.50,
+      };
+      const expectedPagedResult: PagedResult<ProductSupplier> = {
+        data: [mockProductSupplier],
+        total: 1,
+        page: params.page,
+        pageSize: params.pageSize,
+      };
+      repo.getProductSuppliers.mockReturnValue(of(expectedPagedResult));
+
+      const result = await firstValueFrom(getProductSuppliersUseCase.execute(productId, params));
+
+      expect(repo.getProductSuppliers).toHaveBeenCalledWith(productId, params);
+      expect(result).toEqual(expectedPagedResult);
+    });
+
+    it('should use default params when not provided', async () => {
+      const productId = 1;
+      const mockProductSupplier: ProductSupplier = {
+        supplierId: 1,
+        supplierName: 'Supplier 1',
+        taxId: 'B12345678',
+        supplierPrice: 100.50,
+      };
+      const expectedPagedResult: PagedResult<ProductSupplier> = {
+        data: [mockProductSupplier],
+        total: 1,
+        page: 1,
+        pageSize: 10,
+      };
+      repo.getProductSuppliers.mockReturnValue(of(expectedPagedResult));
+
+      const result = await firstValueFrom(getProductSuppliersUseCase.execute(productId));
+
+      expect(repo.getProductSuppliers).toHaveBeenCalledWith(productId, { page: 1, pageSize: 10 });
+      expect(result).toEqual(expectedPagedResult);
+    });
+
+    it('should throw ValidationError if productId is invalid', () => {
+      expect(() => getProductSuppliersUseCase.execute(0)).toThrow(SupplierProductValidationError);
+      expect(() => getProductSuppliersUseCase.execute(-1)).toThrow(SupplierProductValidationError);
+    });
+
+    it('should throw ValidationError if page is invalid', () => {
+      expect(() => getProductSuppliersUseCase.execute(1, { page: 0, pageSize: 10 })).toThrow(SupplierProductValidationError);
+      expect(() => getProductSuppliersUseCase.execute(1, { page: -1, pageSize: 10 })).toThrow(SupplierProductValidationError);
+    });
+
+    it('should throw ValidationError if pageSize is invalid', () => {
+      expect(() => getProductSuppliersUseCase.execute(1, { page: 1, pageSize: 0 })).toThrow(SupplierProductValidationError);
+      expect(() => getProductSuppliersUseCase.execute(1, { page: 1, pageSize: 101 })).toThrow(SupplierProductValidationError);
+    });
+
+    it('should propagate repository errors', async () => {
+      const productId = 1;
+      const errorMessage = 'Repository error';
+      repo.getProductSuppliers.mockReturnValue(throwError(() => new Error(errorMessage)));
+
+      await expect(firstValueFrom(getProductSuppliersUseCase.execute(productId))).rejects.toThrow(errorMessage);
     });
   });
 });
