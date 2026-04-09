@@ -1,18 +1,65 @@
-<div class="flex items-center justify-center min-h-screen bg-surface-50">
-  <div class="max-w-sm w-full p-6 bg-white shadow-lg rounded-lg">
-    <h2 class="text-style-title mb-6 text-center">Iniciar sesión</h2>
+<div class="flex items-center justify-center min-h-screen bg-surface-0 p-4">
+  <ui-card 
+    [footerTemplate]="footerTemplate"
+    styleClass="max-w-md w-full shadow-2xl border-0"
+    [style]="{'border-radius': '1rem', 'overflow': 'hidden'}"
+  >
+    <!-- Header con branding -->
+    <ng-template pTemplate="header">
+      <div class="text-center py-8 bg-primary-50">
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-primary-600 rounded-2xl mb-6 shadow-lg">
+          <i class="pi pi-lock text-white text-3xl"></i>
+        </div>
+        <h1 class="text-style-hero text-primary-700 mb-3">FCT2026</h1>
+        <p class="text-style-subtitle text-surface-600">Gestión de Prácticas Empresariales</p>
+      </div>
+    </ng-template>
 
-    @if (error()) {
-      <p class="text-danger text-sm mb-4">{{ error() }}</p>
-    }
+    <!-- Contenido principal -->
+    <div class="p-8 space-y-8">
+      <!-- Mensaje de bienvenida -->
+      <div class="text-center">
+        <h2 class="text-style-title text-surface-900 mb-3">Bienvenido a ERP System</h2>
+        <p class="text-style-subtitle text-surface-600">Inicia sesión para acceder al sistema</p>
+      </div>
 
-    <ui-button
-      label="Ingresar con Google"
-      icon="pi pi-google"
-      variant="secondary"
-      (clicked)="loginWithGoogle()"
-      [loading]="loading()"
-      styleClass="w-full"
-    ></ui-button>
-  </div>
+      <!-- Alerta de error -->
+      @if (error()) {
+        <div class="bg-red-50 border border-red-200 text-danger px-5 py-4 rounded-xl flex items-center gap-3 mb-8">
+          <i class="pi pi-exclamation-triangle text-danger text-lg"></i>
+          <span class="text-sm font-medium">{{ error() }}</span>
+        </div>
+      }
+
+      <!-- Botón de login con Google -->
+      <div class="space-y-6">
+        <ui-button
+          variant="outline"
+          size="lg"
+          styleClass="w-full h-14"
+          (clicked)="loginWithGoogle()"
+          [loading]="loading()"
+        >
+          <ng-template>
+            <div class="flex items-center justify-center gap-4">
+              <app-google-logo size="lg"></app-google-logo>
+              <span class="text-base font-medium">Continuar con Google</span>
+            </div>
+          </ng-template>
+        </ui-button>
+      </div>
+    </div>
+
+    <!-- Footer template -->
+    <ng-template #footerTemplate>
+      <div class="bg-surface-50 py-2 text-center border-t border-surface-200">
+        <p class="text-sm text-surface-500 mb-2">
+          Tu cuenta está protegida con autenticación de Google
+        </p>
+        <p class="text-xs text-surface-500 leading-relaxed">
+          © 2026 FCT2026 • Sistema de Gestión
+        </p>
+      </div>
+    </ng-template>
+  </ui-card>
 </div>
