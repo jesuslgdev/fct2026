@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import {
   PagedResult,
   ProductSupplier,
@@ -30,6 +31,7 @@ const PRODUCT_SUPPLIER_B: ProductSupplier = {
 };
 
 class MockAuthService {
+  readonly permissions = signal<UserPermission[]>([UserPermission.PurchasesManager]);
   readonly user = signal({
     uid: 'uid-1',
     email: 'manager@example.com',
@@ -37,6 +39,13 @@ class MockAuthService {
     photoURL: null,
     role: 'Manager' as const,
   });
+
+  hasPermission(permission: UserPermission | UserPermission[]): boolean {
+    if (Array.isArray(permission)) {
+      return permission.some((p) => this.permissions().includes(p));
+    }
+    return this.permissions().includes(permission);
+  }
 }
 
 class MockGetProductSuppliersUseCase {
@@ -172,5 +181,17 @@ describe('ProductSuppliersStore', () => {
 
   it('permite modificar para manager', () => {
     expect(store.canModify()).toBe(true);
+  });
+
+  it('no permite modificar sin permisos de compras/admin', async () => {
+    const authService = TestBed.inject(AuthService) as unknown as MockAuthService;
+    authService.permissions.set([]);
+
+    store.productId.set(1);
+    await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 50 });
+
+    expect(store.canModify()).toBe(false);
+    expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
+    expect(store.error()).toBe('No tiene permisos para realizar esta accion.');
   });
 });

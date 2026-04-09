@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import {
   AddSupplierProductRequest,
   ProductSupplier,
@@ -42,10 +43,9 @@ export class ProductSuppliersStore {
   readonly confirmDeleteSupplierDialogVisible = signal(false);
   readonly selectedProductSupplier = signal<ProductSupplier | null>(null);
 
-  readonly canModify = computed(() => {
-    const role = this.authService.user()?.role;
-    return role === 'Administrator' || role === 'Manager';
-  });
+  readonly canModify = computed(() =>
+    this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager])
+  );
 
   readonly productTotalPages = computed(() => Math.ceil(this.productTotal() / this.productPageSize()));
 
@@ -117,6 +117,15 @@ export class ProductSuppliersStore {
     return currentProductSupplier;
   }
 
+  private ensureCanModify(): boolean {
+    if (this.canModify()) {
+      return true;
+    }
+
+    this.error.set('No tiene permisos para realizar esta accion.');
+    return false;
+  }
+
   private async fetchProductSuppliers(productId: number): Promise<void> {
     const result = await firstValueFrom(this.getProductSuppliersUseCase.execute(productId, this.buildQueryParams()));
     this.productSuppliers.set(result.data);
@@ -146,6 +155,10 @@ export class ProductSuppliersStore {
   }
 
   openAddSupplierDialog(): void {
+    if (!this.ensureCanModify()) {
+      return;
+    }
+
     this.selectedProductSupplier.set(null);
     this.addSupplierDialogVisible.set(true);
   }
@@ -157,6 +170,10 @@ export class ProductSuppliersStore {
 
   async addSupplierToProduct(request: { supplierId: number; supplierPrice: number }): Promise<void> {
     this.error.set(null);
+
+    if (!this.ensureCanModify()) {
+      return;
+    }
 
     const currentProductId = this.requireProductId('No hay producto seleccionado.');
     if (!currentProductId) {
@@ -185,6 +202,10 @@ export class ProductSuppliersStore {
   }
 
   openEditSupplierPriceDialog(productSupplier: ProductSupplier): void {
+    if (!this.ensureCanModify()) {
+      return;
+    }
+
     this.selectedProductSupplier.set(productSupplier);
     this.editSupplierPriceDialogVisible.set(true);
   }
@@ -196,6 +217,10 @@ export class ProductSuppliersStore {
 
   async updateSupplierPrice(request: UpdateSupplierProductPriceRequest): Promise<void> {
     this.error.set(null);
+
+    if (!this.ensureCanModify()) {
+      return;
+    }
 
     const currentProductId = this.requireProductId('No hay producto seleccionado.');
     const currentProductSupplier = this.requireSelectedProductSupplier('No hay proveedor seleccionado.');
@@ -226,6 +251,10 @@ export class ProductSuppliersStore {
   }
 
   requestDeleteSupplier(productSupplier: ProductSupplier): void {
+    if (!this.ensureCanModify()) {
+      return;
+    }
+
     this.selectedProductSupplier.set(productSupplier);
     this.confirmDeleteSupplierDialogVisible.set(true);
   }
@@ -237,6 +266,10 @@ export class ProductSuppliersStore {
 
   async confirmDeleteSupplier(): Promise<void> {
     this.error.set(null);
+
+    if (!this.ensureCanModify()) {
+      return;
+    }
 
     const currentProductId = this.requireProductId('No hay producto seleccionado.');
     const currentProductSupplier = this.requireSelectedProductSupplier('No hay proveedor seleccionado.');
