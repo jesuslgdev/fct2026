@@ -41,6 +41,22 @@ export class SupplierProductDuplicateError extends Error {
   }
 }
 
+export class SupplierProductSupplierInactiveError extends Error {
+  override readonly name = 'SupplierProductSupplierInactiveError';
+
+  constructor(message = 'Supplier is not active.') {
+    super(message);
+  }
+}
+
+export class SupplierProductItemInactiveError extends Error {
+  override readonly name = 'SupplierProductItemInactiveError';
+
+  constructor(message = 'Product is not active.') {
+    super(message);
+  }
+}
+
 export class SupplierProductApiError extends Error {
   override readonly name = 'SupplierProductApiError';
 

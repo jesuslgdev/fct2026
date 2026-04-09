@@ -155,6 +155,9 @@ describe('Supplier Product Use Cases', () => {
       
       const invalidPriceRequest: AddSupplierProductRequest = { productId: 1, supplierPrice: 0 };
       expect(() => addProductToSupplierUseCase.execute(1, invalidPriceRequest)).toThrow(SupplierProductValidationError);
+
+      const tooManyDecimalsRequest: AddSupplierProductRequest = { productId: 1, supplierPrice: 10.123 };
+      expect(() => addProductToSupplierUseCase.execute(1, tooManyDecimalsRequest)).toThrow(SupplierProductValidationError);
     });
 
     it('should propagate repository errors', async () => {
@@ -191,6 +194,9 @@ describe('Supplier Product Use Cases', () => {
       
       const invalidPriceRequest: UpdateSupplierProductPriceRequest = { supplierPrice: 0 };
       expect(() => updateSupplierProductPriceUseCase.execute(1, 1, invalidPriceRequest)).toThrow(SupplierProductValidationError);
+
+      const tooManyDecimalsRequest: UpdateSupplierProductPriceRequest = { supplierPrice: 10.123 };
+      expect(() => updateSupplierProductPriceUseCase.execute(1, 1, tooManyDecimalsRequest)).toThrow(SupplierProductValidationError);
     });
 
     it('should propagate repository errors', async () => {
