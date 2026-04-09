@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -42,6 +42,7 @@ export const appConfig: ApplicationConfig = {
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: CategoryRepository, useClass: HttpCategoryRepository },
+    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
     // Mock repositories (replace with real HTTP implementations when backend is ready)
