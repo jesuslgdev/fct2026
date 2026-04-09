@@ -37,6 +37,12 @@ class ChangeSaleStatusRequest(BaseModel):
         return v
 
 
+class UpdateSaleRequest(BaseModel):
+    client_id: int
+    delivery_address: str = Field(min_length=1)
+    lines: list[SaleLineInput] = Field(min_length=1)
+
+
 class SaleLineResponse(BaseModel):
     sale_line_id: int
     sale_id: int
@@ -74,6 +80,7 @@ class SaleDetailDTO(BaseModel):
     warehouse_id: int
     delivery_address: str
     user_id: int
+    created_by_name: str | None = None
     sale_date: datetime
     status: str
     allowed_transitions: list[str]
@@ -105,6 +112,7 @@ class SaleDetailDTO(BaseModel):
             warehouse_id=sale.warehouse_id,
             delivery_address=sale.delivery_address,
             user_id=sale.user_id,
+            created_by_name=getattr(sale, "created_by_name", None),
             sale_date=sale.sale_date,
             status=sale.status,
             allowed_transitions=allowed_next(sale.status),

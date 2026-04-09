@@ -99,6 +99,49 @@ class SaleRepository(ISaleRepository):
         result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
         return result.scalar_one_or_none()
 
+    async def update(
+        self,
+        sale_id: int,
+        client_id: int,
+        delivery_address: str,
+        subtotal: Decimal,
+        taxes: Decimal,
+        total: Decimal,
+        lines: list[dict],
+    ) -> Sale:
+        result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
+        sale = result.scalar_one()
+        sale.client_id = client_id
+        sale.delivery_address = delivery_address
+        sale.subtotal = subtotal
+        sale.taxes = taxes
+        sale.total = total
+
+        existing_lines_result = await self._db.execute(
+            select(SaleLine).where(SaleLine.sale_id == sale_id)
+        )
+        for existing_line in existing_lines_result.scalars().all():
+            await self._db.delete(existing_line)
+
+        await self._db.flush()
+
+        for line in lines:
+            sale_line = SaleLine(
+                sale_id=sale.sale_id,
+                product_id=line["product_id"],
+                quantity=line["quantity"],
+                unit_price=line["unit_price"],
+                vat_rate=line["vat_rate"],
+                line_subtotal=line["line_subtotal"],
+                line_tax=line["line_tax"],
+            )
+            self._db.add(sale_line)
+
+        await self._db.flush()
+        await self._db.refresh(sale, ["lines"])
+        updated_sale = await self.get_by_id(sale_id)
+        return updated_sale if updated_sale is not None else sale
+
     async def get_all_paginated(
         self,
         page: int,
