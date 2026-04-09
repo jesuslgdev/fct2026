@@ -6,6 +6,8 @@ import {
   CreateProductPayload,
   UpdateProductPayload,
   ProductCategory,
+  ProductSupplier,
+  ProductStockByWarehouse,
 } from '@domain/models/product.model';
 
 const INITIAL_MOCK_PRODUCTS: Product[] = [
@@ -29,6 +31,25 @@ const INITIAL_MOCK_PRODUCTS: Product[] = [
     ],
   },
 ];
+
+const PRODUCT_STOCK_BY_WAREHOUSE: Record<number, ProductStockByWarehouse[]> = {
+  1: [
+    {
+      warehouseId: '1',
+      warehouseName: 'Almacén Central',
+      currentStock: 14,
+      minStock: 5,
+      status: 'normal',
+    },
+    {
+      warehouseId: '2',
+      warehouseName: 'Almacén Norte',
+      currentStock: 3,
+      minStock: 5,
+      status: 'low',
+    },
+  ],
+};
 
 @Injectable({ providedIn: 'root' })
 export class MockProductRepository implements ProductRepository {
@@ -72,7 +93,10 @@ export class MockProductRepository implements ProductRepository {
     if (!product) {
       return throwError(() => new Error('Product not found'));
     }
-    return of({ ...product });
+    return of({
+      ...product,
+      suppliers: product.suppliers?.map((supplier) => ({ ...supplier })),
+    });
   }
 
   createProduct(payload: CreateProductPayload): Observable<Product> {
@@ -135,6 +159,20 @@ export class MockProductRepository implements ProductRepository {
 
   getLowStockProducts(): Observable<Product[]> {
     return of(this.products.filter((p) => p.stock < p.minStock).map((p) => ({ ...p })));
+  }
+
+  getProductSuppliers(productId: number): Observable<ProductSupplier[]> {
+    const product = this.products.find((p) => p.productId === productId);
+    if (!product) {
+      return throwError(() => new Error('Product not found'));
+    }
+
+    return of((product.suppliers ?? []).map((supplier) => ({ ...supplier })));
+  }
+
+  getProductStockByWarehouses(productId: number): Observable<ProductStockByWarehouse[]> {
+    const stockByWarehouse = PRODUCT_STOCK_BY_WAREHOUSE[productId] ?? [];
+    return of(stockByWarehouse.map((entry) => ({ ...entry })));
   }
 
   getProductCategories(): Observable<ProductCategory[]> {

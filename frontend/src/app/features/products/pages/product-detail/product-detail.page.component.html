@@ -18,11 +18,11 @@
     </div>
   </div>
 
-  @if (store.loading()) {
+  @if (store.detailLoading()) {
     <p class="warning-text">Cargando detalle del producto...</p>
   }
 
-  @if (store.error(); as errorMessage) {
+  @if (store.detailError(); as errorMessage) {
     <p class="warning-text" role="alert">{{ errorMessage }}</p>
   }
 
@@ -63,20 +63,70 @@
         <p>{{ product.description }}</p>
       </div>
 
-      <div class="mt-4">
-        <h2 class="text-style-subtitle">Proveedores</h2>
+      <div class="mt-6">
+        <div class="flex flex-wrap gap-2">
+          <ui-button
+            label="Almacenes"
+            [variant]="activeDetailView() === 'warehouses' ? 'default' : 'outline'"
+            (clicked)="setDetailView('warehouses')"
+          />
+          <ui-button
+            label="Proveedores"
+            [variant]="activeDetailView() === 'suppliers' ? 'default' : 'outline'"
+            (clicked)="setDetailView('suppliers')"
+          />
+        </div>
 
-        @if (product.suppliers?.length) {
-          <ul class="mt-2 space-y-2 list-none p-0">
-            @for (supplier of product.suppliers; track supplier.supplierId) {
-              <li class="flex items-center justify-between rounded border border-surface-200 px-3 py-2">
-                <span>{{ supplier.supplierName }}</span>
-                <span class="font-medium">{{ supplier.supplierPrice | currency: 'EUR' }}</span>
-              </li>
-            }
-          </ul>
+        @if (activeDetailView() === 'warehouses') {
+          <h2 class="mt-4 text-style-subtitle">Almacenes disponibles</h2>
+
+          @if (store.productStockByWarehouses().length) {
+            <ul class="mt-2 space-y-2 list-none p-0">
+              @for (warehouse of store.productStockByWarehouses(); track warehouse.warehouseId) {
+                <li class="rounded border border-surface-200 px-3 py-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-medium">{{ warehouse.warehouseName }}</span>
+                    <span
+                      class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                      [class.bg-red-100]="warehouse.status === 'out' || warehouse.status === 'critical'"
+                      [class.text-red-700]="warehouse.status === 'out' || warehouse.status === 'critical'"
+                      [class.bg-amber-100]="warehouse.status === 'low'"
+                      [class.text-amber-700]="warehouse.status === 'low'"
+                      [class.bg-emerald-100]="warehouse.status === 'normal'"
+                      [class.text-emerald-700]="warehouse.status === 'normal'"
+                    >
+                      @switch (warehouse.status) {
+                        @case ('out') { Sin stock }
+                        @case ('critical') { Crítico }
+                        @case ('low') { Bajo }
+                        @default { Normal }
+                      }
+                    </span>
+                  </div>
+                  <p class="mt-1 text-sm text-surface-600">
+                    Disponible: {{ warehouse.currentStock }} - Minimo: {{ warehouse.minStock }}
+                  </p>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="mt-2 text-surface-500">Sin stock por almacén para este producto.</p>
+          }
         } @else {
-          <p class="text-surface-500">Sin proveedores asociados.</p>
+          <h2 class="mt-4 text-style-subtitle">Proveedores</h2>
+
+          @if (store.productSuppliers().length) {
+            <ul class="mt-2 space-y-2 list-none p-0">
+              @for (supplier of store.productSuppliers(); track supplier.supplierId) {
+                <li class="flex items-center justify-between rounded border border-surface-200 px-3 py-2">
+                  <span>{{ supplier.supplierName }}</span>
+                  <span class="font-medium">{{ supplier.supplierPrice | currency: 'EUR' }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="mt-2 text-surface-500">Sin proveedores asociados.</p>
+          }
         }
       </div>
     </ui-card>

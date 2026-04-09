@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { catchError, finalize, of, tap } from 'rxjs';
+import { catchError, finalize, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import {
   Product,
@@ -7,6 +7,8 @@ import {
   UpdateProductPayload,
   ProductQueryParams,
   ProductCategory,
+  ProductSupplier,
+  ProductStockByWarehouse,
   PagedResult,
 } from '@domain/models/product.model';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
@@ -17,6 +19,8 @@ import { GetProductByIdUseCase } from '@domain/usecases/product/get-product-by-i
 import { CheckProductCodeUseCase } from '@domain/usecases/product/check-product-code.usecase';
 import { GetLowStockProductsUseCase } from '@domain/usecases/product/get-low-stock-products.usecase';
 import { GetProductCategoriesUseCase } from '@domain/usecases/product/get-product-categories.usecase';
+import { GetProductSuppliersUseCase } from '@domain/usecases/product/get-product-suppliers.usecase';
+import { GetProductStockByWarehousesUseCase } from '@domain/usecases/product/get-product-stock-by-warehouses.usecase';
 import {
   ProductApiError,
   ProductForbiddenError,
@@ -38,6 +42,8 @@ export class ProductsStore {
   private readonly checkProductCodeUseCase = inject(CheckProductCodeUseCase);
   private readonly getLowStockProductsUseCase = inject(GetLowStockProductsUseCase);
   private readonly getProductCategoriesUseCase = inject(GetProductCategoriesUseCase);
+  private readonly getProductSuppliersUseCase = inject(GetProductSuppliersUseCase);
+  private readonly getProductStockByWarehousesUseCase = inject(GetProductStockByWarehousesUseCase);
 
   // ── State ──────────────────────────────────────────────────────────────────
   readonly products = signal<Product[]>([]);
@@ -56,6 +62,10 @@ export class ProductsStore {
   readonly productToToggle = signal<Product | null>(null);
   readonly categories = signal<ProductCategory[]>([]);
   readonly lowStockProducts = signal<Product[]>([]);
+  readonly productSuppliers = signal<ProductSupplier[]>([]);
+  readonly productStockByWarehouses = signal<ProductStockByWarehouse[]>([]);
+  readonly detailLoading = signal(false);
+  readonly detailError = signal<string | null>(null);
   readonly codeValidationLoading = signal(false);
   readonly codeValidationError = signal<string | null>(null);
 
@@ -243,6 +253,42 @@ export class ProductsStore {
         return of();
       }),
       finalize(() => this.loading.set(false))
+    ).subscribe();
+  }
+
+  loadProductDetail(productId: number): void {
+    this.detailLoading.set(true);
+    this.detailError.set(null);
+
+    this.getProductByIdUseCase.execute(productId).pipe(
+      switchMap((product) => {
+        return forkJoin({
+          suppliers: this.getProductSuppliersUseCase.execute(productId).pipe(
+            catchError(() => of(product.suppliers ?? []))
+          ),
+          stockByWarehouse: this.getProductStockByWarehousesUseCase.execute(productId).pipe(
+            catchError(() => of([]))
+          ),
+        }).pipe(
+          map((relations) => ({ product, ...relations }))
+        );
+      }),
+      tap(({ product, suppliers, stockByWarehouse }) => {
+        this.productSuppliers.set(suppliers);
+        this.productStockByWarehouses.set(stockByWarehouse);
+        this.selectedProduct.set({
+          ...product,
+          suppliers,
+        });
+      }),
+      catchError((err) => {
+        this.detailError.set(this.resolveErrorMessage(err, 'Failed to load product detail.'));
+        this.selectedProduct.set(null);
+        this.productSuppliers.set([]);
+        this.productStockByWarehouses.set([]);
+        return of();
+      }),
+      finalize(() => this.detailLoading.set(false))
     ).subscribe();
   }
 

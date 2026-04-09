@@ -3,12 +3,16 @@ import {
   CreateProductPayload,
   UpdateProductPayload,
   ProductCategory,
+  ProductSupplier,
+  ProductStockByWarehouse,
 } from '@domain/models/product.model';
 import {
   ProductDto,
   CreateProductDto,
   UpdateProductDto,
   ProductCategoryDto,
+  ProductSupplierDto,
+  ProductWarehouseStockDto,
 } from '@infrastructure/dtos/product.dto';
 
 export class ProductMapper {
@@ -19,6 +23,56 @@ export class ProductMapper {
 
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private static toWarehouseStatus(currentStock: number, minStock: number): ProductStockByWarehouse['status'] {
+    if (currentStock <= 0) {
+      return 'out';
+    }
+
+    if (minStock <= 0) {
+      return 'normal';
+    }
+
+    const criticalThreshold = Math.max(1, Math.floor(minStock / 2));
+    if (currentStock <= criticalThreshold) {
+      return 'critical';
+    }
+
+    if (currentStock < minStock) {
+      return 'low';
+    }
+
+    return 'normal';
+  }
+
+  static supplierFromDto(dto: ProductSupplierDto): ProductSupplier {
+    return {
+      supplierId: dto.supplier_id ?? dto.supplierId ?? 0,
+      supplierName: dto.supplier_name ?? dto.supplierName ?? 'Proveedor',
+      supplierPrice: ProductMapper.toNumber(dto.supplier_price ?? dto.supplierPrice ?? 0),
+    };
+  }
+
+  static stockByWarehouseFromDto(
+    dto: ProductWarehouseStockDto,
+    fallbackMinStock: number,
+  ): ProductStockByWarehouse {
+    const currentStock = typeof dto.available_stock === 'number'
+      ? dto.available_stock
+      : typeof dto.stock === 'number'
+        ? dto.stock
+        : 0;
+
+    const minStock = fallbackMinStock;
+
+    return {
+      warehouseId: String(dto.warehouse_id),
+      warehouseName: dto.warehouse_name,
+      currentStock,
+      minStock,
+      status: ProductMapper.toWarehouseStatus(currentStock, minStock),
+    };
   }
 
   static fromDto(dto: ProductDto): Product {
@@ -38,13 +92,16 @@ export class ProductMapper {
       stock,
       minStock,
       isActive: dto.is_active,
+      suppliers: Array.isArray(dto.suppliers)
+        ? dto.suppliers.map(ProductMapper.supplierFromDto)
+        : undefined,
     };
   }
 
   static toCreateDto(payload: CreateProductPayload): CreateProductDto {
     return {
       product_code: payload.code,
-  code: payload.code,
+      code: payload.code,
       name: payload.name,
       description: payload.description,
       category_id: payload.categoryId,
@@ -68,8 +125,10 @@ export class ProductMapper {
       dto.stock_current = payload.stock;
       dto.stock = payload.stock;
     }
-    if (payload.minStock !== undefined && payload.minStock !== null) dto.stock_min = payload.minStock;
-    if (payload.minStock !== undefined && payload.minStock !== null) dto.min_stock = payload.minStock;
+    if (payload.minStock !== undefined && payload.minStock !== null) {
+      dto.stock_min = payload.minStock;
+      dto.min_stock = payload.minStock;
+    }
 
     return dto;
   }

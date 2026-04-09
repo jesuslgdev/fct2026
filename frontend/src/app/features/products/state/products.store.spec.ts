@@ -11,7 +11,18 @@ import { GetProductByIdUseCase } from '@domain/usecases/product/get-product-by-i
 import { CheckProductCodeUseCase } from '@domain/usecases/product/check-product-code.usecase';
 import { GetLowStockProductsUseCase } from '@domain/usecases/product/get-low-stock-products.usecase';
 import { GetProductCategoriesUseCase } from '@domain/usecases/product/get-product-categories.usecase';
-import { Product, ProductCategory, CreateProductPayload, UpdateProductPayload, ProductQueryParams, PagedResult } from '@domain/models/product.model';
+import { GetProductSuppliersUseCase } from '@domain/usecases/product/get-product-suppliers.usecase';
+import { GetProductStockByWarehousesUseCase } from '@domain/usecases/product/get-product-stock-by-warehouses.usecase';
+import {
+  Product,
+  ProductCategory,
+  ProductQueryParams,
+  CreateProductPayload,
+  UpdateProductPayload,
+  ProductSupplier,
+  ProductStockByWarehouse,
+  PagedResult,
+} from '@domain/models/product.model';
 import { ProductValidationError } from '@domain/models/product-errors';
 
 class MockAuthService {
@@ -56,6 +67,14 @@ class MockGetProductCategoriesUseCase {
   execute = vi.fn<() => Observable<ProductCategory[]>>();
 }
 
+class MockGetProductSuppliersUseCase {
+  execute = vi.fn<(productId: number) => Observable<ProductSupplier[]>>();
+}
+
+class MockGetProductStockByWarehousesUseCase {
+  execute = vi.fn<(productId: number) => Observable<ProductStockByWarehouse[]>>();
+}
+
 describe('ProductsStore', () => {
   let store: ProductsStore;
   let authService: MockAuthService;
@@ -67,6 +86,8 @@ describe('ProductsStore', () => {
   let checkProductCodeUseCase: MockCheckProductCodeUseCase;
   let getLowStockProductsUseCase: MockGetLowStockProductsUseCase;
   let getProductCategoriesUseCase: MockGetProductCategoriesUseCase;
+  let getProductSuppliersUseCase: MockGetProductSuppliersUseCase;
+  let getProductStockByWarehousesUseCase: MockGetProductStockByWarehousesUseCase;
 
   const mockProduct: Product = {
     productId: 1,
@@ -87,6 +108,20 @@ describe('ProductsStore', () => {
     description: 'Test Category Description',
   };
 
+  const mockSupplier: ProductSupplier = {
+    supplierId: 1,
+    supplierName: 'Supplier A',
+    supplierPrice: 80,
+  };
+
+  const mockStockByWarehouse: ProductStockByWarehouse = {
+    warehouseId: '1',
+    warehouseName: 'Almacén Central',
+    currentStock: 12,
+    minStock: 5,
+    status: 'normal',
+  };
+
   beforeEach(() => {
     authService = new MockAuthService();
     getProductsUseCase = new MockGetProductsUseCase();
@@ -97,6 +132,8 @@ describe('ProductsStore', () => {
     checkProductCodeUseCase = new MockCheckProductCodeUseCase();
     getLowStockProductsUseCase = new MockGetLowStockProductsUseCase();
     getProductCategoriesUseCase = new MockGetProductCategoriesUseCase();
+    getProductSuppliersUseCase = new MockGetProductSuppliersUseCase();
+    getProductStockByWarehousesUseCase = new MockGetProductStockByWarehousesUseCase();
 
     TestBed.configureTestingModule({
       providers: [
@@ -110,6 +147,8 @@ describe('ProductsStore', () => {
         { provide: CheckProductCodeUseCase, useValue: checkProductCodeUseCase },
         { provide: GetLowStockProductsUseCase, useValue: getLowStockProductsUseCase },
         { provide: GetProductCategoriesUseCase, useValue: getProductCategoriesUseCase },
+        { provide: GetProductSuppliersUseCase, useValue: getProductSuppliersUseCase },
+        { provide: GetProductStockByWarehousesUseCase, useValue: getProductStockByWarehousesUseCase },
       ],
     });
 
@@ -289,6 +328,35 @@ describe('ProductsStore', () => {
 
       expect(getProductByIdUseCase.execute).toHaveBeenCalledWith(1);
       expect(store.selectedProduct()).toEqual(mockProduct);
+    });
+
+    it('should load product detail with suppliers and warehouses', async () => {
+      getProductByIdUseCase.execute.mockReturnValue(of(mockProduct));
+      getProductSuppliersUseCase.execute.mockReturnValue(of([mockSupplier]));
+      getProductStockByWarehousesUseCase.execute.mockReturnValue(of([mockStockByWarehouse]));
+
+      await store.loadProductDetail(1);
+
+      expect(getProductByIdUseCase.execute).toHaveBeenCalledWith(1);
+      expect(getProductSuppliersUseCase.execute).toHaveBeenCalledWith(1);
+      expect(getProductStockByWarehousesUseCase.execute).toHaveBeenCalledWith(1);
+      expect(store.productSuppliers()).toEqual([mockSupplier]);
+      expect(store.productStockByWarehouses()).toEqual([mockStockByWarehouse]);
+      expect(store.selectedProduct()?.suppliers).toEqual([mockSupplier]);
+      expect(store.detailLoading()).toBe(false);
+      expect(store.detailError()).toBeNull();
+    });
+
+    it('should set detail error when loading product detail fails', async () => {
+      getProductByIdUseCase.execute.mockReturnValue(throwError(() => new Error('network')));
+
+      await store.loadProductDetail(1);
+
+      expect(store.detailError()).toBe('network');
+      expect(store.selectedProduct()).toBeNull();
+      expect(store.productSuppliers()).toEqual([]);
+      expect(store.productStockByWarehouses()).toEqual([]);
+      expect(store.detailLoading()).toBe(false);
     });
   });
 
