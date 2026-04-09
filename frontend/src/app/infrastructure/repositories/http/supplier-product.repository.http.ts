@@ -8,6 +8,8 @@ import {
   SupplierProductForbiddenError,
   SupplierProductNotFoundError,
   SupplierProductDuplicateError,
+  SupplierProductSupplierInactiveError,
+  SupplierProductItemInactiveError,
   SupplierProductApiError,
 } from '@domain/models/supplier-product-errors';
 import {
@@ -60,6 +62,12 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
       case 404:
         return new SupplierProductNotFoundError(message ?? 'Supplier product association not found.');
       case 409:
+        if (message === 'Supplier is not active') {
+          return new SupplierProductSupplierInactiveError(message);
+        }
+        if (message === 'Product is not active') {
+          return new SupplierProductItemInactiveError(message);
+        }
         return new SupplierProductDuplicateError(message ?? 'Product already associated with this supplier.');
       default:
         return new SupplierProductApiError(message ?? 'Unexpected supplier product API error.');
@@ -91,10 +99,6 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
   private validatePrice(price: number): void {
     if (price <= 0) {
       throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must be greater than 0');
-    }
-
-    if (price > 999999.99) {
-      throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must be less than 999999.99');
     }
 
     // Validar que tenga máximo 2 decimales
