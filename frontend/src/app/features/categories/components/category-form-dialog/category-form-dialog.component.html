@@ -1,0 +1,50 @@
+<ui-dialog
+  [visible]="store.dialogVisible()"
+  (closed)="onCancel()"
+  [header]="getDialogTitle()"
+  [confirmLabel]="confirmLabel"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  [confirmDisabled]="form.invalid"
+  size="default"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+>
+  <form [formGroup]="form" class="dialog-form">
+    @if (store.error(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
+    <!-- Nombre -->
+    <div class="dialog-field">
+      <span class="dialog-field-label">Nombre *</span>
+      <ui-input
+        formControlName="name"
+        placeholder="Ej: Electrónica"
+        [state]="name.invalid && name.touched ? 'error' : 'default'"
+      />
+      @if (name.invalid && name.touched) {
+        <span class="dialog-field-error">
+          @if (name.hasError('required')) { El nombre es obligatorio. }
+          @else { El nombre debe tener entre 1 y 100 caracteres. }
+        </span>
+      }
+    </div>
+
+    <!-- Descripción -->
+    <div class="dialog-field">
+      <span class="dialog-field-label">Descripción</span>
+      <ui-input
+        formControlName="description"
+        placeholder="Ej: Dispositivos electrónicos y accesorios"
+        [state]="description.invalid && description.touched ? 'error' : 'default'"
+      />
+      @if (description.invalid && description.touched) {
+        <span class="dialog-field-error">
+          La descripción no puede superar los 500 caracteres.
+        </span>
+      }
+    </div>
+
+  </form>
+</ui-dialog>

@@ -10,7 +10,11 @@
 >
   <form [formGroup]="form" class="dialog-form">
 
-    <!-- Nombre + Apellidos -->
+ 
+    @if (store.dialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
     <div class="dialog-form-grid">
       <label class="dialog-field">
         <span class="dialog-field-label">Nombre</span>
@@ -36,7 +40,7 @@
       </label>
     </div>
 
-    <!-- Correo electrónico (solo en creación) -->
+  
     @if (store.dialogMode() === 'create') {
       <label class="dialog-field">
         <span class="dialog-field-label">Correo electrónico</span>
@@ -74,7 +78,7 @@
       }
     </div>
 
-    <!-- Departamento -->
+
     <div class="dialog-field">
       <span class="dialog-field-label">Departamento</span>
       @if (renderSelects()) {
@@ -83,13 +87,14 @@
           [options]="store.departments()"
           optionLabel="name"
           optionValue="id"
-          placeholder="Selecciona un departamento"
+          [placeholder]="departmentPlaceholder()"
+          [showClear]="!isDepartmentRequired()"
           styleClass="w-full"
           appendTo="body"
         />
       }
-      @if (departmentId.invalid && departmentId.touched) {
-        <span class="dialog-field-error">El departamento es obligatorio.</span>
+      @if (departmentId.invalid && departmentId.touched && isDepartmentRequired()) {
+        <span class="dialog-field-error">El departamento es obligatorio para este rol.</span>
       }
     </div>
 

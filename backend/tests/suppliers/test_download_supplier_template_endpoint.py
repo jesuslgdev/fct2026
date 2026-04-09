@@ -3,17 +3,19 @@ from httpx import ASGITransport, AsyncClient
 
 from composition.security import get_current_user, require_purchases_manager_or_admin
 from main import app
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 
 
 def _mock_user(role: str):
     def override():
         return UserSession(
+            user_id=1,
             email="test@test.com",
             role=role,
             department_id=None,
             firebase_uid="test-uid",
             name="Test User",
+            last_login_at=None,
         )
 
     return override

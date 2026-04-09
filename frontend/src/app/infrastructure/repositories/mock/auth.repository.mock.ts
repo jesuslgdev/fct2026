@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AuthRepository } from '@domain/repositories/auth.repository';
 import { Session } from '@domain/models/session.model';
+import { UserRole } from '@domain/enums/user-role.enum';
 
 const MOCK_SESSION: Session = {
   token: 'mock-jwt-token-dev',
@@ -9,7 +10,7 @@ const MOCK_SESSION: Session = {
     email: 'dev@example.com',
     displayName: 'Dev User',
     photoURL: 'https://gravatar.com/avatar/dcf2ac25f9a965f613793050b981afa1?s=400&d=wavatar&r=x',
-    role: 'Administrator',
+    role: UserRole.Administrator,
   },
 };
 
@@ -23,4 +24,9 @@ export class MockAuthRepository implements AuthRepository {
     // no-op: mock implementation
     return Promise.resolve();
   }
+
+  async restoreSession(): Promise<Session | null> {
+    return MOCK_SESSION;
+  }
 }
+

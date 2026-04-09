@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from composition.security import get_current_user, require_sales_manager_or_admin
 from main import app
-from shared.domain.entities.user_session import UserSession
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import get_db
 
 
@@ -17,11 +17,13 @@ async def any_user_client(db_session: AsyncSession):
 
     def override_get_current_user():
         return UserSession(
+            user_id=1,
             email="employee@test.com",
             role="Employee",
             department_id=None,
             firebase_uid="uid-e",
             name="Employee Test",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db
@@ -49,20 +51,24 @@ async def sales_manager_client(db_session: AsyncSession):
 
     def override_require_sales_manager_or_admin():
         return UserSession(
+            user_id=2,
             email="manager@sales.test",
             role="Manager",
             department_id=1,
             firebase_uid="uid-m",
             name="Sales Manager",
+            last_login_at=None,
         )
 
     def override_get_current_user():
         return UserSession(
+            user_id=2,
             email="manager@sales.test",
             role="Manager",
             department_id=1,
             firebase_uid="uid-m",
             name="Sales Manager",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db
@@ -94,11 +100,13 @@ async def non_sales_client(db_session: AsyncSession):
 
     def override_get_current_user():
         return UserSession(
+            user_id=1,
             email="employee@test.com",
             role="Employee",
             department_id=None,
             firebase_uid="uid-e",
             name="Employee Test",
+            last_login_at=None,
         )
 
     app.dependency_overrides[get_db] = override_get_db

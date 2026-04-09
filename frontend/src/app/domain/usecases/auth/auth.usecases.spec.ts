@@ -5,6 +5,8 @@ import { Session } from '@domain/models/session.model';
 import { SignInWithGoogleUseCase } from '@domain/usecases/auth/sign-in-with-google.usecase';
 import { SignOutUseCase } from '@domain/usecases/auth/sign-out.usecase';
 
+import { UserPermission } from '@domain/enums/user-permission.enum';
+
 const MOCK_SESSION: Session = {
   token: 'test-jwt-token',
   user: {
@@ -12,12 +14,15 @@ const MOCK_SESSION: Session = {
     email: 'test@example.com',
     displayName: 'Test User',
     photoURL: null,
+    departmentId: 1,
+    permissions: [UserPermission.Admin],
   },
 };
 
 class MockAuthRepository implements AuthRepository {
   signInWithGoogle = vi.fn().mockResolvedValue(MOCK_SESSION);
   signOut = vi.fn().mockResolvedValue(undefined);
+  restoreSession = vi.fn().mockResolvedValue(null);
 }
 
 describe('Auth Use Cases', () => {

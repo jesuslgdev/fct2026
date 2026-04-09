@@ -5,7 +5,11 @@ from modules.admin.domain.entities.department import Department
 from shared.domain.entities.user import User
 
 
-async def test_create_user_success(admin_client: AsyncClient):
+async def test_create_user_success(admin_client: AsyncClient, db_session: AsyncSession):
+    dept = Department(name="HR")
+    db_session.add(dept)
+    await db_session.flush()
+
     response = await admin_client.post(
         "/api/v1/admin/users",
         json={
@@ -13,15 +17,19 @@ async def test_create_user_success(admin_client: AsyncClient):
             "last_name": "Doe",
             "email": "jane@example.com",
             "role": "Employee",
+            "department_id": dept.department_id,
         },
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["email"] == "jane@example.com"
+    # Newly created users are inactive pending first login; personal data is masked.
     assert data["first_name"] == "Jane"
+    assert data["email"] is None
+    assert data["last_name"] is None
     assert data["role"] == "Employee"
     assert "user_id" in data
-    assert data["is_active"] is True
+    assert data["is_active"] is False
+    assert data["last_login_at"] is None
 
 
 async def test_create_user_with_department(

@@ -24,6 +24,10 @@ class CatalogExceptionInfo(AppExceptionInfo):
     CATEGORY_ALREADY_EXISTS = (5102, "Category name already exists", 409)
     CATEGORY_HAS_PRODUCTS = (5103, "Category has associated products", 409)
 
+    # Products (52xx)
+    PRODUCT_NOT_FOUND = (5201, "Product not found", 404)
+    PRODUCT_CODE_ALREADY_EXISTS = (5202, "Product code already exists", 409)
+
 
 class CatalogException(AppException):
     """Raised by catalog use cases and repositories to signal a domain error."""
