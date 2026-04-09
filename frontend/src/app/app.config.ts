@@ -1,4 +1,3 @@
-// Application configuration for Angular app
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -12,6 +11,12 @@ import { ErpPreset } from '@theme/erp.preset';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { FirebaseAuthRepository } from '@infrastructure/repositories/auth/firebase-auth.repository';
 import { AuthRepository } from '@domain/repositories/auth.repository';
+import { HttpCategoryRepository } from '@infrastructure/repositories/http/category.repository.http';
+import { CategoryRepository } from '@domain/repositories/category.repository';
+import { ClientRepository } from '@domain/repositories/client.repository';
+import { HttpClientRepository } from '@infrastructure/repositories/http/client.repository.http';
+import { DepartmentRepository } from '@domain/repositories/department.repository';
+import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
@@ -36,6 +41,9 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    { provide: CategoryRepository, useClass: HttpCategoryRepository },
+    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
+    { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
     { provide: ProductRepository, useClass: HttpProductRepository },
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
@@ -48,16 +56,15 @@ export const appConfig: ApplicationConfig = {
           darkModeSelector: 'none',
           cssLayer: {
             name: 'primeng',
-            // Layer order: theme → base → primeng → components → utilities
             order: 'theme, base, primeng, components, utilities',
           },
         },
       },
     }),
-
     MessageService,
     ConfirmationService,
 
+    // TODO add base url for API REST
     // { provide: PurchaseRepository, useClass: PurchaseRepositoryMock },
   ],
 };

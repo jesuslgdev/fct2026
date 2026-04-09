@@ -1,0 +1,14 @@
+import { Routes } from '@angular/router';
+import { adminGuard } from '@core/guards/admin.guard';
+
+export const DEPARTMENTS_ROUTES: Routes = [
+  {
+    path: '',
+    loadComponent: () =>
+      import('./pages/departments/departments.page.component').then(
+        m => m.DepartmentsPageComponent,
+      ),
+    title: 'Departamentos',
+    canActivate: [adminGuard],
+  },
+];

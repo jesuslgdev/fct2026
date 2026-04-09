@@ -86,7 +86,6 @@ export class HttpProductRepository implements ProductRepository {
       map((items) => items.map(ProductMapper.fromDto)),
     );
   }
-
   private mapHttpError(err: unknown): Error {
     if (!(err instanceof HttpErrorResponse)) {
       return err instanceof Error ? err : new ProductApiError();

@@ -33,6 +33,14 @@ export class UserNotFoundError extends Error {
   }
 }
 
+export class UserAlreadyExistsError extends Error {
+  override readonly name = 'UserAlreadyExistsError';
+
+  constructor(message = 'User already exists.') {
+    super(message);
+  }
+}
+
 export class UserApiError extends Error {
   override readonly name = 'UserApiError';
 

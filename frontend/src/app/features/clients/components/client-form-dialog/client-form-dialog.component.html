@@ -1,0 +1,147 @@
+<ui-dialog
+  [(visible)]="store.dialogVisible"
+  [header]="getDialogTitle()"
+  [confirmLabel]="isViewMode() ? 'Cerrar' : 'Guardar'"
+  [cancelLabel]="isViewMode() ? '' : 'Cancelar'"
+  [confirmLoading]="store.loading()"
+  [confirmDisabled]="form.invalid && !isViewMode()"
+  size="default"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+>
+  <form [formGroup]="form" class="dialog-form">
+
+    @if (store.dialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
+    <!-- Nombre + Tax ID -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <span class="dialog-field-label">Nombre</span>
+        <ui-input
+          formControlName="name"
+          placeholder="Ej: Juan Pérez"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && name.invalid && name.touched ? 'error' : 'default'"
+        />
+        @if (!isViewMode() && name.invalid && name.touched) {
+          <span class="dialog-field-error">
+            @if (name.hasError('required')) { El nombre es obligatorio. }
+            @else { El nombre debe tener al menos 3 caracteres. }
+          </span>
+        }
+      </div>
+      <div class="dialog-field">
+        <span class="dialog-field-label">Tax ID</span>
+        <ui-input
+          formControlName="taxId"
+          placeholder="Ej: 12345678A"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && taxId.invalid && taxId.touched ? 'error' : 'default'"
+        />
+        @if (!isViewMode() && taxId.invalid && taxId.touched) {
+          <span class="dialog-field-error">
+            @if (taxId.hasError('required')) { El Tax ID es obligatorio. }
+            @else { Formato de Tax ID inválido. }
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Dirección -->
+    <div class="dialog-field">
+      <span class="dialog-field-label">Dirección</span>
+      <ui-input
+        formControlName="address"
+        placeholder="Ej: Calle Mayor, 123"
+        [disabled]="isViewMode()"
+        [state]="!isViewMode() && address.invalid && address.touched ? 'error' : 'default'"
+      />
+      @if (!isViewMode() && address.invalid && address.touched) {
+        <span class="dialog-field-error">La dirección es obligatoria.</span>
+      }
+    </div>
+
+    <!-- Ciudad + Provincia -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <span class="dialog-field-label">Ciudad</span>
+        <ui-input
+          formControlName="city"
+          placeholder="Ej: Madrid"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && city.invalid && city.touched ? 'error' : 'default'"
+        />
+        @if (!isViewMode() && city.invalid && city.touched) {
+          <span class="dialog-field-error">La ciudad es obligatoria.</span>
+        }
+      </div>
+      <div class="dialog-field">
+        <span class="dialog-field-label">Provincia</span>
+        <ui-input
+          formControlName="province"
+          placeholder="Ej: Madrid"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && province.invalid && province.touched ? 'error' : 'default'"
+        />
+        @if (!isViewMode() && province.invalid && province.touched) {
+          <span class="dialog-field-error">La provincia es obligatoria.</span>
+        }
+      </div>
+    </div>
+
+    <!-- Código Postal + Teléfono -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <span class="dialog-field-label">Código Postal</span>
+        <ui-input
+          formControlName="postalCode"
+          placeholder="Ej: 28001"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && postalCode.invalid && postalCode.touched ? 'error' : 'default'"
+        />
+        @if (!isViewMode() && postalCode.invalid && postalCode.touched) {
+          <span class="dialog-field-error">
+            @if (postalCode.hasError('required')) { El código postal es obligatorio. }
+            @else { Formato de código postal inválido. }
+          </span>
+        }
+      </div>
+      <div class="dialog-field">
+        <span class="dialog-field-label">Teléfono</span>
+        <ui-input
+          formControlName="phone"
+          placeholder="Ej: 600000001"
+          [disabled]="isViewMode()"
+          [state]="!isViewMode() && phone.invalid && phone.touched ? 'error' : 'default'"
+        />
+        @if (!isViewMode() && phone.invalid && phone.touched) {
+          <span class="dialog-field-error">
+            @if (phone.hasError('required')) { El teléfono es obligatorio. }
+            @else { Formato de teléfono inválido. }
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="dialog-field">
+      <span class="dialog-field-label">Email</span>
+      <ui-input
+        formControlName="email"
+        type="email"
+        placeholder="Ej: cliente@empresa.com"
+        [disabled]="isViewMode()"
+        [state]="!isViewMode() && email.invalid && email.touched ? 'error' : 'default'"
+      />
+      @if (!isViewMode() && email.invalid && email.touched) {
+        <span class="dialog-field-error">
+          @if (email.hasError('required')) { El email es obligatorio. }
+          @else { Introduce un email válido. }
+        </span>
+      }
+    </div>
+
+  </form>
+</ui-dialog>

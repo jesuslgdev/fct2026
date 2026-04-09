@@ -1,10 +1,28 @@
+import asyncio
+import selectors
+import sys
+
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import modules.catalog.domain.entities.product  # noqa: F401
 from composition.security import get_current_user
 from main import app
+from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import engine, get_db
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for each test case."""
+    if sys.platform == "win32":
+        loop = asyncio.SelectorEventLoop(selectors.SelectSelector())
+    else:
+        loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest_asyncio.fixture
@@ -21,7 +39,15 @@ async def client(db_session: AsyncSession):
         yield db_session
 
     def override_get_current_user():
-        return {"email": "admin@test.com", "role": "Administrator"}
+        return UserSession(
+            user_id=1,
+            email="admin@test.com",
+            role="Administrator",
+            department_id=None,
+            firebase_uid="test-uid",
+            name="Admin Test",
+            last_login_at=None,
+        )
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user

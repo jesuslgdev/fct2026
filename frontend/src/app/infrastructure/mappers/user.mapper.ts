@@ -1,15 +1,17 @@
 import {
   User,
-  Department,
+  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
 } from '@domain/models/user.model';
+import { Department } from '@domain/models/department.model';
 import {
   UserDto,
   CreateUserDto,
   UpdateUserDto,
-  DepartmentDto,
+  ActivateUserDto,
 } from '@infrastructure/dtos/user.dto';
+import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 
 export class UserMapper {
   static fromDto(dto: UserDto): User {
@@ -21,6 +23,7 @@ export class UserMapper {
       role: dto.role,
       departmentId: dto.department_id,
       active: dto.is_active,
+      lastLoginAt: dto.last_login_at,
     };
   }
 
@@ -49,6 +52,14 @@ export class UserMapper {
       ...(payload.departmentId !== undefined && {
         department_id: payload.departmentId,
       }),
+    };
+  }
+
+  static toActivateDto(payload: ActivateUserPayload): ActivateUserDto {
+    return {
+      first_name: payload.firstName,
+      last_name: payload.lastName,
+      email: payload.email,
     };
   }
 }

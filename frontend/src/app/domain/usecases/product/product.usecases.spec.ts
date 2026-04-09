@@ -45,7 +45,9 @@ class MockProductRepository implements ProductRepository {
   >();
   getProductById = vi.fn<(id: number) => Observable<Product>>();
   createProduct = vi.fn<(payload: CreateProductPayload) => Observable<Product>>();
-  updateProduct = vi.fn<(id: number, payload: UpdateProductPayload) => Observable<Product>>();
+  updateProduct = vi.fn<
+    (id: number, payload: UpdateProductPayload) => Observable<Product>
+  >();
   toggleProductStatus = vi.fn<(id: number, active: boolean) => Observable<void>>();
   checkCodeExists = vi.fn<(code: string) => Observable<boolean>>();
   getLowStockProducts = vi.fn<() => Observable<Product[]>>();

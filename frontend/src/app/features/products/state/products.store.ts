@@ -103,7 +103,6 @@ export class ProductsStore {
       pageSize,
     };
   }
-
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof ProductValidationError) {
       return err.message || 'Please check the submitted data.';
@@ -128,7 +127,6 @@ export class ProductsStore {
     if (err instanceof Error && err.message.trim()) {
       return err.message;
     }
-
     return fallback;
   }
 

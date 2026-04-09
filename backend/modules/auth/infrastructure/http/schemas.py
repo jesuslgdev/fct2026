@@ -9,3 +9,4 @@ class LoginResponseDTO(BaseModel):
     role: str
     department_id: int | None
     name: str
+    permissions: list[str]

@@ -28,6 +28,23 @@ class AdminExceptionInfo(AppExceptionInfo):
     USER_NOT_FOUND = (1201, "User not found", 404)
     USER_ALREADY_EXISTS = (1202, "User with this email already exists", 409)
     USER_DEPARTMENT_NOT_FOUND = (1203, "Department not found", 404)
+    USER_DEPARTMENT_REQUIRED = (
+        1204,
+        "Department is required for Manager and Employee roles",
+        422,
+    )
+    USER_HAS_REFERENCES = (
+        1205,
+        "User has associated records and cannot be deleted",
+        409,
+    )
+    USER_ALREADY_ACTIVE = (1206, "User is already active", 409)
+    USER_ALREADY_INACTIVE = (1207, "User is already inactive", 409)
+    USER_INVALID_ACTIVATION_DATA = (
+        1208,
+        "Activation data contains placeholder values from deactivation",
+        422,
+    )
 
 
 class AdminException(AppException):
