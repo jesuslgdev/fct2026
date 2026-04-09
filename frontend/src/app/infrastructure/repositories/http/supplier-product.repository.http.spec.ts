@@ -5,6 +5,9 @@ import { firstValueFrom } from 'rxjs';
 import { describe, beforeEach, afterEach, expect, it } from 'vitest';
 import { HttpSupplierProductRepository } from '@infrastructure/repositories/http/supplier-product.repository.http';
 import {
+  SupplierProductDuplicateError,
+  SupplierProductItemInactiveError,
+  SupplierProductSupplierInactiveError,
   SupplierProductValidationError,
   SupplierProductNotFoundError,
 } from '@domain/models/supplier-product-errors';
@@ -79,6 +82,16 @@ describe('HttpSupplierProductRepository', () => {
     httpMock.expectNone(() => true);
   });
 
+  it('throws validation error before HTTP call when price has more than 2 decimals', () => {
+    expect(() =>
+      repository.addProductToSupplier(1, {
+        productId: 10,
+        supplierPrice: 10.123,
+      }),
+    ).toThrow(SupplierProductValidationError);
+
+    httpMock.expectNone(() => true);
+  });
   it('maps HTTP 404 into SupplierProductNotFoundError', async () => {
     const promise = firstValueFrom(repository.removeProductFromSupplier(1, 99));
 
@@ -91,6 +104,41 @@ describe('HttpSupplierProductRepository', () => {
     await expect(promise).rejects.toBeInstanceOf(SupplierProductNotFoundError);
   });
 
+  it('maps HTTP 409 supplier inactive into SupplierProductSupplierInactiveError', async () => {
+    const promise = firstValueFrom(repository.addProductToSupplier(1, { productId: 10, supplierPrice: 10.5 }));
+
+    const req = httpMock.expectOne((request) =>
+      request.method === 'POST' && request.url.endsWith('/api/v1/suppliers/1/products'),
+    );
+
+    req.flush({ detail: 'Supplier is not active' }, { status: 409, statusText: 'Conflict' });
+
+    await expect(promise).rejects.toBeInstanceOf(SupplierProductSupplierInactiveError);
+  });
+
+  it('maps HTTP 409 product inactive into SupplierProductItemInactiveError', async () => {
+    const promise = firstValueFrom(repository.addProductToSupplier(1, { productId: 10, supplierPrice: 10.5 }));
+
+    const req = httpMock.expectOne((request) =>
+      request.method === 'POST' && request.url.endsWith('/api/v1/suppliers/1/products'),
+    );
+
+    req.flush({ detail: 'Product is not active' }, { status: 409, statusText: 'Conflict' });
+
+    await expect(promise).rejects.toBeInstanceOf(SupplierProductItemInactiveError);
+  });
+
+  it('maps HTTP 409 duplicate into SupplierProductDuplicateError', async () => {
+    const promise = firstValueFrom(repository.addProductToSupplier(1, { productId: 10, supplierPrice: 10.5 }));
+
+    const req = httpMock.expectOne((request) =>
+      request.method === 'POST' && request.url.endsWith('/api/v1/suppliers/1/products'),
+    );
+
+    req.flush({ detail: 'Supplier-product association already exists' }, { status: 409, statusText: 'Conflict' });
+
+    await expect(promise).rejects.toBeInstanceOf(SupplierProductDuplicateError);
+  });
   it('sends file as multipart in import endpoint', async () => {
     const file = new File(['data'], 'supplier-products.xlsx', {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
