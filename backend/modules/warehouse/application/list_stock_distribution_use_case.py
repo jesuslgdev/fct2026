@@ -20,7 +20,8 @@ class ListStockDistributionUseCase(IListStockDistributionUseCase):
         page_size: int,
         warehouse_id: int | None = None,
         product_id: int | None = None,
+        search: str | None = None,
     ) -> PaginatedResult[StockDistributionItem]:
         return await self._stock_repo.list_distribution(
-            page, page_size, warehouse_id, product_id
+            page, page_size, warehouse_id, product_id, search
         )

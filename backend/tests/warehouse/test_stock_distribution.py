@@ -118,6 +118,70 @@ async def test_filter_by_warehouse_and_product(
     assert data["items"][0]["product_id"] == second_product.product_id
 
 
+async def test_filter_by_search_partial_match(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+    sample_product: Product,
+):
+    """search filter returns only records whose product name contains the term."""
+    response = await client.get(BASE, params={"search": "smart"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 2
+    assert all(
+        item["product_id"] == sample_product.product_id for item in data["items"]
+    )
+
+
+async def test_filter_by_search_case_insensitive(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+    sample_product: Product,
+):
+    """search filter is case-insensitive."""
+    response = await client.get(BASE, params={"search": "SMART"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 2
+    assert all(
+        item["product_id"] == sample_product.product_id for item in data["items"]
+    )
+
+
+async def test_filter_by_search_no_match(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+):
+    """search filter returns empty when no product name matches."""
+    response = await client.get(BASE, params={"search": "nonexistent"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 0
+    assert data["items"] == []
+
+
+async def test_filter_by_search_and_warehouse(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+    warehouse_a: Warehouse,
+    second_product: Product,
+):
+    """Combined search + warehouse_id filter returns only the matching record."""
+    response = await client.get(
+        BASE,
+        params={"warehouse_id": warehouse_a.warehouse_id, "search": "tablet"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["product_id"] == second_product.product_id
+    assert data["items"][0]["warehouse_id"] == warehouse_a.warehouse_id
+
+
 # ── Pagination ─────────────────────────────────────────────────────
 
 

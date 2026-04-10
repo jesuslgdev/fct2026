@@ -85,6 +85,7 @@ class WarehouseStockRepository(IWarehouseStockRepository):
         page_size: int,
         warehouse_id: int | None = None,
         product_id: int | None = None,
+        search: str | None = None,
     ) -> PaginatedResult[StockDistributionItem]:
         """Return paginated stock distribution with server-side filtering."""
         query = (
@@ -105,6 +106,9 @@ class WarehouseStockRepository(IWarehouseStockRepository):
 
         if product_id is not None:
             query = query.where(WarehouseStock.product_id == product_id)
+
+        if search is not None:
+            query = query.where(Product.name.ilike(f"%{search}%"))
 
         count_query = select(func.count()).select_from(query.subquery())
         total = (await self._db.execute(count_query)).scalar_one()
