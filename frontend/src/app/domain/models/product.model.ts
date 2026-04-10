@@ -1,6 +1,4 @@
-import { PagedResult } from '@domain/models/user.model';
-
-export type { PagedResult };
+export type { PagedResult } from '@domain/models/paged-result.model';
 
 export interface ProductCategory {
   categoryId: number;
@@ -56,7 +54,7 @@ export interface ProductQueryParams {
 }
 
 export interface ProductStockByWarehouse {
-  warehouseId: string;
+  warehouseId: number;
   warehouseName: string;
   warehouseLocation?: string;
   currentStock: number;
