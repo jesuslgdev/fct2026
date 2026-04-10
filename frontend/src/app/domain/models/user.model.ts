@@ -1,5 +1,7 @@
 import { UserRole } from '@domain/enums/user-role.enum';
 
+export type { PagedResult } from '@domain/models/paged-result.model';
+
 export interface User {
   id: number;
   firstName: string;
@@ -39,14 +41,6 @@ export interface UserQueryParams {
   role?: UserRole;
   active?: boolean;
 }
-
-export interface PagedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
 export function isDepartmentRequiredForRole(role: UserRole | null): boolean {
   return role === UserRole.Employee || role === UserRole.Manager;
 }
