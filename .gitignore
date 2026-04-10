@@ -26,11 +26,3 @@ firebase-debug.log
 # Editor
 .vscode/settings.json
 
-# Docs autogeneradas
-**/copilot-instruccions.md
-
-# Estructura interna
-FinalStructure.md
-**/FinalStructure.md
-/.github/references
-.github/SKILL.md

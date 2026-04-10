@@ -1,5 +1,6 @@
 import { PageEvent } from '../models/page-event.model';
 import { Provider, CreateProviderRequest, UpdateProviderRequest } from '../models/provider.model';
+import { ProviderProduct } from '../models/provider-product.model';
 
 export abstract class ProviderRepository {
   abstract getProviders(pageEvent?: PageEvent): Promise<{
@@ -11,5 +12,5 @@ export abstract class ProviderRepository {
   abstract updateProvider(id: string, provider: UpdateProviderRequest): Promise<Provider>;
   abstract activateProvider(id: string): Promise<Provider>;
   abstract deactivateProvider(id: string): Promise<Provider>;
-  abstract getProviderProducts(providerId: string): Promise<Provider[]>;
+  abstract getProviderProducts(providerId: string): Promise<ProviderProduct[]>;
 }
