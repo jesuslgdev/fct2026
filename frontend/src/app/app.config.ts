@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -21,6 +21,7 @@ import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
+import { AuthService } from '@core/services/auth.service';
 import { MockProductRepository } from '@infrastructure/repositories/mock/product.repository.mock';
 import { MockProductCategoryRepository } from '@infrastructure/repositories/mock/product-category.repository.mock';
 import { ProductRepository } from '@domain/repositories/product.repository';
@@ -41,6 +42,13 @@ export const appConfig: ApplicationConfig = {
     ),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (authRepo: AuthRepository, authService: AuthService) =>
+        () => authRepo.restoreSession().then((session) => authService.setSession(session)),
+      deps: [AuthRepository, AuthService],
+      multi: true,
+    },
     { provide: CategoryRepository, useClass: HttpCategoryRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     { provide: ClientRepository, useClass: HttpClientRepository },
