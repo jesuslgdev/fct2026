@@ -6,6 +6,8 @@ import {
   CreateProductPayload,
   UpdateProductPayload,
   ProductCategory,
+  ProductQueryParams,
+  PagedResult,
 } from '@domain/models/product.model';
 
 const INITIAL_MOCK_PRODUCTS: Product[] = [
@@ -35,7 +37,7 @@ export class MockProductRepository implements ProductRepository {
   private products: Product[] = INITIAL_MOCK_PRODUCTS.map((p) => ({ ...p }));
   private nextId = Math.max(...this.products.map((p) => p.productId)) + 1;
 
-  getProducts(params: { page: number; pageSize: number; search?: string; categoryId?: number; active?: boolean; }): Observable<import("@domain/models/user.model").PagedResult<Product>> {
+  getProducts(params: ProductQueryParams): Observable<PagedResult<Product>> {
     const filtered = this.products.filter((p) => {
       if (params.search && !p.name.toLowerCase().includes(params.search.toLowerCase())) {
         return false;

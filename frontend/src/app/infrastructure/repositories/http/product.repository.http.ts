@@ -15,13 +15,11 @@ import {
 import {
   ProductDto,
   ProductsPageDto,
-  ProductCategoryDto,
 } from '@infrastructure/dtos/product.dto';
 import { ProductMapper } from '@infrastructure/mappers/product.mapper';
 import { environment } from 'environments/environment';
 
 const BASE_URL = `${environment.apiUrl}/api/v1/admin/products`;
-const CATEGORIES_URL = `${environment.apiUrl}/api/v1/admin/product-categories`;
 
 @Injectable()
 export class HttpProductRepository implements ProductRepository {
@@ -133,13 +131,6 @@ export class HttpProductRepository implements ProductRepository {
   getLowStockProducts() {
     return this.http.get<ProductDto[]>(`${BASE_URL}/low-stock`).pipe(
       map(dtos => dtos.map(ProductMapper.fromDto)),
-      catchError(err => throwError(() => this.mapHttpError(err)))
-    );
-  }
-
-  getProductCategories() {
-    return this.http.get<ProductCategoryDto[]>(CATEGORIES_URL).pipe(
-      map(dtos => dtos.map(ProductMapper.categoryFromDto)),
       catchError(err => throwError(() => this.mapHttpError(err)))
     );
   }
