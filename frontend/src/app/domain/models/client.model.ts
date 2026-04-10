@@ -43,9 +43,4 @@ export interface ClientQueryParams {
   isActive?: boolean;
 }
 
-export interface PagedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
+export type { PagedResult } from '@domain/models/paged-result.model';

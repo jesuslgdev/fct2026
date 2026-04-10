@@ -40,13 +40,8 @@ export interface UserQueryParams {
   active?: boolean;
 }
 
-export interface PagedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
 export function isDepartmentRequiredForRole(role: UserRole | null): boolean {
   return role === UserRole.Employee || role === UserRole.Manager;
 }
+
+export type { PagedResult } from '@domain/models/paged-result.model';
