@@ -39,7 +39,7 @@ describe('HttpStockDistributionRepository', () => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       providers: [HttpStockDistributionRepository],
-});
+    });
 
     repo = TestBed.inject(HttpStockDistributionRepository);
     controller = TestBed.inject(HttpTestingController);
@@ -50,9 +50,14 @@ describe('HttpStockDistributionRepository', () => {
   });
 
   describe('getStockDistribution()', () => {
-    it('should map a paginated response on 200', async () => {
+    it('should map filters and a paginated response on 200', async () => {
       const promise = firstValueFrom(
-        repo.getStockDistribution({ page: 1, pageSize: 20, warehouseId: 1 }),
+        repo.getStockDistribution({
+          page: 1,
+          pageSize: 20,
+          warehouseId: 1,
+          productId: 10,
+        }),
       );
 
       const req = controller.expectOne((request) => request.url === BASE_URL);
@@ -60,6 +65,7 @@ describe('HttpStockDistributionRepository', () => {
       expect(req.request.params.get('page')).toBe('1');
       expect(req.request.params.get('page_size')).toBe('20');
       expect(req.request.params.get('warehouse_id')).toBe('1');
+      expect(req.request.params.get('product_id')).toBe('10');
 
       req.flush({
         items: [STOCK_ITEM_DTO],
@@ -87,7 +93,7 @@ describe('HttpStockDistributionRepository', () => {
       });
     });
 
-    it('should map productName to a best-effort search query param', async () => {
+    it('should map productName to the search query param', async () => {
       const promise = firstValueFrom(
         repo.getStockDistribution({ page: 1, pageSize: 20, productName: 'Product A' }),
       );

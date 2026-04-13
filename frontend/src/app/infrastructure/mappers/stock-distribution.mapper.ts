@@ -56,7 +56,6 @@ export class StockDistributionMapper {
       query['product_id'] = filters.productId;
     }
 
-  
     if (filters.productName) {
       query['search'] = filters.productName;
     }
