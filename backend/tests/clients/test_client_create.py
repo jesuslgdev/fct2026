@@ -6,10 +6,12 @@ from modules.clients.domain.entities.client import Client
 VALID_PAYLOAD = {
     "name": "Acme Corp",
     "tax_id": "12345678A",
-    "address": "Calle Mayor 1",
-    "city": "Madrid",
-    "province": "Madrid",
-    "postal_code": "28001",
+    "address": {
+        "street": "Calle Mayor 1",
+        "city": "Madrid",
+        "province": "Madrid",
+        "postal_code": "28001",
+    },
     "phone": "600000001",
     "email": "acme@example.com",
 }
@@ -47,7 +49,7 @@ async def test_create_client_duplicate_tax_id(
         Client(
             name="Existing Corp",
             tax_id="12345678A",
-            address="Calle Mayor 1",
+            street="Calle Mayor 1",
             city="Madrid",
             province="Madrid",
             postal_code="28001",

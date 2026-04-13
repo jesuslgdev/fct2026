@@ -25,6 +25,6 @@ class GetWarehouseUseCase(IGetWarehouseUseCase):
         return WarehouseDetail(
             warehouse_id=warehouse.warehouse_id,
             name=warehouse.name,
-            address=warehouse.address,
+            address=warehouse.address_data,
             total_stock=total_stock,
         )
