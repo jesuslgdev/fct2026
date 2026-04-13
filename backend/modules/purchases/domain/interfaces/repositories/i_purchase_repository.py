@@ -88,3 +88,9 @@ class IPurchaseRepository(ABC):
 
     @abstractmethod
     async def delete_all_lines(self, purchase_id: int) -> None: ...
+
+    @abstractmethod
+    async def cancel_purchase(self, purchase_id: int, user_id: int) -> Purchase: ...
+
+    @abstractmethod
+    async def delete_purchase(self, purchase_id: int) -> None: ...
