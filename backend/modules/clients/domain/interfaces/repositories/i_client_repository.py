@@ -22,6 +22,9 @@ class IClientRepository(ABC):
     async def get_by_tax_id(self, tax_id: str) -> Client | None: ...
 
     @abstractmethod
+    async def get_by_email(self, email: str) -> Client | None: ...
+
+    @abstractmethod
     async def create(
         self,
         name: str,
