@@ -113,7 +113,7 @@ export class CategoriesStore {
       this._selectedCategory.set(categoryData);
       this._dialogMode.set('edit');
       this._dialogVisible.set(true);
-    } catch (err) {
+    } catch {
       this._error.set('Error al cargar los datos de la categoría');
     } finally {
       this._loading.set(false);
