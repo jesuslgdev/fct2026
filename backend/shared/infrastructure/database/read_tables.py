@@ -9,4 +9,19 @@ products_table = Table(
     Column("product_id", Integer, primary_key=True),
     Column("product_code", String),
     Column("name", String),
+    Column("category_id", Integer),
+)
+
+categories_table = Table(
+    "categories",
+    READ_METADATA,
+    Column("category_id", Integer, primary_key=True),
+    Column("name", String),
+)
+
+suppliers_table = Table(
+    "suppliers",
+    READ_METADATA,
+    Column("supplier_id", Integer, primary_key=True),
+    Column("name", String),
 )

@@ -9,13 +9,13 @@ from modules.purchases.domain.entities.purchase_line import PurchaseLine
 from modules.purchases.domain.interfaces.repositories.i_purchase_repository import (
     IPurchaseRepository,
 )
-from modules.suppliers.domain.entities.supplier import Supplier
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_purchase_reader import IPurchaseReader
+from shared.infrastructure.database.read_tables import suppliers_table
 
 SORT_FIELDS = {
     "purchase_number": Purchase.purchase_number,
-    "supplier_name": Supplier.name,
+    "supplier_name": suppliers_table.c.name,
     "status": Purchase.status,
     "created_at": Purchase.created_at,
     "total": Purchase.total,
@@ -42,7 +42,8 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         if search:
             pattern = f"%{search}%"
             filters.append(
-                Purchase.purchase_number.ilike(pattern) | Supplier.name.ilike(pattern)
+                Purchase.purchase_number.ilike(pattern)
+                | suppliers_table.c.name.ilike(pattern)
             )
         if status:
             filters.append(Purchase.status == status)
@@ -56,7 +57,9 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         count_stmt = (
             select(func.count())
             .select_from(Purchase)
-            .outerjoin(Supplier, Purchase.supplier_id == Supplier.supplier_id)
+            .outerjoin(
+                suppliers_table, Purchase.supplier_id == suppliers_table.c.supplier_id
+            )
             .where(*filters)
         )
         total_result = await self._db.execute(count_stmt)
@@ -67,8 +70,10 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         offset = (page - 1) * page_size
 
         data_stmt = (
-            select(Purchase, Supplier.name.label("supplier_name"))
-            .outerjoin(Supplier, Purchase.supplier_id == Supplier.supplier_id)
+            select(Purchase, suppliers_table.c.name.label("supplier_name"))
+            .outerjoin(
+                suppliers_table, Purchase.supplier_id == suppliers_table.c.supplier_id
+            )
             .where(*filters)
             .order_by(order_expr)
             .limit(page_size)
