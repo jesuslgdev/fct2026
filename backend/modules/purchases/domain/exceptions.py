@@ -33,6 +33,11 @@ class PurchaseExceptionInfo(AppExceptionInfo):
         "Purchase can only be deleted when in Pending status",
         400,
     )
+    PURCHASE_INVALID_TRANSITION = (
+        7113,
+        "This status transition is not allowed",
+        400,
+    )
 
 
 class PurchaseException(AppException):
