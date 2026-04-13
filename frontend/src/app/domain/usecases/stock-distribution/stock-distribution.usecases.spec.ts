@@ -120,6 +120,16 @@ describe('Stock Distribution Use Cases', () => {
       expect(response).toEqual(result);
     });
 
+    it('should throw StockDistributionValidationError when pageSize exceeds backend limit', async () => {
+      const useCase = TestBed.inject(GetStockDistributionUseCase);
+
+      await expect(firstValueFrom(useCase.execute({ pageSize: 101 }))).rejects.toThrow(
+        StockDistributionValidationError,
+      );
+
+      expect(repo.getStockDistribution).not.toHaveBeenCalled();
+    });
+
     it('should trim the productName filter before delegating to repository', async () => {
       const useCase = TestBed.inject(GetStockDistributionUseCase);
       const result: StockDistributionListResult = {
@@ -146,7 +156,7 @@ describe('Stock Distribution Use Cases', () => {
     it('should throw StockDistributionValidationError when warehouseId is invalid', async () => {
       const useCase = TestBed.inject(GetStockDistributionUseCase);
 
-      expect(() => useCase.execute({ warehouseId: 0 })).toThrowError(
+      await expect(firstValueFrom(useCase.execute({ warehouseId: 0 }))).rejects.toThrow(
         StockDistributionValidationError,
       );
 
@@ -156,7 +166,7 @@ describe('Stock Distribution Use Cases', () => {
     it('should throw StockDistributionValidationError when productName exceeds 255 characters', async () => {
       const useCase = TestBed.inject(GetStockDistributionUseCase);
 
-      expect(() => useCase.execute({ productName: 'a'.repeat(256) })).toThrowError(
+      await expect(firstValueFrom(useCase.execute({ productName: 'a'.repeat(256) }))).rejects.toThrow(
         StockDistributionValidationError,
       );
 
@@ -245,20 +255,20 @@ describe('Stock Distribution Use Cases', () => {
         newQuantity: -5,
       };
 
-      expect(() => useCase.execute(payload)).toThrowError(InvalidQuantityError);
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow(InvalidQuantityError);
       expect(repo.adjustStock).not.toHaveBeenCalled();
     });
 
     it('should throw StockDistributionValidationError when warehouseId is invalid', async () => {
       const useCase = TestBed.inject(AdjustStockUseCase);
 
-      expect(() =>
-        useCase.execute({
+      await expect(
+        firstValueFrom(useCase.execute({
           warehouseId: 0,
           productId: 10,
           newQuantity: 5,
-        }),
-      ).toThrowError(StockDistributionValidationError);
+        })),
+      ).rejects.toThrow(StockDistributionValidationError);
 
       expect(repo.adjustStock).not.toHaveBeenCalled();
     });
@@ -266,13 +276,13 @@ describe('Stock Distribution Use Cases', () => {
     it('should throw StockDistributionValidationError when productId is invalid', async () => {
       const useCase = TestBed.inject(AdjustStockUseCase);
 
-      expect(() =>
-        useCase.execute({
+      await expect(
+        firstValueFrom(useCase.execute({
           warehouseId: 1,
           productId: 0,
           newQuantity: 5,
-        }),
-      ).toThrowError(StockDistributionValidationError);
+        })),
+      ).rejects.toThrow(StockDistributionValidationError);
 
       expect(repo.adjustStock).not.toHaveBeenCalled();
     });
@@ -301,7 +311,7 @@ describe('Stock Distribution Use Cases', () => {
         reason: 'a'.repeat(301),
       };
 
-      expect(() => useCase.execute(payload)).toThrowError(ReasonTooLongError);
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow(ReasonTooLongError);
       expect(repo.adjustStock).not.toHaveBeenCalled();
     });
 
@@ -342,7 +352,7 @@ describe('Stock Distribution Use Cases', () => {
         newQuantity: -1,
       };
 
-      expect(() => useCase.execute(payload)).toThrowError(InvalidQuantityError);
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow(InvalidQuantityError);
       expect(repo.adjustStock).not.toHaveBeenCalled();
     });
 
@@ -355,7 +365,7 @@ describe('Stock Distribution Use Cases', () => {
         reason: 'a'.repeat(301),
       };
 
-      expect(() => useCase.execute(payload)).toThrowError(ReasonTooLongError);
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow(ReasonTooLongError);
       expect(repo.adjustStock).not.toHaveBeenCalled();
     });
   });

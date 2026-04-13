@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
 import {
   StockDistributionFilters,
@@ -23,37 +23,48 @@ export class GetStockDistributionUseCase {
     const pageSize =
       filters?.pageSize !== undefined &&
       Number.isInteger(filters.pageSize) &&
-      filters.pageSize > 0
+      filters.pageSize > 0 &&
+      filters.pageSize <= 100
         ? filters.pageSize
         : 20;
+
+    if (
+      filters?.pageSize !== undefined &&
+      (!Number.isInteger(filters.pageSize) || filters.pageSize <= 0 || filters.pageSize > 100)
+    ) {
+      return throwError(() => new StockDistributionValidationError(
+        { field: 'pageSize' },
+        'Page size must be an integer between 1 and 100.',
+      ));
+    }
 
     if (
       filters?.warehouseId !== undefined &&
       (!Number.isInteger(filters.warehouseId) || filters.warehouseId <= 0)
     ) {
-      throw new StockDistributionValidationError(
+      return throwError(() => new StockDistributionValidationError(
         { field: 'warehouseId' },
         'Warehouse id must be a positive integer.',
-      );
+      ));
     }
 
     if (
       filters?.productId !== undefined &&
       (!Number.isInteger(filters.productId) || filters.productId <= 0)
     ) {
-      throw new StockDistributionValidationError(
+      return throwError(() => new StockDistributionValidationError(
         { field: 'productId' },
         'Product id must be a positive integer.',
-      );
+      ));
     }
 
     const productName = filters?.productName?.trim();
 
     if (productName !== undefined && productName.length > 255) {
-      throw new StockDistributionValidationError(
+      return throwError(() => new StockDistributionValidationError(
         { field: 'productName' },
         'Product name filter cannot exceed 255 characters.',
-      );
+      ));
     }
 
     const normalizedFilters: StockDistributionFilters = {
