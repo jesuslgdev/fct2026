@@ -9,7 +9,6 @@ from composition.dependencies import (
     get_list_sales_use_case,
 )
 from composition.security import require_sales_department_or_admin
-from modules.sales.domain.entities.sale import Sale
 from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
     ICreateSaleUseCase,
 )
@@ -23,42 +22,11 @@ from modules.sales.infrastructure.http.schemas import (
     CreateSaleRequest,
     SaleDetailDTO,
     SaleDTO,
-    SaleLineResponse,
 )
 from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
 router = APIRouter(prefix="/sales")
-
-
-def _to_detail_dto(sale: Sale) -> SaleDetailDTO:
-    return SaleDetailDTO(
-        sale_id=sale.sale_id,
-        sale_number=sale.sale_number,
-        client_id=sale.client_id,
-        delivery_address=sale.delivery_address,
-        user_id=sale.user_id,
-        sale_date=sale.sale_date,
-        status=sale.status,
-        subtotal=sale.subtotal,
-        taxes=sale.taxes,
-        total=sale.total,
-        created_at=sale.created_at,
-        updated_at=sale.updated_at,
-        lines=[
-            SaleLineResponse(
-                sale_line_id=line.sale_line_id,
-                sale_id=line.sale_id,
-                product_id=line.product_id,
-                quantity=line.quantity,
-                unit_price=line.unit_price,
-                line_subtotal=line.line_subtotal,
-                vat_rate=line.vat_rate,
-                line_tax=line.line_tax,
-            )
-            for line in sale.lines
-        ],
-    )
 
 
 @router.post("", response_model=SaleDetailDTO, status_code=201, tags=["Sales"])
@@ -73,7 +41,7 @@ async def create_sale(
         user_id=current_user.user_id,
         lines=[line.model_dump() for line in body.lines],
     )
-    return _to_detail_dto(sale)
+    return SaleDetailDTO.from_entity(sale)
 
 
 @router.get("", response_model=PaginatedResponse[SaleDTO], tags=["Sales"])
@@ -139,4 +107,4 @@ async def get_sale(
 ):
     """Return the full detail of a single sale."""
     sale = await use_case.execute(sale_id)
-    return _to_detail_dto(sale)
+    return SaleDetailDTO.from_entity(sale)

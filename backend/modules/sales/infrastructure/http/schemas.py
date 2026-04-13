@@ -1,7 +1,13 @@
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from modules.sales.domain.entities.sale import Sale
 
 
 class SaleLineInput(BaseModel):
@@ -49,3 +55,33 @@ class SaleDetailDTO(BaseModel):
     created_at: datetime
     updated_at: datetime
     lines: list[SaleLineResponse]
+
+    @classmethod
+    def from_entity(cls, sale: Sale) -> SaleDetailDTO:
+        return cls(
+            sale_id=sale.sale_id,
+            sale_number=sale.sale_number,
+            client_id=sale.client_id,
+            delivery_address=sale.delivery_address,
+            user_id=sale.user_id,
+            sale_date=sale.sale_date,
+            status=sale.status,
+            subtotal=sale.subtotal,
+            taxes=sale.taxes,
+            total=sale.total,
+            created_at=sale.created_at,
+            updated_at=sale.updated_at,
+            lines=[
+                SaleLineResponse(
+                    sale_line_id=line.sale_line_id,
+                    sale_id=line.sale_id,
+                    product_id=line.product_id,
+                    quantity=line.quantity,
+                    unit_price=line.unit_price,
+                    line_subtotal=line.line_subtotal,
+                    vat_rate=line.vat_rate,
+                    line_tax=line.line_tax,
+                )
+                for line in sale.lines
+            ],
+        )
