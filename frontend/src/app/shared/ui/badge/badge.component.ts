@@ -8,7 +8,7 @@ import {
 import { TagModule } from 'primeng/tag';
 
 // Badge variant types
-export type BadgeVariant = 'default' | 'success' | 'info' | 'warning' | 'danger' | 'secondary' | 'contrast';
+export type BadgeVariant = 'default' | 'success' | 'info' | 'warning' | 'danger' | 'secondary' | 'contrast' | 'danger';
 
 // Badge size types
 export type BadgeSize = 'default' | 'lg';

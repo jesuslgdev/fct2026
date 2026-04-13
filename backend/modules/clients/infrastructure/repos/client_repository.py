@@ -6,6 +6,7 @@ from modules.clients.domain.exceptions import ClientException, ClientExceptionIn
 from modules.clients.domain.interfaces.repositories.i_client_repository import (
     IClientRepository,
 )
+from shared.domain.dtos.address import Address
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_client_reader import IClientReader
 
@@ -106,10 +107,7 @@ class ClientRepository(IClientRepository, IClientReader):
         self,
         name: str,
         tax_id: str,
-        address: str,
-        city: str,
-        province: str,
-        postal_code: str,
+        address_data: Address,
         phone: str,
         email: str,
     ) -> Client:
@@ -119,10 +117,7 @@ class ClientRepository(IClientRepository, IClientReader):
             name: Full legal name of the client.
             tax_id: Spanish tax ID (NIF/NIE/CIF). Must be uppercase and
                 validated by the caller before calling this method.
-            address: Street address.
-            city: City.
-            province: Province.
-            postal_code: Postal code.
+            address_data: Shared address DTO with street, city, province and postal code.
             phone: Contact phone number.
             email: Contact email address.
 
@@ -132,10 +127,10 @@ class ClientRepository(IClientRepository, IClientReader):
         client = Client(
             name=name,
             tax_id=tax_id,
-            address=address,
-            city=city,
-            province=province,
-            postal_code=postal_code,
+            street=address_data.street,
+            city=address_data.city,
+            province=address_data.province,
+            postal_code=address_data.postal_code,
             phone=phone,
             email=email,
         )
@@ -148,10 +143,7 @@ class ClientRepository(IClientRepository, IClientReader):
         self,
         client_id: int,
         name: str | None,
-        address: str | None,
-        city: str | None,
-        province: str | None,
-        postal_code: str | None,
+        address_data: Address | None,
         phone: str | None,
         email: str | None,
     ) -> Client:
@@ -163,10 +155,7 @@ class ClientRepository(IClientRepository, IClientReader):
         Args:
             client_id: Primary key of the client to update.
             name: New name, or None to leave unchanged.
-            address: New address, or None to leave unchanged.
-            city: New city, or None to leave unchanged.
-            province: New province, or None to leave unchanged.
-            postal_code: New postal code, or None to leave unchanged.
+            address_data: Full shared address DTO to replace the current one.
             phone: New phone number, or None to leave unchanged.
             email: New email address, or None to leave unchanged.
 
@@ -181,14 +170,8 @@ class ClientRepository(IClientRepository, IClientReader):
             raise ClientException(ClientExceptionInfo.CLIENT_NOT_FOUND)
         if name is not None:
             client.name = name
-        if address is not None:
-            client.address = address
-        if city is not None:
-            client.city = city
-        if province is not None:
-            client.province = province
-        if postal_code is not None:
-            client.postal_code = postal_code
+        if address_data is not None:
+            client.address_data = address_data
         if phone is not None:
             client.phone = phone
         if email is not None:

@@ -26,6 +26,10 @@ import { HttpWarehouseRepository } from '@infrastructure/repositories/http/wareh
 import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
 import { HttpStockDistributionRepository } from '@infrastructure/repositories/http/stock-distribution.repository.http';
 import { AuthService } from '@core/services/auth.service';
+import { MockProductRepository } from '@infrastructure/repositories/mock/product.repository.mock';
+import { MockProductCategoryRepository } from '@infrastructure/repositories/mock/product-category.repository.mock';
+import { ProductRepository } from '@domain/repositories/product.repository';
+import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -55,6 +59,13 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthRepository, AuthService],
       multi: true,
     },
+    { provide: CategoryRepository, useClass: HttpCategoryRepository },
+    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
+    { provide: ClientRepository, useClass: HttpClientRepository },
+    { provide: UserRepository, useClass: HttpUserRepository },
+    // Mock repositories (replace with real HTTP implementations when backend is ready)
+    { provide: ProductRepository, useClass: MockProductRepository },
+    { provide: ProductCategoryRepository, useClass: MockProductCategoryRepository },
     providePrimeNG({
       ripple: true,
       theme: {
@@ -71,5 +82,7 @@ export const appConfig: ApplicationConfig = {
     }),
     MessageService,
     ConfirmationService,
+
+    // TODO add base url for API REST
   ],
 };

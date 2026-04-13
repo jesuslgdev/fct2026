@@ -9,6 +9,7 @@ from modules.suppliers.domain.dtos.supplier_product_detail import (
 )
 from modules.suppliers.domain.entities.supplier import Supplier
 from modules.suppliers.domain.entities.supplier_product import SupplierProduct
+from shared.domain.dtos.address import Address
 from shared.domain.dtos.paginated_result import PaginatedResult
 
 
@@ -33,10 +34,7 @@ class ISupplierRepository(ABC):
         self,
         supplier_id: int,
         name: str | None,
-        address: str | None,
-        city: str | None,
-        province: str | None,
-        postal_code: str | None,
+        address_data: Address | None,
         phone: str | None,
         email: str | None,
     ) -> Supplier: ...
@@ -57,10 +55,7 @@ class ISupplierRepository(ABC):
         self,
         name: str,
         tax_id: str,
-        address: str,
-        city: str,
-        province: str,
-        postal_code: str,
+        address_data: Address,
         phone: str,
         email: str,
     ) -> Supplier: ...

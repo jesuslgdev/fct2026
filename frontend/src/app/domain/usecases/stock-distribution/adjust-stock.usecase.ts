@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
 import {
   AdjustStockPayload,
@@ -28,25 +28,25 @@ export class AdjustStockUseCase {
     };
 
     if (!Number.isInteger(trimmedPayload.warehouseId) || trimmedPayload.warehouseId <= 0) {
-      throw new StockDistributionValidationError(
+      return throwError(() => new StockDistributionValidationError(
         { field: 'warehouseId' },
         'Warehouse id must be a positive integer.',
-      );
+      ));
     }
 
     if (!Number.isInteger(trimmedPayload.productId) || trimmedPayload.productId <= 0) {
-      throw new StockDistributionValidationError(
+      return throwError(() => new StockDistributionValidationError(
         { field: 'productId' },
         'Product id must be a positive integer.',
-      );
+      ));
     }
 
     if (!Number.isInteger(trimmedPayload.newQuantity) || trimmedPayload.newQuantity < 0) {
-      throw new InvalidQuantityError();
+      return throwError(() => new InvalidQuantityError());
     }
 
     if (trimmedPayload.reason && trimmedPayload.reason.length > 300) {
-      throw new ReasonTooLongError();
+      return throwError(() => new ReasonTooLongError());
     }
 
     return this.stockDistributionRepository.adjustStock(trimmedPayload);

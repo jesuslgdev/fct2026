@@ -1,4 +1,6 @@
 
+export type { PagedResult } from '@domain/models/paged-result.model';
+
 export interface Client {
   clientId: number;
   name: string;
@@ -42,5 +44,3 @@ export interface ClientQueryParams {
   search?: string;
   isActive?: boolean;
 }
-
-export type { PagedResult } from '@domain/models/paged-result.model';
