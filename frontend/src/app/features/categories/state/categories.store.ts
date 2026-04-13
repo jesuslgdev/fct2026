@@ -115,7 +115,6 @@ export class CategoriesStore {
       this._dialogVisible.set(true);
     } catch (err) {
       this._error.set('Error al cargar los datos de la categoría');
-      console.error('Error loading category for edit:', err);
     } finally {
       this._loading.set(false);
     }
