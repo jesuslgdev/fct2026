@@ -1,7 +1,6 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.dtos.product_stock_overview import WarehouseStockDetail
 from modules.warehouse.domain.dtos.stock_distribution import StockDistributionItem
 from modules.warehouse.domain.entities.warehouse import Warehouse
@@ -10,6 +9,7 @@ from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_reposito
     IWarehouseStockRepository,
 )
 from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.infrastructure.database.read_tables import products_table
 
 
 class WarehouseStockRepository(IWarehouseStockRepository):
@@ -91,11 +91,13 @@ class WarehouseStockRepository(IWarehouseStockRepository):
             select(
                 WarehouseStock,
                 Warehouse.name.label("warehouse_name"),
-                Product.product_code,
-                Product.name.label("product_name"),
+                products_table.c.product_code,
+                products_table.c.name.label("product_name"),
             )
             .join(Warehouse, WarehouseStock.warehouse_id == Warehouse.warehouse_id)
-            .join(Product, WarehouseStock.product_id == Product.product_id)
+            .join(
+                products_table, WarehouseStock.product_id == products_table.c.product_id
+            )
         )
 
         if warehouse_id is not None:
@@ -109,7 +111,9 @@ class WarehouseStockRepository(IWarehouseStockRepository):
 
         offset = (page - 1) * page_size
         query = (
-            query.order_by(Warehouse.name, Product.name).offset(offset).limit(page_size)
+            query.order_by(Warehouse.name, products_table.c.name)
+            .offset(offset)
+            .limit(page_size)
         )
 
         result = await self._db.execute(query)
