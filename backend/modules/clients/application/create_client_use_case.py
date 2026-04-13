@@ -11,6 +11,7 @@ from modules.clients.domain.interfaces.use_cases.i_create_client_use_case import
     ICreateClientUseCase,
 )
 from shared.constants import TAX_ID_PATTERN
+from shared.domain.dtos.address import Address
 
 
 class CreateClientUseCase(ICreateClientUseCase):
@@ -36,10 +37,7 @@ class CreateClientUseCase(ICreateClientUseCase):
         self,
         name: str,
         tax_id: str,
-        address: str,
-        city: str,
-        province: str,
-        postal_code: str,
+        address_data: Address,
         phone: str,
         email: str,
     ) -> Client:
@@ -52,10 +50,7 @@ class CreateClientUseCase(ICreateClientUseCase):
         Args:
             name: Client name or company name (max 200 characters).
             tax_id: Spanish tax identifier (NIF, NIE or CIF).
-            address: Full postal address.
-            city: City.
-            province: Province.
-            postal_code: Postal code (typically 5 digits).
+            address_data: Full postal address fields grouped in a shared DTO.
             phone: Contact phone number.
             email: Contact email address.
 
@@ -80,10 +75,7 @@ class CreateClientUseCase(ICreateClientUseCase):
         return await self._repo.create(
             name=name,
             tax_id=normalized_tax_id,
-            address=address,
-            city=city,
-            province=province,
-            postal_code=postal_code,
+            address_data=address_data,
             phone=phone,
             email=email,
         )

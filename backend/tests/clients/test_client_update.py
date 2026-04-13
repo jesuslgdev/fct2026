@@ -9,7 +9,7 @@ async def _seed_client(db_session: AsyncSession) -> Client:
     client = Client(
         name="Original Name",
         tax_id="12345678A",
-        address="Calle Mayor 1",
+        street="Calle Mayor 1",
         city="Madrid",
         province="Madrid",
         postal_code="28001",
@@ -27,10 +27,12 @@ async def test_update_client_success(
     client = await _seed_client(db_session)
     payload = {
         "name": "Updated Name",
-        "address": "Nueva Calle 99",
-        "city": "Barcelona",
-        "province": "Barcelona",
-        "postal_code": "08001",
+        "address": {
+            "street": "Nueva Calle 99",
+            "city": "Barcelona",
+            "province": "Barcelona",
+            "postal_code": "08001",
+        },
         "phone": "611111111",
         "email": "updated@example.com",
     }
@@ -41,6 +43,7 @@ async def test_update_client_success(
     data = response.json()
     assert data["name"] == "Updated Name"
     assert data["city"] == "Barcelona"
+    assert data["address"]["street"] == "Nueva Calle 99"
     assert data["email"] == "updated@example.com"
 
 

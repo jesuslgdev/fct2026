@@ -17,6 +17,7 @@ from modules.suppliers.domain.exceptions import SupplierException, SupplierExcep
 from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
     ISupplierRepository,
 )
+from shared.domain.dtos.address import Address
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_supplier_reader import ISupplierReader
 
@@ -84,10 +85,7 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         self,
         supplier_id: int,
         name: str | None,
-        address: str | None,
-        city: str | None,
-        province: str | None,
-        postal_code: str | None,
+        address_data: Address | None,
         phone: str | None,
         email: str | None,
     ) -> Supplier:
@@ -96,14 +94,8 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
             raise SupplierException(SupplierExceptionInfo.SUPPLIER_NOT_FOUND)
         if name is not None:
             supplier.name = name
-        if address is not None:
-            supplier.address = address
-        if city is not None:
-            supplier.city = city
-        if province is not None:
-            supplier.province = province
-        if postal_code is not None:
-            supplier.postal_code = postal_code
+        if address_data is not None:
+            supplier.address_data = address_data
         if phone is not None:
             supplier.phone = phone
         if email is not None:
@@ -135,20 +127,17 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         self,
         name: str,
         tax_id: str,
-        address: str,
-        city: str,
-        province: str,
-        postal_code: str,
+        address_data: Address,
         phone: str,
         email: str,
     ) -> Supplier:
         supplier = Supplier(
             name=name,
             tax_id=tax_id,
-            address=address,
-            city=city,
-            province=province,
-            postal_code=postal_code,
+            street=address_data.street,
+            city=address_data.city,
+            province=address_data.province,
+            postal_code=address_data.postal_code,
             phone=phone,
             email=email,
         )

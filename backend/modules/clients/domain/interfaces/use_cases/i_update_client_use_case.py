@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from modules.clients.domain.entities.client import Client
+from shared.domain.dtos.address import Address
 
 
 class IUpdateClientUseCase(ABC):
@@ -9,10 +10,7 @@ class IUpdateClientUseCase(ABC):
         self,
         client_id: int,
         name: str | None,
-        address: str | None,
-        city: str | None,
-        province: str | None,
-        postal_code: str | None,
+        address_data: Address | None,
         phone: str | None,
         email: str | None,
     ) -> Client: ...
