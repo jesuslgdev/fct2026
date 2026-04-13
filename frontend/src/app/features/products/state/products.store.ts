@@ -174,7 +174,7 @@ export class ProductsStore {
     this.getLowStockProductsUseCase.execute().pipe(
       tap(products => this.lowStockProducts.set(products)),
       catchError(() => {
-        console.error('Failed to load low stock products');
+        this.error.set('Failed to load low stock products.');
         return of();
       })
     ).subscribe();
