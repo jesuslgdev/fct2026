@@ -41,6 +41,6 @@ export interface UserQueryParams {
   role?: UserRole;
   active?: boolean;
 }
-export function isDepartmentRequiredForRole(role: UserRole | null): boolean {
+export function isDepartmentRequiredForRole(role: UserRole | null | undefined): boolean {
   return role === UserRole.Employee || role === UserRole.Manager;
 }
