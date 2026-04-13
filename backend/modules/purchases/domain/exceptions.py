@@ -22,6 +22,7 @@ class PurchaseExceptionInfo(AppExceptionInfo):
         400,
     )
     PURCHASE_LINE_NOT_FOUND = (7109, "Purchase line not found", 404)
+    SUPPLIER_NOT_FOUND = (7110, "Supplier not found", 404)
 
 
 class PurchaseException(AppException):

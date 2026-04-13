@@ -40,6 +40,11 @@ class PurchaseLineDTO(BaseModel):
     line_tax: Decimal
 
 
+class UpdatePurchaseRequest(BaseModel):
+    supplier_id: int
+    warehouse_id: int
+
+
 class AddPurchaseLineRequest(BaseModel):
     product_id: int
     quantity: int = Field(gt=0)

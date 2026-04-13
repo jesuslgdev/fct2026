@@ -177,6 +177,7 @@ from modules.purchases.application.list_purchases_use_case import (
 from modules.purchases.application.update_purchase_line_use_case import (
     UpdatePurchaseLineUseCase,
 )
+from modules.purchases.application.update_purchase_use_case import UpdatePurchaseUseCase
 from modules.purchases.domain.interfaces.use_cases.i_add_purchase_line_use_case import (
     IAddPurchaseLineUseCase,
 )
@@ -197,6 +198,9 @@ from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case imp
 )
 from modules.purchases.domain.interfaces.use_cases.i_update_purchase_line_use_case import (
     IUpdatePurchaseLineUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case import (
+    IUpdatePurchaseUseCase,
 )
 from modules.purchases.infrastructure.repos.purchase_repository import (
     PurchaseRepository,
@@ -640,6 +644,12 @@ async def get_delete_purchase_line_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IDeletePurchaseLineUseCase:
     return DeletePurchaseLineUseCase(PurchaseRepository(db))
+
+
+async def get_update_purchase_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IUpdatePurchaseUseCase:
+    return UpdatePurchaseUseCase(PurchaseRepository(db), SupplierRepository(db))
 
 
 async def get_get_supplier_price_use_case(
