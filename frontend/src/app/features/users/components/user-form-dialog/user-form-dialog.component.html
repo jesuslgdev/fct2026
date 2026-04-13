@@ -87,13 +87,14 @@
           [options]="store.departments()"
           optionLabel="name"
           optionValue="id"
-          placeholder="Selecciona un departamento"
+          [placeholder]="departmentPlaceholder()"
+          [showClear]="!isDepartmentRequired()"
           styleClass="w-full"
           appendTo="body"
         />
       }
-      @if (departmentId.invalid && departmentId.touched) {
-        <span class="dialog-field-error">El departamento es obligatorio.</span>
+      @if (departmentId.invalid && departmentId.touched && isDepartmentRequired()) {
+        <span class="dialog-field-error">El departamento es obligatorio para este rol.</span>
       }
     </div>
 

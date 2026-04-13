@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from modules.clients.domain.entities.client import Client
+from shared.domain.dtos.address import Address
 
 
 class ICreateClientUseCase(ABC):
@@ -9,10 +10,7 @@ class ICreateClientUseCase(ABC):
         self,
         name: str,
         tax_id: str,
-        address: str,
-        city: str,
-        province: str,
-        postal_code: str,
+        address_data: Address,
         phone: str,
         email: str,
     ) -> Client: ...

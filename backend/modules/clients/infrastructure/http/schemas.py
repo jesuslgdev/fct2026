@@ -1,17 +1,4 @@
-from typing import Generic, TypeVar
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-T = TypeVar("T")
-
-
-class PaginatedResponse(BaseModel, Generic[T]):
-    """Generic paginated response wrapper."""
-
-    items: list[T]
-    total: int
-    page: int
-    page_size: int
 
 
 class ClientDTO(BaseModel):
@@ -26,12 +13,17 @@ class ClientDTO(BaseModel):
     is_active: bool
 
 
+class AddressDTO(BaseModel):
+    street: str = Field(..., min_length=1, max_length=300)
+    city: str = Field(..., min_length=1, max_length=100)
+    province: str = Field(..., min_length=1, max_length=100)
+    postal_code: str = Field(..., min_length=1, max_length=10)
+
+
 class ClientDetailDTO(ClientDTO):
     """Full representation of a client including address and contact fields."""
 
-    address: str
-    province: str
-    postal_code: str
+    address: AddressDTO
     phone: str
     email: str
 
@@ -41,10 +33,7 @@ class CreateClientDTO(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     tax_id: str = Field(..., min_length=1, max_length=20)
-    address: str = Field(..., min_length=1, max_length=300)
-    city: str = Field(..., min_length=1, max_length=100)
-    province: str = Field(..., min_length=1, max_length=100)
-    postal_code: str = Field(..., min_length=1, max_length=10)
+    address: AddressDTO
     phone: str = Field(..., min_length=1, max_length=20)
     email: str = Field(..., max_length=255)
 
@@ -70,10 +59,7 @@ class UpdateClientDTO(BaseModel):
     """
 
     name: str | None = Field(None, min_length=1, max_length=200)
-    address: str | None = Field(None, min_length=1, max_length=300)
-    city: str | None = Field(None, min_length=1, max_length=100)
-    province: str | None = Field(None, min_length=1, max_length=100)
-    postal_code: str | None = Field(None, min_length=1, max_length=10)
+    address: AddressDTO | None = None
     phone: str | None = Field(None, min_length=1, max_length=20)
     email: str | None = Field(None, max_length=255)
 

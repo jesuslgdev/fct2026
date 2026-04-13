@@ -22,7 +22,7 @@ class ListWarehousesUseCase(IListWarehousesUseCase):
                 WarehouseDetail(
                     warehouse_id=w.warehouse_id,
                     name=w.name,
-                    address=w.address,
+                    address=w.address_data,
                     total_stock=total_stock,
                 )
             )

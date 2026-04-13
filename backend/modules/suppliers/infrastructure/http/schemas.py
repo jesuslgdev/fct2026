@@ -49,10 +49,15 @@ class SupplierDTO(BaseModel):
     is_active: bool
 
 
+class AddressDTO(BaseModel):
+    street: str = Field(..., min_length=1, max_length=300)
+    city: str = Field(..., min_length=1, max_length=100)
+    province: str = Field(..., min_length=1, max_length=100)
+    postal_code: str = Field(..., pattern=POSTAL_CODE_PATTERN)
+
+
 class SupplierDetailDTO(SupplierDTO):
-    address: str
-    province: str
-    postal_code: str
+    address: AddressDTO
     phone: str
     email: str
     products: list[SupplierProductDTO]
@@ -61,10 +66,7 @@ class SupplierDetailDTO(SupplierDTO):
 class CreateSupplierDTO(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     tax_id: str = Field(..., min_length=1, max_length=20)
-    address: str = Field(..., min_length=1, max_length=300)
-    city: str = Field(..., min_length=1, max_length=100)
-    province: str = Field(..., min_length=1, max_length=100)
-    postal_code: str = Field(..., pattern=POSTAL_CODE_PATTERN)
+    address: AddressDTO
     phone: str = Field(..., pattern=PHONE_PATTERN)
     email: str = Field(..., max_length=255, pattern=EMAIL_PATTERN)
 
@@ -76,10 +78,7 @@ class CreateSupplierDTO(BaseModel):
 
 class UpdateSupplierDTO(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=150)
-    address: str | None = Field(None, min_length=1, max_length=255)
-    city: str | None = Field(None, min_length=1, max_length=100)
-    province: str | None = Field(None, min_length=1, max_length=100)
-    postal_code: str | None = Field(None, pattern=POSTAL_CODE_PATTERN)
+    address: AddressDTO | None = None
     phone: str | None = Field(None, pattern=PHONE_PATTERN)
     email: str | None = Field(None, max_length=150, pattern=EMAIL_PATTERN)
 
