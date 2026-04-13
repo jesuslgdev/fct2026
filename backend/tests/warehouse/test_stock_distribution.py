@@ -1,5 +1,6 @@
 from httpx import AsyncClient
 
+from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.warehouse import Warehouse
 from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 
