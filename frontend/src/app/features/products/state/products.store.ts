@@ -152,7 +152,6 @@ export class ProductsStore {
         this.pageSize.set(normalized.pageSize);
       }),
       catchError(err => {
-        console.error('ProductsStore.loadProducts failed', err);
         this.error.set(this.resolveErrorMessage(err, 'Failed to load products.'));
         return of();
       }),

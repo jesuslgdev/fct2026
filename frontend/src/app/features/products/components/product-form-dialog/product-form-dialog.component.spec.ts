@@ -77,6 +77,28 @@ describe('ProductFormDialogComponent', () => {
     });
   });
 
+  it('does not submit when price is zero', async () => {
+    const fixture = TestBed.createComponent(ProductFormDialogComponent);
+    const component = fixture.componentInstance;
+    store.dialogMode.set('create');
+    fixture.detectChanges();
+
+    component.form.setValue({
+      code: 'P-0003',
+      name: 'Producto gratis',
+      description: 'Desc',
+      categoryId: 1,
+      price: 0,
+      stock: 10,
+      minStock: 2,
+    });
+
+    await component.onConfirm();
+
+    expect(store.validateProductCode).not.toHaveBeenCalled();
+    expect(store.createProduct).not.toHaveBeenCalled();
+  });
+
   it('does not create if code validation fails', async () => {
     store.dialogMode.set('create');
     store.codeValidationError.set('Code exists');

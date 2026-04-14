@@ -72,6 +72,12 @@
           placeholder="0"
           [state]="price.invalid && price.touched ? 'error' : 'default'"
         />
+        @if (price.touched && price.hasError('required')) {
+          <span class="dialog-field-error">El precio es obligatorio.</span>
+        }
+        @if (price.touched && price.hasError('min')) {
+          <span class="dialog-field-error">El precio no puede ser menor ni igual a 0.</span>
+        }
       </label>
 
       <label class="dialog-field">
