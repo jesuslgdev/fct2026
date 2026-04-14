@@ -202,13 +202,14 @@ async def list_stock_distribution(
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     warehouse_id: int | None = Query(None, description="Filter by warehouse ID"),
     product_id: int | None = Query(None, description="Filter by product ID"),
+    search: str | None = Query(None, description="Search by product name"),
     use_case: IListStockDistributionUseCase = Depends(
         get_list_stock_distribution_use_case
     ),
     _: dict = Depends(get_current_user),
 ):
     """Return paginated stock distribution across warehouses and products."""
-    result = await use_case.execute(page, page_size, warehouse_id, product_id)
+    result = await use_case.execute(page, page_size, warehouse_id, product_id, search)
     return PaginatedResponse(
         items=[
             StockDistributionItemDTO(

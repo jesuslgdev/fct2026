@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from shared.constants import EMAIL_PATTERN, PHONE_PATTERN, POSTAL_CODE_PATTERN
+
 
 class ClientDTO(BaseModel):
     """Summary representation of a client (used in list responses)."""
@@ -17,7 +19,7 @@ class AddressDTO(BaseModel):
     street: str = Field(..., min_length=1, max_length=300)
     city: str = Field(..., min_length=1, max_length=100)
     province: str = Field(..., min_length=1, max_length=100)
-    postal_code: str = Field(..., min_length=1, max_length=10)
+    postal_code: str = Field(..., pattern=POSTAL_CODE_PATTERN)
 
 
 class ClientDetailDTO(ClientDTO):
@@ -34,8 +36,8 @@ class CreateClientDTO(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     tax_id: str = Field(..., min_length=1, max_length=20)
     address: AddressDTO
-    phone: str = Field(..., min_length=1, max_length=20)
-    email: str = Field(..., max_length=255)
+    phone: str = Field(..., pattern=PHONE_PATTERN)
+    email: str = Field(..., max_length=255, pattern=EMAIL_PATTERN)
 
     @field_validator("tax_id", mode="before")
     @classmethod
@@ -50,6 +52,12 @@ class CreateClientDTO(BaseModel):
         """
         return v.upper()
 
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        """Normalize emails to avoid case-sensitive duplicates."""
+        return v.strip().lower()
+
 
 class UpdateClientDTO(BaseModel):
     """Payload for updating an existing client. All fields are optional.
@@ -60,8 +68,16 @@ class UpdateClientDTO(BaseModel):
 
     name: str | None = Field(None, min_length=1, max_length=200)
     address: AddressDTO | None = None
-    phone: str | None = Field(None, min_length=1, max_length=20)
-    email: str | None = Field(None, max_length=255)
+    phone: str | None = Field(None, pattern=PHONE_PATTERN)
+    email: str | None = Field(None, max_length=255, pattern=EMAIL_PATTERN)
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_optional_email(cls, v: str | None) -> str | None:
+        """Normalize optional emails to avoid case-sensitive duplicates."""
+        if v is None:
+            return None
+        return v.strip().lower()
 
 
 class SetClientActiveDTO(BaseModel):

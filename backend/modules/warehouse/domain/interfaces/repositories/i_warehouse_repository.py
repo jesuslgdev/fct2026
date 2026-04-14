@@ -29,3 +29,6 @@ class IWarehouseRepository(ABC):
 
     @abstractmethod
     async def get_total_stock(self, warehouse_id: int) -> int: ...
+
+    @abstractmethod
+    async def has_stock_history(self, warehouse_id: int) -> bool: ...

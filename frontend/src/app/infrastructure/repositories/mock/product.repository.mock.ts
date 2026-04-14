@@ -39,8 +39,13 @@ export class MockProductRepository implements ProductRepository {
 
   getProducts(params: ProductQueryParams): Observable<PagedResult<Product>> {
     const filtered = this.products.filter((p) => {
-      if (params.search && !p.name.toLowerCase().includes(params.search.toLowerCase())) {
-        return false;
+      if (params.search) {
+        const query = params.search.toLowerCase();
+        const matchesCode = p.code.toLowerCase().includes(query);
+        const matchesName = p.name.toLowerCase().includes(query);
+        if (!matchesCode && !matchesName) {
+          return false;
+        }
       }
       if (params.categoryId != null && p.categoryId !== params.categoryId) {
         return false;

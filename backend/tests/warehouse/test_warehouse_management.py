@@ -1,7 +1,10 @@
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.catalog.domain.entities.product import Product
+from modules.warehouse.domain.entities.stock_movement import StockMovement
 from modules.warehouse.domain.entities.warehouse import Warehouse
+from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 
 BASE = "/api/v1/warehouse/warehouses"
 
@@ -203,6 +206,56 @@ async def test_delete_warehouse_has_stock(
 ):
     """Returns 409 with error code 6103 when warehouse has stock."""
     response = await admin_client.delete(f"{BASE}/{warehouse_with_stock.warehouse_id}")
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == 6103
+
+
+async def test_delete_warehouse_with_zero_stock_record(
+    admin_client: AsyncClient,
+    db_session: AsyncSession,
+    sample_warehouse: Warehouse,
+    sample_product: Product,
+):
+    """Returns 409 when a warehouse_stock row exists even if stock=0."""
+    db_session.add(
+        WarehouseStock(
+            warehouse_id=sample_warehouse.warehouse_id,
+            product_id=sample_product.product_id,
+            stock=0,
+            reserved_stock=0,
+        )
+    )
+    await db_session.flush()
+
+    response = await admin_client.delete(f"{BASE}/{sample_warehouse.warehouse_id}")
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == 6103
+
+
+async def test_delete_warehouse_with_movement_history(
+    admin_client: AsyncClient,
+    db_session: AsyncSession,
+    sample_warehouse: Warehouse,
+    sample_product: Product,
+):
+    """Returns 409 when a stock_movement exists for the warehouse."""
+    db_session.add(
+        StockMovement(
+            warehouse_id=sample_warehouse.warehouse_id,
+            product_id=sample_product.product_id,
+            movement_type="adjustment",
+            previous_quantity=5,
+            new_quantity=0,
+            difference=-5,
+            reason="cleared",
+            user_email="admin@test.com",
+        )
+    )
+    await db_session.flush()
+
+    response = await admin_client.delete(f"{BASE}/{sample_warehouse.warehouse_id}")
 
     assert response.status_code == 409
     assert response.json()["error_code"] == 6103

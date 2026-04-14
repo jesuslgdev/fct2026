@@ -21,11 +21,13 @@ import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
+import { HttpProductRepository } from '@infrastructure/repositories/http/product.repository.http';
+import { HttpProductCategoryRepository } from '@infrastructure/repositories/http/product-category.repository.http';
 import { AuthService } from '@core/services/auth.service';
-import { MockProductRepository } from '@infrastructure/repositories/mock/product.repository.mock';
-import { MockProductCategoryRepository } from '@infrastructure/repositories/mock/product-category.repository.mock';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
+import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
+import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -53,9 +55,9 @@ export const appConfig: ApplicationConfig = {
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
-    // Mock repositories (replace with real HTTP implementations when backend is ready)
-    { provide: ProductRepository, useClass: MockProductRepository },
-    { provide: ProductCategoryRepository, useClass: MockProductCategoryRepository },
+    { provide: ProductRepository, useClass: HttpProductRepository },
+    { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
+    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
     providePrimeNG({
       ripple: true,
       theme: {
@@ -74,5 +76,6 @@ export const appConfig: ApplicationConfig = {
     ConfirmationService,
 
     // TODO add base url for API REST
+    // { provide: PurchaseRepository, useClass: PurchaseRepositoryMock },
   ],
 };
