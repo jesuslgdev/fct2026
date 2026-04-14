@@ -10,7 +10,6 @@ describe('Provider Models', () => {
     email: 'provider@test.com',
     phone: '+1234567890',
     address: 'Test Address',
-    contactPerson: 'Contact Person',
     isActive: true,
     status: ProviderStatus.ACTIVE,
     createdAt: new Date(),
@@ -41,7 +40,6 @@ describe('Provider Models', () => {
       };
       expect(minimalProvider.phone).toBeUndefined();
       expect(minimalProvider.address).toBeUndefined();
-      expect(minimalProvider.contactPerson).toBeUndefined();
       expect(minimalProvider.products).toBeUndefined();
     });
   });
@@ -53,8 +51,7 @@ describe('Provider Models', () => {
         taxId: '111111111',
         email: 'new@test.com',
         phone: '+1111111111',
-        address: 'New Address',
-        contactPerson: 'New Contact'
+        address: 'New Address'
       };
       expect(createRequest.name).toBe('New Provider');
       expect(createRequest.taxId).toBe('111111111');
@@ -69,7 +66,6 @@ describe('Provider Models', () => {
       };
       expect(minimalRequest.phone).toBeUndefined();
       expect(minimalRequest.address).toBeUndefined();
-      expect(minimalRequest.contactPerson).toBeUndefined();
     });
   });
 

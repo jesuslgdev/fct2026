@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { ProviderRepository } from '../../repositories/provider.repository';
-import { Provider, UpdateProviderRequest } from '../../models/provider.model';
+import {
+  Provider,
+  UpdateProviderRequest,
+  ProviderImportExecutionResult,
+  ProviderImportTemplate,
+} from '../../models/provider.model';
 import { ProviderProduct } from '../../models/provider-product.model';
 import { PageEvent } from '../../models/page-event.model';
 import { ProviderStatus } from '../../enums/provider-status.enum';
@@ -11,7 +16,9 @@ import {
   UpdateProviderUseCase, 
   ActivateProviderUseCase, 
   DeactivateProviderUseCase,
-  GetProviderProductsUseCase
+  GetProviderProductsUseCase,
+  DownloadProviderTemplateUseCase,
+  ImportProvidersUseCase,
 } from './index';
 
 const MOCK_PROVIDER: Provider = {
@@ -42,6 +49,17 @@ const MOCK_PROVIDER_PRODUCT: ProviderProduct = {
   updatedAt: new Date(),
 };
 
+const MOCK_TEMPLATE: ProviderImportTemplate = {
+  filename: 'plantilla_proveedores.xlsx',
+  data: new ArrayBuffer(8),
+};
+
+const MOCK_IMPORT_RESULT: ProviderImportExecutionResult = {
+  success: true,
+  importedCount: 2,
+  message: 'Import completed successfully',
+};
+
 class MockProviderRepository implements ProviderRepository {
   getProviders = vi.fn().mockResolvedValue({
     data: [MOCK_PROVIDER],
@@ -53,6 +71,8 @@ class MockProviderRepository implements ProviderRepository {
   activateProvider = vi.fn().mockResolvedValue(MOCK_PROVIDER);
   deactivateProvider = vi.fn().mockResolvedValue(MOCK_PROVIDER);
   getProviderProducts = vi.fn().mockResolvedValue([MOCK_PROVIDER_PRODUCT]);
+  downloadImportTemplate = vi.fn().mockResolvedValue(MOCK_TEMPLATE);
+  importProviders = vi.fn().mockResolvedValue(MOCK_IMPORT_RESULT);
 }
 
 describe('Provider Use Cases', () => {
@@ -68,6 +88,8 @@ describe('Provider Use Cases', () => {
         ActivateProviderUseCase,
         DeactivateProviderUseCase,
         GetProviderProductsUseCase,
+        DownloadProviderTemplateUseCase,
+        ImportProvidersUseCase,
         { provide: ProviderRepository, useValue: mockRepo },
       ],
     });
@@ -150,6 +172,27 @@ describe('Provider Use Cases', () => {
       expect(mockRepo.getProviderProducts).toHaveBeenCalledWith('1');
       expect(mockRepo.getProviderProducts).toHaveBeenCalledOnce();
       expect(result).toEqual([MOCK_PROVIDER_PRODUCT]);
+    });
+  });
+
+  describe('DownloadProviderTemplateUseCase', () => {
+    it('should call downloadImportTemplate and return template', async () => {
+      const useCase = TestBed.inject(DownloadProviderTemplateUseCase) as DownloadProviderTemplateUseCase;
+      const result = await useCase.execute();
+
+      expect(mockRepo.downloadImportTemplate).toHaveBeenCalledOnce();
+      expect(result).toEqual(MOCK_TEMPLATE);
+    });
+  });
+
+  describe('ImportProvidersUseCase', () => {
+    it('should call importProviders and return import result', async () => {
+      const useCase = TestBed.inject(ImportProvidersUseCase) as ImportProvidersUseCase;
+      const file = new File(['name,taxId,email'], 'providers.csv', { type: 'text/csv' });
+      const result = await useCase.execute(file);
+
+      expect(mockRepo.importProviders).toHaveBeenCalledWith(file);
+      expect(result).toEqual(MOCK_IMPORT_RESULT);
     });
   });
 });
