@@ -43,8 +43,46 @@
       }
     </div>
 
+    <!-- Campo de dirección -->
+    <div class="dialog-field">
+      <label for="address" class="dialog-field-label">Dirección</label>
+      <ui-input id="address" formControlName="address" placeholder="Calle Principal 123"
+        [state]="address.invalid && address.touched ? 'error' : 'default'" />
+      @if (address.invalid && address.touched) {
+        <span class="dialog-field-error">La dirección no es válida.</span>
+      }
+    </div>
+
     <!-- Grid de 2 columnas para campos opcionales -->
     <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <label for="city" class="dialog-field-label">Ciudad</label>
+        <ui-input id="city" formControlName="city" placeholder="Madrid"
+          [state]="city.invalid && city.touched ? 'error' : 'default'" />
+        @if (city.invalid && city.touched) {
+          <span class="dialog-field-error">La ciudad no es válida.</span>
+        }
+      </div>
+      <div class="dialog-field">
+        <label for="province" class="dialog-field-label">Provincia</label>
+        <ui-input id="province" formControlName="province" placeholder="Madrid"
+          [state]="province.invalid && province.touched ? 'error' : 'default'" />
+        @if (province.invalid && province.touched) {
+          <span class="dialog-field-error">La provincia no es válida.</span>
+        }
+      </div>
+    </div>
+
+    <!-- Grid de 2 columnas para campos opcionales -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <label for="postalCode" class="dialog-field-label">Código Postal</label>
+        <ui-input id="postalCode" formControlName="postalCode" placeholder="28001"
+          [state]="postalCode.invalid && postalCode.touched ? 'error' : 'default'" />
+        @if (postalCode.invalid && postalCode.touched) {
+          <span class="dialog-field-error">El código postal no es válido.</span>
+        }
+      </div>
       <div class="dialog-field">
         <label for="phone" class="dialog-field-label">Teléfono</label>
         <ui-input id="phone" formControlName="phone" placeholder="+34 900 123 456"
@@ -53,24 +91,7 @@
           <span class="dialog-field-error">Formato de teléfono no válido.</span>
         }
       </div>
-      <div class="dialog-field">
-        <label for="contactPerson" class="dialog-field-label">Persona de contacto</label>
-        <ui-input id="contactPerson" formControlName="contactPerson" placeholder="Nombre del contacto"
-          [state]="contactPerson.invalid && contactPerson.touched ? 'error' : 'default'" />
-        @if (contactPerson.invalid && contactPerson.touched) {
-          <span class="dialog-field-error">El nombre de contacto no es válido.</span>
-        }
-      </div>
     </div>
 
-    <!-- Campo de dirección -->
-    <div class="dialog-field">
-      <label for="address" class="dialog-field-label">Dirección</label>
-      <ui-input id="address" formControlName="address" placeholder="Calle Principal 123, Ciudad"
-        [state]="address.invalid && address.touched ? 'error' : 'default'" />
-      @if (address.invalid && address.touched) {
-        <span class="dialog-field-error">La dirección no es válida.</span>
-      }
-    </div>
   </form>
 </ui-dialog>

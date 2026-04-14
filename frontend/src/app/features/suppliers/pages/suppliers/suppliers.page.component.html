@@ -5,11 +5,19 @@
     <div class="page-header">
       <h1 class="text-style-title">Proveedores</h1>
       @if (store.canEdit()) {
-        <ui-button
-          label="Nuevo proveedor"
-          icon="pi pi-plus"
-          (clicked)="store.openCreateDialog()"
-        />
+        <div class="flex gap-2">
+          <ui-button
+            label="Importar Excel"
+            icon="pi pi-upload"
+            variant="outline"
+            (clicked)="openImportDialog()"
+          />
+          <ui-button
+            label="Nuevo proveedor"
+            icon="pi pi-plus"
+            (clicked)="store.openCreateDialog()"
+          />
+        </div>
       }
     </div>
   </ui-card>
@@ -23,13 +31,12 @@
 
   <!-- ── Filters ────────────────────────────────────── -->
   <ui-card class="filters-card">
-    <div class="filters-row">
+    <div class="flex gap-3 mb-4">
       <ui-input
-        type="text"
-        placeholder="Buscar por nombre, email o NIF…"
+        placeholder="Buscar por nombre, email, NIF..."
         styleClass="flex-1 min-w-64"
         [ngModel]="store.searchQuery()"
-        (valueChange)="store.onSearch($event)"
+        (ngModelChange)="store.onSearch($event)"
       />
       <p-select
         [options]="statusOptions"
@@ -62,9 +69,6 @@
         <tr>
           <th>Nombre</th>
           <th>NIF/CIF</th>
-          <th>Email</th>
-          <th>Teléfono</th>
-          <th>Contacto</th>
           <th>Estado</th>
           @if (store.canEdit()) { <th>Acciones</th> }
         </tr>
@@ -74,9 +78,6 @@
         <tr>
           <td>{{ provider.name }}</td>
           <td>{{ provider.taxId }}</td>
-          <td>{{ provider.email }}</td>
-          <td>{{ provider.phone || '-' }}</td>
-          <td>{{ provider.contactPerson || '-' }}</td>
           <td>
             <ui-badge 
               [label]="getStatusLabel(provider.status)" 
@@ -86,6 +87,8 @@
           @if (store.canEdit()) {
             <td>
               <div class="flex gap-2">
+                <ui-button icon="pi pi-eye" variant="ghost" size="sm"
+                  (clicked)="openDetailsDialog(provider)" />
                 <ui-button icon="pi pi-pencil" variant="ghost" size="sm"
                   (clicked)="store.openEditDialog(provider)" />
                 <ui-button
@@ -101,7 +104,7 @@
 
       <ng-template #emptymessage>
         <tr>
-          <td [attr.colspan]="store.canEdit() ? 7 : 6" class="empty-state">
+          <td [attr.colspan]="store.canEdit() ? 4 : 3" class="empty-state">
             No se encontraron proveedores.
           </td>
         </tr>
@@ -110,10 +113,66 @@
   </ui-card>
 </section>
 
-<!-- Diálogo de crear/editar -->
+<!-- Create/Edit dialog -->
 <app-provider-form-dialog />
 
-<!-- Diálogo de confirmación -->
+<!-- Provider details dialog -->
+<ui-dialog
+  [(visible)]="detailsDialogVisible"
+  header="Detalles del Proveedor"
+  size="lg"
+  (cancelled)="closeDetailsDialog()"
+>
+  @if (selectedProviderForDetails; as provider) {
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <span class="text-sm font-medium text-gray-500">Nombre</span>
+          <p class="text-base">{{ provider.name }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">NIF/CIF</span>
+          <p class="text-base">{{ provider.taxId }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Email</span>
+          <p class="text-base">{{ provider.email || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Teléfono</span>
+          <p class="text-base">{{ provider.phone || 'No disponible' }}</p>
+        </div>
+        <div class="col-span-2">
+          <span class="text-sm font-medium text-gray-500">Dirección</span>
+          <p class="text-base">{{ provider.address || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Ciudad</span>
+          <p class="text-base">{{ provider.city || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Provincia</span>
+          <p class="text-base">{{ provider.province || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Código Postal</span>
+          <p class="text-base">{{ provider.postalCode || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Estado</span>
+          <p class="text-base">
+            <ui-badge 
+              [label]="getStatusLabel(provider.status)" 
+              [variant]="getStatusBadgeVariant(provider.status)" 
+            />
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</ui-dialog>
+
+<!-- Confirmation dialog -->
 <ui-dialog
   [(visible)]="store.confirmDialogVisible"
   [header]="store.providerToToggle()?.isActive ? 'Desactivar proveedor' : 'Activar proveedor'"
@@ -137,3 +196,6 @@
     </p>
   }
 </ui-dialog>
+
+<!-- Import dialog -->
+<app-import-dialog (importCompleted)="onImportCompleted()" />

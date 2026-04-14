@@ -15,7 +15,9 @@ const MOCK_PROVIDER: Provider = {
   email: 'provider@test.com',
   phone: '+1234567890',
   address: 'Test Address',
-  contactPerson: 'Contact Person',
+  city: 'Test City',
+  province: '',
+  postalCode: '',
   isActive: true,
   status: ProviderStatus.ACTIVE,
   createdAt: new Date(),
@@ -69,7 +71,6 @@ describe('ProviderFormDialogComponent', () => {
     expect(component.form.contains('email')).toBe(true);
     expect(component.form.contains('phone')).toBe(true);
     expect(component.form.contains('address')).toBe(true);
-    expect(component.form.contains('contactPerson')).toBe(true);
   });
 
   it('should have proper validators on required fields', () => {
@@ -89,7 +90,6 @@ describe('ProviderFormDialogComponent', () => {
     expect(component.email).toBe(component.form.get('email'));
     expect(component.phone).toBe(component.form.get('phone'));
     expect(component.address).toBe(component.form.get('address'));
-    expect(component.contactPerson).toBe(component.form.get('contactPerson'));
   });
 
   it('should reset form when mode is create', () => {
@@ -109,7 +109,9 @@ describe('ProviderFormDialogComponent', () => {
       email: null,
       phone: null,
       address: null,
-      contactPerson: null,
+      city: null,
+      province: null,
+      postalCode: null,
     });
   });
 
@@ -121,7 +123,9 @@ describe('ProviderFormDialogComponent', () => {
       email: MOCK_PROVIDER.email,
       phone: MOCK_PROVIDER.phone ?? '',
       address: MOCK_PROVIDER.address ?? '',
-      contactPerson: MOCK_PROVIDER.contactPerson ?? '',
+      city: MOCK_PROVIDER.city ?? '',
+      province: MOCK_PROVIDER.province ?? '',
+      postalCode: MOCK_PROVIDER.postalCode ?? '',
     });
     fixture.detectChanges();
 
@@ -131,7 +135,9 @@ describe('ProviderFormDialogComponent', () => {
       email: MOCK_PROVIDER.email,
       phone: MOCK_PROVIDER.phone,
       address: MOCK_PROVIDER.address,
-      contactPerson: MOCK_PROVIDER.contactPerson,
+      city: MOCK_PROVIDER.city,
+      province: MOCK_PROVIDER.province,
+      postalCode: MOCK_PROVIDER.postalCode,
     });
   });
 
@@ -140,7 +146,6 @@ describe('ProviderFormDialogComponent', () => {
       ...MOCK_PROVIDER,
       phone: null,
       address: null,
-      contactPerson: null,
     };
 
     // Manually trigger the patchValue to simulate the effect
@@ -150,7 +155,9 @@ describe('ProviderFormDialogComponent', () => {
       email: providerWithNulls.email,
       phone: '',
       address: '',
-      contactPerson: '',
+      city: '',
+      province: '',
+      postalCode: '',
     });
     fixture.detectChanges();
 
@@ -160,7 +167,9 @@ describe('ProviderFormDialogComponent', () => {
       email: providerWithNulls.email,
       phone: '',
       address: '',
-      contactPerson: '',
+      city: '',
+      province: '',
+      postalCode: '',
     });
   });
 
@@ -180,7 +189,9 @@ describe('ProviderFormDialogComponent', () => {
       email: 'new@test.com',
       phone: '+1234567890',
       address: 'New Address',
-      contactPerson: 'New Contact',
+      city: 'New City',
+      province: 'New Province',
+      postalCode: '28001',
     });
 
     mockStore.dialogMode.mockReturnValue('create');
@@ -194,7 +205,9 @@ describe('ProviderFormDialogComponent', () => {
       email: 'new@test.com',
       phone: '+1234567890',
       address: 'New Address',
-      contactPerson: 'New Contact',
+      city: 'New City',
+      province: 'New Province',
+      postalCode: '28001',
     });
   });
 
@@ -205,7 +218,9 @@ describe('ProviderFormDialogComponent', () => {
       email: 'updated@test.com',
       phone: '+0987654321',
       address: 'Updated Address',
-      contactPerson: 'Updated Contact',
+      city: 'Updated City',
+      province: 'Updated Province',
+      postalCode: '28002',
     });
 
     mockStore.dialogMode.mockReturnValue('edit');
@@ -219,7 +234,9 @@ describe('ProviderFormDialogComponent', () => {
       email: 'updated@test.com',
       phone: '+0987654321',
       address: 'Updated Address',
-      contactPerson: 'Updated Contact',
+      city: 'Updated City',
+      province: 'Updated Province',
+      postalCode: '28002',
     });
   });
 

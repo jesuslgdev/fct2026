@@ -25,13 +25,13 @@ export class FirebaseAuthRepository implements AuthRepository {
   private readonly auth = inject(FIREBASE_AUTH);
   private readonly http = inject(HttpClient);
 
-  // Mapeo de roles del backend a roles del frontend
+  // Map backend roles to frontend roles
   private mapBackendRoleToFrontend(backendRole: string): UserRole {
     switch (backendRole) {
       case 'Administrator': return UserRole.ADMIN;
       case 'Manager': return UserRole.PURCHASES_MANAGER;
       case 'Employee': return UserRole.USER;
-      default: return UserRole.USER; // fallback seguro
+      default: return UserRole.USER; // safe fallback
     }
   }
 

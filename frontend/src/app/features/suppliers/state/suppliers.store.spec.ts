@@ -22,7 +22,6 @@ const MOCK_PROVIDER: Provider = {
   email: 'provider@test.com',
   phone: '+1234567890',
   address: 'Test Address',
-  contactPerson: 'Contact Person',
   isActive: true,
   status: ProviderStatus.ACTIVE,
   createdAt: new Date(),
@@ -154,24 +153,15 @@ describe('SuppliersStore', () => {
       expect(view[0].productCount).toBe(1);
     });
 
-    it('should compute filteredProviders correctly', () => {
+    it('should expose provider list for table rendering', () => {
       store.providers.set([MOCK_PROVIDER]);
-      
-      // Test search filter
+
+      expect(store.filteredProviders()).toEqual([MOCK_PROVIDER]);
+
+      // In lazy mode, filters are applied by backend and table receives provider list as-is.
       store.searchQuery.set('test');
-      let filtered = store.filteredProviders();
-      expect(filtered).toHaveLength(1);
-      
-      // Test status filter
-      store.searchQuery.set('');
-      store.statusFilter.set(ProviderStatus.ACTIVE);
-      filtered = store.filteredProviders();
-      expect(filtered).toHaveLength(1);
-      
-      // Test status filter with different status
       store.statusFilter.set(ProviderStatus.INACTIVE);
-      filtered = store.filteredProviders();
-      expect(filtered).toHaveLength(0);
+      expect(store.filteredProviders()).toEqual([MOCK_PROVIDER]);
     });
   });
 
@@ -182,7 +172,11 @@ describe('SuppliersStore', () => {
 
       await store.loadProviders();
 
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith(undefined);
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        rows: 20,
+        first: 0,
+      });
       expect(store.providers()).toEqual([MOCK_PROVIDER]);
       expect(store.total()).toBe(1);
       expect(store.loading()).toBe(false);
@@ -196,7 +190,11 @@ describe('SuppliersStore', () => {
 
       await store.loadProviders(pageEvent);
 
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith(pageEvent);
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        rows: 10,
+        first: 0,
+      });
       expect(store.page()).toBe(1); // page se establece desde el evento
       expect(store.pageSize()).toBe(10);
     });
@@ -273,6 +271,7 @@ describe('SuppliersStore', () => {
       expect(store.dialogMode()).toBe('edit');
       expect(store.dialogVisible()).toBe(true);
     });
+
 
     it('should close dialog', () => {
       store.dialogVisible.set(true);
@@ -353,7 +352,14 @@ describe('SuppliersStore', () => {
       await store.saveProvider(updatePayload);
 
       expect(mockUpdateProviderUseCase.execute).toHaveBeenCalledWith('1', updatePayload);
-      expect(store.providers()).toContain(updatedProvider);
+      expect(store.providers()).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: updatedProvider.id,
+            name: updatedProvider.name,
+          }),
+        ]),
+      );
       expect(store.dialogVisible()).toBe(false);
     });
 
@@ -419,7 +425,12 @@ describe('SuppliersStore', () => {
 
       expect(store.searchQuery()).toBe('test');
       expect(store.page()).toBe(1);
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalled();
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        rows: 20,
+        first: 0,
+        query: 'test',
+      });
     });
 
     it('should handle status filter change', async () => {
@@ -429,11 +440,17 @@ describe('SuppliersStore', () => {
 
       expect(store.statusFilter()).toBe(ProviderStatus.ACTIVE);
       expect(store.page()).toBe(1);
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalled();
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        rows: 20,
+        first: 0,
+        status: ProviderStatus.ACTIVE,
+        isActive: true,
+      });
     });
 
     it('should handle page change', () => {
-      const pageEvent: PageEvent = { first: 10, rows: 10, page: 2 };
+      const pageEvent: PageEvent = { first: 10, rows: 10, page: 1 };
       mockGetProvidersUseCase.execute.mockResolvedValue({
         data: [],
         total: 0,
@@ -443,8 +460,7 @@ describe('SuppliersStore', () => {
 
       expect(store.page()).toBe(2); // PrimeNG base 0 + 1 = store base 1
       expect(store.pageSize()).toBe(10);
-      // The event payload is normalized to include page: 2 (store uses 1-based page)
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ page: 2, rows: 10 });
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({ ...pageEvent, page: 2, first: 10, rows: 10 });
     });
   });
 
@@ -468,7 +484,11 @@ describe('SuppliersStore', () => {
       expect(store.searchQuery()).toBe('');
       expect(store.statusFilter()).toBe(null);
       expect(store.page()).toBe(1);
-      expect(mockGetProvidersUseCase.execute).toHaveBeenCalled();
+      expect(mockGetProvidersUseCase.execute).toHaveBeenCalledWith({
+        page: 1,
+        rows: 20,
+        first: 0,
+      });
     });
   });
 

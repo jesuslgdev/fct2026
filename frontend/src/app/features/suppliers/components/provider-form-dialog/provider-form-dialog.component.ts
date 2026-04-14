@@ -24,16 +24,20 @@ export class ProviderFormDialogComponent {
     email: ['', [Validators.required, Validators.email]],
     phone: [''],
     address: [''],
-    contactPerson: [''],
+    city: [''],
+    province: [''],
+    postalCode: [''],
   });
 
-  // Getters for quick access to controls
+// Getters for quick access to controls
   get name() { return this.form.controls.name; }
   get taxId() { return this.form.controls.taxId; }
   get email() { return this.form.controls.email; }
   get phone() { return this.form.controls.phone; }
   get address() { return this.form.controls.address; }
-  get contactPerson() { return this.form.controls.contactPerson; }
+  get city() { return this.form.controls.city; }
+  get province() { return this.form.controls.province; }
+  get postalCode() { return this.form.controls.postalCode; }
 
   constructor() {
     // Effect: keeps the form in sync when mode/selected provider changes
@@ -47,7 +51,9 @@ export class ProviderFormDialogComponent {
           email: provider.email,
           phone: provider.phone ?? '',
           address: provider.address ?? '',
-          contactPerson: provider.contactPerson ?? '',
+          city: provider.city ?? '',
+          province: provider.province ?? '',
+          postalCode: provider.postalCode ?? '',
         });
       } else {
         this.form.reset();
@@ -72,7 +78,9 @@ export class ProviderFormDialogComponent {
         email: v.email!,
         phone: v.phone || undefined,
         address: v.address || undefined,
-        contactPerson: v.contactPerson || undefined,
+        city: v.city || undefined,
+        province: v.province || undefined,
+        postalCode: v.postalCode || undefined,
       };
       this.store.saveProvider(payload);
     } else {
@@ -82,7 +90,9 @@ export class ProviderFormDialogComponent {
         email: v.email ?? undefined,
         phone: v.phone || undefined,
         address: v.address || undefined,
-        contactPerson: v.contactPerson || undefined,
+        city: v.city || undefined,
+        province: v.province || undefined,
+        postalCode: v.postalCode || undefined,
       };
       this.store.saveProvider(payload);
     }

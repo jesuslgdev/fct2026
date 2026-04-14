@@ -51,7 +51,6 @@ describe('SuppliersPageComponent', () => {
       email: 'provider@test.com',
       phone: '+1234567890',
       address: 'Test Address',
-      contactPerson: 'Contact Person',
       isActive: true,
       status: ProviderStatus.ACTIVE,
       createdAt: new Date(),
