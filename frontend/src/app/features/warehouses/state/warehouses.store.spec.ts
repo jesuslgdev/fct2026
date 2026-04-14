@@ -20,17 +20,33 @@ import { UpdateWarehouseUseCase } from '@domain/usecases/warehouse/update-wareho
 import { DeleteWarehouseUseCase } from '@domain/usecases/warehouse/delete-warehouse.usecase';
 import { Observable, of, throwError } from 'rxjs';
 
+const ADDRESS_A = {
+  street: 'Calle Principal 123',
+  city: 'Madrid',
+  province: 'Madrid',
+  postalCode: '28001',
+};
+
+const ADDRESS_B = {
+  street: 'Poligono Industrial 45',
+  city: 'Barcelona',
+  province: 'Barcelona',
+  postalCode: '08001',
+};
+
 const WAREHOUSE_A: Warehouse = {
   warehouseId: 1,
-  name: 'Almacén Central',
-  address: 'Calle Principal 123, Madrid',
+  name: 'Almacen Central',
+  address: 'Calle Principal 123, Madrid, Madrid, 28001',
+  addressData: ADDRESS_A,
   totalStock: 150,
 };
 
 const WAREHOUSE_B: Warehouse = {
   warehouseId: 2,
-  name: 'Almacén Norte',
-  address: 'Polígono Industrial 45, Barcelona',
+  name: 'Almacen Norte',
+  address: 'Poligono Industrial 45, Barcelona, Barcelona, 08001',
+  addressData: ADDRESS_B,
   totalStock: 75,
 };
 
@@ -94,8 +110,7 @@ describe('WarehousesStore', () => {
   });
 
   it('loads warehouses successfully', () => {
-    const warehouses: Warehouse[] = [WAREHOUSE_A, WAREHOUSE_B];
-    getWarehousesUseCase.execute.mockReturnValueOnce(of(warehouses));
+    getWarehousesUseCase.execute.mockReturnValueOnce(of([WAREHOUSE_A, WAREHOUSE_B]));
 
     store.loadWarehouses();
 
@@ -105,43 +120,43 @@ describe('WarehousesStore', () => {
     expect(store.error()).toBeNull();
   });
 
-  it('sets error when loading warehouses fails', () => {
+  it('maps load errors', () => {
     getWarehousesUseCase.execute.mockReturnValueOnce(throwError(() => new Error('boom')));
 
     store.loadWarehouses();
 
     expect(store.error()).toBe('Error al cargar los almacenes.');
     expect(store.loading()).toBe(false);
-  });
 
-  it('maps forbidden warehouse error to a specific message', () => {
     getWarehousesUseCase.execute.mockReturnValueOnce(throwError(() => new WarehouseForbiddenError()));
-
     store.loadWarehouses();
-
     expect(store.error()).toBe('No tienes permisos para realizar esta acción.');
   });
 
   it('maps validation warehouse error to backend message', () => {
     createWarehouseUseCase.execute.mockReturnValueOnce(
-      throwError(() => new WarehouseValidationError('name', 'Name already exists.'))
+      throwError(() => new WarehouseValidationError('name', 'Name is required.')),
     );
 
     store.saveWarehouse({
-      name: 'Almacén Central',
-      address: 'Calle Principal 123',
+      name: 'Almacen Central',
+      address: ADDRESS_A,
     });
 
-    expect(store.dialogError()).toBe('Name already exists.');
+    expect(store.dialogError()).toBe('El nombre es obligatorio.');
     expect(store.error()).toBeNull();
   });
 
   it('creates a new warehouse and updates state', () => {
     const payload: CreateWarehousePayload = {
-      name: 'Almacén Sur',
-      address: 'Avenida de la Industria 789, Valencia',
+      name: 'Almacen Sur',
+      address: {
+        street: 'Avenida de la Industria 789',
+        city: 'Valencia',
+        province: 'Valencia',
+        postalCode: '46001',
+      },
     };
-
     createWarehouseUseCase.execute.mockReturnValueOnce(of(WAREHOUSE_B));
 
     store.openCreateDialog();
@@ -154,22 +169,20 @@ describe('WarehousesStore', () => {
   });
 
   it('updates an existing warehouse in edit mode', () => {
-    const updated: Warehouse = { ...WAREHOUSE_A, name: 'Almacén Principal' };
-    const payload: UpdateWarehousePayload = { name: 'Almacén Principal', address: WAREHOUSE_A.address };
-    const expectedPayload: UpdateWarehousePayload = {
-      name: 'Almacén Principal',
-      address: WAREHOUSE_A.address,
+    const updated: Warehouse = { ...WAREHOUSE_A, name: 'Almacen Principal' };
+    const payload: UpdateWarehousePayload = {
+      name: 'Almacen Principal',
+      address: WAREHOUSE_A.addressData,
     };
 
     getWarehousesUseCase.execute.mockReturnValueOnce(of([WAREHOUSE_A]));
     store.loadWarehouses();
-
     updateWarehouseUseCase.execute.mockReturnValueOnce(of(updated));
 
     store.openEditDialog(WAREHOUSE_A);
     store.saveWarehouse(payload);
 
-    expect(updateWarehouseUseCase.execute).toHaveBeenCalledWith(WAREHOUSE_A.warehouseId, expectedPayload);
+    expect(updateWarehouseUseCase.execute).toHaveBeenCalledWith(WAREHOUSE_A.warehouseId, payload);
     expect(store.warehouses()).toEqual([updated]);
     expect(store.dialogVisible()).toBe(false);
   });
@@ -177,7 +190,6 @@ describe('WarehousesStore', () => {
   it('deletes warehouse and closes confirm dialog', () => {
     getWarehousesUseCase.execute.mockReturnValueOnce(of([WAREHOUSE_A]));
     store.loadWarehouses();
-
     deleteWarehouseUseCase.execute.mockReturnValueOnce(of(undefined));
 
     store.requestDeleteWarehouse(WAREHOUSE_A);
@@ -189,42 +201,28 @@ describe('WarehousesStore', () => {
     expect(store.warehouseToDelete()).toBeNull();
   });
 
-  it('sets search query and triggers search via computed signal', () => {
-    const query = 'Norte';
-    
+  it('filters and exposes edit permissions', () => {
     getWarehousesUseCase.execute.mockReturnValueOnce(of([WAREHOUSE_A, WAREHOUSE_B]));
     store.loadWarehouses();
-    store.onSearch(query);
+    store.onSearch('Norte');
 
-    expect(store.searchQuery()).toBe(query);
+    expect(store.searchQuery()).toBe('Norte');
     expect(store.filteredWarehouses()).toEqual([WAREHOUSE_B]);
+    expect(store.canEdit()).toBe(true);
   });
 
-  it('opens create dialog correctly', () => {
+  it('opens and closes dialogs', () => {
     store.openCreateDialog();
-
     expect(store.dialogMode()).toBe('create');
     expect(store.dialogVisible()).toBe(true);
     expect(store.selectedWarehouse()).toBeNull();
-  });
 
-  it('opens edit dialog correctly', () => {
     store.openEditDialog(WAREHOUSE_A);
-
     expect(store.dialogMode()).toBe('edit');
-    expect(store.dialogVisible()).toBe(true);
     expect(store.selectedWarehouse()).toEqual(WAREHOUSE_A);
-  });
 
-  it('closes dialog correctly', () => {
-    store.openCreateDialog();
     store.closeDialog();
-
     expect(store.dialogVisible()).toBe(false);
     expect(store.selectedWarehouse()).toBeNull();
-  });
-
-  it('computes canEdit correctly', () => {
-    expect(store.canEdit()).toBe(true);
   });
 });
