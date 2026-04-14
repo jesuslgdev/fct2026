@@ -59,7 +59,9 @@ class MockAuthService {
     role: 'Administrator' as const,
     permissions: [UserPermission.Admin],
   });
+
   readonly permissions = signal([UserPermission.Admin]);
+
   hasPermission(permission: UserPermission | UserPermission[]): boolean {
     const p = Array.isArray(permission) ? permission : [permission];
     return p.some((perm) => (this.permissions() as UserPermission[]).includes(perm));
@@ -130,6 +132,7 @@ describe('WarehousesStore', () => {
 
     getWarehousesUseCase.execute.mockReturnValueOnce(throwError(() => new WarehouseForbiddenError()));
     store.loadWarehouses();
+
     expect(store.error()).toBe('No tienes permisos para realizar esta acción.');
   });
 
@@ -157,6 +160,7 @@ describe('WarehousesStore', () => {
         postalCode: '46001',
       },
     };
+
     createWarehouseUseCase.execute.mockReturnValueOnce(of(WAREHOUSE_B));
 
     store.openCreateDialog();
@@ -213,15 +217,18 @@ describe('WarehousesStore', () => {
 
   it('opens and closes dialogs', () => {
     store.openCreateDialog();
+
     expect(store.dialogMode()).toBe('create');
     expect(store.dialogVisible()).toBe(true);
     expect(store.selectedWarehouse()).toBeNull();
 
     store.openEditDialog(WAREHOUSE_A);
+
     expect(store.dialogMode()).toBe('edit');
     expect(store.selectedWarehouse()).toEqual(WAREHOUSE_A);
 
     store.closeDialog();
+
     expect(store.dialogVisible()).toBe(false);
     expect(store.selectedWarehouse()).toBeNull();
   });
