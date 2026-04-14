@@ -12,16 +12,28 @@ import { Session } from '@domain/models/session.model';
 import { AccessDeniedError } from '@domain/models/auth-errors';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { environment } from 'environments/environment';
+import { UserRole } from '@domain/enums/user-role.enum';
 
 interface LoginResponse {
   role: string;
   name: string;
+  department_id?: number | null;
 }
 
 @Injectable()
 export class FirebaseAuthRepository implements AuthRepository {
   private readonly auth = inject(FIREBASE_AUTH);
   private readonly http = inject(HttpClient);
+
+  // Map backend roles to frontend roles
+  private mapBackendRoleToFrontend(backendRole: string): UserRole {
+    switch (backendRole) {
+      case 'Administrator': return UserRole.ADMIN;
+      case 'Manager': return UserRole.PURCHASES_MANAGER;
+      case 'Employee': return UserRole.USER;
+      default: return UserRole.USER; // safe fallback
+    }
+  }
 
   async signInWithGoogle(): Promise<Session> {
     const provider = new GoogleAuthProvider();
@@ -42,7 +54,7 @@ export class FirebaseAuthRepository implements AuthRepository {
           email: credential.user.email,
           displayName: response.name || credential.user.displayName,
           photoURL: credential.user.photoURL,
-          role: response.role,
+          role: this.mapBackendRoleToFrontend(response.role),
         },
       };
     } catch (err) {

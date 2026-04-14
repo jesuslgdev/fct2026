@@ -5,3 +5,5 @@ export * from './update-provider.usecase';
 export * from './activate-provider.usecase';
 export * from './deactivate-provider.usecase';
 export * from './get-provider-products.usecase';
+export * from './download-provider-template.usecase';
+export * from './import-providers.usecase';

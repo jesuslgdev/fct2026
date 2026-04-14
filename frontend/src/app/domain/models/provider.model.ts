@@ -8,7 +8,9 @@ export interface Provider {
   email: string;
   phone?: string;
   address?: string;
-  contactPerson?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
   isActive: boolean;
   status: ProviderStatus;
   createdAt: Date;
@@ -22,9 +24,36 @@ export interface CreateProviderRequest {
   email: string;
   phone?: string;
   address?: string;
-  contactPerson?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
 }
 
-export interface UpdateProviderRequest extends Partial<CreateProviderRequest> {
+export interface UpdateProviderRequest {
+  name?: string;
+  taxId?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
   isActive?: boolean;
+}
+
+export interface ProviderImportError {
+  row: number;
+  reason: string;
+}
+
+export interface ProviderImportExecutionResult {
+  success: boolean;
+  importedCount: number;
+  message: string;
+  errors?: ProviderImportError[];
+}
+
+export interface ProviderImportTemplate {
+  filename: string;
+  data: ArrayBuffer;
 }

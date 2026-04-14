@@ -67,37 +67,30 @@ export class SuppliersStore {
     })),
   );
 
-  // Filtered providers for UI (display only, not for pagination)
-  readonly filteredProviders = computed(() => {
-    // In lazy mode, data comes filtered from server
-    // Only apply local filters if not in lazy mode or for quick search
-    if (this.searchQuery() || this.statusFilter()) {
-      let filtered = [...this.providers()];
-      
-      // Search filter (if backend doesn't support it)
-      const search = this.searchQuery().toLowerCase();
-      if (search) {
-        filtered = filtered.filter(
-          (provider) =>
-            provider.name.toLowerCase().includes(search) ||
-            provider.email.toLowerCase().includes(search) ||
-            provider.taxId.toLowerCase().includes(search) ||
-            (provider.contactPerson?.toLowerCase().includes(search) ?? false),
-        );
-      }
+  // Table data comes already filtered from backend when lazy mode is enabled.
+  readonly filteredProviders = computed(() => this.providers());
 
-      // Status filter (if backend doesn't support it)
-      const statusFilter = this.statusFilter();
-      if (statusFilter) {
-        filtered = filtered.filter((provider) => provider.status === statusFilter);
-      }
+  private buildProvidersPageEvent(pageEvent?: PageEvent): PageEvent {
+    const rows = pageEvent?.rows ?? this.pageSize();
+    const page = pageEvent?.page ?? this.page();
+    const first = pageEvent?.first ?? Math.max((page - 1) * rows, 0);
+    const query = this.searchQuery().trim();
+    const status = this.statusFilter();
 
-      return filtered;
-    }
-    
-    // If no local filters, return server data
-    return this.providers();
-  });
+    return {
+      ...pageEvent,
+      page,
+      rows,
+      first,
+      ...(query ? { query } : {}),
+      ...(status
+        ? {
+            status,
+            isActive: status === ProviderStatus.ACTIVE,
+          }
+        : {}),
+    };
+  }
 
   // ── Error mapping (Domain → UI messages) ───────────────────────────────────
   private resolveErrorMessage(err: unknown, fallback: string): string {
@@ -125,16 +118,17 @@ export class SuppliersStore {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const result = await this.getProvidersUseCase.execute(pageEvent);
+      const request = this.buildProvidersPageEvent(pageEvent);
+      const result = await this.getProvidersUseCase.execute(request);
       this.providers.set(result.data);
       this.total.set(result.total);
 
       // Update pagination if comes from event
-      if (pageEvent?.page !== undefined) {
-        this.page.set(pageEvent.page);
+      if (request.page !== undefined) {
+        this.page.set(request.page);
       }
-      if (pageEvent?.rows !== undefined) {
-        this.pageSize.set(pageEvent.rows);
+      if (request.rows !== undefined) {
+        this.pageSize.set(request.rows);
       }
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Failed to load providers.'));
@@ -274,40 +268,29 @@ export class SuppliersStore {
   onSearch(query: string): void {
     this.searchQuery.set(query);
     this.page.set(1); // Reset to first page
-    this.loadProviders();
+    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
   }
 
   onStatusFilterChange(status: ProviderStatus | null): void {
     this.statusFilter.set(status);
     this.page.set(1);
-    this.loadProviders();
+    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
   }
 
   onPageChange(event: PageEvent): void {
-    // PrimeNG pagination emits `first` (offset 0-based) and `rows`, and optionally `page`.
-    // Backend only needs page and page_size, not first.
+    // PrimeNG emits `first` and `rows`, and optionally `page` (0-based).
+    // Normalize values so store state remains 1-based and backend payload is consistent.
     const rows = event.rows ?? this.pageSize();
-    let page: number;
-    
-    if (event.page !== undefined) {
-      // Use page directly if provided (1-based)
-      page = event.page;
-    } else {
-      // Calculate from first offset (convert 0-based to 1-based)
-      page = Math.floor((event.first ?? 0) / rows) + 1;
-    }
-    
-    // Create PageEvent with only parameters backend needs
-    const updatedPageEvent: PageEvent = {
-      page,
-      rows
-    };
-    
+    const pageIndex = event.page ?? Math.floor((event.first ?? 0) / rows);
+    const first = event.first ?? pageIndex * rows;
+    const page = pageIndex + 1;
+
+    // Keep store page in 1-based format.
     this.page.set(page);
     this.pageSize.set(rows);
     
-    // Load data from server with new pagination
-    this.loadProviders(updatedPageEvent);
+    // Load server data using normalized pagination values.
+    this.loadProviders({ ...event, page, first, rows });
   }
 
   // ── Utilities ───────────────────────────────────────────────────────────
@@ -319,6 +302,6 @@ export class SuppliersStore {
     this.searchQuery.set('');
     this.statusFilter.set(null);
     this.page.set(1);
-    this.loadProviders();
+    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
   }
 }
