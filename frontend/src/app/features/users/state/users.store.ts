@@ -14,6 +14,7 @@ import { CreateUserUseCase } from '@domain/usecases/user/create-user.usecase';
 import { UpdateUserUseCase } from '@domain/usecases/user/update-user.usecase';
 import { ActivateUserUseCase } from '@domain/usecases/user/activate-user.usecase';
 import { DeactivateUserUseCase } from '@domain/usecases/user/deactivate-user.usecase';
+import { DeleteUserUseCase } from '@domain/usecases/user/delete-user.usecase';
 import { GetDepartmentsForUsersUseCase } from '@domain/usecases/departments/get-departments-for-users.usecase';
 import {
   UserAlreadyActiveError,
@@ -45,6 +46,7 @@ export class UsersStore {
   private readonly updateUserUseCase = inject(UpdateUserUseCase);
   private readonly activateUserUseCase = inject(ActivateUserUseCase);
   private readonly deactivateUserUseCase = inject(DeactivateUserUseCase);
+  private readonly deleteUserUseCase = inject(DeleteUserUseCase);
 
   readonly users = signal<User[]>([]);
   readonly total = signal(0);
@@ -62,6 +64,8 @@ export class UsersStore {
   readonly dialogError = signal<string | null>(null);
   readonly confirmDialogVisible = signal(false);
   readonly userToToggle = signal<User | null>(null);
+  readonly deleteDialogVisible = signal(false);
+  readonly userToDelete = signal<User | null>(null);
 
   readonly canEdit = this.authService.isAdmin;
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
@@ -192,6 +196,17 @@ export class UsersStore {
     this.confirmDialogVisible.set(false);
   }
 
+  requestDeleteUser(user: User): void {
+    this.error.set(null);
+    this.userToDelete.set(user);
+    this.deleteDialogVisible.set(true);
+  }
+
+  cancelDeleteUser(): void {
+    this.userToDelete.set(null);
+    this.deleteDialogVisible.set(false);
+  }
+
   saveUser(payload: CreateUserPayload | UpdateUserPayload): void {
     this.loading.set(true);
     this.dialogError.set(null);
@@ -252,6 +267,31 @@ export class UsersStore {
                 : 'No se pudo activar el usuario.',
             ),
           );
+          return EMPTY;
+        }),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe();
+  }
+
+  confirmDeleteUser(): void {
+    const user = this.userToDelete();
+    if (!user) return;
+
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.deleteUserUseCase
+      .execute(user.id)
+      .pipe(
+        take(1),
+        tap(() => {
+          this.deleteDialogVisible.set(false);
+          this.userToDelete.set(null);
+          this.loadUsers();
+        }),
+        catchError((err) => {
+          this.error.set(this.resolveErrorMessage(err, 'No se pudo eliminar el usuario.'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),

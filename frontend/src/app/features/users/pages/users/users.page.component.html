@@ -94,6 +94,12 @@
                 size="sm"
                 (clicked)="store.requestToggleStatus(user)"
               />
+              <ui-button
+                icon="pi pi-trash"
+                variant="destructive"
+                size="sm"
+                (clicked)="store.requestDeleteUser(user)"
+              />
             </div>
           </td>
         }
@@ -133,6 +139,26 @@
         Esta accion reactiva el acceso de
         <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>.
       }
+    </p>
+  }
+</ui-dialog>
+
+<ui-dialog
+  [(visible)]="store.deleteDialogVisible"
+  header="Eliminar usuario"
+  variant="warning"
+  size="sm"
+  confirmLabel="Eliminar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmDeleteUser()"
+  (cancelled)="store.cancelDeleteUser()"
+>
+  @if (store.userToDelete(); as user) {
+    <p class="warning-text">
+      Esta accion eliminara
+      <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>.
+      Si tiene registros asociados, el backend conservara la trazabilidad y anonimizara sus datos.
     </p>
   }
 </ui-dialog>

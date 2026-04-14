@@ -57,6 +57,7 @@ class MockUserRepository implements UserRepository {
   updateUser = vi.fn<(id: number, payload: UpdateUserPayload) => Observable<User>>();
   deactivateUser = vi.fn<(id: number) => Observable<void>>();
   activateUser = vi.fn<(id: number) => Observable<void>>();
+  deleteUser = vi.fn<(id: number) => Observable<void>>();
   getDepartments = vi.fn<() => Observable<Department[]>>();
 }
 
@@ -229,6 +230,19 @@ describe('UsersStore', () => {
     expect(refreshSpy).toHaveBeenCalledOnce();
     expect(store.confirmDialogVisible()).toBe(false);
     expect(store.userToToggle()).toBeNull();
+  });
+
+  it('deletes a user and refreshes the list', async () => {
+    store.requestDeleteUser(USER_A);
+    repo.deleteUser.mockReturnValueOnce(of(void 0));
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+
+    await store.confirmDeleteUser();
+
+    expect(repo.deleteUser).toHaveBeenCalledWith(USER_A.id);
+    expect(refreshSpy).toHaveBeenCalledOnce();
+    expect(store.deleteDialogVisible()).toBe(false);
+    expect(store.userToDelete()).toBeNull();
   });
 
   it('search resets page and triggers load', () => {
