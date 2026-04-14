@@ -1,7 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { TablePageEvent } from 'primeng/table';
-import { StockDistributionItem } from '@domain/models/stock-distribution.model';
+import { Product } from '@domain/models/product.model';
 import {
+  AdjustStockResult,
+  StockDistributionItem,
+} from '@domain/models/stock-distribution.model';
+import {
+  InvalidQuantityError,
+  ProductNotActiveError,
+  ProductNotFoundError,
+  ReasonTooLongError,
   StockDistributionApiError,
   StockDistributionValidationError,
   WarehouseNotFoundError as StockWarehouseNotFoundError,
@@ -12,8 +20,18 @@ import {
   WarehouseNotFoundError,
   WarehouseValidationError,
 } from '@domain/models/warehouse-errors';
+import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
+import { AdjustStockUseCase } from '@domain/usecases/stock-distribution/adjust-stock.usecase';
 import { GetStockDistributionUseCase } from '@domain/usecases/stock-distribution/get-stock-distribution.usecase';
 import { GetWarehouseByIdUseCase } from '@domain/usecases/warehouse/get-warehouse-by-id.usecase';
+
+export type StockAdjustmentMode = 'existing' | 'initial';
+
+export interface ProductStockOption {
+  productId: number;
+  label: string;
+  product: Product;
+}
 
 @Injectable()
 export class WarehouseDetailStore {
@@ -40,6 +58,8 @@ export class WarehouseDetailStore {
 
   private readonly getWarehouseByIdUseCase = inject(GetWarehouseByIdUseCase);
   private readonly getStockDistributionUseCase = inject(GetStockDistributionUseCase);
+  private readonly adjustStockUseCase = inject(AdjustStockUseCase);
+  private readonly getProductsUseCase = inject(GetProductsUseCase);
 
   readonly warehouseId = signal<number | null>(null);
   readonly warehouse = signal<Warehouse | null>(null);
@@ -48,16 +68,35 @@ export class WarehouseDetailStore {
   readonly page = signal(1);
   readonly pageSize = signal(20);
   readonly productNameFilter = signal('');
+  readonly productOptions = signal<ProductStockOption[]>([]);
+  readonly productSearchQuery = signal('');
+  readonly selectedStockItem = signal<StockDistributionItem | null>(null);
+  readonly selectedProduct = signal<Product | null>(null);
+  readonly adjustMode = signal<StockAdjustmentMode>('existing');
   readonly loadingWarehouse = signal(false);
   readonly loadingStock = signal(false);
+  readonly productsLoading = signal(false);
+  readonly adjustingStock = signal(false);
   readonly error = signal<string | null>(null);
   readonly stockError = signal<string | null>(null);
+  readonly adjustDialogError = signal<string | null>(null);
+  readonly adjustDialogVisible = signal(false);
 
   readonly availableStockItems = computed(() =>
     this.stockItems().filter((item) => item.availableStock > 0),
   );
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
+
+  readonly selectedProductLabel = computed(() => {
+    const item = this.selectedStockItem();
+    if (item) {
+      return `${item.productCode} - ${item.productName}`;
+    }
+
+    const product = this.selectedProduct();
+    return product ? `${product.code} - ${product.name}` : '';
+  });
 
   init(warehouseId: number): void {
     this.warehouseId.set(warehouseId);
@@ -126,6 +165,134 @@ export class WarehouseDetailStore {
     this.loadStock();
   }
 
+  openAdjustExistingDialog(item: StockDistributionItem): void {
+    this.adjustMode.set('existing');
+    this.selectedStockItem.set(item);
+    this.selectedProduct.set(null);
+    this.adjustDialogError.set(null);
+    this.adjustDialogVisible.set(true);
+  }
+
+  openInitialStockDialog(): void {
+    this.adjustMode.set('initial');
+    this.selectedStockItem.set(null);
+    this.selectedProduct.set(null);
+    this.productSearchQuery.set('');
+    this.productOptions.set([]);
+    this.adjustDialogError.set(null);
+    this.adjustDialogVisible.set(true);
+    this.searchProducts('');
+  }
+
+  closeAdjustDialog(): void {
+    this.adjustDialogVisible.set(false);
+    this.adjustDialogError.set(null);
+    this.selectedStockItem.set(null);
+    this.selectedProduct.set(null);
+  }
+
+  searchProducts(query: string): void {
+    this.productSearchQuery.set(query.trim());
+    this.productsLoading.set(true);
+
+    this.getProductsUseCase.execute({
+      page: 1,
+      pageSize: 20,
+      search: this.productSearchQuery() || undefined,
+      active: true,
+    }).subscribe({
+      next: (result) => {
+        this.productOptions.set(
+          result.data.map((product) => ({
+            productId: product.productId,
+            label: `${product.code} - ${product.name}`,
+            product,
+          })),
+        );
+        this.productsLoading.set(false);
+      },
+      error: () => {
+        this.adjustDialogError.set('No se pudieron cargar los productos.');
+        this.productsLoading.set(false);
+      },
+    });
+  }
+
+  selectProduct(productId: number | null): void {
+    const option = this.productOptions().find((item) => item.productId === productId);
+    this.selectedProduct.set(option?.product ?? null);
+  }
+
+  confirmAdjustStock(newQuantity: number, reason?: string): void {
+    const warehouseId = this.warehouseId();
+    const productId = this.resolveSelectedProductId();
+
+    if (!warehouseId || !productId) {
+      this.adjustDialogError.set('Selecciona un producto para ajustar el stock.');
+      return;
+    }
+
+    this.adjustingStock.set(true);
+    this.adjustDialogError.set(null);
+
+    this.adjustStockUseCase.execute({
+      warehouseId,
+      productId,
+      newQuantity,
+      reason,
+    }).subscribe({
+      next: (result) => this.handleAdjustStockSuccess(result),
+      error: (err) => {
+        this.adjustDialogError.set(this.resolveStockErrorMessage(err, 'No se pudo ajustar el stock.'));
+        this.adjustingStock.set(false);
+      },
+    });
+  }
+
+  private resolveSelectedProductId(): number | null {
+    if (this.adjustMode() === 'existing') {
+      return this.selectedStockItem()?.productId ?? null;
+    }
+
+    return this.selectedProduct()?.productId ?? null;
+  }
+
+  private handleAdjustStockSuccess(result: AdjustStockResult): void {
+    if (this.adjustMode() === 'existing') {
+      this.stockItems.update((items) =>
+        items.map((item) => {
+          if (item.productId !== result.productId) {
+            return item;
+          }
+
+          return {
+            ...item,
+            stock: result.newQuantity,
+            availableStock: result.newQuantity - item.reservedStock,
+          };
+        }),
+      );
+
+      this.warehouse.update((warehouse) =>
+        warehouse
+          ? {
+              ...warehouse,
+              totalStock: warehouse.totalStock + result.difference,
+            }
+          : warehouse,
+      );
+
+      this.adjustingStock.set(false);
+      this.closeAdjustDialog();
+      return;
+    }
+
+    this.adjustingStock.set(false);
+    this.closeAdjustDialog();
+    this.loadWarehouse();
+    this.loadStock();
+  }
+
   private resolveWarehouseErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof WarehouseValidationError) {
       return this.translateWarehouseValidationError(err, 'Revisa los datos enviados.');
@@ -147,8 +314,24 @@ export class WarehouseDetailStore {
       return this.translateStockValidationError(err, 'Revisa los datos enviados.');
     }
 
+    if (err instanceof InvalidQuantityError) {
+      return 'La cantidad debe ser mayor o igual que 0.';
+    }
+
+    if (err instanceof ReasonTooLongError) {
+      return 'El motivo no puede superar 300 caracteres.';
+    }
+
     if (err instanceof StockWarehouseNotFoundError) {
       return 'El almacen seleccionado ya no existe.';
+    }
+
+    if (err instanceof ProductNotFoundError) {
+      return 'El producto seleccionado ya no existe.';
+    }
+
+    if (err instanceof ProductNotActiveError) {
+      return 'El producto seleccionado no esta activo.';
     }
 
     if (err instanceof StockDistributionApiError) {

@@ -9,6 +9,7 @@ import {
   InputComponent,
   TableComponent,
 } from '@shared/ui';
+import { StockAdjustmentDialogComponent } from '@features/warehouses/components/stock-adjustment-dialog/stock-adjustment-dialog.component';
 import { WarehouseDetailStore } from '@features/warehouses/state/warehouse-detail.store';
 
 @Component({
@@ -23,6 +24,7 @@ import { WarehouseDetailStore } from '@features/warehouses/state/warehouse-detai
     CardComponent,
     InputComponent,
     TableComponent,
+    StockAdjustmentDialogComponent,
     Tabs,
     TabList,
     Tab,
