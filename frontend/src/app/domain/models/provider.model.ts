@@ -40,3 +40,20 @@ export interface UpdateProviderRequest {
   postalCode?: string;
   isActive?: boolean;
 }
+
+export interface ProviderImportError {
+  row: number;
+  reason: string;
+}
+
+export interface ProviderImportExecutionResult {
+  success: boolean;
+  importedCount: number;
+  message: string;
+  errors?: ProviderImportError[];
+}
+
+export interface ProviderImportTemplate {
+  filename: string;
+  data: ArrayBuffer;
+}

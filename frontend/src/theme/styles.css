@@ -63,8 +63,24 @@
   color: var(--p-red-500);
 }
 
+@utility bg-danger-subtle {
+  background-color: color-mix(in srgb, var(--p-red-500) 10%, transparent);
+}
+
+@utility border-danger-subtle {
+  border-color: color-mix(in srgb, var(--p-red-500) 25%, transparent);
+}
+
 @utility text-success {
   color: var(--p-green-600);
+}
+
+@utility bg-success-subtle {
+  background-color: color-mix(in srgb, var(--p-green-500) 12%, transparent);
+}
+
+@utility border-success-subtle {
+  border-color: color-mix(in srgb, var(--p-green-500) 25%, transparent);
 }
 
 @utility text-success-icon {
@@ -75,8 +91,24 @@
   color: var(--p-amber-500, #f59e0b);
 }
 
+@utility bg-warning-subtle {
+  background-color: color-mix(in srgb, var(--p-amber-500, #f59e0b) 12%, transparent);
+}
+
+@utility border-warning-subtle {
+  border-color: color-mix(in srgb, var(--p-amber-500, #f59e0b) 25%, transparent);
+}
+
 @utility text-info {
   color: var(--p-sky-600, #0284c7);
+}
+
+@utility bg-info-subtle {
+  background-color: color-mix(in srgb, var(--p-sky-600, #0284c7) 10%, transparent);
+}
+
+@utility border-info-subtle {
+  border-color: color-mix(in srgb, var(--p-sky-600, #0284c7) 25%, transparent);
 }
 
 @utility text-subtitle-base {

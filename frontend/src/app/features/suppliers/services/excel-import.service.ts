@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
-import { environment } from 'environments/environment';
+import { DownloadProviderTemplateUseCase } from '@domain/usecases/supplier/download-provider-template.usecase';
+import { ImportProvidersUseCase } from '@domain/usecases/supplier/import-providers.usecase';
 
 export interface ExcelImportResult {
   success: boolean;
@@ -35,35 +34,17 @@ export interface ExcelTemplate {
   data: ArrayBuffer;
 }
 
-interface SupplierImportApiResponse {
-  total: number;
-  created: number;
-  errors: number;
-  error_detail: { row: number; reason: string }[];
-}
-
 @Injectable({
   providedIn: 'root'
 })
 export class ExcelImportService {
-  private readonly http = inject(HttpClient);
+  private readonly downloadProviderTemplateUseCase = inject(DownloadProviderTemplateUseCase);
+  private readonly importProvidersUseCase = inject(ImportProvidersUseCase);
 
   // ── Download Excel template ─────────────────────────────────────────────
   async downloadTemplate(): Promise<ExcelTemplate> {
     try {
-      const response = await firstValueFrom(
-        this.http.get(`${environment.apiUrl}/api/v1/suppliers/template`, {
-          responseType: 'blob'
-        })
-      );
-      
-      const filename = 'plantilla_proveedores.xlsx';
-      const data = await response.arrayBuffer();
-      
-      return {
-        filename,
-        data
-      };
+      return await this.downloadProviderTemplateUseCase.execute();
     } catch {
       // Fallback to a locally generated template if the endpoint fails
       const templateData = this.generateTemplateData();
@@ -71,7 +52,7 @@ export class ExcelImportService {
       
       return {
         filename,
-        data: templateData
+        data: templateData,
       };
     }
   }
@@ -287,40 +268,26 @@ export class ExcelImportService {
     errors?: ImportError[];
   }> {
     try {
-      // Create FormData for multipart/form-data
-      const formData = new FormData();
-      formData.append('file', file);
+      const backendResult = await this.importProvidersUseCase.execute(file);
 
-      // Call the real backend endpoint
-      const response = await firstValueFrom(
-        this.http.post<SupplierImportApiResponse>(`${environment.apiUrl}/api/v1/suppliers/import`, formData)
-      );
-
-      // Map backend response to our format
-      const backendResult = response;
-
-      // Convert backend errors to frontend format
-      const errors: ImportError[] = backendResult.error_detail.map(error => ({
+      const errors: ImportError[] = (backendResult.errors ?? []).map((error) => ({
         row: error.row,
         field: 'general', // Backend does not specify the field
         value: '',
-        message: error.reason
+        message: error.reason,
       }));
 
       return {
-        success: backendResult.errors === 0,
-        importedCount: backendResult.created,
-        message: backendResult.errors === 0 
-          ? `Se han importado ${backendResult.created} proveedores correctamente`
-          : `Se encontraron ${backendResult.errors} errores durante la importación`,
-        errors: backendResult.errors > 0 ? errors : undefined
+        success: backendResult.success,
+        importedCount: backendResult.importedCount,
+        message: backendResult.message,
+        errors: errors.length > 0 ? errors : undefined,
       };
-    } catch (error) {
-      console.error('Error importing providers:', error);
+    } catch (error: unknown) {
       return {
         success: false,
         importedCount: 0,
-        message: error instanceof Error ? error.message : 'Error desconocido durante la importación'
+        message: error instanceof Error ? error.message : 'Error desconocido durante la importación',
       };
     }
   }

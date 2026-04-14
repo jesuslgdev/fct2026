@@ -226,7 +226,8 @@ export class ImportDialogComponent {
     const result = this.importResult();
     if (!result) return '';
 
-    return `Se han importado ${result.validRecords} proveedores correctamente`;
+    const importedCount = result.importedProviders?.length ?? result.validRecords;
+    return `Se han importado ${importedCount} proveedores correctamente`;
   }
 
   getCurrentDate(): string {
@@ -239,8 +240,7 @@ export class ImportDialogComponent {
   }
 
   canImport(): boolean {
-    // Now we can import directly if we have a valid file
-    return this.selectedFile() !== null && !this.loading();
+    return this.selectedFile() !== null && this.importResult()?.success === true && !this.loading();
   }
 
   getStepTitle(): string {

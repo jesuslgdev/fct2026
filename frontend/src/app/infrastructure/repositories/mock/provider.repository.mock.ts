@@ -4,6 +4,8 @@ import {
   Provider,
   CreateProviderRequest,
   UpdateProviderRequest,
+  ProviderImportExecutionResult,
+  ProviderImportTemplate,
 } from '@domain/models/provider.model';
 import { ProviderProduct } from '@domain/models/provider-product.model';
 import { PageEvent } from '@domain/models/page-event.model';
@@ -475,6 +477,47 @@ export class MockProviderRepository implements ProviderRepository {
     if (!provider) throw new Error(`Provider with id "${providerId}" not found`);
     
     return [{ ...provider, products }];
+  }
+
+  async downloadImportTemplate(): Promise<ProviderImportTemplate> {
+    const headers = [
+      'Nombre',
+      'CIF',
+      'Dirección',
+      'Ciudad',
+      'Provincia',
+      'Código postal',
+      'Teléfono',
+      'Email',
+    ];
+    const sample = [
+      'Empresa Ejemplo SL',
+      'B12345678',
+      'Calle Principal 123',
+      'Madrid',
+      'Madrid',
+      '28001',
+      '912345678',
+      'contacto@empresa.com',
+    ];
+
+    const csv = `${headers.join(',')}\n${sample.join(',')}`;
+    return {
+      filename: 'plantilla_proveedores.xlsx',
+      data: new TextEncoder().encode(csv).buffer,
+    };
+  }
+
+  async importProviders(file: File): Promise<ProviderImportExecutionResult> {
+    const content = await file.text();
+    const rows = content.split('\n').filter((line) => line.trim().length > 0);
+    const importedCount = Math.max(0, rows.length - 1);
+
+    return {
+      success: true,
+      importedCount,
+      message: `Se han importado ${importedCount} proveedores correctamente`,
+    };
   }
 }
 

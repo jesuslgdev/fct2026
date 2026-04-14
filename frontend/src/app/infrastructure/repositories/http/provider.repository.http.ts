@@ -6,6 +6,8 @@ import {
   Provider,
   CreateProviderRequest,
   UpdateProviderRequest,
+  ProviderImportExecutionResult,
+  ProviderImportTemplate,
 } from '@domain/models/provider.model';
 import { PageEvent } from '@domain/models/page-event.model';
 import {
@@ -18,6 +20,13 @@ import { ProviderMapper } from '@infrastructure/mappers/provider.mapper';
 import { environment } from 'environments/environment';
 
 const BASE_URL = `${environment.apiUrl}/api/v1/suppliers`;
+
+interface ImportProvidersApiResponse {
+  total: number;
+  created: number;
+  errors: number;
+  error_detail: { row: number; reason: string }[];
+}
 
 @Injectable()
 export class HttpProviderRepository implements ProviderRepository {
@@ -179,6 +188,46 @@ export class HttpProviderRepository implements ProviderRepository {
       } catch {
         return [providerFromDetail];
       }
+    });
+  }
+
+  async downloadImportTemplate(): Promise<ProviderImportTemplate> {
+    return this.withErrorMapping(async () => {
+      const response = await firstValueFrom(
+        this.http.get(`${BASE_URL}/template`, {
+          responseType: 'blob',
+        }),
+      );
+
+      return {
+        filename: 'plantilla_proveedores.xlsx',
+        data: await response.arrayBuffer(),
+      };
+    });
+  }
+
+  async importProviders(file: File): Promise<ProviderImportExecutionResult> {
+    return this.withErrorMapping(async () => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await firstValueFrom(
+        this.http.post<ImportProvidersApiResponse>(`${BASE_URL}/import`, formData),
+      );
+
+      const errors = (response.error_detail ?? []).map((error) => ({
+        row: error.row,
+        reason: error.reason,
+      }));
+
+      return {
+        success: response.errors === 0,
+        importedCount: response.created,
+        message: response.errors === 0
+          ? `Se han importado ${response.created} proveedores correctamente`
+          : `Se encontraron ${response.errors} errores durante la importación`,
+        errors: errors.length > 0 ? errors : undefined,
+      };
     });
   }
 }
