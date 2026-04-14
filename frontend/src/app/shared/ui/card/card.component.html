@@ -4,7 +4,7 @@
   [style]="style()"
   [styleClass]="styleClass()"
 >
-  <!-- Plantilla header personalizada -->
+  <!-- Custom header template -->
   @if (headerTemplate()) {
     <ng-template pTemplate="header">
       <ng-container
@@ -14,7 +14,7 @@
     </ng-template>
   }
 
-  <!-- Plantilla title personalizada -->
+  <!-- Custom title template -->
   @if (titleTemplate()) {
     <ng-template pTemplate="title">
       <ng-container
@@ -24,7 +24,7 @@
     </ng-template>
   }
 
-  <!-- Plantilla subtitle personalizada -->
+  <!-- Custom subtitle template -->
   @if (subtitleTemplate()) {
     <ng-template pTemplate="subtitle">
       <ng-container
@@ -34,10 +34,10 @@
     </ng-template>
   }
 
-  <!-- Contenido principal proyectado directamente -->
+  <!-- Main projected content -->
   <ng-content></ng-content>
 
-  <!-- Plantilla footer personalizada -->
+  <!-- Custom footer template -->
   @if (footerTemplate()) {
     <ng-template pTemplate="footer">
       <ng-container

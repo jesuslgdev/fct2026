@@ -19,6 +19,8 @@ import { DepartmentRepository } from '@domain/repositories/department.repository
 import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
+import { HttpProviderRepository } from '@infrastructure/repositories/http/provider.repository.http';
+import { ProviderRepository } from '@domain/repositories/provider.repository';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
 import { HttpProductRepository } from '@infrastructure/repositories/http/product.repository.http';
@@ -58,6 +60,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ProductRepository, useClass: HttpProductRepository },
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
     { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
+    { provide: ProviderRepository, useClass: HttpProviderRepository },
     providePrimeNG({
       ripple: true,
       theme: {
