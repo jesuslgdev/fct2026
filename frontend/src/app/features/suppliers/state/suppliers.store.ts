@@ -150,9 +150,7 @@ export class SuppliersStore {
   async loadProviderProducts(providerId: string): Promise<void> {
     try {
       const result = await this.getProviderProductsUseCase.execute(providerId);
-      if (result.length > 0 && result[0].products) {
-        this.providerProducts.set(result[0].products);
-      }
+      this.providerProducts.set(result);
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Failed to load provider products.'));
     }

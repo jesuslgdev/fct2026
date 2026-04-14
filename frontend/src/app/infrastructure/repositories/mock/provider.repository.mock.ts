@@ -468,15 +468,11 @@ export class MockProviderRepository implements ProviderRepository {
     return { ...deactivated };
   }
 
-  async getProviderProducts(providerId: string): Promise<Provider[]> {
+  async getProviderProducts(providerId: string): Promise<ProviderProduct[]> {
     // TODO: replace with ProductRepository when Products feature becomes available
     const products = this.providerProducts.filter((pp) => pp.providerId === providerId);
-    
-    // For now, return the provider with products attached
-    const provider = this.providers.find((p) => p.id === providerId);
-    if (!provider) throw new Error(`Provider with id "${providerId}" not found`);
-    
-    return [{ ...provider, products }];
+
+    return products.map((product) => ({ ...product }));
   }
 
   async downloadImportTemplate(): Promise<ProviderImportTemplate> {

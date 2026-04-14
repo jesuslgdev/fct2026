@@ -7,6 +7,7 @@ import {
   ProviderImportExecutionResult,
   ProviderImportTemplate,
 } from '../../models/provider.model';
+import { ProviderProduct } from '../../models/provider-product.model';
 import { PageEvent } from '../../models/page-event.model';
 import { ProviderStatus } from '../../enums/provider-status.enum';
 import { 
@@ -38,6 +39,16 @@ const MOCK_PAGE_EVENT: PageEvent = {
   pageCount: 5
 };
 
+const MOCK_PROVIDER_PRODUCT: ProviderProduct = {
+  id: 'pp-1',
+  productId: 'product-1',
+  productName: 'Test Product',
+  providerId: '1',
+  specificPrice: 12.5,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 const MOCK_TEMPLATE: ProviderImportTemplate = {
   filename: 'plantilla_proveedores.xlsx',
   data: new ArrayBuffer(8),
@@ -59,7 +70,7 @@ class MockProviderRepository implements ProviderRepository {
   updateProvider = vi.fn().mockResolvedValue(MOCK_PROVIDER);
   activateProvider = vi.fn().mockResolvedValue(MOCK_PROVIDER);
   deactivateProvider = vi.fn().mockResolvedValue(MOCK_PROVIDER);
-  getProviderProducts = vi.fn().mockResolvedValue([MOCK_PROVIDER]);
+  getProviderProducts = vi.fn().mockResolvedValue([MOCK_PROVIDER_PRODUCT]);
   downloadImportTemplate = vi.fn().mockResolvedValue(MOCK_TEMPLATE);
   importProviders = vi.fn().mockResolvedValue(MOCK_IMPORT_RESULT);
 }
@@ -160,7 +171,7 @@ describe('Provider Use Cases', () => {
       
       expect(mockRepo.getProviderProducts).toHaveBeenCalledWith('1');
       expect(mockRepo.getProviderProducts).toHaveBeenCalledOnce();
-      expect(result).toEqual([MOCK_PROVIDER]);
+      expect(result).toEqual([MOCK_PROVIDER_PRODUCT]);
     });
   });
 

@@ -6,6 +6,7 @@ import {
   ProviderImportExecutionResult,
   ProviderImportTemplate,
 } from '../models/provider.model';
+import { ProviderProduct } from '../models/provider-product.model';
 
 export abstract class ProviderRepository {
   abstract getProviders(pageEvent?: PageEvent): Promise<{
@@ -17,7 +18,7 @@ export abstract class ProviderRepository {
   abstract updateProvider(id: string, provider: UpdateProviderRequest): Promise<Provider>;
   abstract activateProvider(id: string): Promise<Provider>;
   abstract deactivateProvider(id: string): Promise<Provider>;
-  abstract getProviderProducts(providerId: string): Promise<Provider[]>;
+  abstract getProviderProducts(providerId: string): Promise<ProviderProduct[]>;
   abstract downloadImportTemplate(): Promise<ProviderImportTemplate>;
   abstract importProviders(file: File): Promise<ProviderImportExecutionResult>;
 }

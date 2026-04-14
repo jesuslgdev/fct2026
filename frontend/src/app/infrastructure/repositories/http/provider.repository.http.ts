@@ -9,6 +9,7 @@ import {
   ProviderImportExecutionResult,
   ProviderImportTemplate,
 } from '@domain/models/provider.model';
+import { ProviderProduct } from '@domain/models/provider-product.model';
 import { PageEvent } from '@domain/models/page-event.model';
 import {
   ProviderDetailDto,
@@ -161,7 +162,7 @@ export class HttpProviderRepository implements ProviderRepository {
     });
   }
 
-  async getProviderProducts(providerId: string): Promise<Provider[]> {
+  async getProviderProducts(providerId: string): Promise<ProviderProduct[]> {
     return this.withErrorMapping(async () => {
       // The detail endpoint may already include products depending on backend version.
       const detailDto = await firstValueFrom(
@@ -170,7 +171,7 @@ export class HttpProviderRepository implements ProviderRepository {
 
       const providerFromDetail = ProviderMapper.fromDetailDto(detailDto);
       if ((providerFromDetail.products?.length ?? 0) > 0) {
-        return [providerFromDetail];
+        return providerFromDetail.products ?? [];
       }
 
       // Backward compatibility: older backend versions expose products in /products.
@@ -179,14 +180,9 @@ export class HttpProviderRepository implements ProviderRepository {
           this.http.get<ProviderProductsDto>(`${BASE_URL}/${providerId}/products`),
         );
 
-        return [
-          {
-            ...providerFromDetail,
-            products: ProviderMapper.fromProductsDto(productsDto),
-          },
-        ];
+        return ProviderMapper.fromProductsDto(productsDto);
       } catch {
-        return [providerFromDetail];
+        return providerFromDetail.products ?? [];
       }
     });
   }
