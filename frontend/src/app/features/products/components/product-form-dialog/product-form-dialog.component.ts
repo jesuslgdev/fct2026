@@ -22,7 +22,7 @@ export class ProductFormDialogComponent {
     name: ['', [Validators.required, Validators.maxLength(120)]],
     description: ['', [Validators.required, Validators.maxLength(500)]],
     categoryId: [null as number | null, Validators.required],
-    price: [0, [Validators.required, Validators.min(0)]],
+    price: [0, [Validators.required, Validators.min(0.01)]],
     stock: [0, [Validators.required, Validators.min(0)]],
     minStock: [0, [Validators.required, Validators.min(0)]],
   });

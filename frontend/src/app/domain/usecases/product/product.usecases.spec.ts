@@ -50,7 +50,7 @@ const SUPPLIER_MOCK: ProductSupplier = {
 };
 
 const STOCK_WAREHOUSE_MOCK: ProductStockByWarehouse = {
-  warehouseId: '1',
+  warehouseId: 1,
   warehouseName: 'Almacén central',
   currentStock: 12,
   minStock: 5,

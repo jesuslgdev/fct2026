@@ -8,6 +8,8 @@ import {
   ProductCategory,
   ProductSupplier,
   ProductStockByWarehouse,
+  ProductQueryParams,
+  PagedResult,
 } from '@domain/models/product.model';
 
 const INITIAL_MOCK_PRODUCTS: Product[] = [
@@ -35,14 +37,14 @@ const INITIAL_MOCK_PRODUCTS: Product[] = [
 const PRODUCT_STOCK_BY_WAREHOUSE: Record<number, ProductStockByWarehouse[]> = {
   1: [
     {
-      warehouseId: '1',
+      warehouseId: 1,
       warehouseName: 'Almacén Central',
       currentStock: 14,
       minStock: 5,
       status: 'normal',
     },
     {
-      warehouseId: '2',
+      warehouseId: 2,
       warehouseName: 'Almacén Norte',
       currentStock: 3,
       minStock: 5,
@@ -56,7 +58,7 @@ export class MockProductRepository implements ProductRepository {
   private products: Product[] = INITIAL_MOCK_PRODUCTS.map((p) => ({ ...p }));
   private nextId = Math.max(...this.products.map((p) => p.productId)) + 1;
 
-  getProducts(params: { page: number; pageSize: number; search?: string; categoryId?: number; active?: boolean; }): Observable<import("@domain/models/user.model").PagedResult<Product>> {
+  getProducts(params: ProductQueryParams): Observable<PagedResult<Product>> {
     const filtered = this.products.filter((p) => {
       if (params.search) {
         const query = params.search.toLowerCase();

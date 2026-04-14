@@ -115,7 +115,7 @@ describe('ProductsStore', () => {
   };
 
   const mockStockByWarehouse: ProductStockByWarehouse = {
-    warehouseId: '1',
+    warehouseId: 1,
     warehouseName: 'Almacén Central',
     currentStock: 12,
     minStock: 5,

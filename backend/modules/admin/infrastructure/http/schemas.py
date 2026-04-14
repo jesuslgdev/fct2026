@@ -42,9 +42,3 @@ class UpdateUserDTO(BaseModel):
     last_name: str | None = Field(None, min_length=1, max_length=150)
     role: str | None = Field(None, pattern=ROLE_PATTERN)
     department_id: int | None = None
-
-
-class ActivateUserDTO(BaseModel):
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=150)
-    email: str = Field(..., max_length=255)

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { EMPTY, catchError, expand, map, reduce, throwError } from 'rxjs';
+import { EMPTY, catchError, expand, map, of, reduce, throwError } from 'rxjs';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import {
   ProductApiError,
@@ -14,7 +14,6 @@ import {
   CreateProductPayload,
   UpdateProductPayload,
   ProductQueryParams,
-  ProductSupplier,
   ProductStockByWarehouse,
 } from '@domain/models/product.model';
 import {
@@ -44,13 +43,17 @@ type ProductsPageResponse = Partial<ProductsPageDto> & {
 export class HttpProductRepository implements ProductRepository {
   private readonly http = inject(HttpClient);
 
-  private getProductsPage(page: number, pageSize: number) {
-    return this.http.get<ProductsPageResponse>(BASE_URL, {
-      params: {
-        page,
-        page_size: pageSize,
-      },
-    });
+  private getProductsPage(page: number, pageSize: number, search?: string) {
+    const params: Record<string, string | number> = {
+      page,
+      page_size: pageSize,
+    };
+
+    if (search && search.trim().length > 0) {
+      params['search'] = search;
+    }
+
+    return this.http.get<ProductsPageResponse>(BASE_URL, { params });
   }
 
   private normalizePageResponse(response: ProductsPageResponse, fallback: { page: number; pageSize: number; }): {
@@ -198,21 +201,42 @@ export class HttpProductRepository implements ProductRepository {
   }
 
   checkCodeExists(code: string) {
-    return this.http.get<ProductsPageResponse>(BASE_URL, {
-      params: {
-        page: 1,
-        page_size: 100,
-        search: code,
-      },
-    }).pipe(
-      map((response) => {
-        const normalized = this.normalizePageResponse(response, { page: 1, pageSize: 100 });
-        const query = code.trim().toLowerCase();
-        return normalized.items.some((item) => {
-          const itemCode = (item.product_code ?? item.code ?? '').toLowerCase();
-          return itemCode === query;
-        });
+    const trimmedCode = code.trim();
+    if (!trimmedCode) {
+      return of(false);
+    }
+
+    const pageSize = 100;
+    const normalizedCode = trimmedCode.toLowerCase();
+    const toPageState = (response: ProductsPageResponse, fallbackPage: number) => {
+      const normalized = this.normalizePageResponse(response, { page: fallbackPage, pageSize });
+      const found = normalized.items.some((item) => {
+        const itemCode = (item.product_code ?? item.code ?? '').toLowerCase();
+        return itemCode === normalizedCode;
+      });
+      const hasMore = normalized.page * normalized.pageSize < normalized.total;
+
+      return {
+        found,
+        hasMore,
+        page: normalized.page,
+      };
+    };
+
+    return this.getProductsPage(1, pageSize, trimmedCode).pipe(
+      map((response) => toPageState(response, 1)),
+      expand((state) => {
+        if (state.found || !state.hasMore) {
+          return EMPTY;
+        }
+
+        const nextPage = state.page + 1;
+        return this.getProductsPage(nextPage, pageSize, trimmedCode).pipe(
+          map((response) => toPageState(response, nextPage))
+        );
       }),
+      map((state) => state.found),
+      reduce((exists, found) => exists || found, false),
       catchError((err) => throwError(() => this.mapHttpError(err)))
     );
   }

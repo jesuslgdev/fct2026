@@ -67,7 +67,7 @@ export class ProductMapper {
     const minStock = fallbackMinStock;
 
     return {
-      warehouseId: String(dto.warehouse_id),
+      warehouseId: ProductMapper.toNumber(dto.warehouse_id),
       warehouseName: dto.warehouse_name,
       currentStock,
       minStock,

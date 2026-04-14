@@ -10,7 +10,7 @@ async def test_get_client_success(
     client = Client(
         name="Acme Corp",
         tax_id="12345678A",
-        address="Calle Mayor 1",
+        street="Calle Mayor 1",
         city="Madrid",
         province="Madrid",
         postal_code="28001",
@@ -36,7 +36,7 @@ async def test_get_client_detail_shape(
     client = Client(
         name="Detail Corp",
         tax_id="87654321B",
-        address="Gran Vía 10",
+        street="Gran Vía 10",
         city="Madrid",
         province="Madrid",
         postal_code="28013",
@@ -51,8 +51,9 @@ async def test_get_client_detail_shape(
     data = response.json()
     # ClientDetailDTO fields
     assert "address" in data
-    assert "province" in data
-    assert "postal_code" in data
+    assert "street" in data["address"]
+    assert "province" in data["address"]
+    assert "postal_code" in data["address"]
     assert "phone" in data
     assert "email" in data
 

@@ -51,7 +51,7 @@ def _make_supplier(**kwargs) -> Supplier:
         "supplier_id": 1,
         "name": "Proveedor Test S.L.",
         "tax_id": "B12345674",
-        "address": "Calle Mayor 1",
+        "street": "Calle Mayor 1",
         "city": "Madrid",
         "province": "Madrid",
         "postal_code": "28001",
