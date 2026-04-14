@@ -22,6 +22,22 @@ class PurchaseExceptionInfo(AppExceptionInfo):
         400,
     )
     PURCHASE_LINE_NOT_FOUND = (7109, "Purchase line not found", 404)
+    SUPPLIER_NOT_FOUND = (7110, "Supplier not found", 404)
+    PURCHASE_NOT_CANCELLABLE = (
+        7111,
+        "Purchase can only be cancelled when in Pending or Approved status",
+        400,
+    )
+    PURCHASE_NOT_DELETABLE = (
+        7112,
+        "Purchase can only be deleted when in Pending status",
+        400,
+    )
+    PURCHASE_INVALID_TRANSITION = (
+        7113,
+        "This status transition is not allowed",
+        400,
+    )
 
 
 class PurchaseException(AppException):

@@ -48,10 +48,7 @@ class IUserRepository(ABC):
     async def deactivate(self, user_id: int) -> None: ...
 
     @abstractmethod
-    async def activate(
-        self,
-        user_id: int,
-        first_name: str,
-        last_name: str,
-        email: str,
-    ) -> None: ...
+    async def activate(self, user_id: int) -> None: ...
+
+    @abstractmethod
+    async def anonymize(self, user_id: int) -> None: ...

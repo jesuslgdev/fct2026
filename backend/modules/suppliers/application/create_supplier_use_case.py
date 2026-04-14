@@ -9,6 +9,7 @@ from modules.suppliers.domain.interfaces.use_cases.i_create_supplier_use_case im
     ICreateSupplierUseCase,
 )
 from shared.constants import TAX_ID_PATTERN
+from shared.domain.dtos.address import Address
 
 
 class CreateSupplierUseCase(ICreateSupplierUseCase):
@@ -19,10 +20,7 @@ class CreateSupplierUseCase(ICreateSupplierUseCase):
         self,
         name: str,
         tax_id: str,
-        address: str,
-        city: str,
-        province: str,
-        postal_code: str,
+        address_data: Address,
         phone: str,
         email: str,
     ) -> Supplier:
@@ -38,10 +36,7 @@ class CreateSupplierUseCase(ICreateSupplierUseCase):
         return await self._repo.create(
             name=name,
             tax_id=normalized_tax_id,
-            address=address,
-            city=city,
-            province=province,
-            postal_code=postal_code,
+            address_data=address_data,
             phone=phone,
             email=email,
         )

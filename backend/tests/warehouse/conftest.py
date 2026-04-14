@@ -8,8 +8,18 @@ from modules.catalog.domain.entities.category import Category
 from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.warehouse import Warehouse
 from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
+from shared.domain.dtos.address import Address
 from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.database.connection import get_db
+
+
+def _address(street: str) -> Address:
+    return Address(
+        street=street,
+        city="Madrid",
+        province="Madrid",
+        postal_code="28001",
+    )
 
 
 @pytest_asyncio.fixture
@@ -42,7 +52,7 @@ async def sample_product(
 @pytest_asyncio.fixture
 async def warehouse_a(db_session: AsyncSession) -> Warehouse:
     """Create warehouse A."""
-    wh = Warehouse(name="Warehouse A", address="Street 1")
+    wh = Warehouse(name="Warehouse A", address_data=_address("Street 1"))
     db_session.add(wh)
     await db_session.flush()
     return wh
@@ -51,7 +61,7 @@ async def warehouse_a(db_session: AsyncSession) -> Warehouse:
 @pytest_asyncio.fixture
 async def warehouse_b(db_session: AsyncSession) -> Warehouse:
     """Create warehouse B."""
-    wh = Warehouse(name="Warehouse B", address="Street 2")
+    wh = Warehouse(name="Warehouse B", address_data=_address("Street 2"))
     db_session.add(wh)
     await db_session.flush()
     return wh
@@ -153,7 +163,7 @@ async def admin_client(db_session: AsyncSession):
 @pytest_asyncio.fixture
 async def sample_warehouse(db_session: AsyncSession) -> Warehouse:
     """Create a standalone warehouse for management tests."""
-    wh = Warehouse(name="Main Warehouse", address="123 Main St")
+    wh = Warehouse(name="Main Warehouse", address_data=_address("123 Main St"))
     db_session.add(wh)
     await db_session.flush()
     return wh
@@ -165,7 +175,7 @@ async def warehouse_with_stock(
     sample_product: Product,
 ) -> Warehouse:
     """Create a warehouse that has stock (cannot be deleted)."""
-    wh = Warehouse(name="Stocked Warehouse", address="456 Stock Ave")
+    wh = Warehouse(name="Stocked Warehouse", address_data=_address("456 Stock Ave"))
     db_session.add(wh)
     await db_session.flush()
     stock = WarehouseStock(
