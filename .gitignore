@@ -4,11 +4,16 @@ frontend/environments
 .env
 .DS_Store
 
-# Claude Code (asistente IA)
+# AI assistants
 .claude/
+CLAUDE.md
+AGENTS.md
+.agents/
+
+# Node (root)
+package-lock.json
 
 # Node
-package-lock.json
 node_modules/
 frontend/node_modules/
 
@@ -34,3 +39,8 @@ FinalStructure.md
 **/FinalStructure.md
 # /.github/references
 # .github/SKILL.md
+.github/skills/fct2026/SKILL.md
+
+# Agents
+.agents/
+AGENTS.md

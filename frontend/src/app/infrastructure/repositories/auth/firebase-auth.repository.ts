@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
   GoogleAuthProvider,
   getIdToken,
+  onAuthStateChanged,
   signInWithPopup,
   signOut,
 } from 'firebase/auth';
@@ -13,27 +14,19 @@ import { AccessDeniedError } from '@domain/models/auth-errors';
 import { FIREBASE_AUTH } from '@core/auth/firebase-auth.token';
 import { environment } from 'environments/environment';
 import { UserRole } from '@domain/enums/user-role.enum';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 
 interface LoginResponse {
   role: string;
+  department_id: number | null;
   name: string;
-  department_id?: number | null;
+  permissions: string[];
 }
 
 @Injectable()
 export class FirebaseAuthRepository implements AuthRepository {
   private readonly auth = inject(FIREBASE_AUTH);
   private readonly http = inject(HttpClient);
-
-  // Map backend roles to frontend roles
-  private mapBackendRoleToFrontend(backendRole: string): UserRole {
-    switch (backendRole) {
-      case 'Administrator': return UserRole.ADMIN;
-      case 'Manager': return UserRole.PURCHASES_MANAGER;
-      case 'Employee': return UserRole.USER;
-      default: return UserRole.USER; // safe fallback
-    }
-  }
 
   async signInWithGoogle(): Promise<Session> {
     const provider = new GoogleAuthProvider();
@@ -47,6 +40,10 @@ export class FirebaseAuthRepository implements AuthRepository {
           { firebase_id_token: firebaseToken },
         ),
       );
+      const role: UserRole | null = Object.values(UserRole).includes(response.role as UserRole)
+        ? (response.role as UserRole)
+        : null;
+
       return {
         token: firebaseToken,
         user: {
@@ -54,7 +51,9 @@ export class FirebaseAuthRepository implements AuthRepository {
           email: credential.user.email,
           displayName: response.name || credential.user.displayName,
           photoURL: credential.user.photoURL,
-          role: this.mapBackendRoleToFrontend(response.role),
+          role,
+          departmentId: response.department_id,
+          permissions: response.permissions as UserPermission[],
         },
       };
     } catch (err) {
@@ -76,5 +75,43 @@ export class FirebaseAuthRepository implements AuthRepository {
     } finally {
       await signOut(this.auth);
     }
+  }
+
+  restoreSession(): Promise<Session | null> {
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(this.auth, async (user) => {
+        unsubscribe();
+        if (!user) {
+          resolve(null);
+          return;
+        }
+        try {
+          const firebaseToken = await getIdToken(user);
+          const response = await firstValueFrom(
+            this.http.post<LoginResponse>(
+              `${environment.apiUrl}/api/v1/auth/login`,
+              { firebase_id_token: firebaseToken },
+            ),
+          );
+          const role: UserRole | null = Object.values(UserRole).includes(response.role as UserRole)
+            ? (response.role as UserRole)
+            : null;
+          resolve({
+            token: firebaseToken,
+            user: {
+              uid: user.uid,
+              email: user.email,
+              displayName: response.name || user.displayName,
+              photoURL: user.photoURL,
+              role,
+              departmentId: response.department_id,
+              permissions: response.permissions as UserPermission[],
+            },
+          });
+        } catch {
+          resolve(null);
+        }
+      });
+    });
   }
 }

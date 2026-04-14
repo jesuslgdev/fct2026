@@ -43,7 +43,7 @@ const MOCK_AUTH_USER = {
   email: 'test@example.com',
   displayName: 'Test User',
   photoURL: 'https://example.com/photo.jpg',
-  role: UserRole.ADMIN,
+  role: UserRole.Administrator,
 };
 
 describe('SuppliersStore', () => {
@@ -131,12 +131,12 @@ describe('SuppliersStore', () => {
     });
 
     it('should compute canEdit correctly for purchases manager', () => {
-      mockAuthService.user.mockReturnValue({ ...MOCK_AUTH_USER, role: UserRole.PURCHASES_MANAGER });
+      mockAuthService.user.mockReturnValue({ ...MOCK_AUTH_USER, role: UserRole.Manager });
       expect(store.canEdit()).toBe(true);
     });
 
     it('should compute canEdit correctly for regular user', () => {
-      mockAuthService.user.mockReturnValue({ ...MOCK_AUTH_USER, role: UserRole.USER });
+      mockAuthService.user.mockReturnValue({ ...MOCK_AUTH_USER, role: UserRole.Employee });
       expect(store.canEdit()).toBe(false);
     });
 

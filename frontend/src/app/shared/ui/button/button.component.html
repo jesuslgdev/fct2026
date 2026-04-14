@@ -1,17 +1,37 @@
 <!-- Button with all configurable options and event binding -->
-<p-button
-  [label]="label()"
-  [icon]="icon()"
-  [iconPos]="iconPos()"
-  [type]="type()"
-  [disabled]="disabled()"
-  [loading]="loading()"
-  [severity]="options().severity"
-  [outlined]="options().outlined ?? false"
-  [text]="options().text ?? false"
-  [link]="options().link ?? false"
-  [size]="resolvedSize()"
-  [rounded]="rounded()"
-  [styleClass]="styleClass()"
-  (onClick)="clicked.emit($event)"
-/>
+@if (hasCustomContent()) {
+  <p-button
+    [type]="type()"
+    [disabled]="disabled()"
+    [loading]="loading()"
+    [severity]="options().severity"
+    [outlined]="options().outlined ?? false"
+    [text]="options().text ?? false"
+    [link]="options().link ?? false"
+    [size]="resolvedSize()"
+    [rounded]="rounded()"
+    [ariaLabel]="ariaLabel()"
+    [styleClass]="styleClass()"
+    (onClick)="clicked.emit($event)"
+  >
+    <ng-container *ngTemplateOutlet="contentTemplate"></ng-container>
+  </p-button>
+} @else {
+  <p-button
+    [label]="label()"
+    [icon]="icon()"
+    [iconPos]="iconPos()"
+    [type]="type()"
+    [disabled]="disabled()"
+    [loading]="loading()"
+    [severity]="options().severity"
+    [outlined]="options().outlined ?? false"
+    [text]="options().text ?? false"
+    [link]="options().link ?? false"
+    [size]="resolvedSize()"
+    [rounded]="rounded()"
+    [ariaLabel]="ariaLabel()"
+    [styleClass]="styleClass()"
+    (onClick)="clicked.emit($event)"
+  />
+}

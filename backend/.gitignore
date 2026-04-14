@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Entorno virtual
+.venv/
+venv/
+env/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Testing
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Build / distribución
+dist/
+build/
+*.egg-info/
+
+# Ruff
+.ruff_cache/
+
+# Alembic (versiones generadas localmente no deben ignorarse, solo cache)
+alembic/versions/__pycache__/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Claves y certificados
+*.pem
+*.key
+*.p12
+
+# SQLite (bases de datos de test locales)
+*.sqlite
+*.db
+
+# Firebase
+firebase-credentials.json
+*-firebase-adminsdk-*.json
+
+# Local Gemini/Docs/Planning files
+.gemini/
+*.md
+*.docx

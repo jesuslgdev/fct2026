@@ -1,0 +1,15 @@
+# Stage 1: Export dependencies
+FROM python:3.13-slim AS builder
+WORKDIR /app
+RUN pip install poetry poetry-plugin-export
+COPY pyproject.toml poetry.lock ./
+RUN poetry export -f requirements.txt -o requirements.txt --without dev
+
+# Stage 2: Production image
+FROM python:3.13-slim
+WORKDIR /app
+COPY --from=builder /app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+RUN chmod +x entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]

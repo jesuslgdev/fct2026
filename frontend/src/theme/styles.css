@@ -176,7 +176,7 @@
   }
 
   .nav-link.active {
-    background-color: var(--p-primary-50, #E6EEF7);
+    background-color: var(--p-primary-50);
     color: var(--p-primary-color);
     font-weight: 600;
   }
@@ -337,5 +337,12 @@
   .dialog-field-error {
     @apply text-xs text-danger;
   }
+
+  .dialog-error-banner {
+    @apply text-sm font-medium text-danger bg-red-50 border border-red-200 rounded-md px-3 py-2;
+  }
 }
 
+.dialog-error-banner {
+  @apply text-sm font-medium text-danger bg-danger-subtle border border-danger-subtle rounded-md px-3 py-2;
+}

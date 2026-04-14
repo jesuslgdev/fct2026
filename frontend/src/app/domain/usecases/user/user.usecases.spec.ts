@@ -1,0 +1,143 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { UserRepository } from '@domain/repositories/user.repository';
+import { firstValueFrom, Observable, of } from 'rxjs';
+import {
+  User,
+  ActivateUserPayload,
+  CreateUserPayload,
+  UpdateUserPayload,
+  UserQueryParams,
+  PagedResult,
+} from '@domain/models/user.model';
+import { Department } from '@domain/models/department.model';
+import { UserRole } from '@domain/enums/user-role.enum';
+import { GetUsersUseCase } from '@domain/usecases/user/get-users.usecase';
+import { GetUserByIdUseCase } from '@domain/usecases/user/get-user-by-id.usecase';
+import { CreateUserUseCase } from '@domain/usecases/user/create-user.usecase';
+import { UpdateUserUseCase } from '@domain/usecases/user/update-user.usecase';
+import { ActivateUserUseCase } from '@domain/usecases/user/activate-user.usecase';
+import { DeactivateUserUseCase } from '@domain/usecases/user/deactivate-user.usecase';
+
+const USER_MOCK: User = {
+  id: 1,
+  firstName: 'Ana',
+  lastName: 'Garcia',
+  email: 'ana@example.com',
+  role: UserRole.Administrator,
+  departmentId: 1,
+  active: true,
+};
+
+class MockUserRepository implements UserRepository {
+  getUsers = vi.fn<
+    (params: UserQueryParams) => Observable<PagedResult<User>>
+  >();
+  getUserById = vi.fn<(id: number) => Observable<User>>();
+  createUser = vi.fn<(payload: CreateUserPayload) => Observable<User>>();
+  updateUser = vi.fn<(id: number, payload: UpdateUserPayload) => Observable<User>>();
+  deactivateUser = vi.fn<(id: number) => Observable<void>>();
+  activateUser = vi.fn<(id: number, payload: ActivateUserPayload) => Observable<void>>();
+  getDepartments = vi.fn<() => Observable<Department[]>>();
+}
+
+describe('User Use Cases', () => {
+  let repo: MockUserRepository;
+
+  beforeEach(() => {
+    repo = new MockUserRepository();
+    TestBed.configureTestingModule({
+      providers: [
+        GetUsersUseCase,
+        GetUserByIdUseCase,
+        CreateUserUseCase,
+        UpdateUserUseCase,
+        ActivateUserUseCase,
+        DeactivateUserUseCase,
+        { provide: UserRepository, useValue: repo },
+      ],
+    });
+  });
+
+  it('GetUsersUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(GetUsersUseCase);
+    const params: UserQueryParams = { page: 1, pageSize: 20 };
+    const resultMock: PagedResult<User> = {
+      data: [USER_MOCK],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    };
+    repo.getUsers.mockReturnValueOnce(of(resultMock));
+
+    const result = await firstValueFrom(useCase.execute(params));
+
+    expect(repo.getUsers).toHaveBeenCalledOnce();
+    expect(repo.getUsers).toHaveBeenCalledWith(params);
+    expect(result).toEqual(resultMock);
+  });
+
+  it('GetUserByIdUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(GetUserByIdUseCase);
+    repo.getUserById.mockReturnValueOnce(of(USER_MOCK));
+
+    const result = await firstValueFrom(useCase.execute(1));
+
+    expect(repo.getUserById).toHaveBeenCalledWith(1);
+    expect(result).toEqual(USER_MOCK);
+  });
+
+  it('CreateUserUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(CreateUserUseCase);
+    const payload: CreateUserPayload = {
+      firstName: 'Ana',
+      lastName: 'Garcia',
+      email: 'ana@example.com',
+      role: UserRole.Administrator,
+      departmentId: 1,
+    };
+    repo.createUser.mockReturnValueOnce(of(USER_MOCK));
+
+    const result = await firstValueFrom(useCase.execute(payload));
+
+    expect(repo.createUser).toHaveBeenCalledWith(payload);
+    expect(result).toEqual(USER_MOCK);
+  });
+
+  it('UpdateUserUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(UpdateUserUseCase);
+    const payload: UpdateUserPayload = { firstName: 'Ana Maria' };
+    const updated: User = { ...USER_MOCK, firstName: 'Ana Maria' };
+    repo.updateUser.mockReturnValueOnce(of(updated));
+
+    const result = await firstValueFrom(useCase.execute(1, payload));
+
+    expect(repo.updateUser).toHaveBeenCalledWith(1, payload);
+    expect(result).toEqual(updated);
+  });
+
+  it('DeactivateUserUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(DeactivateUserUseCase);
+    repo.deactivateUser.mockReturnValueOnce(of(void 0));
+
+    await firstValueFrom(useCase.execute(1));
+
+    expect(repo.deactivateUser).toHaveBeenCalledWith(1);
+    expect(repo.deactivateUser).toHaveBeenCalledOnce();
+  });
+
+  it('ActivateUserUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(ActivateUserUseCase);
+    const payload: ActivateUserPayload = {
+      firstName: 'Ana',
+      lastName: 'Garcia',
+      email: 'ana@example.com',
+    };
+    repo.activateUser.mockReturnValueOnce(of(void 0));
+
+    await firstValueFrom(useCase.execute(1, payload));
+
+    expect(repo.activateUser).toHaveBeenCalledWith(1, payload);
+    expect(repo.activateUser).toHaveBeenCalledOnce();
+  });
+});

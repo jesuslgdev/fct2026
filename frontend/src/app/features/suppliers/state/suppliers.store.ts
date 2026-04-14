@@ -54,7 +54,7 @@ export class SuppliersStore {
   // ── Computed ───────────────────────────────────────────────────────────
   readonly canEdit = computed(() => {
     const userRole = this.authService.user()?.role;
-    return userRole === UserRole.ADMIN || userRole === UserRole.PURCHASES_MANAGER;
+    return userRole === UserRole.Administrator || userRole === UserRole.Manager;
   });
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
