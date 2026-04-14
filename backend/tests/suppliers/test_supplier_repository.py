@@ -6,13 +6,14 @@ from modules.suppliers.domain.exceptions import SupplierException
 from modules.suppliers.infrastructure.repos.supplier_repository import (
     SupplierRepository,
 )
+from shared.domain.dtos.address import Address
 
 
 def _make_supplier(**kwargs) -> Supplier:
     defaults = {
         "name": "Proveedor Test S.L.",
         "tax_id": "B12345674",
-        "address": "Calle Mayor 1",
+        "street": "Calle Mayor 1",
         "city": "Madrid",
         "province": "Madrid",
         "postal_code": "28001",
@@ -98,10 +99,12 @@ async def test_update_not_found_raises(db_session: AsyncSession):
         await repo.update(
             supplier_id=99999,
             name="X",
-            address=None,
-            city=None,
-            province=None,
-            postal_code=None,
+            address_data=Address(
+                street="Calle Mayor 1",
+                city="Madrid",
+                province="Madrid",
+                postal_code="28001",
+            ),
             phone=None,
             email=None,
         )

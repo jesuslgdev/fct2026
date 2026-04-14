@@ -3,8 +3,6 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.catalog.domain.entities.category import Category
-from modules.catalog.domain.entities.product import Product
 from modules.suppliers.domain.dtos.product_supplier_detail import (
     ProductSupplierDetail,
 )
@@ -17,8 +15,10 @@ from modules.suppliers.domain.exceptions import SupplierException, SupplierExcep
 from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
     ISupplierRepository,
 )
+from shared.domain.dtos.address import Address
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_supplier_reader import ISupplierReader
+from shared.infrastructure.database.read_tables import categories_table, products_table
 
 
 class SupplierRepository(ISupplierRepository, ISupplierReader):
@@ -84,10 +84,7 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         self,
         supplier_id: int,
         name: str | None,
-        address: str | None,
-        city: str | None,
-        province: str | None,
-        postal_code: str | None,
+        address_data: Address | None,
         phone: str | None,
         email: str | None,
     ) -> Supplier:
@@ -96,14 +93,8 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
             raise SupplierException(SupplierExceptionInfo.SUPPLIER_NOT_FOUND)
         if name is not None:
             supplier.name = name
-        if address is not None:
-            supplier.address = address
-        if city is not None:
-            supplier.city = city
-        if province is not None:
-            supplier.province = province
-        if postal_code is not None:
-            supplier.postal_code = postal_code
+        if address_data is not None:
+            supplier.address_data = address_data
         if phone is not None:
             supplier.phone = phone
         if email is not None:
@@ -135,20 +126,17 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         self,
         name: str,
         tax_id: str,
-        address: str,
-        city: str,
-        province: str,
-        postal_code: str,
+        address_data: Address,
         phone: str,
         email: str,
     ) -> Supplier:
         supplier = Supplier(
             name=name,
             tax_id=tax_id,
-            address=address,
-            city=city,
-            province=province,
-            postal_code=postal_code,
+            street=address_data.street,
+            city=address_data.city,
+            province=address_data.province,
+            postal_code=address_data.postal_code,
             phone=phone,
             email=email,
         )
@@ -218,17 +206,23 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
     ) -> list[SupplierProductDetail]:
         result = await self._db.execute(
             select(
-                Product.product_id,
-                Product.name.label("product_name"),
-                Product.product_code,
-                Category.name.label("category_name"),
+                products_table.c.product_id,
+                products_table.c.name.label("product_name"),
+                products_table.c.product_code,
+                categories_table.c.name.label("category_name"),
                 SupplierProduct.supplier_price,
             )
             .select_from(SupplierProduct)
-            .join(Product, SupplierProduct.product_id == Product.product_id)
-            .outerjoin(Category, Product.category_id == Category.category_id)
+            .join(
+                products_table,
+                SupplierProduct.product_id == products_table.c.product_id,
+            )
+            .outerjoin(
+                categories_table,
+                products_table.c.category_id == categories_table.c.category_id,
+            )
             .where(SupplierProduct.supplier_id == supplier_id)
-            .order_by(Product.name)
+            .order_by(products_table.c.name)
         )
         return [
             SupplierProductDetail(
@@ -254,17 +248,23 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         offset = (page - 1) * page_size
         result = await self._db.execute(
             select(
-                Product.product_id,
-                Product.name.label("product_name"),
-                Product.product_code,
-                Category.name.label("category_name"),
+                products_table.c.product_id,
+                products_table.c.name.label("product_name"),
+                products_table.c.product_code,
+                categories_table.c.name.label("category_name"),
                 SupplierProduct.supplier_price,
             )
             .select_from(SupplierProduct)
-            .join(Product, SupplierProduct.product_id == Product.product_id)
-            .outerjoin(Category, Product.category_id == Category.category_id)
+            .join(
+                products_table,
+                SupplierProduct.product_id == products_table.c.product_id,
+            )
+            .outerjoin(
+                categories_table,
+                products_table.c.category_id == categories_table.c.category_id,
+            )
             .where(SupplierProduct.supplier_id == supplier_id)
-            .order_by(Product.name)
+            .order_by(products_table.c.name)
             .limit(page_size)
             .offset(offset)
         )

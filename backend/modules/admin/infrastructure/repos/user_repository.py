@@ -23,8 +23,9 @@ class UserRepository(IUserRepository, IUserReader):
         role: str | None = None,
         active: bool | None = None,
     ) -> PaginatedResult[User]:
-        base_query = select(User)
-        count_query = select(func.count()).select_from(User)
+        not_deleted = User.is_deleted == False  # noqa: E712
+        base_query = select(User).where(not_deleted)
+        count_query = select(func.count()).select_from(User).where(not_deleted)
 
         if search:
             pattern = f"%{search}%"
@@ -127,23 +128,22 @@ class UserRepository(IUserRepository, IUserReader):
         if user is None:
             raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
         user.is_active = False
-        user.first_name = USER_DELETED_PLACEHOLDER
-        user.last_name = USER_DELETED_PLACEHOLDER
-        user.email = f"{USER_DELETED_EMAIL_PREFIX}{user_id}@deleted.com"
         await self._db.flush()
 
-    async def activate(
-        self,
-        user_id: int,
-        first_name: str,
-        last_name: str,
-        email: str,
-    ) -> None:
+    async def activate(self, user_id: int) -> None:
         user = await self.get_by_id(user_id)
         if user is None:
             raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
         user.is_active = True
-        user.first_name = first_name
-        user.last_name = last_name
-        user.email = email
+        await self._db.flush()
+
+    async def anonymize(self, user_id: int) -> None:
+        user = await self.get_by_id(user_id)
+        if user is None:
+            raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
+        user.is_active = False
+        user.is_deleted = True
+        user.first_name = USER_DELETED_PLACEHOLDER
+        user.last_name = USER_DELETED_PLACEHOLDER
+        user.email = f"{USER_DELETED_EMAIL_PREFIX}{user_id}@deleted.com"
         await self._db.flush()

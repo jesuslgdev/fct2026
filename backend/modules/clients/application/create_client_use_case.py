@@ -11,16 +11,18 @@ from modules.clients.domain.interfaces.use_cases.i_create_client_use_case import
     ICreateClientUseCase,
 )
 from shared.constants import TAX_ID_PATTERN
+from shared.domain.dtos.address import Address
 
 
 class CreateClientUseCase(ICreateClientUseCase):
     """Validates and persists a new client in the system.
 
-    The process follows three ordered steps:
+    The process follows four ordered steps:
 
     1. Validate the NIF/NIE/CIF format against ``TAX_ID_PATTERN``.
     2. Verify that no existing client shares the same ``tax_id``.
-    3. Persist the client with the ``tax_id`` normalised to uppercase.
+    3. Verify that no existing client shares the same ``email``.
+    4. Persist the client with the ``tax_id`` normalised to uppercase.
     """
 
     def __init__(self, repo: IClientRepository) -> None:
@@ -36,10 +38,7 @@ class CreateClientUseCase(ICreateClientUseCase):
         self,
         name: str,
         tax_id: str,
-        address: str,
-        city: str,
-        province: str,
-        postal_code: str,
+        address_data: Address,
         phone: str,
         email: str,
     ) -> Client:
@@ -52,10 +51,7 @@ class CreateClientUseCase(ICreateClientUseCase):
         Args:
             name: Client name or company name (max 200 characters).
             tax_id: Spanish tax identifier (NIF, NIE or CIF).
-            address: Full postal address.
-            city: City.
-            province: Province.
-            postal_code: Postal code (typically 5 digits).
+            address_data: Full postal address fields grouped in a shared DTO.
             phone: Contact phone number.
             email: Contact email address.
 
@@ -67,6 +63,9 @@ class CreateClientUseCase(ICreateClientUseCase):
                 the ``tax_id`` does not match the NIF/NIE/CIF format.
             ClientException: With code ``4102`` (``CLIENT_ALREADY_EXISTS``) if
                 a client with that ``tax_id`` is already registered.
+            ClientException: With code ``4104``
+                (``CLIENT_EMAIL_ALREADY_EXISTS``) if a client with that
+                ``email`` is already registered.
         """
         normalized_tax_id = tax_id.upper()
 
@@ -77,13 +76,14 @@ class CreateClientUseCase(ICreateClientUseCase):
         if existing is not None:
             raise ClientException(ClientExceptionInfo.CLIENT_ALREADY_EXISTS)
 
+        existing_email = await self._repo.get_by_email(email)
+        if existing_email is not None:
+            raise ClientException(ClientExceptionInfo.CLIENT_EMAIL_ALREADY_EXISTS)
+
         return await self._repo.create(
             name=name,
             tax_id=normalized_tax_id,
-            address=address,
-            city=city,
-            province=province,
-            postal_code=postal_code,
+            address_data=address_data,
             phone=phone,
             email=email,
         )
