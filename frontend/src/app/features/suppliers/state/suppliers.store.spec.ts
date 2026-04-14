@@ -233,7 +233,7 @@ describe('SuppliersStore', () => {
 
   describe('Load Provider Products', () => {
     it('should load provider products successfully', async () => {
-      const mockResult = [{ ...MOCK_PROVIDER, products: [MOCK_PROVIDER_PRODUCT] }];
+      const mockResult = [MOCK_PROVIDER_PRODUCT];
       mockGetProviderProductsUseCase.execute.mockResolvedValue(mockResult);
 
       await store.loadProviderProducts('1');
@@ -284,7 +284,7 @@ describe('SuppliersStore', () => {
     });
 
     it('should open products dialog', () => {
-      mockGetProviderProductsUseCase.execute.mockResolvedValue([{ products: [MOCK_PROVIDER_PRODUCT] }]);
+      mockGetProviderProductsUseCase.execute.mockResolvedValue([MOCK_PROVIDER_PRODUCT]);
 
       store.openProductsDialog(MOCK_PROVIDER);
 
