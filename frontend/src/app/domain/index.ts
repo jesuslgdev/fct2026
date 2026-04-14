@@ -16,6 +16,7 @@ export * from './repositories/auth.repository';
 // Use Cases
 export * from './usecases/supplier/get-providers.usecase';
 export * from './usecases/supplier/get-provider-by-id.usecase';
+export * from './usecases/supplier/create-provider.usecase';
 export * from './usecases/supplier/update-provider.usecase';
 export * from './usecases/supplier/activate-provider.usecase';
 export * from './usecases/supplier/deactivate-provider.usecase';

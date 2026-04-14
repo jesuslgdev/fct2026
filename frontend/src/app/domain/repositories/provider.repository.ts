@@ -1,5 +1,11 @@
 import { PageEvent } from '../models/page-event.model';
-import { Provider, CreateProviderRequest, UpdateProviderRequest } from '../models/provider.model';
+import {
+  Provider,
+  CreateProviderRequest,
+  UpdateProviderRequest,
+  ProviderImportExecutionResult,
+  ProviderImportTemplate,
+} from '../models/provider.model';
 
 export abstract class ProviderRepository {
   abstract getProviders(pageEvent?: PageEvent): Promise<{
@@ -12,4 +18,6 @@ export abstract class ProviderRepository {
   abstract activateProvider(id: string): Promise<Provider>;
   abstract deactivateProvider(id: string): Promise<Provider>;
   abstract getProviderProducts(providerId: string): Promise<Provider[]>;
+  abstract downloadImportTemplate(): Promise<ProviderImportTemplate>;
+  abstract importProviders(file: File): Promise<ProviderImportExecutionResult>;
 }
