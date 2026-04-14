@@ -3,7 +3,7 @@ export class WarehouseValidationError extends Error {
 
   constructor(
     public readonly field: string,
-    message = 'Validación fallida.',
+    message = 'Validation failed.',
   ) {
     super(message);
   }
@@ -12,7 +12,7 @@ export class WarehouseValidationError extends Error {
 export class WarehouseUnauthorizedError extends Error {
   override readonly name = 'WarehouseUnauthorizedError';
 
-  constructor(message = 'Autenticación requerida.') {
+  constructor(message = 'Authentication required.') {
     super(message);
   }
 }
@@ -20,7 +20,7 @@ export class WarehouseUnauthorizedError extends Error {
 export class WarehouseForbiddenError extends Error {
   override readonly name = 'WarehouseForbiddenError';
 
-  constructor(message = 'Permisos insuficientes.') {
+  constructor(message = 'Insufficient permissions.') {
     super(message);
   }
 }
@@ -28,7 +28,7 @@ export class WarehouseForbiddenError extends Error {
 export class WarehouseNotFoundError extends Error {
   override readonly name = 'WarehouseNotFoundError';
 
-  constructor(message = 'Almacén no encontrado.') {
+  constructor(message = 'Warehouse not found.') {
     super(message);
   }
 }
@@ -36,7 +36,7 @@ export class WarehouseNotFoundError extends Error {
 export class WarehouseAlreadyExistsError extends Error {
   override readonly name = 'WarehouseAlreadyExistsError';
 
-  constructor(message = 'Ya existe un almacén con este nombre.') {
+  constructor(message = 'A warehouse with this name already exists.') {
     super(message);
   }
 }
@@ -44,7 +44,7 @@ export class WarehouseAlreadyExistsError extends Error {
 export class WarehouseHasStockError extends Error {
   override readonly name = 'WarehouseHasStockError';
 
-  constructor(message = 'No se puede eliminar un almacén con stock existente.') {
+  constructor(message = 'Cannot delete a warehouse with existing stock.') {
     super(message);
   }
 }
@@ -52,7 +52,7 @@ export class WarehouseHasStockError extends Error {
 export class WarehouseApiError extends Error {
   override readonly name = 'WarehouseApiError';
 
-  constructor(message = 'Error inesperado en la API de almacenes.') {
+  constructor(message = 'Unexpected warehouses API error.') {
     super(message);
   }
 }

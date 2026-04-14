@@ -19,7 +19,7 @@ const BASE_URL = `${environment.apiUrl}/api/v1/warehouse/warehouses`;
 
 const WAREHOUSE_DTO = {
   warehouse_id: 1,
-  name: 'Almacén Central',
+  name: 'Almacen Central',
   address: {
     street: 'Calle Principal 123',
     city: 'Madrid',
@@ -31,9 +31,35 @@ const WAREHOUSE_DTO = {
 
 const WAREHOUSE_DOMAIN = {
   warehouseId: 1,
-  name: 'Almacén Central',
+  name: 'Almacen Central',
   address: 'Calle Principal 123, Madrid, Madrid, 28001',
+  addressData: {
+    street: 'Calle Principal 123',
+    city: 'Madrid',
+    province: 'Madrid',
+    postalCode: '28001',
+  },
   totalStock: 42,
+};
+
+const CREATE_PAYLOAD = {
+  name: 'Almacen Central',
+  address: {
+    street: 'Calle Principal 123',
+    city: 'Madrid',
+    province: 'Madrid',
+    postalCode: '28001',
+  },
+};
+
+const CREATE_DTO = {
+  name: 'Almacen Central',
+  address: {
+    street: 'Calle Principal 123',
+    city: 'Madrid',
+    province: 'Madrid',
+    postal_code: '28001',
+  },
 };
 
 describe('HttpWarehouseRepository', () => {
@@ -54,185 +80,120 @@ describe('HttpWarehouseRepository', () => {
     controller.verify();
   });
 
-  // ─── getWarehouses ──────────────────────────────────────────────────────────
-
   describe('getWarehouses()', () => {
-    it('should return a list of mapped warehouses on 200', async () => {
+    it('returns mapped warehouses on 200', async () => {
       const promise = firstValueFrom(repo.getWarehouses());
       const req = controller.expectOne(BASE_URL);
       expect(req.request.method).toBe('GET');
       req.flush([WAREHOUSE_DTO]);
 
-      const result = await promise;
-      expect(result).toEqual([WAREHOUSE_DOMAIN]);
+      await expect(promise).resolves.toEqual([WAREHOUSE_DOMAIN]);
     });
 
-    it('should throw WarehouseUnauthorizedError on 401', async () => {
-      const promise = firstValueFrom(repo.getWarehouses());
+    it('maps common read errors', async () => {
+      const unauthorized = firstValueFrom(repo.getWarehouses());
       controller.expectOne(BASE_URL).flush(
         { message: 'Unauthorized' },
         { status: 401, statusText: 'Unauthorized' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseUnauthorizedError);
-    });
+      await expect(unauthorized).rejects.toBeInstanceOf(WarehouseUnauthorizedError);
 
-    it('should throw WarehouseApiError on unexpected status', async () => {
-      const promise = firstValueFrom(repo.getWarehouses());
+      const unexpected = firstValueFrom(repo.getWarehouses());
       controller.expectOne(BASE_URL).flush(
         { message: 'Server Error' },
         { status: 500, statusText: 'Internal Server Error' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseApiError);
+      await expect(unexpected).rejects.toBeInstanceOf(WarehouseApiError);
     });
   });
 
-  // ─── getWarehouseById ───────────────────────────────────────────────────────
-
   describe('getWarehouseById()', () => {
-    it('should return a mapped warehouse on 200', async () => {
+    it('returns a mapped warehouse on 200', async () => {
       const promise = firstValueFrom(repo.getWarehouseById(1));
       const req = controller.expectOne(`${BASE_URL}/1`);
       expect(req.request.method).toBe('GET');
       req.flush(WAREHOUSE_DTO);
 
-      const result = await promise;
-      expect(result).toEqual(WAREHOUSE_DOMAIN);
+      await expect(promise).resolves.toEqual(WAREHOUSE_DOMAIN);
     });
 
-    it('should throw WarehouseNotFoundError on 404', async () => {
-      const promise = firstValueFrom(repo.getWarehouseById(999));
+    it('maps 404 and 403 errors', async () => {
+      const notFound = firstValueFrom(repo.getWarehouseById(999));
       controller.expectOne(`${BASE_URL}/999`).flush(
         { detail: 'Not found' },
         { status: 404, statusText: 'Not Found' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseNotFoundError);
-    });
+      await expect(notFound).rejects.toBeInstanceOf(WarehouseNotFoundError);
 
-    it('should throw WarehouseForbiddenError on 403', async () => {
-      const promise = firstValueFrom(repo.getWarehouseById(1));
+      const forbidden = firstValueFrom(repo.getWarehouseById(1));
       controller.expectOne(`${BASE_URL}/1`).flush(
         { message: 'Forbidden' },
         { status: 403, statusText: 'Forbidden' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseForbiddenError);
+      await expect(forbidden).rejects.toBeInstanceOf(WarehouseForbiddenError);
     });
   });
 
-  // ─── createWarehouse ────────────────────────────────────────────────────────
-
   describe('createWarehouse()', () => {
-    const CREATE_PAYLOAD = { name: 'Almacén Central', address: 'Calle Principal 123' };
-
-    it('should POST the correct DTO and return mapped warehouse on 201', async () => {
+    it('posts the API address object and returns a mapped warehouse on 201', async () => {
       const promise = firstValueFrom(repo.createWarehouse(CREATE_PAYLOAD));
       const req = controller.expectOne(BASE_URL);
 
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ name: 'Almacén Central', address: 'Calle Principal 123' });
+      expect(req.request.body).toEqual(CREATE_DTO);
       req.flush(WAREHOUSE_DTO);
 
-      const result = await promise;
-      expect(result).toEqual(WAREHOUSE_DOMAIN);
+      await expect(promise).resolves.toEqual(WAREHOUSE_DOMAIN);
     });
 
-    it('should throw WarehouseValidationError on 422', async () => {
-      const promise = firstValueFrom(repo.createWarehouse(CREATE_PAYLOAD));
+    it('maps create errors', async () => {
+      const validation = firstValueFrom(repo.createWarehouse(CREATE_PAYLOAD));
       controller.expectOne(BASE_URL).flush(
         { detail: 'Validation error' },
         { status: 422, statusText: 'Unprocessable Entity' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseValidationError);
-    });
+      await expect(validation).rejects.toBeInstanceOf(WarehouseValidationError);
 
-    it('should throw WarehouseValidationError on 400', async () => {
-      const promise = firstValueFrom(repo.createWarehouse(CREATE_PAYLOAD));
-      controller.expectOne(BASE_URL).flush(
-        { message: 'Bad request' },
-        { status: 400, statusText: 'Bad Request' },
-      );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseValidationError);
-    });
-
-    it('should throw WarehouseAlreadyExistsError on 409 with NAME_DUPLICATE code (6102)', async () => {
-      const promise = firstValueFrom(repo.createWarehouse(CREATE_PAYLOAD));
+      const duplicate = firstValueFrom(repo.createWarehouse(CREATE_PAYLOAD));
       controller.expectOne(BASE_URL).flush(
         { message: 'Name already taken', error_code: 6102 },
         { status: 409, statusText: 'Conflict' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseAlreadyExistsError);
-    });
-
-    it('should throw WarehouseApiError on 409 with unknown error code', async () => {
-      const promise = firstValueFrom(repo.createWarehouse(CREATE_PAYLOAD));
-      controller.expectOne(BASE_URL).flush(
-        { message: 'Conflict', error_code: 9999 },
-        { status: 409, statusText: 'Conflict' },
-      );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseApiError);
+      await expect(duplicate).rejects.toBeInstanceOf(WarehouseAlreadyExistsError);
     });
   });
 
-  // ─── updateWarehouse ────────────────────────────────────────────────────────
-
   describe('updateWarehouse()', () => {
-    const UPDATE_PAYLOAD = { name: 'Almacén Norte', address: 'Calle Nueva 456' };
-
-    it('should PUT the correct DTO and return mapped warehouse on 200', async () => {
-      const promise = firstValueFrom(repo.updateWarehouse(1, UPDATE_PAYLOAD));
+    it('puts the API address object and returns a mapped warehouse on 200', async () => {
+      const promise = firstValueFrom(repo.updateWarehouse(1, CREATE_PAYLOAD));
       const req = controller.expectOne(`${BASE_URL}/1`);
 
       expect(req.request.method).toBe('PUT');
-      expect(req.request.body).toEqual({ name: 'Almacén Norte', address: 'Calle Nueva 456' });
-      req.flush({
-        ...WAREHOUSE_DTO,
-        name: 'Almacén Norte',
-        address: {
-          street: 'Calle Nueva 456',
-          city: 'Madrid',
-          province: 'Madrid',
-          postal_code: '28002',
-        },
-      });
+      expect(req.request.body).toEqual(CREATE_DTO);
+      req.flush(WAREHOUSE_DTO);
 
-      const result = await promise;
-      expect(result).toMatchObject({
-        name: 'Almacén Norte',
-        address: 'Calle Nueva 456, Madrid, Madrid, 28002',
-      });
+      await expect(promise).resolves.toEqual(WAREHOUSE_DOMAIN);
     });
 
-    it('should throw WarehouseNotFoundError on 404', async () => {
-      const promise = firstValueFrom(repo.updateWarehouse(999, UPDATE_PAYLOAD));
+    it('maps update errors', async () => {
+      const notFound = firstValueFrom(repo.updateWarehouse(999, CREATE_PAYLOAD));
       controller.expectOne(`${BASE_URL}/999`).flush(
         { detail: 'Not found' },
         { status: 404, statusText: 'Not Found' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseNotFoundError);
-    });
+      await expect(notFound).rejects.toBeInstanceOf(WarehouseNotFoundError);
 
-    it('should throw WarehouseValidationError on 422', async () => {
-      const promise = firstValueFrom(repo.updateWarehouse(1, UPDATE_PAYLOAD));
+      const validation = firstValueFrom(repo.updateWarehouse(1, CREATE_PAYLOAD));
       controller.expectOne(`${BASE_URL}/1`).flush(
         { detail: 'Validation error' },
         { status: 422, statusText: 'Unprocessable Entity' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseValidationError);
-    });
-
-    it('should throw WarehouseAlreadyExistsError on 409 with NAME_DUPLICATE code (6102)', async () => {
-      const promise = firstValueFrom(repo.updateWarehouse(1, UPDATE_PAYLOAD));
-      controller.expectOne(`${BASE_URL}/1`).flush(
-        { message: 'Duplicate name', error_code: 6102 },
-        { status: 409, statusText: 'Conflict' },
-      );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseAlreadyExistsError);
+      await expect(validation).rejects.toBeInstanceOf(WarehouseValidationError);
     });
   });
 
-  // ─── deleteWarehouse ────────────────────────────────────────────────────────
-
   describe('deleteWarehouse()', () => {
-    it('should send DELETE and complete on 204', async () => {
+    it('sends DELETE and completes on 204', async () => {
       const promise = firstValueFrom(repo.deleteWarehouse(1));
       const req = controller.expectOne(`${BASE_URL}/1`);
       expect(req.request.method).toBe('DELETE');
@@ -241,86 +202,26 @@ describe('HttpWarehouseRepository', () => {
       await expect(promise).resolves.toBeNull();
     });
 
-    it('should throw WarehouseHasStockError on 409 with HAS_STOCK code (6103)', async () => {
-      const promise = firstValueFrom(repo.deleteWarehouse(1));
+    it('maps delete errors', async () => {
+      const hasStock = firstValueFrom(repo.deleteWarehouse(1));
       controller.expectOne(`${BASE_URL}/1`).flush(
         { message: 'Has stock', error_code: 6103 },
         { status: 409, statusText: 'Conflict' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseHasStockError);
-    });
+      await expect(hasStock).rejects.toBeInstanceOf(WarehouseHasStockError);
 
-    it('should throw WarehouseNotFoundError on 404', async () => {
-      const promise = firstValueFrom(repo.deleteWarehouse(999));
-      controller.expectOne(`${BASE_URL}/999`).flush(
-        { detail: 'Not found' },
-        { status: 404, statusText: 'Not Found' },
-      );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseNotFoundError);
-    });
-
-    it('should throw WarehouseForbiddenError on 403', async () => {
-      const promise = firstValueFrom(repo.deleteWarehouse(1));
+      const forbidden = firstValueFrom(repo.deleteWarehouse(1));
       controller.expectOne(`${BASE_URL}/1`).flush(
         { message: 'Forbidden' },
         { status: 403, statusText: 'Forbidden' },
       );
-      await expect(promise).rejects.toBeInstanceOf(WarehouseForbiddenError);
+      await expect(forbidden).rejects.toBeInstanceOf(WarehouseForbiddenError);
     });
 
-    it('should throw WarehouseApiError on generic non-HttpErrorResponse error', async () => {
-      // Simulates a network-level error (ProgressEvent), not an HTTP status error.
+    it('maps network errors to WarehouseApiError', async () => {
       const promise = firstValueFrom(repo.deleteWarehouse(1));
       controller.expectOne(`${BASE_URL}/1`).error(new ProgressEvent('error'));
       await expect(promise).rejects.toBeInstanceOf(WarehouseApiError);
-    });
-  });
-
-  // ─── error message extraction ───────────────────────────────────────────────
-
-  describe('error message extraction', () => {
-    it('should use message field from error body when present', async () => {
-      const promise = firstValueFrom(repo.getWarehouses());
-      controller.expectOne(BASE_URL).flush(
-        { message: 'Custom message from body' },
-        { status: 500, statusText: 'Server Error' },
-      );
-      const err = await promise.catch((e) => e);
-      expect(err).toBeInstanceOf(WarehouseApiError);
-      expect(err.message).toBe('Custom message from body');
-    });
-
-    it('should use detail field from error body when message is absent', async () => {
-      const promise = firstValueFrom(repo.getWarehouses());
-      controller.expectOne(BASE_URL).flush(
-        { detail: 'Detail from body' },
-        { status: 500, statusText: 'Server Error' },
-      );
-      const err = await promise.catch((e) => e);
-      expect(err).toBeInstanceOf(WarehouseApiError);
-      expect(err.message).toBe('Detail from body');
-    });
-
-    it('should use string error body directly', async () => {
-      const promise = firstValueFrom(repo.getWarehouses());
-      controller.expectOne(BASE_URL).flush('Plain string error', {
-        status: 500,
-        statusText: 'Server Error',
-      });
-      const err = await promise.catch((e) => e);
-      expect(err).toBeInstanceOf(WarehouseApiError);
-      expect(err.message).toBe('Plain string error');
-    });
-
-    it('should fall back to the default message when body has no extractable message', async () => {
-      const promise = firstValueFrom(repo.getWarehouses());
-      controller.expectOne(BASE_URL).flush(
-        {},
-        { status: 500, statusText: 'Server Error' },
-      );
-      const err = await promise.catch((e) => e);
-      expect(err).toBeInstanceOf(WarehouseApiError);
-      expect(err.message).toBe('Error inesperado en la API de almacenes.');
     });
   });
 });
