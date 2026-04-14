@@ -88,12 +88,12 @@
                     <span class="font-medium">{{ warehouse.warehouseName }}</span>
                     <span
                       class="rounded-full px-2 py-0.5 text-xs font-semibold"
-                      [class.bg-red-100]="warehouse.status === 'out' || warehouse.status === 'critical'"
-                      [class.text-red-700]="warehouse.status === 'out' || warehouse.status === 'critical'"
-                      [class.bg-amber-100]="warehouse.status === 'low'"
-                      [class.text-amber-700]="warehouse.status === 'low'"
-                      [class.bg-emerald-100]="warehouse.status === 'normal'"
-                      [class.text-emerald-700]="warehouse.status === 'normal'"
+                      [class.bg-danger-subtle]="warehouse.status === 'out' || warehouse.status === 'critical'"
+                      [class.text-danger]="warehouse.status === 'out' || warehouse.status === 'critical'"
+                      [class.bg-warning-subtle]="warehouse.status === 'low'"
+                      [class.text-warning]="warehouse.status === 'low'"
+                      [class.bg-success-subtle]="warehouse.status === 'normal'"
+                      [class.text-success]="warehouse.status === 'normal'"
                     >
                       @switch (warehouse.status) {
                         @case ('out') { Sin stock }
