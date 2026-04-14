@@ -16,7 +16,7 @@
       <ui-card class="border-info-subtle bg-info-subtle">
         <div class="space-y-3">
           <h3 class="text-lg font-semibold text-info">Importación Masiva de Proveedores</h3>
-          <p class="text-surface-600">
+          <p class="text-neutral-muted">
             Importa múltiples proveedores desde un archivo Excel o CSV. 
             El sistema valida todos los datos antes de importar y muestra un resumen.
           </p>
@@ -52,19 +52,19 @@
         <div class="space-y-4">
           <h4 class="font-medium">Seleccionar Archivo</h4>
           
-          <div class="border-2 border-dashed border-surface-300 rounded-lg p-6 text-center hover:border-surface-400 transition-colors"
+          <div class="file-dropzone"
                (dragover)="onDragOver($event)"
                (dragleave)="onDragLeave($event)"
                (drop)="onDrop($event)">
             <div class="space-y-2">
               <div class="text-2xl">Archivo</div>
-              <p class="text-surface-600">
+              <p class="text-neutral-muted">
                 Arrastra un archivo aquí o 
                 <label for="file-upload" class="text-info cursor-pointer underline">
                   haz clic para seleccionarlo
                 </label>
               </p>
-              <p class="text-sm text-surface-500">
+              <p class="text-sm text-neutral-subtle">
                 Formatos admitidos: Excel (.xlsx, .xls) y CSV (.csv)
               </p>
               <input
@@ -85,7 +85,7 @@
                   <div class="text-2xl">Documento</div>
                   <div>
                     <div class="font-medium">{{ getFileName() }}</div>
-                    <div class="text-sm text-surface-600">{{ getFileSize() }}</div>
+                    <div class="text-sm text-neutral-muted">{{ getFileSize() }}</div>
                   </div>
                 </div>
                 <ui-button
@@ -113,9 +113,9 @@
             <h4 class="font-semibold text-lg">Resumen de Validación</h4>
             
             <div class="grid grid-cols-3 gap-4 text-center">
-              <div class="bg-surface-50 rounded-lg p-4">
-                <div class="text-2xl font-bold text-surface-700">{{ result.totalRecords }}</div>
-                <div class="text-sm text-surface-600">Total Registros</div>
+              <div class="bg-neutral-subtle rounded-lg p-4">
+                <div class="text-2xl font-bold text-neutral-strong">{{ result.totalRecords }}</div>
+                <div class="text-sm text-neutral-muted">Total Registros</div>
               </div>
               <div class="bg-success-subtle rounded-lg p-4">
                 <div class="text-2xl font-bold text-success">{{ result.validRecords }}</div>
@@ -199,7 +199,7 @@
             </p>
           </div>
 
-          <div class="text-sm text-surface-600">
+          <div class="text-sm text-neutral-muted">
             <p>Importación realizada por: Administrador</p>
             <p>Fecha: {{ getCurrentDate() }}</p>
           </div>
