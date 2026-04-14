@@ -17,11 +17,12 @@ from shared.domain.dtos.address import Address
 class CreateClientUseCase(ICreateClientUseCase):
     """Validates and persists a new client in the system.
 
-    The process follows three ordered steps:
+    The process follows four ordered steps:
 
     1. Validate the NIF/NIE/CIF format against ``TAX_ID_PATTERN``.
     2. Verify that no existing client shares the same ``tax_id``.
-    3. Persist the client with the ``tax_id`` normalised to uppercase.
+    3. Verify that no existing client shares the same ``email``.
+    4. Persist the client with the ``tax_id`` normalised to uppercase.
     """
 
     def __init__(self, repo: IClientRepository) -> None:
@@ -62,6 +63,9 @@ class CreateClientUseCase(ICreateClientUseCase):
                 the ``tax_id`` does not match the NIF/NIE/CIF format.
             ClientException: With code ``4102`` (``CLIENT_ALREADY_EXISTS``) if
                 a client with that ``tax_id`` is already registered.
+            ClientException: With code ``4104``
+                (``CLIENT_EMAIL_ALREADY_EXISTS``) if a client with that
+                ``email`` is already registered.
         """
         normalized_tax_id = tax_id.upper()
 
@@ -71,6 +75,10 @@ class CreateClientUseCase(ICreateClientUseCase):
         existing = await self._repo.get_by_tax_id(normalized_tax_id)
         if existing is not None:
             raise ClientException(ClientExceptionInfo.CLIENT_ALREADY_EXISTS)
+
+        existing_email = await self._repo.get_by_email(email)
+        if existing_email is not None:
+            raise ClientException(ClientExceptionInfo.CLIENT_EMAIL_ALREADY_EXISTS)
 
         return await self._repo.create(
             name=name,

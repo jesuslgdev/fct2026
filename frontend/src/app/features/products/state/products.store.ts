@@ -7,6 +7,7 @@ import {
   UpdateProductPayload,
   ProductQueryParams,
   ProductCategory,
+  PagedResult,
 } from '@domain/models/product.model';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { CreateProductUseCase } from '@domain/usecases/product/create-product.usecase';
@@ -77,6 +78,31 @@ export class ProductsStore {
 
   readonly hasLowStockProducts = computed(() => this.lowStockProducts().length > 0);
 
+  private normalizeProductsResult(result: unknown): PagedResult<Product> {
+    if (!result || typeof result !== 'object') {
+      return {
+        data: [],
+        total: 0,
+        page: this.page(),
+        pageSize: this.pageSize(),
+      };
+    }
+
+    const payload = result as Record<string, unknown>;
+    const rawData = payload['data'];
+    const data = Array.isArray(rawData) ? rawData as Product[] : [];
+
+    const total = typeof payload['total'] === 'number' ? payload['total'] : data.length;
+    const page = typeof payload['page'] === 'number' ? payload['page'] : this.page();
+    const pageSize = typeof payload['pageSize'] === 'number' ? payload['pageSize'] : this.pageSize();
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+    };
+  }
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof ProductValidationError) {
       return err.message || 'Please check the submitted data.';
@@ -98,6 +124,9 @@ export class ProductsStore {
       return err.message || fallback;
     }
 
+    if (err instanceof Error && err.message.trim()) {
+      return err.message;
+    }
     return fallback;
   }
 
@@ -110,14 +139,17 @@ export class ProductsStore {
       page: this.page(),
       pageSize: this.pageSize(),
       search: this.searchQuery() || undefined,
-      categoryId: this.categoryFilter() || undefined,
+      categoryId: this.categoryFilter() ?? undefined,
       active: this.statusFilter() ?? undefined,
     };
 
     this.getProductsUseCase.execute(params).pipe(
       tap(result => {
-        this.products.set(result.data);
-        this.total.set(result.total);
+        const normalized = this.normalizeProductsResult(result);
+        this.products.set(normalized.data);
+        this.total.set(normalized.total);
+        this.page.set(normalized.page);
+        this.pageSize.set(normalized.pageSize);
       }),
       catchError(err => {
         this.error.set(this.resolveErrorMessage(err, 'Failed to load products.'));

@@ -103,6 +103,13 @@ class ClientRepository(IClientRepository, IClientReader):
         result = await self._db.execute(select(Client).where(Client.tax_id == tax_id))
         return result.scalar_one_or_none()
 
+    async def get_by_email(self, email: str) -> Client | None:
+        """Fetch a single client by email (case-insensitive)."""
+        result = await self._db.execute(
+            select(Client).where(func.lower(Client.email) == email.lower())
+        )
+        return result.scalar_one_or_none()
+
     async def create(
         self,
         name: str,

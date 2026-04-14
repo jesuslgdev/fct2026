@@ -6,7 +6,9 @@ from shared.domain.dtos.address import Address
 from shared.domain.entities.user import User
 
 
-async def test_delete_user_success(admin_client: AsyncClient, db_session: AsyncSession):
+async def test_delete_user_hard_delete_when_no_references(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
     user = User(
         first_name="ToDelete",
         last_name="User",
@@ -24,12 +26,7 @@ async def test_delete_user_success(admin_client: AsyncClient, db_session: AsyncS
     assert get_response.status_code == 404
 
 
-async def test_delete_user_not_found(admin_client: AsyncClient):
-    response = await admin_client.delete("/api/v1/admin/users/99999")
-    assert response.status_code == 404
-
-
-async def test_delete_user_has_purchases(
+async def test_delete_user_anonymizes_when_has_purchases(
     admin_client: AsyncClient, db_session: AsyncSession
 ):
     from modules.purchases.domain.entities.purchase import Purchase
@@ -84,8 +81,58 @@ async def test_delete_user_has_purchases(
     await db_session.flush()
 
     response = await admin_client.delete(f"/api/v1/admin/users/{user.user_id}")
+    assert response.status_code == 204
+
+    await db_session.refresh(user)
+    assert user.is_deleted is True
+    assert user.is_active is False
+    assert user.first_name == "DELETED"
+    assert user.last_name == "DELETED"
+    assert user.email == f"deleted_{user.user_id}@deleted.com"
+
+
+async def test_delete_user_already_deleted(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    user = User(
+        first_name="DELETED",
+        last_name="DELETED",
+        email="deleted_0@deleted.com",
+        role="Employee",
+        is_active=False,
+        is_deleted=True,
+    )
+    db_session.add(user)
+    await db_session.flush()
+
+    response = await admin_client.delete(f"/api/v1/admin/users/{user.user_id}")
     assert response.status_code == 409
-    assert response.json()["error_code"] == 1205
+    assert response.json()["error_code"] == 1208
+
+
+async def test_deleted_user_hidden_from_list(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    user = User(
+        first_name="DELETED",
+        last_name="DELETED",
+        email="deleted_hidden@deleted.com",
+        role="Employee",
+        is_active=False,
+        is_deleted=True,
+    )
+    db_session.add(user)
+    await db_session.flush()
+
+    response = await admin_client.get("/api/v1/admin/users")
+    assert response.status_code == 200
+    user_ids = [u["user_id"] for u in response.json()["items"]]
+    assert user.user_id not in user_ids
+
+
+async def test_delete_user_not_found(admin_client: AsyncClient):
+    response = await admin_client.delete("/api/v1/admin/users/99999")
+    assert response.status_code == 404
 
 
 async def test_delete_user_unauthorized(unauthenticated_client: AsyncClient):

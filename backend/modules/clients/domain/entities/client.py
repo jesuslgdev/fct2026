@@ -41,7 +41,7 @@ class Client(Base):
 
     # --- Contact ---
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
-    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
     # --- Status ---
     # Soft-delete flag. Inactive clients are hidden from normal listings
