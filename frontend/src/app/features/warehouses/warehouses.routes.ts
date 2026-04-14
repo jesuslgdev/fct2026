@@ -9,4 +9,12 @@ export const WAREHOUSES_ROUTES: Routes = [
       ),
     title: 'Gestion de almacenes',
   },
+  {
+    path: ':warehouseId',
+    loadComponent: () =>
+      import('./pages/warehouse-detail/warehouse-detail.page.component').then(
+        (m) => m.WarehouseDetailPageComponent,
+      ),
+    title: 'Detalle de almacen',
+  },
 ];
