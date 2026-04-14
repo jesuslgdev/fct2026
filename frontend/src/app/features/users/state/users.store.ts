@@ -3,7 +3,6 @@ import { catchError, EMPTY, finalize, tap, take } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import {
   User,
-  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -17,8 +16,11 @@ import { ActivateUserUseCase } from '@domain/usecases/user/activate-user.usecase
 import { DeactivateUserUseCase } from '@domain/usecases/user/deactivate-user.usecase';
 import { GetDepartmentsForUsersUseCase } from '@domain/usecases/departments/get-departments-for-users.usecase';
 import {
+  UserAlreadyActiveError,
   UserAlreadyExistsError,
+  UserAlreadyInactiveError,
   UserApiError,
+  UserDeletedError,
   UserForbiddenError,
   UserNotFoundError,
   UserUnauthorizedError,
@@ -44,7 +46,6 @@ export class UsersStore {
   private readonly activateUserUseCase = inject(ActivateUserUseCase);
   private readonly deactivateUserUseCase = inject(DeactivateUserUseCase);
 
-  // ── State ──────────────────────────────────────────────────────────────────
   readonly users = signal<User[]>([]);
   readonly total = signal(0);
   readonly page = signal(1);
@@ -60,31 +61,38 @@ export class UsersStore {
   readonly dialogMode = signal<DialogMode>('create');
   readonly dialogError = signal<string | null>(null);
   readonly confirmDialogVisible = signal(false);
-  readonly reactivateDialogVisible = signal(false);
-  readonly reactivateDialogError = signal<string | null>(null);
   readonly userToToggle = signal<User | null>(null);
 
-  // ── Computed ───────────────────────────────────────────────────────────────
   readonly canEdit = this.authService.isAdmin;
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
   readonly usersView = computed<UserView[]>(() =>
-    this.users().map((user) => {
-      return {
-        ...user,
-        fullName: `${user.firstName} ${user.lastName ?? ''}`.trim(),
-        emailDisplay: user.email ?? '-',
-        pendingFirstLogin: user.lastLoginAt == null,
-        departmentName:
-          user.departmentId === null
-            ? '-'
-            : (this.departments().find((d) => d.id === user.departmentId)?.name ?? '-'),
-      };
-    }),
+    this.users().map((user) => ({
+      ...user,
+      fullName: `${user.firstName} ${user.lastName ?? ''}`.trim(),
+      emailDisplay: user.email ?? '-',
+      pendingFirstLogin: user.lastLoginAt == null,
+      departmentName:
+        user.departmentId === null
+          ? '-'
+          : (this.departments().find((d) => d.id === user.departmentId)?.name ?? '-'),
+    })),
   );
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof UserAlreadyExistsError) {
-      return 'Ya existe un usuario con este correo electrónico.';
+      return 'Ya existe un usuario con este correo electronico.';
+    }
+
+    if (err instanceof UserAlreadyActiveError) {
+      return 'El usuario ya esta activo.';
+    }
+
+    if (err instanceof UserAlreadyInactiveError) {
+      return 'El usuario ya esta inactivo.';
+    }
+
+    if (err instanceof UserDeletedError) {
+      return 'El usuario ha sido eliminado y no se puede modificar.';
     }
 
     if (err instanceof UserValidationError) {
@@ -92,11 +100,11 @@ export class UsersStore {
     }
 
     if (err instanceof UserUnauthorizedError) {
-      return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
+      return 'Tu sesion ha expirado. Vuelve a iniciar sesion.';
     }
 
     if (err instanceof UserForbiddenError) {
-      return 'No tienes permisos para realizar esta acción.';
+      return 'No tienes permisos para realizar esta accion.';
     }
 
     if (err instanceof UserNotFoundError) {
@@ -104,20 +112,12 @@ export class UsersStore {
     }
 
     if (err instanceof UserApiError) {
-      const normalized = (err.message ?? '').toLowerCase();
-      if (normalized.includes('already active')) {
-        return 'El usuario ya está activo.';
-      }
-      if (normalized.includes('already inactive')) {
-        return 'El usuario ya está inactivo.';
-      }
       return err.message || fallback;
     }
 
     return fallback;
   }
 
-  // ── Data loading ───────────────────────────────────────────────────────────
   loadUsers(): void {
     this.loading.set(true);
     this.error.set(null);
@@ -161,7 +161,6 @@ export class UsersStore {
       .subscribe();
   }
 
-  // ── Dialog ─────────────────────────────────────────────────────────────────
   openCreateDialog(): void {
     this.selectedUser.set(null);
     this.dialogMode.set('create');
@@ -182,30 +181,17 @@ export class UsersStore {
     this.dialogError.set(null);
   }
 
-  // ── Confirm deactivate dialog ───────────────────────────────────────────────
   requestToggleStatus(user: User): void {
     this.error.set(null);
-    this.reactivateDialogError.set(null);
     this.userToToggle.set(user);
-
-    if (user.active) {
-      this.reactivateDialogVisible.set(false);
-      this.confirmDialogVisible.set(true);
-      return;
-    }
-
-    this.confirmDialogVisible.set(false);
-    this.reactivateDialogVisible.set(true);
+    this.confirmDialogVisible.set(true);
   }
 
   cancelToggleStatus(): void {
     this.userToToggle.set(null);
     this.confirmDialogVisible.set(false);
-    this.reactivateDialogVisible.set(false);
-    this.reactivateDialogError.set(null);
   }
 
-  // ── CRUD ───────────────────────────────────────────────────────────────────
   saveUser(payload: CreateUserPayload | UpdateUserPayload): void {
     this.loading.set(true);
     this.dialogError.set(null);
@@ -240,13 +226,16 @@ export class UsersStore {
 
   confirmToggleStatus(): void {
     const user = this.userToToggle();
-    if (!user || !user.active) return;
+    if (!user) return;
 
     this.loading.set(true);
     this.error.set(null);
 
-    this.deactivateUserUseCase
-      .execute(user.id)
+    const request$ = user.active
+      ? this.deactivateUserUseCase.execute(user.id)
+      : this.activateUserUseCase.execute(user.id);
+
+    request$
       .pipe(
         take(1),
         tap(() => {
@@ -255,33 +244,13 @@ export class UsersStore {
           this.loadUsers();
         }),
         catchError((err) => {
-          this.error.set(this.resolveErrorMessage(err, 'No se pudo desactivar el usuario.'));
-          return EMPTY;
-        }),
-        finalize(() => this.loading.set(false)),
-      )
-      .subscribe();
-  }
-
-  confirmReactivateUser(payload: ActivateUserPayload): void {
-    const user = this.userToToggle();
-    if (!user || user.active) return;
-
-    this.loading.set(true);
-    this.reactivateDialogError.set(null);
-
-    this.activateUserUseCase
-      .execute(user.id, payload)
-      .pipe(
-        take(1),
-        tap(() => {
-          this.reactivateDialogVisible.set(false);
-          this.userToToggle.set(null);
-          this.loadUsers();
-        }),
-        catchError((err) => {
-          this.reactivateDialogError.set(
-            this.resolveErrorMessage(err, 'No se pudo reactivar el usuario.'),
+          this.error.set(
+            this.resolveErrorMessage(
+              err,
+              user.active
+                ? 'No se pudo desactivar el usuario.'
+                : 'No se pudo activar el usuario.',
+            ),
           );
           return EMPTY;
         }),
@@ -290,7 +259,6 @@ export class UsersStore {
       .subscribe();
   }
 
-  // ── Filters & pagination ───────────────────────────────────────────────────
   onSearch(query: string): void {
     this.searchQuery.set(query);
     this.page.set(1);
@@ -309,10 +277,8 @@ export class UsersStore {
     this.loadUsers();
   }
 
-
   onPageChange(event: { first: number; rows: number }): void {
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
-
   }
 }

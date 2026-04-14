@@ -4,7 +4,6 @@ import { UserRepository } from '@domain/repositories/user.repository';
 import { firstValueFrom, Observable, of } from 'rxjs';
 import {
   User,
-  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -37,7 +36,7 @@ class MockUserRepository implements UserRepository {
   createUser = vi.fn<(payload: CreateUserPayload) => Observable<User>>();
   updateUser = vi.fn<(id: number, payload: UpdateUserPayload) => Observable<User>>();
   deactivateUser = vi.fn<(id: number) => Observable<void>>();
-  activateUser = vi.fn<(id: number, payload: ActivateUserPayload) => Observable<void>>();
+  activateUser = vi.fn<(id: number) => Observable<void>>();
   getDepartments = vi.fn<() => Observable<Department[]>>();
 }
 
@@ -128,16 +127,11 @@ describe('User Use Cases', () => {
 
   it('ActivateUserUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(ActivateUserUseCase);
-    const payload: ActivateUserPayload = {
-      firstName: 'Ana',
-      lastName: 'Garcia',
-      email: 'ana@example.com',
-    };
     repo.activateUser.mockReturnValueOnce(of(void 0));
 
-    await firstValueFrom(useCase.execute(1, payload));
+    await firstValueFrom(useCase.execute(1));
 
-    expect(repo.activateUser).toHaveBeenCalledWith(1, payload);
+    expect(repo.activateUser).toHaveBeenCalledWith(1);
     expect(repo.activateUser).toHaveBeenCalledOnce();
   });
 });

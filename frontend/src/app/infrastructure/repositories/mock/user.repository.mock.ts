@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
   User,
-  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -204,9 +203,6 @@ export class MockUserRepository implements UserRepository {
         ? {
             ...u,
             active: false,
-            firstName: 'DELETED',
-            lastName: 'DELETED',
-            email: `deleted_${id}@deleted.com`,
           }
         : u,
     );
@@ -214,7 +210,7 @@ export class MockUserRepository implements UserRepository {
     return of(void 0);
   }
 
-  activateUser(id: number, payload: ActivateUserPayload): Observable<void> {
+  activateUser(id: number): Observable<void> {
     if (!this.getUserByIdOrThrow(id)) {
       return throwError(() => new Error(`Usuario con id "${id}" no encontrado`));
     }
@@ -224,9 +220,7 @@ export class MockUserRepository implements UserRepository {
         ? {
             ...u,
             active: true,
-            firstName: payload.firstName,
-            lastName: payload.lastName,
-            email: payload.email,
+            lastLoginAt: u.lastLoginAt ?? new Date(0).toISOString(),
           }
         : u,
     );
