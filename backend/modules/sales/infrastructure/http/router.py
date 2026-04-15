@@ -38,6 +38,7 @@ async def create_sale(
     """Create a new sale."""
     sale = await use_case.execute(
         client_id=body.client_id,
+        warehouse_id=body.warehouse_id,
         user_id=current_user.user_id,
         lines=[line.model_dump() for line in body.lines],
     )

@@ -42,7 +42,6 @@ class CreateProductRequest(BaseModel):
     category_id: int = Field(..., gt=0)
     price: Decimal = Field(..., gt=0, decimal_places=2)
     vat_rate: Decimal = Field(Decimal("0.21"), ge=0, le=1)
-    stock_current: int = Field(0, ge=0)
     stock_min: int = Field(0, ge=0)
 
 

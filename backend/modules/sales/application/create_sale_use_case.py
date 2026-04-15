@@ -10,7 +10,10 @@ from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
 )
 from shared.domain.interfaces.i_client_reader import IClientReader
 from shared.domain.interfaces.i_product_reader import IProductReader
-from shared.domain.interfaces.i_product_stock_updater import IProductStockUpdater
+from shared.domain.interfaces.i_stock_availability_reader import (
+    IStockAvailabilityReader,
+)
+from shared.domain.interfaces.i_warehouse_reader import IWarehouseReader
 
 
 class CreateSaleUseCase(ICreateSaleUseCase):
@@ -19,16 +22,19 @@ class CreateSaleUseCase(ICreateSaleUseCase):
         sale_repo: ISaleRepository,
         client_reader: IClientReader,
         product_reader: IProductReader,
-        stock_updater: IProductStockUpdater,
+        warehouse_reader: IWarehouseReader,
+        stock_reader: IStockAvailabilityReader,
     ) -> None:
         self._sale_repo = sale_repo
         self._client_reader = client_reader
         self._product_reader = product_reader
-        self._stock_updater = stock_updater
+        self._warehouse_reader = warehouse_reader
+        self._stock_reader = stock_reader
 
     async def execute(
         self,
         client_id: int,
+        warehouse_id: int,
         user_id: int,
         lines: list[dict],
     ) -> Sale:
@@ -37,6 +43,10 @@ class CreateSaleUseCase(ICreateSaleUseCase):
             raise SaleException(SaleExceptionInfo.CLIENT_NOT_FOUND)
         if not client.is_active:
             raise SaleException(SaleExceptionInfo.CLIENT_NOT_ACTIVE)
+
+        warehouse = await self._warehouse_reader.get_by_id(warehouse_id)
+        if warehouse is None:
+            raise SaleException(SaleExceptionInfo.WAREHOUSE_NOT_FOUND)
 
         delivery_address = (
             f"{client.address}, {client.city}, {client.province}, {client.postal_code}"
@@ -54,7 +64,10 @@ class CreateSaleUseCase(ICreateSaleUseCase):
                 raise SaleException(SaleExceptionInfo.PRODUCT_NOT_FOUND)
             if not product.is_active:
                 raise SaleException(SaleExceptionInfo.PRODUCT_NOT_ACTIVE)
-            if product.stock_current < line["quantity"]:
+            available = await self._stock_reader.get_available_stock(
+                warehouse_id, line["product_id"]
+            )
+            if available < line["quantity"]:
                 raise SaleException(SaleExceptionInfo.INSUFFICIENT_STOCK)
 
             quantity = line["quantity"]
@@ -80,9 +93,10 @@ class CreateSaleUseCase(ICreateSaleUseCase):
 
         sale_number = await self._sale_repo.generate_sale_number()
 
-        sale = await self._sale_repo.create(
+        return await self._sale_repo.create(
             sale_number=sale_number,
             client_id=client_id,
+            warehouse_id=warehouse_id,
             delivery_address=delivery_address,
             user_id=user_id,
             status="Pending",
@@ -91,13 +105,3 @@ class CreateSaleUseCase(ICreateSaleUseCase):
             total=total,
             lines=processed_lines,
         )
-
-        for line, processed in zip(lines, processed_lines):
-            product = await self._product_reader.get_by_id(line["product_id"])
-            if product is not None:
-                new_stock = product.stock_current - processed["quantity"]
-                await self._stock_updater.update_stock_current(
-                    line["product_id"], new_stock
-                )
-
-        return sale

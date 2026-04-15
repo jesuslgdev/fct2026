@@ -132,9 +132,6 @@ from modules.catalog.domain.interfaces.use_cases.products.i_update_product_use_c
 )
 from modules.catalog.infrastructure.repos.category_repository import CategoryRepository
 from modules.catalog.infrastructure.repos.product_repository import ProductRepository
-from modules.catalog.infrastructure.repos.product_stock_updater import (
-    ProductStockUpdater,
-)
 from modules.clients.application.create_client_use_case import CreateClientUseCase
 from modules.clients.application.get_client_use_case import GetClientUseCase
 from modules.clients.application.list_clients_use_case import ListClientsUseCase
@@ -219,6 +216,19 @@ from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case im
 from modules.purchases.infrastructure.repos.purchase_repository import (
     PurchaseRepository,
 )
+from modules.sales.application.create_sale_use_case import CreateSaleUseCase
+from modules.sales.application.get_sale_use_case import GetSaleUseCase
+from modules.sales.application.list_sales_use_case import ListSalesUseCase
+from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
+    ICreateSaleUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
+    IGetSaleUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_list_sales_use_case import (
+    IListSalesUseCase,
+)
+from modules.sales.infrastructure.repos.sale_repository import SaleRepository
 from modules.suppliers.application.add_product_to_supplier_use_case import (
     AddProductToSupplierUseCase,
 )
@@ -689,7 +699,6 @@ async def get_advance_purchase_status_use_case(
         stock_recorder=StockEntryRecorder(
             stock_repo=WarehouseStockRepository(db),
             movement_repo=StockMovementRepository(db),
-            stock_updater=ProductStockUpdater(db),
         ),
     )
 
@@ -760,5 +769,31 @@ async def get_adjust_stock_use_case(
         stock_repo=WarehouseStockRepository(db),
         movement_repo=StockMovementRepository(db),
         product_reader=ProductRepository(db),
-        stock_updater=ProductStockUpdater(db),
     )
+
+
+# ── Sales ──────────────────────────────────────────────────────────
+
+
+async def get_create_sale_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ICreateSaleUseCase:
+    return CreateSaleUseCase(
+        sale_repo=SaleRepository(db),
+        client_reader=ClientRepository(db),
+        product_reader=ProductRepository(db),
+        warehouse_reader=WarehouseRepository(db),
+        stock_reader=WarehouseStockRepository(db),
+    )
+
+
+async def get_get_sale_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetSaleUseCase:
+    return GetSaleUseCase(SaleRepository(db))
+
+
+async def get_list_sales_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListSalesUseCase:
+    return ListSalesUseCase(SaleRepository(db))

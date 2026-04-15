@@ -88,7 +88,6 @@ class ProductRepository(IProductRepository, IProductReader):
         category_id: int,
         price: Decimal,
         vat_rate: Decimal,
-        stock_current: int,
         stock_min: int,
     ) -> Product:
         product = Product(
@@ -98,7 +97,6 @@ class ProductRepository(IProductRepository, IProductReader):
             category_id=category_id,
             price=price,
             vat_rate=vat_rate,
-            stock_current=stock_current,
             stock_min=stock_min,
             is_active=True,
         )
