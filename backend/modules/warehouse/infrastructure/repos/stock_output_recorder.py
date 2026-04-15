@@ -5,29 +5,24 @@ from modules.warehouse.domain.interfaces.repositories.i_stock_movement_repositor
 from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_repository import (
     IWarehouseStockRepository,
 )
-from shared.domain.interfaces.i_product_stock_updater import IProductStockUpdater
 from shared.domain.interfaces.i_stock_output_recorder import IStockOutputRecorder
 
 
 class StockOutputRecorder(IStockOutputRecorder):
     """Records an outbound stock movement for a single product in a warehouse.
 
-    Symmetric to StockEntryRecorder: subtracts quantity from existing stock
-    instead of adding it. Used by the sales module when a sale is Delivered.
-
-    When update_global=False the global product.stock_current is NOT updated
-    here because the sales Approve step already decremented it (reservation).
+    Symmetric to StockEntryRecorder: subtracts quantity from warehouse_stock.
+    stock_current on Product is a computed column_property and updates
+    automatically once the warehouse_stock row is modified.
     """
 
     def __init__(
         self,
         stock_repo: IWarehouseStockRepository,
         movement_repo: IStockMovementRepository,
-        stock_updater: IProductStockUpdater,
     ) -> None:
         self._stock_repo = stock_repo
         self._movement_repo = movement_repo
-        self._stock_updater = stock_updater
 
     async def remove_stock(
         self,
@@ -36,7 +31,6 @@ class StockOutputRecorder(IStockOutputRecorder):
         quantity: int,
         user_email: str,
         reason: str,
-        update_global: bool = True,
     ) -> None:
         current = await self._stock_repo.get_by_warehouse_and_product(
             warehouse_id, product_id
@@ -57,7 +51,3 @@ class StockOutputRecorder(IStockOutputRecorder):
             user_email=user_email,
         )
         await self._movement_repo.create(movement)
-
-        if update_global:
-            global_stock = await self._stock_repo.get_global_stock(product_id)
-            await self._stock_updater.update_stock_current(product_id, global_stock)
