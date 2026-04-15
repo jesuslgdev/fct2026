@@ -16,7 +16,9 @@ class SaleExceptionInfo(AppExceptionInfo):
     PRODUCT_NOT_ACTIVE = (8105, "Product is not active", 422)
     INSUFFICIENT_STOCK = (8106, "Insufficient stock for product", 422)
     EMPTY_SALE_LINES = (8107, "At least one sale line is required", 422)
-    WAREHOUSE_NOT_FOUND = (8108, "Warehouse not found", 404)
+    SALE_INVALID_TRANSITION = (8108, "Invalid sale status transition", 422)
+    SALE_TERMINAL_STATE = (8109, "Sale is in a terminal state", 422)
+    WAREHOUSE_NOT_FOUND = (8110, "Warehouse not found", 404)
 
 
 class SaleException(AppException):
