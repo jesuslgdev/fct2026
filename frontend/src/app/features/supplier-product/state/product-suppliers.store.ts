@@ -19,7 +19,9 @@ import {
   SupplierProductApiError,
   SupplierProductDuplicateError,
   SupplierProductForbiddenError,
+  SupplierProductItemInactiveError,
   SupplierProductNotFoundError,
+  SupplierProductSupplierInactiveError,
   SupplierProductUnauthorizedError,
   SupplierProductValidationError,
 } from '@domain/models/supplier-product-errors';
@@ -106,6 +108,14 @@ export class ProductSuppliersStore {
 
     if (err instanceof SupplierProductDuplicateError) {
       return 'El producto ya esta asociado con este proveedor.';
+    }
+
+    if (err instanceof SupplierProductSupplierInactiveError) {
+      return 'Solo se pueden asociar proveedores activos.';
+    }
+
+    if (err instanceof SupplierProductItemInactiveError) {
+      return 'Solo se pueden asociar productos activos.';
     }
 
     if (err instanceof SupplierProductApiError) {

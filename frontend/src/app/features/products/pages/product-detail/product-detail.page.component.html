@@ -149,6 +149,7 @@
                         icon="pi pi-trash"
                         variant="destructive"
                         size="sm"
+                        ariaLabel="Eliminar asociacion"
                         (clicked)="supplierStore.requestDeleteSupplier(supplier)"
                       />
                     }
@@ -213,4 +214,23 @@
       />
     </label>
   </div>
+</ui-dialog>
+
+<ui-dialog
+  [(visible)]="supplierStore.confirmDeleteSupplierDialogVisible"
+  header="Eliminar asociación"
+  variant="warning"
+  size="sm"
+  confirmLabel="Eliminar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="supplierStore.loading()"
+  (confirmed)="supplierStore.confirmDeleteSupplier()"
+  (cancelled)="supplierStore.cancelDeleteSupplier()"
+>
+  @if (supplierStore.selectedProductSupplier(); as supplier) {
+    <p class="warning-text">
+      Vas a eliminar la asociación con <strong>{{ supplier.supplierName }}</strong>.
+      Las compras históricas no se verán afectadas.
+    </p>
+  }
 </ui-dialog>

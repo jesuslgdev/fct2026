@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { ProviderStatus } from '@domain/enums/provider-status.enum';
 import { UserPermission } from '@domain/enums/user-permission.enum';
@@ -12,6 +12,10 @@ import {
   ProductSupplierQueryParams,
   UpdateSupplierProductPriceRequest,
 } from '@domain/models/supplier-product.model';
+import {
+  SupplierProductDuplicateError,
+  SupplierProductItemInactiveError,
+} from '@domain/models/supplier-product-errors';
 import { GetProvidersUseCase } from '@domain/usecases/supplier/get-providers.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
 import { GetProductSuppliersUseCase } from '@domain/usecases/supplier-product/get-product-suppliers.usecase';
@@ -198,6 +202,28 @@ describe('ProductSuppliersStore', () => {
 
     expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
     expect(store.error()).toBe('Proveedor seleccionado invalido.');
+  });
+
+  it('mapea asociacion duplicada al agregar proveedor', async () => {
+    store.productId.set(1);
+    addProductToSupplierUseCase.execute.mockReturnValue(
+      throwError(() => new SupplierProductDuplicateError('Product already associated')),
+    );
+
+    await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 90 });
+
+    expect(store.error()).toBe('El producto ya esta asociado con este proveedor.');
+  });
+
+  it('mapea producto inactivo al agregar proveedor', async () => {
+    store.productId.set(1);
+    addProductToSupplierUseCase.execute.mockReturnValue(
+      throwError(() => new SupplierProductItemInactiveError('Product is not active')),
+    );
+
+    await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 90 });
+
+    expect(store.error()).toBe('Solo se pueden asociar productos activos.');
   });
 
   it('actualiza precio y recarga lista', async () => {
