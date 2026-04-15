@@ -17,6 +17,7 @@ import { CreateUserUseCase } from '@domain/usecases/user/create-user.usecase';
 import { UpdateUserUseCase } from '@domain/usecases/user/update-user.usecase';
 import { ActivateUserUseCase } from '@domain/usecases/user/activate-user.usecase';
 import { DeactivateUserUseCase } from '@domain/usecases/user/deactivate-user.usecase';
+import { DeleteUserUseCase } from '@domain/usecases/user/delete-user.usecase';
 
 const USER_MOCK: User = {
   id: 1,
@@ -37,6 +38,7 @@ class MockUserRepository implements UserRepository {
   updateUser = vi.fn<(id: number, payload: UpdateUserPayload) => Observable<User>>();
   deactivateUser = vi.fn<(id: number) => Observable<void>>();
   activateUser = vi.fn<(id: number) => Observable<void>>();
+  deleteUser = vi.fn<(id: number) => Observable<void>>();
   getDepartments = vi.fn<() => Observable<Department[]>>();
 }
 
@@ -53,6 +55,7 @@ describe('User Use Cases', () => {
         UpdateUserUseCase,
         ActivateUserUseCase,
         DeactivateUserUseCase,
+        DeleteUserUseCase,
         { provide: UserRepository, useValue: repo },
       ],
     });
@@ -133,5 +136,15 @@ describe('User Use Cases', () => {
 
     expect(repo.activateUser).toHaveBeenCalledWith(1);
     expect(repo.activateUser).toHaveBeenCalledOnce();
+  });
+
+  it('DeleteUserUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(DeleteUserUseCase);
+    repo.deleteUser.mockReturnValueOnce(of(void 0));
+
+    await firstValueFrom(useCase.execute(1));
+
+    expect(repo.deleteUser).toHaveBeenCalledWith(1);
+    expect(repo.deleteUser).toHaveBeenCalledOnce();
   });
 });

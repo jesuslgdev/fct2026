@@ -228,6 +228,15 @@ export class MockUserRepository implements UserRepository {
     return of(void 0);
   }
 
+  deleteUser(id: number): Observable<void> {
+    if (!this.getUserByIdOrThrow(id)) {
+      return throwError(() => new Error(`Usuario con id "${id}" no encontrado`));
+    }
+
+    this.users = this.users.filter((u) => u.id !== id);
+    return of(void 0);
+  }
+
   getDepartments(): Observable<Department[]> {
     // TODO: replace with DepartmentRepository when Departments feature becomes available
     return of(INITIAL_MOCK_DEPARTMENTS.map((d) => ({ ...d })));

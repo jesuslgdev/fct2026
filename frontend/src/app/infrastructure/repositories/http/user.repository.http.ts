@@ -182,6 +182,12 @@ export class HttpUserRepository implements UserRepository {
     );
   }
 
+  deleteUser(id: number): Observable<void> {
+    return this.withErrorMapping(() =>
+      this.http.delete<void>(`${BASE_URL}/${id}`),
+    );
+  }
+
   getDepartments(): Observable<Department[]> {
     return this.withErrorMapping(() =>
       this.http.get<DepartmentDto[]>(DEPARTMENTS_URL).pipe(
