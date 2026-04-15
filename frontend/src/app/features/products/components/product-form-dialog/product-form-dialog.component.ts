@@ -23,7 +23,6 @@ export class ProductFormDialogComponent {
     description: ['', [Validators.required, Validators.maxLength(500)]],
     categoryId: [null as number | null, Validators.required],
     price: [0, [Validators.required, Validators.min(0.01)]],
-    stock: [0, [Validators.required, Validators.min(0)]],
     minStock: [0, [Validators.required, Validators.min(0)]],
   });
 
@@ -40,7 +39,6 @@ export class ProductFormDialogComponent {
   get description() { return this.form.controls.description; }
   get categoryId() { return this.form.controls.categoryId; }
   get price() { return this.form.controls.price; }
-  get stock() { return this.form.controls.stock; }
   get minStock() { return this.form.controls.minStock; }
 
   constructor() {
@@ -55,7 +53,6 @@ export class ProductFormDialogComponent {
           description: '',
           categoryId: null,
           price: 0,
-          stock: 0,
           minStock: 0,
         });
         this.form.enable({ emitEvent: false });
@@ -70,7 +67,6 @@ export class ProductFormDialogComponent {
           description: product.description,
           categoryId: product.categoryId,
           price: product.price,
-          stock: product.stock,
           minStock: product.minStock,
         });
       }
@@ -81,7 +77,6 @@ export class ProductFormDialogComponent {
       } else {
         this.form.enable({ emitEvent: false });
         this.code.disable({ emitEvent: false });
-        this.stock.disable({ emitEvent: false });
       }
     });
   }
@@ -111,7 +106,6 @@ export class ProductFormDialogComponent {
         description: value.description ?? '',
         categoryId: value.categoryId ?? 0,
         price: value.price ?? 0,
-        stock: value.stock ?? 0,
         minStock: value.minStock ?? 0,
       };
       await this.store.createProduct(payload);

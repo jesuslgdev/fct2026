@@ -267,7 +267,6 @@ describe('ProductsStore', () => {
         description: 'New Description',
         categoryId: 1,
         price: 50,
-        stock: 20,
         minStock: 10,
       };
       

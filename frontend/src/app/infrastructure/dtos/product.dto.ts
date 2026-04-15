@@ -71,10 +71,7 @@ export interface CreateProductDto {
   category_id: number;
   price: number | string;
   vat_rate?: number | string;
-  stock_current?: number;
   stock_min?: number;
-  stock?: number;
-  min_stock?: number;
 }
 
 export interface UpdateProductDto {
@@ -85,10 +82,7 @@ export interface UpdateProductDto {
   category_id?: number;
   price?: number | string | null;
   vat_rate?: number | string | null;
-  stock_current?: number | null;
   stock_min?: number | null;
-  stock?: number | null;
-  min_stock?: number | null;
 }
 
 export interface ProductCategoryDto {

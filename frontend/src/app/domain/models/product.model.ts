@@ -32,7 +32,6 @@ export interface CreateProductPayload {
   description: string;
   categoryId: number;
   price: number;
-  stock: number;
   minStock: number;
 }
 
@@ -41,7 +40,6 @@ export interface UpdateProductPayload {
   description?: string | null;
   categoryId?: number | null;
   price?: number | null;
-  stock?: number | null;
   minStock?: number | null;
 }
 

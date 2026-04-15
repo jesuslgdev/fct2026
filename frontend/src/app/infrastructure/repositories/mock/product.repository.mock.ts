@@ -115,7 +115,7 @@ export class MockProductRepository implements ProductRepository {
       categoryId: payload.categoryId,
       categoryName: 'Categoría general',
       price: payload.price,
-      stock: payload.stock,
+      stock: 0,
       minStock: payload.minStock,
       isActive: true,
       suppliers: [],
@@ -138,7 +138,6 @@ export class MockProductRepository implements ProductRepository {
       description: payload.description ?? existing.description,
       categoryId: payload.categoryId ?? existing.categoryId,
       price: payload.price ?? existing.price,
-      stock: payload.stock ?? existing.stock,
       minStock: payload.minStock ?? existing.minStock,
     };
 
