@@ -189,12 +189,9 @@ describe('PurchasesStore', () => {
     getDeliveryWarehousesUseCase = new MockGetDeliveryWarehousesUseCase();
     getSupplierProductsForPurchaseUseCase = new MockGetSupplierProductsForPurchaseUseCase();
 
-<<<<<<< Updated upstream
-=======
     // Default response to support catalog preloading side effects in loadFormOptions.
     getSupplierProductsForPurchaseUseCase.execute.mockReturnValue(of([]));
 
->>>>>>> Stashed changes
     TestBed.configureTestingModule({
       providers: [
         PurchasesStore,
