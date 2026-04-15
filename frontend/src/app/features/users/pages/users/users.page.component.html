@@ -1,8 +1,5 @@
 <section class="page">
-
-  <!-- ── Header ───────────────────────────────────────────────────────────── -->
   <div class="page-header">
-    <!-- título semántico definido en styles.css -->
     <h1 class="text-style-title">Usuarios</h1>
     @if (store.canEdit()) {
       <ui-button
@@ -17,11 +14,10 @@
     <p class="warning-text" role="alert">{{ errorMessage }}</p>
   }
 
-  <!-- ── Filters ──────────────────────────────────────────────────────────── -->
   <div class="filters-row">
     <ui-input
       type="text"
-      placeholder="Buscar por nombre o correo…"
+      placeholder="Buscar por nombre o correo..."
       styleClass="flex-1 min-w-64"
       [ngModel]="store.searchQuery()"
       (valueChange)="store.onSearch($event)"
@@ -46,11 +42,11 @@
     />
   </div>
 
-  <!-- ── Table ────────────────────────────────────────────────────────────── -->
   <ui-table
     [value]="store.usersView()"
     [loading]="store.loading()"
     [paginator]="true"
+    [lazy]="true"
     [rows]="store.pageSize()"
     [totalRecords]="store.total()"
     [rowsPerPageOptions]="[10, 20, 50]"
@@ -85,7 +81,7 @@
         </td>
         @if (store.canEdit()) {
           <td>
-            <div>
+            <div class="flex items-center gap-2">
               <ui-button
                 icon="pi pi-pencil"
                 variant="ghost"
@@ -97,6 +93,12 @@
                 [variant]="user.active ? 'destructive' : 'secondary'"
                 size="sm"
                 (clicked)="store.requestToggleStatus(user)"
+              />
+              <ui-button
+                icon="pi pi-trash"
+                variant="destructive"
+                size="sm"
+                (clicked)="store.requestDeleteUser(user)"
               />
             </div>
           </td>
@@ -112,20 +114,16 @@
       </tr>
     </ng-template>
   </ui-table>
-
 </section>
 
-<!-- ── Create / Edit user dialog ────────────────────────────────────────── -->
 <app-user-form-dialog />
-<app-user-reactivate-dialog />
 
-<!-- ── Confirm toggle status dialog ─────────────────────────────────────── -->
 <ui-dialog
   [(visible)]="store.confirmDialogVisible"
-  header="Desactivar usuario"
+  [header]="store.userToToggle()?.active ? 'Desactivar usuario' : 'Activar usuario'"
   variant="warning"
   size="sm"
-  confirmLabel="Desactivar"
+  [confirmLabel]="store.userToToggle()?.active ? 'Desactivar' : 'Activar'"
   cancelLabel="Cancelar"
   [confirmLoading]="store.loading()"
   (confirmed)="store.confirmToggleStatus()"
@@ -133,10 +131,34 @@
 >
   @if (store.userToToggle(); as user) {
     <p class="warning-text">
-      ¿Está seguro de que desea desactivar
-      <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>?
-      Sus datos personales se eliminarán y, para reactivar su cuenta,
-      será necesario introducirlos manualmente.
+      @if (user.active) {
+        Esta accion desactiva el acceso de
+        <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>.
+        Sus datos personales se conservan.
+      } @else {
+        Esta accion reactiva el acceso de
+        <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>.
+      }
+    </p>
+  }
+</ui-dialog>
+
+<ui-dialog
+  [(visible)]="store.deleteDialogVisible"
+  header="Eliminar usuario"
+  variant="warning"
+  size="sm"
+  confirmLabel="Eliminar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmDeleteUser()"
+  (cancelled)="store.cancelDeleteUser()"
+>
+  @if (store.userToDelete(); as user) {
+    <p class="warning-text">
+      Esta accion eliminara
+      <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>.
+      Si tiene registros asociados, el backend conservara la trazabilidad y anonimizara sus datos.
     </p>
   }
 </ui-dialog>
