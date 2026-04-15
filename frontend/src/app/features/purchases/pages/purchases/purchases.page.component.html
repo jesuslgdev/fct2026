@@ -1,0 +1,238 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Compras</h1>
+    @if (store.canManage()) {
+      <ui-button
+        label="Nueva compra"
+        icon="pi pi-plus"
+        (clicked)="store.openCreateDialog()"
+      />
+    }
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  <div class="filters-row">
+    <ui-input
+      type="text"
+      placeholder="Buscar por proveedor..."
+      styleClass="flex-1 min-w-64"
+      [ngModel]="store.supplierSearch()"
+      (valueChange)="onSearchSupplier($event)"
+    />
+
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los estados"
+      class="min-w-44"
+      [ngModel]="store.statusFilter()"
+      (ngModelChange)="onStatusChange($event)"
+    />
+
+    <p-select
+      [options]="supplierOptions()"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los proveedores"
+      class="min-w-56"
+      [ngModel]="store.supplierFilter()"
+      (ngModelChange)="onSupplierFilterChange($event)"
+    />
+
+    <p-select
+      [options]="sortOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Ordenar por"
+      class="min-w-48"
+      [ngModel]="sortValue()"
+      (ngModelChange)="onSortChange($event)"
+    />
+  </div>
+
+  <div class="filters-row">
+    <ui-input
+      type="date"
+      placeholder="Desde"
+      styleClass="min-w-52"
+      [ngModel]="fromDate()"
+      (valueChange)="onFromDateChange($event)"
+    />
+
+    <ui-input
+      type="date"
+      placeholder="Hasta"
+      styleClass="min-w-52"
+      [ngModel]="toDate()"
+      (valueChange)="onToDateChange($event)"
+    />
+  </div>
+
+  <ui-table
+    [value]="store.purchases()"
+    [loading]="store.loading()"
+    [paginator]="true"
+    [lazy]="true"
+    [first]="(store.page() - 1) * store.pageSize()"
+    [rows]="store.pageSize()"
+    [totalRecords]="store.total()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="purchaseId"
+    (page)="onPageChange($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Número</th>
+        <th>Proveedor</th>
+        <th>Dirección entrega</th>
+        <th>Creada</th>
+        <th>Total</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-purchase>
+      <tr>
+        <td>{{ purchase.purchaseNumber }}</td>
+        <td>{{ purchase.supplierName }}</td>
+        <td>{{ purchase.deliveryAddress }}</td>
+        <td>{{ purchase.createdAt | date: 'short' }}</td>
+        <td>{{ purchase.total | currency: 'EUR' }}</td>
+        <td>
+          <ui-purchase-status-badge [status]="purchase.status" />
+        </td>
+        <td>
+          <div class="flex flex-wrap gap-2">
+            <ui-button
+              icon="pi pi-eye"
+              variant="ghost"
+              size="sm"
+              ariaLabel="Ver compra"
+              (clicked)="store.openViewDialog(purchase)"
+            />
+            @if (canEditPurchase(purchase)) {
+              <ui-button
+                icon="pi pi-pencil"
+                variant="ghost"
+                size="sm"
+                ariaLabel="Editar compra"
+                (clicked)="store.openEditDialog(purchase)"
+              />
+            }
+            @if (canDeletePurchase(purchase)) {
+              <ui-button
+                icon="pi pi-trash"
+                variant="destructive"
+                size="sm"
+                ariaLabel="Eliminar compra"
+                (clicked)="store.requestDeletePurchase(purchase)"
+              />
+            }
+            @if (canCancelPurchase(purchase)) {
+              <ui-button
+                icon="pi pi-times-circle"
+                variant="outline"
+                size="sm"
+                ariaLabel="Cancelar compra"
+                (clicked)="openCancelDialog(purchase)"
+              />
+            }
+            @if (canAdvanceStatus(purchase)) {
+              <ui-button
+                icon="pi pi-arrow-right"
+                variant="secondary"
+                size="sm"
+                [title]="'Cambiar a ' + nextStatusLabel(purchase)"
+                [ariaLabel]="'Cambiar a ' + nextStatusLabel(purchase)"
+                (clicked)="requestStatusChange(purchase)"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="7" class="empty-state">
+          No se encontraron compras.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+</section>
+
+<app-purchase-form-dialog />
+
+<ui-dialog
+  [(visible)]="store.deleteConfirmVisible"
+  header="Eliminar compra"
+  variant="warning"
+  size="sm"
+  confirmLabel="Eliminar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmDeletePurchase()"
+  (cancelled)="store.cancelDeletePurchase()"
+>
+  @if (store.purchaseToDelete(); as purchase) {
+    <p class="warning-text">
+      ¿Desea eliminar la compra <strong>{{ purchase.purchaseNumber }}</strong>? Esta acción no se puede deshacer.
+    </p>
+  }
+</ui-dialog>
+
+<ui-dialog
+  [(visible)]="store.cancelConfirmVisible"
+  header="Cancelar compra"
+  variant="warning"
+  size="default"
+  confirmLabel="Cancelar compra"
+  cancelLabel="Volver"
+  [confirmLoading]="store.loading()"
+  (confirmed)="confirmCancelPurchase()"
+  (cancelled)="closeCancelDialog()"
+>
+  @if (store.purchaseToCancel(); as purchase) {
+    <div class="dialog-field">
+      <p class="warning-text">
+        Va a cancelar la compra <strong>{{ purchase.purchaseNumber }}</strong>.
+      </p>
+      <span class="dialog-field-label">Motivo (opcional)</span>
+      <ui-input
+        type="text"
+        placeholder="Motivo de cancelación"
+        [ngModel]="cancellationReason()"
+        (valueChange)="cancellationReason.set($event)"
+      />
+    </div>
+  }
+</ui-dialog>
+
+<ui-dialog
+  [(visible)]="store.statusConfirmVisible"
+  header="Cambiar estado"
+  variant="info"
+  size="sm"
+  confirmLabel="Confirmar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmStatusChange()"
+  (cancelled)="store.cancelStatusChange()"
+>
+  @if (store.purchaseToChangeStatus(); as purchase) {
+    @if (store.nextStatusToApply(); as nextStatus) {
+      <p class="warning-text">
+        Cambiar estado de <strong>{{ purchase.purchaseNumber }}</strong>
+        de <strong>{{ statusLabel(purchase.status) }}</strong>
+        a <strong>{{ statusLabel(nextStatus) }}</strong>.
+      </p>
+    }
+  }
+</ui-dialog>
