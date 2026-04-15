@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductsStore } from '@features/products/state/products.store';
@@ -25,6 +25,7 @@ export class ProductDetailPageComponent implements OnInit {
   readonly store = inject(ProductsStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly activeDetailView = signal<'warehouses' | 'suppliers'>('warehouses');
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -33,7 +34,11 @@ export class ProductDetailPageComponent implements OnInit {
       return;
     }
 
-    this.store.loadProductById(id);
+    this.store.loadProductDetail(id);
+  }
+
+  setDetailView(view: 'warehouses' | 'suppliers'): void {
+    this.activeDetailView.set(view);
   }
 
   async openEditFromDetail(): Promise<void> {
