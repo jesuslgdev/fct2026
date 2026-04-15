@@ -68,6 +68,19 @@ export class SupplierProductsStore {
     const associated = new Set(this.supplierProducts().map((item) => item.productId));
     return this.activeProducts().filter((product) => product.isActive && !associated.has(product.productId));
   });
+  readonly importInvalidRows = computed(() => {
+    const result = this.importResult();
+    return result ? new Set(result.errorDetail.map((error) => error.row)).size : 0;
+  });
+  readonly importValidRows = computed(() => {
+    const result = this.importResult();
+    return result ? Math.max(result.total - this.importInvalidRows(), 0) : 0;
+  });
+  readonly importHasErrors = computed(() => (this.importResult()?.errors ?? 0) > 0);
+  readonly importSucceeded = computed(() => {
+    const result = this.importResult();
+    return !!result && result.errors === 0;
+  });
 
   private buildQueryParams(): SupplierProductQueryParams {
     return { page: this.supplierPage(), pageSize: this.supplierPageSize() };
@@ -292,6 +305,8 @@ export class SupplierProductsStore {
   }
 
   setImportFile(file: File | null): void {
+    this.error.set(null);
+    this.importResult.set(null);
     this.selectedImportFile.set(file);
   }
 
@@ -304,11 +319,17 @@ export class SupplierProductsStore {
       this.error.set('Se requiere archivo Excel para importar.');
       return;
     }
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      this.error.set('El archivo debe ser Excel .xlsx.');
+      return;
+    }
     this.importLoading.set(true);
     try {
       const result = await firstValueFrom(this.importSupplierProductsUseCase.execute(supplierId, { file }));
       this.importResult.set(result);
-      await this.fetchSupplierProducts(supplierId);
+      if (result.errors === 0) {
+        await this.fetchSupplierProducts(supplierId);
+      }
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Error al importar productos del proveedor.'));
     } finally {
