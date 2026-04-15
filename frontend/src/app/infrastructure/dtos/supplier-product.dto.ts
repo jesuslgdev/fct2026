@@ -2,9 +2,9 @@ type ApiDecimal = number | string;
 
 export interface SupplierProductDto {
   product_id: number;
-  product_name?: string;
-  product_code?: string;
-  category_name?: string;
+  product_name?: string | null;
+  product_code?: string | null;
+  category_name?: string | null;
   supplier_price: ApiDecimal;
 }
 

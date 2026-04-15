@@ -111,7 +111,7 @@ describe('HttpSupplierProductRepository', () => {
       request.method === 'POST' && request.url.endsWith('/api/v1/suppliers/1/products'),
     );
 
-    req.flush({ detail: 'Supplier is not active' }, { status: 409, statusText: 'Conflict' });
+    req.flush({ error_code: 3203, detail: 'Supplier is not active' }, { status: 409, statusText: 'Conflict' });
 
     await expect(promise).rejects.toBeInstanceOf(SupplierProductSupplierInactiveError);
   });
@@ -123,7 +123,7 @@ describe('HttpSupplierProductRepository', () => {
       request.method === 'POST' && request.url.endsWith('/api/v1/suppliers/1/products'),
     );
 
-    req.flush({ detail: 'Product is not active' }, { status: 409, statusText: 'Conflict' });
+    req.flush({ error_code: 3204, detail: 'Product is not active' }, { status: 409, statusText: 'Conflict' });
 
     await expect(promise).rejects.toBeInstanceOf(SupplierProductItemInactiveError);
   });
@@ -135,7 +135,7 @@ describe('HttpSupplierProductRepository', () => {
       request.method === 'POST' && request.url.endsWith('/api/v1/suppliers/1/products'),
     );
 
-    req.flush({ detail: 'Supplier-product association already exists' }, { status: 409, statusText: 'Conflict' });
+    req.flush({ error_code: 3202, detail: 'Supplier-product association already exists' }, { status: 409, statusText: 'Conflict' });
 
     await expect(promise).rejects.toBeInstanceOf(SupplierProductDuplicateError);
   });
@@ -166,7 +166,7 @@ describe('HttpSupplierProductRepository', () => {
     expect(result.total).toBe(5);
     expect(result.created).toBe(4);
     expect(result.errors).toBe(1);
-    expect(result.error_detail).toEqual([{ row: 4, reason: 'Invalid product code' }]);
+    expect(result.errorDetail).toEqual([{ row: 4, reason: 'Invalid product code' }]);
   });
 
   it('downloads template as blob', async () => {

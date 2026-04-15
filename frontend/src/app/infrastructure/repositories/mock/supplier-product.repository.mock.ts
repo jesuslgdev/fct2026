@@ -65,15 +65,10 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
   }
 
   private validatePrice(price: number): void {
-    if (price <= 0) {
+    if (!Number.isFinite(price) || price <= 0) {
       throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must be greater than 0');
     }
 
-    if (price > 999999.99) {
-      throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must be less than 999999.99');
-    }
-
-    
     const decimalPlaces = (price.toString().split('.')[1] || '').length;
     if (decimalPlaces > 2) {
       throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must have maximum 2 decimal places');
@@ -108,7 +103,6 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
   addProductToSupplier(supplierId: number, request: AddSupplierProductRequest): Observable<SupplierProduct> {
     this.validatePrice(request.supplierPrice);
 
-    // Check if product already exists for this supplier
     const existing = this.findSupplierProduct(supplierId, request.productId);
     if (existing) {
       throw new SupplierProductDuplicateError('Product already associated with this supplier');
@@ -164,20 +158,18 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
 
   importSupplierProducts(supplierId: number, request: ImportSupplierProductsRequest): Observable<ImportResult> {
     const currentCount = this.supplierProducts.filter((sp) => sp.supplierId === supplierId).length;
-    // Mock implementation: simulate processing the file from request
     const fileData = request.file;
     const fileSize = fileData.size;
 
     return of({
       total: currentCount,
-      created: Math.floor(fileSize / 1000), // Simulate created count based on file size
+      created: Math.floor(fileSize / 1000),
       errors: 0,
-      error_detail: [],
+      errorDetail: [],
     });
   }
 
   downloadTemplate(supplierId: number): Observable<Blob> {
-    // Generate different mock content based on supplierId
     const supplierPrefix = supplierId.toString(16).padStart(2, '0');
     const mockContent = new Uint8Array([0x50, 0x4b, 0x03, 0x04, parseInt(supplierPrefix, 16)]);
     return of(new Blob([mockContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
