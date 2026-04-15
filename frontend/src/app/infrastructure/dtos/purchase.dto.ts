@@ -15,7 +15,7 @@ export interface PurchaseListItemDto {
   status: BackendPurchaseStatus | string;
   warehouse_id: number;
   created_at: string;
-  total: number | null;
+  total: number | string | null;
 }
 
 export type PurchasesPageDto = PaginatedResponse<PurchaseListItemDto>;
@@ -26,11 +26,11 @@ export interface PurchaseLineDto {
   product_id: number;
   product_name: string | null;
   quantity: number;
-  unit_price: number;
-  discount: number;
-  line_subtotal: number;
-  vat_rate: number;
-  line_tax: number;
+  unit_price: number | string;
+  discount: number | string;
+  line_subtotal: number | string;
+  vat_rate: number | string;
+  line_tax: number | string;
 }
 
 export interface PurchaseDetailDto {
@@ -44,9 +44,9 @@ export interface PurchaseDetailDto {
   warehouse_name: string | null;
   purchase_date: string;
   status: BackendPurchaseStatus | string;
-  subtotal: number;
-  taxes: number;
-  total: number;
+  subtotal: number | string;
+  taxes: number | string;
+  total: number | string;
   cancelled_at: string | null;
   cancelled_by_user_id: number | null;
   created_at: string;
@@ -98,7 +98,7 @@ export interface SupplierProductDto {
   product_name: string | null;
   product_code: string | null;
   category_name: string | null;
-  supplier_price: number;
+  supplier_price: number | string;
 }
 
 export type SupplierProductsPageDto = PaginatedResponse<SupplierProductDto>;
@@ -110,8 +110,8 @@ export interface CatalogProductDto {
   description: string | null;
   category_id: number;
   category_name: string | null;
-  price: number;
-  vat_rate: number;
+  price: number | string;
+  vat_rate: number | string;
   stock_current: number;
   stock_min: number;
   is_active: boolean;

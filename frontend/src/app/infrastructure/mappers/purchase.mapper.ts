@@ -185,12 +185,14 @@ export class PurchaseMapper {
     };
   }
 
-  static toDomainVatRate(vatRate: number): number {
-    if (vatRate <= 1) {
-      return Math.round((vatRate + Number.EPSILON) * 10000) / 100;
+  static toDomainVatRate(vatRate: number | string | null | undefined): number {
+    const normalizedVatRate = this.toNumber(vatRate);
+
+    if (normalizedVatRate <= 1) {
+      return Math.round((normalizedVatRate + Number.EPSILON) * 10000) / 100;
     }
 
-    return vatRate;
+    return normalizedVatRate;
   }
 
   static toDomainStatus(status: string): PurchaseStatus {
@@ -270,11 +272,20 @@ export class PurchaseMapper {
     ];
   }
 
-  private static toNumber(value: number | null | undefined): number {
-    if (typeof value !== 'number' || Number.isNaN(value)) {
+  private static toNumber(value: number | string | null | undefined): number {
+    if (value === null || value === undefined) {
       return 0;
     }
 
-    return value;
+    const parsedValue =
+      typeof value === 'number'
+        ? value
+        : Number.parseFloat(value.replace(',', '.'));
+
+    if (!Number.isFinite(parsedValue)) {
+      return 0;
+    }
+
+    return parsedValue;
   }
 }
