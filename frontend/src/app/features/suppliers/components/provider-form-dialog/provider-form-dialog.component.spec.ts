@@ -71,17 +71,30 @@ describe('ProviderFormDialogComponent', () => {
     expect(component.form.contains('email')).toBe(true);
     expect(component.form.contains('phone')).toBe(true);
     expect(component.form.contains('address')).toBe(true);
+    expect(component.form.contains('city')).toBe(true);
+    expect(component.form.contains('province')).toBe(true);
+    expect(component.form.contains('postalCode')).toBe(true);
   });
 
   it('should have proper validators on required fields', () => {
     const nameControl = component.form.get('name');
     const taxIdControl = component.form.get('taxId');
     const emailControl = component.form.get('email');
+    const phoneControl = component.form.get('phone');
+    const addressControl = component.form.get('address');
+    const cityControl = component.form.get('city');
+    const provinceControl = component.form.get('province');
+    const postalCodeControl = component.form.get('postalCode');
 
     expect(nameControl?.hasValidator(Validators.required)).toBe(true);
     expect(taxIdControl?.hasValidator(Validators.required)).toBe(true);
     expect(emailControl?.hasValidator(Validators.required)).toBe(true);
     expect(emailControl?.hasValidator(Validators.email)).toBe(true);
+    expect(phoneControl?.hasValidator(Validators.required)).toBe(true);
+    expect(addressControl?.hasValidator(Validators.required)).toBe(true);
+    expect(cityControl?.hasValidator(Validators.required)).toBe(true);
+    expect(provinceControl?.hasValidator(Validators.required)).toBe(true);
+    expect(postalCodeControl?.hasValidator(Validators.required)).toBe(true);
   });
 
   it('should have getters for form controls', () => {
@@ -100,18 +113,27 @@ describe('ProviderFormDialogComponent', () => {
     });
 
     // Reset the form manually to simulate the effect
-    component.form.reset();
+    component.form.reset({
+      name: '',
+      taxId: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      province: '',
+      postalCode: '',
+    });
     fixture.detectChanges();
 
     expect(component.form.value).toEqual({
-      name: null,
-      taxId: null,
-      email: null,
-      phone: null,
-      address: null,
-      city: null,
-      province: null,
-      postalCode: null,
+      name: '',
+      taxId: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      province: '',
+      postalCode: '',
     });
   });
 

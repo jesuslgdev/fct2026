@@ -24,9 +24,7 @@
 
   <!-- Error global -->
   @if (store.error(); as errorMessage) {
-    <ui-card variant="danger" class="mb-4">
-      <p class="text-white" role="alert">{{ errorMessage }}</p>
-    </ui-card>
+    <p class="dialog-error-banner" role="alert">{{ errorMessage }}</p>
   }
 
   <!-- ── Filters ────────────────────────────────────── -->

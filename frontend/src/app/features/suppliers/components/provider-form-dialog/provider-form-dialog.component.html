@@ -49,7 +49,10 @@
       <ui-input id="address" formControlName="address" placeholder="Calle Principal 123"
         [state]="address.invalid && address.touched ? 'error' : 'default'" />
       @if (address.invalid && address.touched) {
-        <span class="dialog-field-error">La dirección no es válida.</span>
+        <span class="dialog-field-error">
+          @if (address.hasError('required')) { La dirección es obligatoria. }
+          @else { La dirección no es válida. }
+        </span>
       }
     </div>
 
@@ -60,7 +63,10 @@
         <ui-input id="city" formControlName="city" placeholder="Madrid"
           [state]="city.invalid && city.touched ? 'error' : 'default'" />
         @if (city.invalid && city.touched) {
-          <span class="dialog-field-error">La ciudad no es válida.</span>
+          <span class="dialog-field-error">
+            @if (city.hasError('required')) { La ciudad es obligatoria. }
+            @else { La ciudad no es válida. }
+          </span>
         }
       </div>
       <div class="dialog-field">
@@ -68,7 +74,10 @@
         <ui-input id="province" formControlName="province" placeholder="Madrid"
           [state]="province.invalid && province.touched ? 'error' : 'default'" />
         @if (province.invalid && province.touched) {
-          <span class="dialog-field-error">La provincia no es válida.</span>
+          <span class="dialog-field-error">
+            @if (province.hasError('required')) { La provincia es obligatoria. }
+            @else { La provincia no es válida. }
+          </span>
         }
       </div>
     </div>
@@ -80,7 +89,10 @@
         <ui-input id="postalCode" formControlName="postalCode" placeholder="28001"
           [state]="postalCode.invalid && postalCode.touched ? 'error' : 'default'" />
         @if (postalCode.invalid && postalCode.touched) {
-          <span class="dialog-field-error">El código postal no es válido.</span>
+          <span class="dialog-field-error">
+            @if (postalCode.hasError('required')) { El código postal es obligatorio. }
+            @else { El código postal no es válido. }
+          </span>
         }
       </div>
       <div class="dialog-field">
@@ -88,7 +100,10 @@
         <ui-input id="phone" formControlName="phone" placeholder="+34 900 123 456"
           [state]="phone.invalid && phone.touched ? 'error' : 'default'" />
         @if (phone.invalid && phone.touched) {
-          <span class="dialog-field-error">Formato de teléfono no válido.</span>
+          <span class="dialog-field-error">
+            @if (phone.hasError('required')) { El teléfono es obligatorio. }
+            @else { Formato de teléfono no válido. }
+          </span>
         }
       </div>
     </div>
