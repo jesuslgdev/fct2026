@@ -13,12 +13,6 @@ export interface User {
   lastLoginAt?: string | null;
 }
 
-export interface ActivateUserPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-}
-
 export interface CreateUserPayload {
   firstName: string;
   lastName: string;

@@ -8,7 +8,6 @@ import { InputComponent } from '@shared/ui/input/input.component';
 import { UsersStore } from '@features/users/state/users.store';
 import { UserStatusBadgeComponent } from '@features/users/components/user-status-badge/user-status-badge.component';
 import { UserFormDialogComponent } from '@features/users/components/user-form-dialog/user-form-dialog.component';
-import { UserReactivateDialogComponent } from '@features/users/components/user-reactivate-dialog/user-reactivate-dialog.component';
 import { UserRole } from '@domain/enums/user-role.enum';
 import { User } from '@domain/models/user.model';
 
@@ -29,7 +28,6 @@ interface RoleOption   { label: string; value: UserRole | null; }
     DialogComponent,
     UserStatusBadgeComponent,
     UserFormDialogComponent,
-    UserReactivateDialogComponent,
   ],
   templateUrl: './users.page.component.html',
 })
