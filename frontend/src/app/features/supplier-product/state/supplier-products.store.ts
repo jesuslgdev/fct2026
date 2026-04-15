@@ -5,12 +5,15 @@ import { UserPermission } from '@domain/enums/user-permission.enum';
 import { Product } from '@domain/models/product.model';
 import {
   AddSupplierProductRequest,
+  ImportResult,
   SupplierProduct,
   SupplierProductQueryParams,
 } from '@domain/models/supplier-product.model';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
+import { DownloadTemplateUseCase } from '@domain/usecases/supplier-product/download-template.usecase';
 import { GetSupplierProductsUseCase } from '@domain/usecases/supplier-product/get-supplier-products.usecase';
+import { ImportSupplierProductsUseCase } from '@domain/usecases/supplier-product/import-supplier-products.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
 import { UpdateSupplierProductPriceUseCase } from '@domain/usecases/supplier-product/update-supplier-product-price.usecase';
 import {
@@ -31,6 +34,8 @@ export class SupplierProductsStore {
   private readonly addProductToSupplierUseCase = inject(AddProductToSupplierUseCase);
   private readonly updateSupplierProductPriceUseCase = inject(UpdateSupplierProductPriceUseCase);
   private readonly removeProductFromSupplierUseCase = inject(RemoveProductFromSupplierUseCase);
+  private readonly importSupplierProductsUseCase = inject(ImportSupplierProductsUseCase);
+  private readonly downloadTemplateUseCase = inject(DownloadTemplateUseCase);
   private readonly getProductsUseCase = inject(GetProductsUseCase);
 
   readonly supplierProducts = signal<SupplierProduct[]>([]);
@@ -50,6 +55,10 @@ export class SupplierProductsStore {
   readonly editingProductId = signal<number | null>(null);
   readonly priceDraft = signal('');
   readonly savingProductIds = signal<ReadonlySet<number>>(new Set<number>());
+  readonly importDialogVisible = signal(false);
+  readonly selectedImportFile = signal<File | null>(null);
+  readonly importResult = signal<ImportResult | null>(null);
+  readonly importLoading = signal(false);
 
   readonly canModify = computed(() =>
     this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager])
@@ -266,6 +275,55 @@ export class SupplierProductsStore {
       this.error.set(this.resolveErrorMessage(err, 'Error al eliminar producto del proveedor.'));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  openImportDialog(): void {
+    if (!this.ensureCanModify()) return;
+    this.importDialogVisible.set(true);
+    this.selectedImportFile.set(null);
+    this.importResult.set(null);
+  }
+
+  closeImportDialog(): void {
+    this.importDialogVisible.set(false);
+    this.selectedImportFile.set(null);
+    this.importResult.set(null);
+  }
+
+  setImportFile(file: File | null): void {
+    this.selectedImportFile.set(file);
+  }
+
+  async importSupplierProducts(): Promise<void> {
+    this.error.set(null);
+    if (!this.ensureCanModify()) return;
+    const supplierId = this.requireSupplierId();
+    const file = this.selectedImportFile();
+    if (!supplierId || !file) {
+      this.error.set('Se requiere archivo Excel para importar.');
+      return;
+    }
+    this.importLoading.set(true);
+    try {
+      const result = await firstValueFrom(this.importSupplierProductsUseCase.execute(supplierId, { file }));
+      this.importResult.set(result);
+      await this.fetchSupplierProducts(supplierId);
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Error al importar productos del proveedor.'));
+    } finally {
+      this.importLoading.set(false);
+    }
+  }
+
+  async downloadTemplate(): Promise<Blob | null> {
+    const supplierId = this.requireSupplierId();
+    if (!supplierId) return null;
+    try {
+      return await firstValueFrom(this.downloadTemplateUseCase.execute(supplierId));
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Error al descargar plantilla.'));
+      return null;
     }
   }
 
