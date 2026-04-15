@@ -13,7 +13,7 @@ class AdjustStockResult:
         previous_quantity: Stock before the adjustment.
         new_quantity: Stock after the adjustment.
         difference: new_quantity - previous_quantity.
-        global_stock: Updated global stock_current for the product.
+        global_stock: Updated total stock across all warehouses for the product.
         created_at: Timestamp of the movement.
     """
 

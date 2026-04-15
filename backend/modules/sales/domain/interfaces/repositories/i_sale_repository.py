@@ -15,6 +15,7 @@ class ISaleRepository(ABC):
         self,
         sale_number: str,
         client_id: int,
+        warehouse_id: int,
         delivery_address: str,
         user_id: int,
         status: str,
