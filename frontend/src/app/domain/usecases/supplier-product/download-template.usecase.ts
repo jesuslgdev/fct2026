@@ -8,7 +8,7 @@ export class DownloadTemplateUseCase {
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
   execute(supplierId: number): Observable<Blob> {
-    if (supplierId <= 0) {
+    if (!Number.isInteger(supplierId) || supplierId <= 0) {
       throw new SupplierProductValidationError({ supplierId }, 'Invalid supplier ID.');
     }
     return this.supplierProductRepository.downloadTemplate(supplierId);

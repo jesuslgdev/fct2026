@@ -34,6 +34,12 @@ import { environment } from 'environments/environment';
 
 const BASE_URL = `${environment.apiUrl}/api/v1/suppliers`;
 
+const SUPPLIER_PRODUCT_ERROR_CODES = {
+  associationAlreadyExists: 3202,
+  supplierNotActive: 3203,
+  productNotActive: 3204,
+} as const;
+
 @Injectable()
 export class HttpSupplierProductRepository implements SupplierProductRepository {
   private readonly http = inject(HttpClient);
@@ -50,6 +56,7 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
     }
 
     const message = this.extractErrorMessage(err);
+    const errorCode = this.extractErrorCode(err);
 
     switch (err.status) {
       case 400:
@@ -62,16 +69,32 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
       case 404:
         return new SupplierProductNotFoundError(message ?? 'Supplier product association not found.');
       case 409:
-        if (message === 'Supplier is not active') {
+        if (errorCode === SUPPLIER_PRODUCT_ERROR_CODES.supplierNotActive || message === 'Supplier is not active') {
           return new SupplierProductSupplierInactiveError(message);
         }
-        if (message === 'Product is not active') {
+        if (errorCode === SUPPLIER_PRODUCT_ERROR_CODES.productNotActive || message === 'Product is not active') {
           return new SupplierProductItemInactiveError(message);
+        }
+        if (errorCode === SUPPLIER_PRODUCT_ERROR_CODES.associationAlreadyExists) {
+          return new SupplierProductDuplicateError(message ?? 'Product already associated with this supplier.');
         }
         return new SupplierProductDuplicateError(message ?? 'Product already associated with this supplier.');
       default:
         return new SupplierProductApiError(message ?? 'Unexpected supplier product API error.');
     }
+  }
+
+  private extractErrorCode(err: HttpErrorResponse): number | undefined {
+    if (err.error && typeof err.error === 'object') {
+      const payload = err.error as Record<string, unknown>;
+      const rawCode = payload['error_code'];
+
+      if (typeof rawCode === 'number') {
+        return rawCode;
+      }
+    }
+
+    return undefined;
   }
 
   private extractErrorMessage(err: HttpErrorResponse): string | undefined {
@@ -97,11 +120,10 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
   }
 
   private validatePrice(price: number): void {
-    if (price <= 0) {
+    if (!Number.isFinite(price) || price <= 0) {
       throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must be greater than 0');
     }
 
-    // Validar que tenga máximo 2 decimales
     const decimalPlaces = (price.toString().split('.')[1] || '').length;
     if (decimalPlaces > 2) {
       throw new SupplierProductValidationError({ supplierPrice: price }, 'Supplier price must have maximum 2 decimal places');
@@ -161,8 +183,8 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
 
   downloadTemplate(supplierId: number): Observable<Blob> {
     return this.withErrorMapping(
-      this.http.get<Blob>(`${BASE_URL}/${supplierId}/products/template`, {
-        responseType: 'blob' as 'json',
+      this.http.get(`${BASE_URL}/${supplierId}/products/template`, {
+        responseType: 'blob',
       })
     );
   }

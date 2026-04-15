@@ -17,6 +17,7 @@ export class CreateClientUseCase {
     const normalizedPayload: CreateClientPayload = {
       ...payload,
       taxId: payload.taxId.toUpperCase(),
+      email: payload.email.trim().toLowerCase(),
     };
 
     if (!TAX_ID_PATTERN.test(normalizedPayload.taxId)) {

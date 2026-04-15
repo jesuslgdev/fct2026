@@ -8,6 +8,10 @@ import { SupplierProductValidationError } from '@domain/models/supplier-product-
 export class UpdateSupplierProductPriceUseCase {
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
+  private isPositiveInteger(value: number): boolean {
+    return Number.isInteger(value) && value > 0;
+  }
+
   private hasMaxTwoDecimalPlaces(value: number): boolean {
     const normalized = value.toString();
     if (normalized.includes('e') || normalized.includes('E')) {
@@ -19,15 +23,15 @@ export class UpdateSupplierProductPriceUseCase {
   }
 
   execute(supplierId: number, productId: number, request: UpdateSupplierProductPriceRequest): Observable<SupplierProduct> {
-    if (supplierId <= 0) {
+    if (!this.isPositiveInteger(supplierId)) {
       throw new SupplierProductValidationError({ supplierId }, 'Invalid supplier ID.');
     }
 
-    if (productId <= 0) {
+    if (!this.isPositiveInteger(productId)) {
       throw new SupplierProductValidationError({ productId }, 'Invalid product ID.');
     }
 
-    if (request.supplierPrice <= 0) {
+    if (!Number.isFinite(request.supplierPrice) || request.supplierPrice <= 0) {
       throw new SupplierProductValidationError({ supplierPrice: request.supplierPrice }, 'Supplier price must be greater than zero.');
     }
 

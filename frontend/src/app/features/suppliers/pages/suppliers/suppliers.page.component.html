@@ -1,0 +1,201 @@
+<section class="page">
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <ui-card class="page-header-card">
+    <div class="page-header">
+      <h1 class="text-style-title">Proveedores</h1>
+      @if (store.canEdit()) {
+        <div class="flex gap-2">
+          <ui-button
+            label="Importar Excel"
+            icon="pi pi-upload"
+            variant="outline"
+            (clicked)="openImportDialog()"
+          />
+          <ui-button
+            label="Nuevo proveedor"
+            icon="pi pi-plus"
+            (clicked)="store.openCreateDialog()"
+          />
+        </div>
+      }
+    </div>
+  </ui-card>
+
+  <!-- Error global -->
+  @if (store.error(); as errorMessage) {
+    <ui-card variant="danger" class="mb-4">
+      <p class="text-white" role="alert">{{ errorMessage }}</p>
+    </ui-card>
+  }
+
+  <!-- ── Filters ────────────────────────────────────── -->
+  <ui-card class="filters-card">
+    <div class="flex gap-3 mb-4">
+      <ui-input
+        placeholder="Buscar por nombre, email, NIF..."
+        styleClass="flex-1 min-w-64"
+        [ngModel]="store.searchQuery()"
+        (ngModelChange)="store.onSearch($event)"
+      />
+      <p-select
+        [options]="statusOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Todos los estados"
+        class="min-w-44"
+        [ngModel]="store.statusFilter()"
+        (ngModelChange)="store.onStatusFilterChange($event)"
+      />
+    </div>
+  </ui-card>
+
+  <!-- ── Table ──────────────────────────────────────── -->
+  <ui-card class="table-card">
+    <ui-table
+      [value]="store.filteredProviders()"
+      [loading]="store.loading()"
+      [paginator]="true"
+      [lazy]="true"
+      [first]="(store.page() - 1) * store.pageSize()"
+      [rows]="store.pageSize()"
+      [totalRecords]="store.total()"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      tableClass="ui-table-base ui-table-compact ui-table-bordered"
+      dataKey="id"
+      (page)="store.onPageChange($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Nombre</th>
+          <th>NIF/CIF</th>
+          <th>Estado</th>
+          @if (store.canEdit()) { <th>Acciones</th> }
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-provider>
+        <tr>
+          <td>{{ provider.name }}</td>
+          <td>{{ provider.taxId }}</td>
+          <td>
+            <ui-badge 
+              [label]="getStatusLabel(provider.status)" 
+              [variant]="getStatusBadgeVariant(provider.status)" 
+            />
+          </td>
+          @if (store.canEdit()) {
+            <td>
+              <div class="flex gap-2">
+                <ui-button icon="pi pi-eye" variant="ghost" size="sm"
+                  (clicked)="openDetailsDialog(provider)" />
+                <ui-button icon="pi pi-pencil" variant="ghost" size="sm"
+                  (clicked)="store.openEditDialog(provider)" />
+                <ui-button
+                  [icon]="provider.isActive ? 'pi pi-ban' : 'pi pi-check-circle'"
+                  [variant]="provider.isActive ? 'destructive' : 'secondary'"
+                  size="sm"
+                  (clicked)="store.requestToggleStatus(provider)" />
+              </div>
+            </td>
+          }
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td [attr.colspan]="store.canEdit() ? 4 : 3" class="empty-state">
+            No se encontraron proveedores.
+          </td>
+        </tr>
+      </ng-template>
+    </ui-table>
+  </ui-card>
+</section>
+
+<!-- Create/Edit dialog -->
+<app-provider-form-dialog />
+
+<!-- Provider details dialog -->
+<ui-dialog
+  [(visible)]="detailsDialogVisible"
+  header="Detalles del Proveedor"
+  size="lg"
+  (cancelled)="closeDetailsDialog()"
+>
+  @if (selectedProviderForDetails; as provider) {
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <span class="text-sm font-medium text-gray-500">Nombre</span>
+          <p class="text-base">{{ provider.name }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">NIF/CIF</span>
+          <p class="text-base">{{ provider.taxId }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Email</span>
+          <p class="text-base">{{ provider.email || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Teléfono</span>
+          <p class="text-base">{{ provider.phone || 'No disponible' }}</p>
+        </div>
+        <div class="col-span-2">
+          <span class="text-sm font-medium text-gray-500">Dirección</span>
+          <p class="text-base">{{ provider.address || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Ciudad</span>
+          <p class="text-base">{{ provider.city || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Provincia</span>
+          <p class="text-base">{{ provider.province || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Código Postal</span>
+          <p class="text-base">{{ provider.postalCode || 'No disponible' }}</p>
+        </div>
+        <div>
+          <span class="text-sm font-medium text-gray-500">Estado</span>
+          <p class="text-base">
+            <ui-badge 
+              [label]="getStatusLabel(provider.status)" 
+              [variant]="getStatusBadgeVariant(provider.status)" 
+            />
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</ui-dialog>
+
+<!-- Confirmation dialog -->
+<ui-dialog
+  [(visible)]="store.confirmDialogVisible"
+  [header]="store.providerToToggle()?.isActive ? 'Desactivar proveedor' : 'Activar proveedor'"
+  variant="warning"
+  size="sm"
+  confirmLabel="Confirm"
+  cancelLabel="Cancel"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmToggleStatus()"
+  (cancelled)="store.cancelToggleStatus()"
+>
+  @if (store.providerToToggle(); as provider) {
+    <p class="warning-text">
+      @if (provider.isActive) {
+        ¿Está seguro de que desea desactivar
+        <strong>{{ provider.name }}</strong>?
+      } @else {
+        ¿Está seguro de que desea reactivar
+        <strong>{{ provider.name }}</strong>?
+      }
+    </p>
+  }
+</ui-dialog>
+
+<!-- Import dialog -->
+<app-import-dialog (importCompleted)="onImportCompleted()" />

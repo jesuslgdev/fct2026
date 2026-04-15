@@ -1,8 +1,10 @@
+export type { PagedResult } from '@domain/models/paged-result.model';
+
 export interface SupplierProduct {
   productId: number;
-  productCode?: string | null;
-  productName?: string | null;
-  categoryName?: string | null;
+  productCode?: string;
+  productName?: string;
+  categoryName?: string;
   supplierPrice: number;
 }
 
@@ -25,21 +27,13 @@ export interface ImportResult {
   total: number;
   created: number;
   errors: number;
-  error_detail: ImportError[];
+  errorDetail: ImportError[];
 }
 
 export interface ImportError {
   row: number;
   reason: string;
 }
-
-export interface PagedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
 
 export interface SupplierProductQueryParams {
   page: number;

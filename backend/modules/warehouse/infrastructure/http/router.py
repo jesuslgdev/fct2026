@@ -36,6 +36,7 @@ from modules.warehouse.domain.interfaces.use_cases.i_update_warehouse_use_case i
     IUpdateWarehouseUseCase,
 )
 from modules.warehouse.infrastructure.http.schemas import (
+    AddressDTO,
     AdjustStockDTO,
     AdjustStockResponseDTO,
     CreateWarehouseDTO,
@@ -45,10 +46,20 @@ from modules.warehouse.infrastructure.http.schemas import (
     WarehouseDTO,
     WarehouseStockDetailDTO,
 )
+from shared.domain.dtos.address import Address
 from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
 router = APIRouter(prefix="/warehouse", tags=["Warehouse - Stock"])
+
+
+def _to_address_dto(address_data: Address) -> AddressDTO:
+    return AddressDTO(
+        street=address_data.street,
+        city=address_data.city,
+        province=address_data.province,
+        postal_code=address_data.postal_code,
+    )
 
 
 @router.get(
@@ -98,7 +109,7 @@ async def list_warehouses(
         WarehouseDTO(
             warehouse_id=r.warehouse_id,
             name=r.name,
-            address=r.address,
+            address=_to_address_dto(r.address),
             total_stock=r.total_stock,
         )
         for r in results
@@ -116,7 +127,7 @@ async def get_warehouse(
     return WarehouseDTO(
         warehouse_id=result.warehouse_id,
         name=result.name,
-        address=result.address,
+        address=_to_address_dto(result.address),
         total_stock=result.total_stock,
     )
 
@@ -128,11 +139,19 @@ async def create_warehouse(
     _: dict = Depends(require_admin),
 ):
     """Create a new warehouse."""
-    result = await use_case.execute(body.name, body.address)
+    result = await use_case.execute(
+        body.name,
+        Address(
+            street=body.address.street,
+            city=body.address.city,
+            province=body.address.province,
+            postal_code=body.address.postal_code,
+        ),
+    )
     return WarehouseDTO(
         warehouse_id=result.warehouse_id,
         name=result.name,
-        address=result.address,
+        address=_to_address_dto(result.address_data),
         total_stock=0,
     )
 
@@ -145,11 +164,20 @@ async def update_warehouse(
     _: dict = Depends(require_admin),
 ):
     """Update an existing warehouse."""
-    result = await use_case.execute(warehouse_id, body.name, body.address)
+    result = await use_case.execute(
+        warehouse_id,
+        body.name,
+        Address(
+            street=body.address.street,
+            city=body.address.city,
+            province=body.address.province,
+            postal_code=body.address.postal_code,
+        ),
+    )
     return WarehouseDTO(
         warehouse_id=result.warehouse_id,
         name=result.name,
-        address=result.address,
+        address=_to_address_dto(result.address_data),
         total_stock=0,
     )
 
@@ -174,13 +202,14 @@ async def list_stock_distribution(
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     warehouse_id: int | None = Query(None, description="Filter by warehouse ID"),
     product_id: int | None = Query(None, description="Filter by product ID"),
+    search: str | None = Query(None, description="Search by product name"),
     use_case: IListStockDistributionUseCase = Depends(
         get_list_stock_distribution_use_case
     ),
     _: dict = Depends(get_current_user),
 ):
     """Return paginated stock distribution across warehouses and products."""
-    result = await use_case.execute(page, page_size, warehouse_id, product_id)
+    result = await use_case.execute(page, page_size, warehouse_id, product_id, search)
     return PaginatedResponse(
         items=[
             StockDistributionItemDTO(

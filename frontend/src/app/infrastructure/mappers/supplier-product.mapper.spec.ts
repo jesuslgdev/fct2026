@@ -70,7 +70,7 @@ describe('SupplierProductMapper', () => {
       total: 3,
       created: 2,
       errors: 1,
-      error_detail: [{ row: 2, reason: 'Invalid price' }],
+      errorDetail: [{ row: 2, reason: 'Invalid price' }],
     });
   });
 

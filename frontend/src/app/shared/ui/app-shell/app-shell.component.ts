@@ -74,7 +74,16 @@ export class AppShellComponent {
     { initialValue: this.router.url },
   );
 
-  readonly pageTitle = computed(() => PAGE_TITLES[this.currentUrl()] ?? 'ERP System');
+  readonly pageTitle = computed(() => {
+    const url = this.currentUrl();
+    if (PAGE_TITLES[url]) {
+      return PAGE_TITLES[url];
+    }
+    if (url.startsWith('/products/')) {
+      return 'Detalle de producto';
+    }
+    return 'ERP System';
+  });
 
   async logout(): Promise<void> {
     await this.signOut.execute();

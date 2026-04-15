@@ -17,13 +17,14 @@ import {
   ImportErrorDto,
   ImportResultDto,
 } from '@infrastructure/dtos/supplier-product.dto';
+import { SupplierProductApiError } from '@domain/models/supplier-product-errors';
 
 export class SupplierProductMapper {
   private static toNumber(value: number | string): number {
     const parsed = typeof value === 'string' ? Number(value) : value;
 
     if (!Number.isFinite(parsed)) {
-      throw new Error('Invalid decimal value received from API.');
+      throw new SupplierProductApiError('Invalid decimal value received from API.');
     }
 
     return parsed;
@@ -32,9 +33,9 @@ export class SupplierProductMapper {
   static fromDto(dto: SupplierProductDto): SupplierProduct {
     return {
       productId: dto.product_id,
-      productCode: dto.product_code ?? null,
-      productName: dto.product_name ?? null,
-      categoryName: dto.category_name ?? null,
+      productCode: dto.product_code ?? undefined,
+      productName: dto.product_name ?? undefined,
+      categoryName: dto.category_name ?? undefined,
       supplierPrice: this.toNumber(dto.supplier_price),
     };
   }
@@ -84,7 +85,7 @@ export class SupplierProductMapper {
       total: dto.total,
       created: dto.created,
       errors: dto.errors,
-      error_detail: dto.error_detail.map((item) => this.importErrorFromDto(item)),
+      errorDetail: dto.error_detail.map((item) => this.importErrorFromDto(item)),
     };
   }
 

@@ -26,7 +26,7 @@ const SUPPLIER_PRODUCT_MOCK: SupplierProduct = {
   productId: 1,
   productCode: 'PROD001',
   productName: 'Test Product',
-  categoryName: null,
+  categoryName: undefined,
   supplierPrice: 100.50
 };
 
@@ -245,7 +245,7 @@ describe('Supplier Product Use Cases', () => {
       const request: ImportSupplierProductsRequest = {
         file: mockFile
       };
-      const importResult: ImportResult = { total: 2, created: 2, errors: 0, error_detail: [] };
+      const importResult: ImportResult = { total: 2, created: 2, errors: 0, errorDetail: [] };
       repo.importSupplierProducts.mockReturnValue(of(importResult));
 
       const result = await firstValueFrom(importSupplierProductsUseCase.execute(supplierId, request));

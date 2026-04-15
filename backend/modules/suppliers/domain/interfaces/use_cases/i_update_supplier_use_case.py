@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from modules.suppliers.domain.entities.supplier import Supplier
+from shared.domain.dtos.address import Address
 
 
 class IUpdateSupplierUseCase(ABC):
@@ -9,10 +10,7 @@ class IUpdateSupplierUseCase(ABC):
         self,
         supplier_id: int,
         name: str | None,
-        address: str | None,
-        city: str | None,
-        province: str | None,
-        postal_code: str | None,
+        address_data: Address | None,
         phone: str | None,
         email: str | None,
     ) -> Supplier: ...

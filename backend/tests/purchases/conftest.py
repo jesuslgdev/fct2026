@@ -60,6 +60,8 @@ def make_purchase(**kwargs) -> MagicMock:
         "subtotal": Decimal("100.00"),
         "taxes": Decimal("21.00"),
         "total": Decimal("121.00"),
+        "cancelled_at": None,
+        "cancelled_by_user_id": None,
         "created_at": datetime(2026, 1, 15, tzinfo=UTC),
         "updated_at": datetime(2026, 1, 15, tzinfo=UTC),
         "lines": [line],
