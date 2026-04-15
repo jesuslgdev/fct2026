@@ -155,6 +155,13 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.repos.client_repository import ClientRepository
+from modules.dashboard.application.get_dashboard_use_case import GetDashboardUseCase
+from modules.dashboard.domain.interfaces.use_cases.i_get_dashboard_use_case import (
+    IGetDashboardUseCase,
+)
+from modules.dashboard.infrastructure.repos.dashboard_repository import (
+    DashboardRepository,
+)
 from modules.purchases.application.add_purchase_line_use_case import (
     AddPurchaseLineUseCase,
 )
@@ -375,6 +382,7 @@ from modules.warehouse.infrastructure.repos.warehouse_repository import (
 from modules.warehouse.infrastructure.repos.warehouse_stock_repository import (
     WarehouseStockRepository,
 )
+from shared.config import settings
 from shared.infrastructure.database.connection import get_db
 
 
@@ -588,6 +596,17 @@ async def get_set_client_active_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ISetClientActiveUseCase:
     return SetClientActiveUseCase(ClientRepository(db))
+
+
+async def get_dashboard_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetDashboardUseCase:
+    return GetDashboardUseCase(
+        dashboard_repo=DashboardRepository(db),
+        department_reader=DepartmentRepository(db),
+        stale_days=settings.dashboard_stale_days,
+        recent_limit=settings.dashboard_recent_limit,
+    )
 
 
 async def get_add_product_to_supplier_use_case(
