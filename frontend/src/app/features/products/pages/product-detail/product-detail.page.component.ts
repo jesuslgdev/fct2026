@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -36,16 +36,21 @@ export class ProductDetailPageComponent implements OnInit {
   readonly supplierStore = inject(ProductSuppliersStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly activeDetailView = signal<'warehouses' | 'suppliers'>('warehouses');
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!Number.isFinite(id) || id <= 0) {
-      this.store.error.set('Identificador de producto invalido.');
+      this.store.detailError.set('Identificador de producto invalido.');
       return;
     }
 
-    this.store.loadProductById(id);
+    this.store.loadProductDetail(id);
     void this.supplierStore.loadProductSuppliers(id);
+  }
+
+  setDetailView(view: 'warehouses' | 'suppliers'): void {
+    this.activeDetailView.set(view);
   }
 
   async openEditFromDetail(): Promise<void> {

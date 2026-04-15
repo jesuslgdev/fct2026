@@ -1,6 +1,5 @@
 import {
   User,
-  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -15,6 +14,7 @@ export abstract class UserRepository {
   abstract createUser(payload: CreateUserPayload): Observable<User>;
   abstract updateUser(id: number, payload: UpdateUserPayload): Observable<User>;
   abstract deactivateUser(id: number): Observable<void>;
-  abstract activateUser(id: number, payload: ActivateUserPayload): Observable<void>;
+  abstract activateUser(id: number): Observable<void>;
+  abstract deleteUser(id: number): Observable<void>;
   abstract getDepartments(): Observable<Department[]>;
 }

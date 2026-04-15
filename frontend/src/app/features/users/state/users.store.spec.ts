@@ -7,7 +7,6 @@ import { AuthService } from '@core/services/auth.service';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
   User,
-  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -57,7 +56,8 @@ class MockUserRepository implements UserRepository {
   createUser = vi.fn<(payload: CreateUserPayload) => Observable<User>>();
   updateUser = vi.fn<(id: number, payload: UpdateUserPayload) => Observable<User>>();
   deactivateUser = vi.fn<(id: number) => Observable<void>>();
-  activateUser = vi.fn<(id: number, payload: ActivateUserPayload) => Observable<void>>();
+  activateUser = vi.fn<(id: number) => Observable<void>>();
+  deleteUser = vi.fn<(id: number) => Observable<void>>();
   getDepartments = vi.fn<() => Observable<Department[]>>();
 }
 
@@ -117,7 +117,7 @@ describe('UsersStore', () => {
 
     await store.loadUsers();
 
-    expect(store.error()).toBe('No tienes permisos para realizar esta acción.');
+    expect(store.error()).toBe('No tienes permisos para realizar esta accion.');
   });
 
   it('maps validation users error to backend message', async () => {
@@ -196,7 +196,7 @@ describe('UsersStore', () => {
     expect(store.userToToggle()).toBeNull();
   });
 
-  it('opens reactivation dialog when requesting status change on inactive user', () => {
+  it('opens status confirmation when requesting status change on inactive user', () => {
     const inactiveUser: User = {
       ...USER_A,
       id: 10,
@@ -207,8 +207,7 @@ describe('UsersStore', () => {
 
     store.requestToggleStatus(inactiveUser);
 
-    expect(store.reactivateDialogVisible()).toBe(true);
-    expect(store.confirmDialogVisible()).toBe(false);
+    expect(store.confirmDialogVisible()).toBe(true);
     expect(store.userToToggle()).toEqual(inactiveUser);
   });
 
@@ -220,22 +219,30 @@ describe('UsersStore', () => {
       lastName: null,
       email: null,
     };
-    const payload: ActivateUserPayload = {
-      firstName: 'Ana',
-      lastName: 'Garcia',
-      email: 'ana@example.com',
-    };
 
     store.requestToggleStatus(inactiveUser);
     repo.activateUser.mockReturnValueOnce(of(void 0));
     const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
 
-    await store.confirmReactivateUser(payload);
+    await store.confirmToggleStatus();
 
-    expect(repo.activateUser).toHaveBeenCalledWith(inactiveUser.id, payload);
+    expect(repo.activateUser).toHaveBeenCalledWith(inactiveUser.id);
     expect(refreshSpy).toHaveBeenCalledOnce();
-    expect(store.reactivateDialogVisible()).toBe(false);
+    expect(store.confirmDialogVisible()).toBe(false);
     expect(store.userToToggle()).toBeNull();
+  });
+
+  it('deletes a user and refreshes the list', async () => {
+    store.requestDeleteUser(USER_A);
+    repo.deleteUser.mockReturnValueOnce(of(void 0));
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+
+    await store.confirmDeleteUser();
+
+    expect(repo.deleteUser).toHaveBeenCalledWith(USER_A.id);
+    expect(refreshSpy).toHaveBeenCalledOnce();
+    expect(store.deleteDialogVisible()).toBe(false);
+    expect(store.userToDelete()).toBeNull();
   });
 
   it('search resets page and triggers load', () => {
@@ -246,6 +253,16 @@ describe('UsersStore', () => {
 
     expect(store.searchQuery()).toBe('ana');
     expect(store.page()).toBe(1);
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
+  it('page change updates pagination and triggers load', () => {
+    const spy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+
+    store.onPageChange({ first: 20, rows: 10 });
+
+    expect(store.page()).toBe(3);
+    expect(store.pageSize()).toBe(10);
     expect(spy).toHaveBeenCalledOnce();
   });
 

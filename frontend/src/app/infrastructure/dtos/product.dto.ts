@@ -14,8 +14,43 @@ export interface ProductDto {
   stock?: number;
   min_stock?: number;
   is_active: boolean;
+  suppliers?: ProductSupplierDto[];
   created_at?: string;
   updated_at?: string;
+}
+
+export interface ProductSupplierDto {
+  supplier_id?: number;
+  supplierId?: number;
+  supplier_name?: string;
+  supplierName?: string;
+  supplier_price: number | string;
+  supplierPrice?: number | string;
+}
+
+export interface ProductSuppliersPaginatedDto {
+  items: ProductSupplierDto[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface ProductWarehouseStockDto {
+  warehouse_id: number | string;
+  warehouse_name: string;
+  stock?: number;
+  reserved_stock?: number;
+  available_stock?: number;
+}
+
+export interface ProductStockOverviewDto {
+  product_id: number;
+  product_code: string;
+  product_name: string;
+  stock_global: number;
+  stock_min: number;
+  alert_level: string;
+  warehouses: ProductWarehouseStockDto[];
 }
 
 export interface ProductsPageDto {
