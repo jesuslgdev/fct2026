@@ -11,7 +11,7 @@ class MockProductsStore {
   readonly error = signal<string | null>(null);
   readonly canEdit = signal(true);
 
-  readonly loadProductById = vi.fn();
+  readonly loadProductDetail = vi.fn();
   readonly openEditDialog = vi.fn();
 }
 
@@ -61,7 +61,7 @@ describe('ProductDetailPageComponent', () => {
 
     fixture.detectChanges();
 
-    expect(productsStore.loadProductById).toHaveBeenCalledWith(12);
+    expect(productsStore.loadProductDetail).toHaveBeenCalledWith(12);
     expect(productSuppliersStore.loadProductSuppliers).toHaveBeenCalledWith(12);
   });
 
