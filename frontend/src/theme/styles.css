@@ -75,6 +75,14 @@
   color: var(--p-green-600);
 }
 
+@utility bg-success-subtle {
+  background-color: color-mix(in srgb, var(--p-green-500) 12%, transparent);
+}
+
+@utility border-success-subtle {
+  border-color: color-mix(in srgb, var(--p-green-500) 25%, transparent);
+}
+
 @utility text-success-icon {
   color: var(--p-green-500);
 }
@@ -83,8 +91,54 @@
   color: var(--p-amber-500, #f59e0b);
 }
 
+@utility bg-warning-subtle {
+  background-color: color-mix(in srgb, var(--p-amber-500, #f59e0b) 12%, transparent);
+}
+
+@utility border-warning-subtle {
+  border-color: color-mix(in srgb, var(--p-amber-500, #f59e0b) 25%, transparent);
+}
+
 @utility text-info {
   color: var(--p-sky-600, #0284c7);
+}
+
+@utility bg-info-subtle {
+  background-color: color-mix(in srgb, var(--p-sky-600, #0284c7) 10%, transparent);
+}
+
+@utility border-info-subtle {
+  border-color: color-mix(in srgb, var(--p-sky-600, #0284c7) 25%, transparent);
+}
+
+@utility text-neutral-strong {
+  color: var(--p-surface-700);
+}
+
+@utility text-neutral-muted {
+  color: var(--p-surface-600);
+}
+
+@utility text-neutral-subtle {
+  color: var(--p-surface-500);
+}
+
+@utility bg-neutral-subtle {
+  background-color: var(--p-surface-50);
+}
+
+@layer components {
+  .file-dropzone {
+    border: 2px dashed var(--p-surface-300);
+    border-radius: var(--p-border-radius-lg, 0.5rem);
+    padding: 1.5rem;
+    text-align: center;
+    transition: border-color 150ms ease;
+  }
+
+  .file-dropzone:hover {
+    border-color: var(--p-surface-400);
+  }
 }
 
 @utility text-subtitle-base {

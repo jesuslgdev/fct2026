@@ -10,6 +10,13 @@ export class UpdateClientUseCase {
   private readonly clientRepository = inject(ClientRepository);
 
   execute(id: number, payload: UpdateClientPayload): Observable<ClientDetail> {
-    return this.clientRepository.updateClient(id, payload);
+    const normalizedPayload: UpdateClientPayload = {
+      ...payload,
+      ...(payload.email !== undefined && payload.email !== null && {
+        email: payload.email.trim().toLowerCase(),
+      }),
+    };
+
+    return this.clientRepository.updateClient(id, normalizedPayload);
   }
 }

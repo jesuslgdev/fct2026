@@ -1,0 +1,36 @@
+# Root level
+frontend/node_modules/
+frontend/environments
+.env
+.DS_Store
+
+# Claude Code (asistente IA)
+.claude/
+
+# Node
+package-lock.json
+node_modules/
+frontend/node_modules/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Editor
+.vscode/settings.json
+
+# Docs autogeneradas
+**/copilot-instruccions.md
+
+# Estructura interna
+FinalStructure.md
+**/FinalStructure.md
+/.github/references
+.github/SKILL.md

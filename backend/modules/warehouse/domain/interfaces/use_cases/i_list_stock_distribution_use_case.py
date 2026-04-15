@@ -14,4 +14,5 @@ class IListStockDistributionUseCase(ABC):
         page_size: int,
         warehouse_id: int | None = None,
         product_id: int | None = None,
+        search: str | None = None,
     ) -> PaginatedResult[StockDistributionItem]: ...

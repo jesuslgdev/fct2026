@@ -40,10 +40,10 @@ class AdminExceptionInfo(AppExceptionInfo):
     )
     USER_ALREADY_ACTIVE = (1206, "User is already active", 409)
     USER_ALREADY_INACTIVE = (1207, "User is already inactive", 409)
-    USER_INVALID_ACTIVATION_DATA = (
+    USER_IS_DELETED = (
         1208,
-        "Activation data contains placeholder values from deactivation",
-        422,
+        "User has been deleted and cannot be modified",
+        409,
     )
 
 

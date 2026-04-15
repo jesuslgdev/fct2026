@@ -25,13 +25,15 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.http.schemas import (
+    AddressDTO,
     ClientDetailDTO,
     ClientDTO,
     CreateClientDTO,
-    PaginatedResponse,
     SetClientActiveDTO,
     UpdateClientDTO,
 )
+from shared.domain.dtos.address import Address
+from shared.infrastructure.http.paginated_response import PaginatedResponse
 
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
@@ -48,7 +50,21 @@ def _to_detail_dto(client: Client) -> ClientDetailDTO:
     Returns:
         A fully populated ClientDetailDTO.
     """
-    return ClientDetailDTO.model_validate(client)
+    return ClientDetailDTO(
+        client_id=client.client_id,
+        name=client.name,
+        tax_id=client.tax_id,
+        city=client.city,
+        is_active=client.is_active,
+        address=AddressDTO(
+            street=client.street,
+            city=client.city,
+            province=client.province,
+            postal_code=client.postal_code,
+        ),
+        phone=client.phone,
+        email=client.email,
+    )
 
 
 @router.get("", response_model=PaginatedResponse[ClientDTO])
@@ -106,10 +122,12 @@ async def create_client(
     result = await use_case.execute(
         name=body.name,
         tax_id=body.tax_id,
-        address=body.address,
-        city=body.city,
-        province=body.province,
-        postal_code=body.postal_code,
+        address_data=Address(
+            street=body.address.street,
+            city=body.address.city,
+            province=body.address.province,
+            postal_code=body.address.postal_code,
+        ),
         phone=body.phone,
         email=body.email,
     )
@@ -131,10 +149,16 @@ async def update_client(
     result = await use_case.execute(
         client_id=client_id,
         name=body.name,
-        address=body.address,
-        city=body.city,
-        province=body.province,
-        postal_code=body.postal_code,
+        address_data=(
+            Address(
+                street=body.address.street,
+                city=body.address.city,
+                province=body.address.province,
+                postal_code=body.address.postal_code,
+            )
+            if body.address is not None
+            else None
+        ),
         phone=body.phone,
         email=body.email,
     )
