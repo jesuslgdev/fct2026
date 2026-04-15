@@ -26,7 +26,7 @@ const SUPPLIER_PRODUCT_MOCK: SupplierProduct = {
   productId: 1,
   productCode: 'PROD001',
   productName: 'Test Product',
-  categoryName: null,
+  categoryName: undefined,
   supplierPrice: 100.50
 };
 
