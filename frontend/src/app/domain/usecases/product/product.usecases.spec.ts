@@ -138,7 +138,6 @@ describe('Product Use Cases', () => {
       description: 'Descripción ejemplo',
       categoryId: 1,
       price: 10,
-      stock: 5,
       minStock: 2,
     };
     repo.createProduct.mockReturnValueOnce(of(PRODUCT_MOCK));
