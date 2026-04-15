@@ -70,6 +70,14 @@
       <div class="mt-6">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h2 class="text-style-subtitle">Productos</h2>
+          @if (supplierProductsStore.canModify()) {
+            <ui-button
+              label="Añadir producto"
+              icon="pi pi-plus"
+              size="sm"
+              (clicked)="supplierProductsStore.openAddProductDialog()"
+            />
+          }
         </div>
 
         @if (supplierProductsStore.error(); as associationError) {
@@ -189,4 +197,50 @@
       Las compras históricas no se verán afectadas.
     </p>
   }
+</ui-dialog>
+
+<ui-dialog
+  [(visible)]="supplierProductsStore.addProductDialogVisible"
+  header="Añadir producto"
+  size="sm"
+  confirmLabel="Guardar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="supplierProductsStore.loading()"
+  [confirmDisabled]="!supplierProductsStore.selectedProductId() || !supplierProductsStore.addProductPriceDraft()"
+  (confirmed)="supplierProductsStore.addSelectedProductToSupplier()"
+  (cancelled)="supplierProductsStore.closeAddProductDialog()"
+>
+  <div class="dialog-form">
+    <label class="dialog-field">
+      <span class="dialog-field-label">Producto</span>
+      <p-select
+        [options]="supplierProductsStore.activeProductsForAdd()"
+        optionLabel="name"
+        optionValue="productId"
+        placeholder="Selecciona un producto activo"
+        [filter]="true"
+        filterBy="name,code"
+        filterPlaceholder="Buscar producto"
+        emptyFilterMessage="Sin productos encontrados"
+        styleClass="w-full"
+        appendTo="body"
+        [loading]="supplierProductsStore.productsLoading()"
+        [ngModel]="supplierProductsStore.selectedProductId()"
+        (ngModelChange)="supplierProductsStore.setSelectedProductId($event)"
+      />
+    </label>
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Precio proveedor</span>
+      <input
+        class="p-inputtext p-component w-full"
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="0.00"
+        [value]="supplierProductsStore.addProductPriceDraft()"
+        (input)="onAddProductPriceInput($event)"
+      />
+    </label>
+  </div>
 </ui-dialog>

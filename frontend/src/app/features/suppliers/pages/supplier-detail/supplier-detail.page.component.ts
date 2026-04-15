@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Select } from 'primeng/select';
 import type { TablePageEvent } from 'primeng/table';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CardComponent } from '@shared/ui/card/card.component';
@@ -19,6 +21,8 @@ import { Provider } from '@domain/models/provider.model';
   providers: [SuppliersStore, SupplierProductsStore],
   imports: [
     CurrencyPipe,
+    FormsModule,
+    Select,
     ButtonComponent,
     CardComponent,
     DialogComponent,
@@ -77,5 +81,9 @@ export class SupplierDetailPageComponent implements OnInit {
 
   onSupplierProductPriceInput(event: Event): void {
     this.supplierProductsStore.setPriceDraft((event.target as HTMLInputElement).value);
+  }
+
+  onAddProductPriceInput(event: Event): void {
+    this.supplierProductsStore.setAddProductPriceDraft((event.target as HTMLInputElement).value);
   }
 }
