@@ -2,9 +2,9 @@ export type { PagedResult } from '@domain/models/paged-result.model';
 
 export interface SupplierProduct {
   productId: number;
-  productCode?: string | null;
-  productName?: string | null;
-  categoryName?: string | null;
+  productCode?: string;
+  productName?: string;
+  categoryName?: string;
   supplierPrice: number;
 }
 
