@@ -49,7 +49,6 @@ async def test_delete_category_has_products(
         name="SomeProduct",
         category_id=category.category_id,
         price=10,
-        stock_current=0,
         stock_min=0,
     )
     db_session.add(product)

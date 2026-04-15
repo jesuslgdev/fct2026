@@ -102,8 +102,9 @@ class ProductRepository(IProductRepository, IProductReader):
         )
         self._db.add(product)
         await self._db.flush()
-        await self._db.refresh(product, ["category"])
-        return product
+        # Re-query so that the stock_current column_property (subquery) and
+        # the category relationship are loaded eagerly within the async session.
+        return await self.get_by_id(product.product_id)
 
     async def update(
         self,
@@ -136,8 +137,7 @@ class ProductRepository(IProductRepository, IProductReader):
             product.stock_min = stock_min
 
         await self._db.flush()
-        await self._db.refresh(product, ["category"])
-        return product
+        return await self.get_by_id(product.product_id)
 
     async def set_active(self, product_id: int, is_active: bool) -> None:
         product = await self.get_by_id(product_id)

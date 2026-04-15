@@ -1,7 +1,7 @@
 """add warehouse_id to sales
 
 Revision ID: b2c3d4e5f6a7
-Revises: a1b2c3d4e5f7
+Revises: 80f43570db6f
 Create Date: 2026-04-15 00:00:00.000000
 
 The sale header now records which warehouse fulfils the order.
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "b2c3d4e5f6a7"
-down_revision = "a1b2c3d4e5f7"
+down_revision = "80f43570db6f"
 branch_labels = None
 depends_on = None
 

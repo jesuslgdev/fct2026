@@ -83,7 +83,6 @@ async def test_create_product_duplicate_code(
         name="X",
         category_id=sample_category.category_id,
         price=10,
-        stock_current=0,
         stock_min=0,
     )
     db_session.add(p)
