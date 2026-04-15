@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "i18n": "bundle exec localize",
+    "i18n": "node ./scripts/run-i18n.mjs",
     "start": "npm run i18n && ng serve",
     "build": "npm run i18n && ng build",
     "build:dev": "ng build --configuration=development",

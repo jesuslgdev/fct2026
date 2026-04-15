@@ -1,0 +1,86 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Detalle de producto</h1>
+    <div class="flex items-center gap-2">
+      <ui-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        variant="outline"
+        (clicked)="goBack()"
+      />
+      @if (store.canEdit() && store.selectedProduct()) {
+        <ui-button
+          label="Editar"
+          icon="pi pi-pencil"
+          (clicked)="openEditFromDetail()"
+        />
+      }
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <p class="warning-text">Cargando detalle del producto...</p>
+  }
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (store.selectedProduct(); as product) {
+    <ui-card>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <p class="text-sm text-surface-500">Codigo</p>
+          <p class="font-semibold">{{ product.code }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Nombre</p>
+          <p class="font-semibold">{{ product.name }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Categoria</p>
+          <p>{{ product.categoryName }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Estado</p>
+          <ui-product-status-badge
+            [active]="product.isActive"
+            [lowStock]="product.stock < product.minStock"
+          />
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Precio</p>
+          <p>{{ product.price | currency: 'EUR' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Stock</p>
+          <p>{{ product.stock }} (minimo: {{ product.minStock }})</p>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <p class="text-sm text-surface-500">Descripcion</p>
+        <p>{{ product.description }}</p>
+      </div>
+
+      <div class="mt-4">
+        <h2 class="text-style-subtitle">Proveedores</h2>
+
+        @if (product.suppliers?.length) {
+          <ul class="mt-2 space-y-2 list-none p-0">
+            @for (supplier of product.suppliers; track supplier.supplierId) {
+              <li class="flex items-center justify-between rounded border border-surface-200 px-3 py-2">
+                <span>{{ supplier.supplierName }}</span>
+                <span class="font-medium">{{ supplier.supplierPrice | currency: 'EUR' }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="text-surface-500">Sin proveedores asociados.</p>
+        }
+      </div>
+    </ui-card>
+  }
+</section>
+
+<app-product-form-dialog />

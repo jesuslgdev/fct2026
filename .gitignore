@@ -37,4 +37,10 @@ firebase-debug.log
 # Estructura interna
 FinalStructure.md
 **/FinalStructure.md
+# /.github/references
+# .github/SKILL.md
 .github/skills/fct2026/SKILL.md
+
+# Agents
+.agents/
+AGENTS.md

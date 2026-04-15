@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select, text
@@ -9,13 +9,13 @@ from modules.purchases.domain.entities.purchase_line import PurchaseLine
 from modules.purchases.domain.interfaces.repositories.i_purchase_repository import (
     IPurchaseRepository,
 )
-from modules.suppliers.domain.entities.supplier import Supplier
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.interfaces.i_purchase_reader import IPurchaseReader
+from shared.infrastructure.database.read_tables import suppliers_table
 
 SORT_FIELDS = {
     "purchase_number": Purchase.purchase_number,
-    "supplier_name": Supplier.name,
+    "supplier_name": suppliers_table.c.name,
     "status": Purchase.status,
     "created_at": Purchase.created_at,
     "total": Purchase.total,
@@ -42,7 +42,8 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         if search:
             pattern = f"%{search}%"
             filters.append(
-                Purchase.purchase_number.ilike(pattern) | Supplier.name.ilike(pattern)
+                Purchase.purchase_number.ilike(pattern)
+                | suppliers_table.c.name.ilike(pattern)
             )
         if status:
             filters.append(Purchase.status == status)
@@ -56,7 +57,9 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         count_stmt = (
             select(func.count())
             .select_from(Purchase)
-            .outerjoin(Supplier, Purchase.supplier_id == Supplier.supplier_id)
+            .outerjoin(
+                suppliers_table, Purchase.supplier_id == suppliers_table.c.supplier_id
+            )
             .where(*filters)
         )
         total_result = await self._db.execute(count_stmt)
@@ -67,8 +70,10 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         offset = (page - 1) * page_size
 
         data_stmt = (
-            select(Purchase, Supplier.name.label("supplier_name"))
-            .outerjoin(Supplier, Purchase.supplier_id == Supplier.supplier_id)
+            select(Purchase, suppliers_table.c.name.label("supplier_name"))
+            .outerjoin(
+                suppliers_table, Purchase.supplier_id == suppliers_table.c.supplier_id
+            )
             .where(*filters)
             .order_by(order_expr)
             .limit(page_size)
@@ -221,6 +226,61 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         purchase.subtotal = subtotal
         purchase.taxes = taxes
         purchase.total = total
+        await self._db.flush()
+        await self._db.refresh(purchase, ["lines"])
+        return purchase
+
+    async def update_header(
+        self,
+        purchase_id: int,
+        supplier_id: int,
+        warehouse_id: int,
+    ) -> Purchase:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        purchase.supplier_id = supplier_id
+        purchase.warehouse_id = warehouse_id
+        await self._db.flush()
+        await self._db.refresh(purchase, ["lines"])
+        return purchase
+
+    async def delete_all_lines(self, purchase_id: int) -> None:
+        result = await self._db.execute(
+            select(PurchaseLine).where(PurchaseLine.purchase_id == purchase_id)
+        )
+        for line in result.scalars().all():
+            await self._db.delete(line)
+        await self._db.flush()
+
+    async def cancel_purchase(self, purchase_id: int, user_id: int) -> Purchase:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        purchase.status = "Cancelled"
+        purchase.cancelled_at = datetime.now(UTC)
+        purchase.cancelled_by_user_id = user_id
+        await self._db.flush()
+        await self._db.refresh(purchase, ["lines"])
+        return purchase
+
+    async def delete_purchase(self, purchase_id: int) -> None:
+        await self.delete_all_lines(purchase_id)
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        await self._db.delete(purchase)
+        await self._db.flush()
+
+    async def advance_status(self, purchase_id: int, new_status: str) -> Purchase:
+        result = await self._db.execute(
+            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        )
+        purchase = result.scalar_one()
+        purchase.status = new_status
         await self._db.flush()
         await self._db.refresh(purchase, ["lines"])
         return purchase

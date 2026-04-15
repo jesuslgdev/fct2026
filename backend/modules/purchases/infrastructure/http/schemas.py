@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -40,6 +41,11 @@ class PurchaseLineDTO(BaseModel):
     line_tax: Decimal
 
 
+class UpdatePurchaseRequest(BaseModel):
+    supplier_id: int
+    warehouse_id: int
+
+
 class AddPurchaseLineRequest(BaseModel):
     product_id: int
     quantity: int = Field(gt=0)
@@ -51,6 +57,10 @@ class UpdatePurchaseLineRequest(BaseModel):
     quantity: int = Field(gt=0)
     unit_price: Decimal = Field(gt=0, decimal_places=2)
     discount: Decimal = Field(default=0, ge=0, decimal_places=2)
+
+
+class AdvancePurchaseStatusRequest(BaseModel):
+    status: Literal["Approved", "In Process", "Sent", "Received"]
 
 
 class SupplierPriceDTO(BaseModel):
@@ -72,6 +82,8 @@ class PurchaseDetailDTO(BaseModel):
     subtotal: Decimal
     taxes: Decimal
     total: Decimal
+    cancelled_at: datetime | None = None
+    cancelled_by_user_id: int | None = None
     created_at: datetime
     updated_at: datetime
     lines: list[PurchaseLineDTO]

@@ -1,16 +1,20 @@
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 
 from composition.dependencies import (
     get_add_purchase_line_use_case,
+    get_advance_purchase_status_use_case,
+    get_cancel_purchase_use_case,
     get_create_purchase_use_case,
     get_delete_purchase_line_use_case,
+    get_delete_purchase_use_case,
     get_get_purchase_use_case,
     get_get_supplier_price_use_case,
     get_list_purchases_use_case,
     get_update_purchase_line_use_case,
+    get_update_purchase_use_case,
 )
 from composition.security import (
     get_current_user,
@@ -20,11 +24,20 @@ from modules.purchases.domain.entities.purchase_enriched import PurchaseEnriched
 from modules.purchases.domain.interfaces.use_cases.i_add_purchase_line_use_case import (
     IAddPurchaseLineUseCase,
 )
+from modules.purchases.domain.interfaces.use_cases.i_advance_purchase_status_use_case import (
+    IAdvancePurchaseStatusUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_cancel_purchase_use_case import (
+    ICancelPurchaseUseCase,
+)
 from modules.purchases.domain.interfaces.use_cases.i_create_purchase_use_case import (
     ICreatePurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_delete_purchase_line_use_case import (
     IDeletePurchaseLineUseCase,
+)
+from modules.purchases.domain.interfaces.use_cases.i_delete_purchase_use_case import (
+    IDeletePurchaseUseCase,
 )
 from modules.purchases.domain.interfaces.use_cases.i_get_purchase_use_case import (
     IGetPurchaseUseCase,
@@ -38,14 +51,19 @@ from modules.purchases.domain.interfaces.use_cases.i_list_purchases_use_case imp
 from modules.purchases.domain.interfaces.use_cases.i_update_purchase_line_use_case import (
     IUpdatePurchaseLineUseCase,
 )
+from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case import (
+    IUpdatePurchaseUseCase,
+)
 from modules.purchases.infrastructure.http.schemas import (
     AddPurchaseLineRequest,
+    AdvancePurchaseStatusRequest,
     CreatePurchaseRequest,
     PurchaseDetailDTO,
     PurchaseDTO,
     PurchaseLineDTO,
     SupplierPriceDTO,
     UpdatePurchaseLineRequest,
+    UpdatePurchaseRequest,
 )
 from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
@@ -65,6 +83,8 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
         subtotal=purchase.subtotal,
         taxes=purchase.taxes,
         total=purchase.total,
+        cancelled_at=purchase.cancelled_at,
+        cancelled_by_user_id=purchase.cancelled_by_user_id,
         created_at=purchase.created_at,
         updated_at=purchase.updated_at,
         lines=[
@@ -203,6 +223,68 @@ async def create_purchase(
         lines=[line.model_dump() for line in body.lines],
     )
     return _purchase_detail(purchase)
+
+
+@router.put("/{purchase_id}", response_model=PurchaseDetailDTO, tags=["Purchases"])
+async def update_purchase(
+    purchase_id: int,
+    body: UpdatePurchaseRequest,
+    _: UserSession = Depends(require_purchases_department_or_admin),
+    use_case: IUpdatePurchaseUseCase = Depends(get_update_purchase_use_case),
+):
+    """Update the supplier and warehouse of a pending purchase. If the supplier changes, all lines are cleared."""
+    purchase = await use_case.execute(
+        purchase_id=purchase_id,
+        supplier_id=body.supplier_id,
+        warehouse_id=body.warehouse_id,
+    )
+    return _purchase_detail(purchase)
+
+
+@router.patch(
+    "/{purchase_id}/status", response_model=PurchaseDetailDTO, tags=["Purchases"]
+)
+async def advance_purchase_status(
+    purchase_id: int,
+    body: AdvancePurchaseStatusRequest,
+    current_user: UserSession = Depends(require_purchases_department_or_admin),
+    use_case: IAdvancePurchaseStatusUseCase = Depends(
+        get_advance_purchase_status_use_case
+    ),
+):
+    """Advance a purchase to the next valid status. Received triggers automatic stock entry."""
+    purchase = await use_case.execute(
+        purchase_id=purchase_id,
+        new_status=body.status,
+        user_email=current_user.email,
+    )
+    return _purchase_detail(purchase)
+
+
+@router.patch(
+    "/{purchase_id}/cancel", response_model=PurchaseDetailDTO, tags=["Purchases"]
+)
+async def cancel_purchase(
+    purchase_id: int,
+    current_user: UserSession = Depends(require_purchases_department_or_admin),
+    use_case: ICancelPurchaseUseCase = Depends(get_cancel_purchase_use_case),
+):
+    """Cancel a purchase in Pending or Approved status. Cancelled is a final state."""
+    purchase = await use_case.execute(
+        purchase_id=purchase_id, user_id=current_user.user_id
+    )
+    return _purchase_detail(purchase)
+
+
+@router.delete("/{purchase_id}", status_code=204, tags=["Purchases"])
+async def delete_purchase(
+    purchase_id: int,
+    _: UserSession = Depends(require_purchases_department_or_admin),
+    use_case: IDeletePurchaseUseCase = Depends(get_delete_purchase_use_case),
+):
+    """Physically delete a purchase. Only allowed when status is Pending."""
+    await use_case.execute(purchase_id=purchase_id)
+    return Response(status_code=204)
 
 
 # ── Purchase Lines ──────────────────────────────────────────────

@@ -28,7 +28,7 @@
         @if (!isViewMode() && name.invalid && name.touched) {
           <span class="dialog-field-error">
             @if (name.hasError('required')) { El nombre es obligatorio. }
-            @else { El nombre debe tener al menos 3 caracteres. }
+            @else { El nombre es demasiado largo (máximo 200 caracteres). }
           </span>
         }
       </div>
@@ -37,8 +37,8 @@
         <ui-input
           formControlName="taxId"
           placeholder="Ej: 12345678A"
-          [disabled]="isViewMode()"
-          [state]="!isViewMode() && taxId.invalid && taxId.touched ? 'error' : 'default'"
+          [disabled]="isViewMode() || store.dialogMode() === 'edit'"
+          [state]="!isViewMode() && store.dialogMode() !== 'edit' && taxId.invalid && taxId.touched ? 'error' : 'default'"
         />
         @if (!isViewMode() && taxId.invalid && taxId.touched) {
           <span class="dialog-field-error">
@@ -59,7 +59,10 @@
         [state]="!isViewMode() && address.invalid && address.touched ? 'error' : 'default'"
       />
       @if (!isViewMode() && address.invalid && address.touched) {
-        <span class="dialog-field-error">La dirección es obligatoria.</span>
+        <span class="dialog-field-error">
+          @if (address.hasError('required')) { La dirección es obligatoria. }
+          @else { La dirección es demasiado larga (máximo 300 caracteres). }
+        </span>
       }
     </div>
 
@@ -74,7 +77,10 @@
           [state]="!isViewMode() && city.invalid && city.touched ? 'error' : 'default'"
         />
         @if (!isViewMode() && city.invalid && city.touched) {
-          <span class="dialog-field-error">La ciudad es obligatoria.</span>
+          <span class="dialog-field-error">
+            @if (city.hasError('required')) { La ciudad es obligatoria. }
+            @else { La ciudad es demasiado larga (máximo 100 caracteres). }
+          </span>
         }
       </div>
       <div class="dialog-field">
@@ -86,7 +92,10 @@
           [state]="!isViewMode() && province.invalid && province.touched ? 'error' : 'default'"
         />
         @if (!isViewMode() && province.invalid && province.touched) {
-          <span class="dialog-field-error">La provincia es obligatoria.</span>
+          <span class="dialog-field-error">
+            @if (province.hasError('required')) { La provincia es obligatoria. }
+            @else { La provincia es demasiado larga (máximo 100 caracteres). }
+          </span>
         }
       </div>
     </div>
@@ -112,7 +121,7 @@
         <span class="dialog-field-label">Teléfono</span>
         <ui-input
           formControlName="phone"
-          placeholder="Ej: 600000001"
+          placeholder="Ej: +34 600 000 001"
           [disabled]="isViewMode()"
           [state]="!isViewMode() && phone.invalid && phone.touched ? 'error' : 'default'"
         />
@@ -138,6 +147,7 @@
       @if (!isViewMode() && email.invalid && email.touched) {
         <span class="dialog-field-error">
           @if (email.hasError('required')) { El email es obligatorio. }
+          @else if (email.hasError('maxlength')) { El email es demasiado largo (máximo 255 caracteres). }
           @else { Introduce un email válido. }
         </span>
       }

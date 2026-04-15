@@ -9,7 +9,7 @@ export class ImportSupplierProductsUseCase {
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
   execute(supplierId: number, request: ImportSupplierProductsRequest): Observable<ImportResult> {
-    if (supplierId <= 0) {
+    if (!Number.isInteger(supplierId) || supplierId <= 0) {
       throw new SupplierProductValidationError({ supplierId }, 'Invalid supplier ID.');
     }
 
