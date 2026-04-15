@@ -37,7 +37,11 @@ import { GetPurchaseByIdUseCase } from '@domain/usecases/purchase/get-purchase-b
 import { GetPurchasesUseCase } from '@domain/usecases/purchase/get-purchases.usecase';
 import { GetSupplierProductsForPurchaseUseCase } from '@domain/usecases/purchase/get-supplier-products-for-purchase.usecase';
 import { UpdatePurchaseUseCase } from '@domain/usecases/purchase/update-purchase.usecase';
+<<<<<<< Updated upstream
 import { finalize, forkJoin, take } from 'rxjs';
+=======
+import { catchError, finalize, forkJoin, map, of, take } from 'rxjs';
+>>>>>>> Stashed changes
 
 export type PurchaseDialogMode = 'create' | 'edit' | 'view';
 
@@ -67,6 +71,10 @@ export class PurchasesStore {
   readonly loadingDetail = signal(false);
   readonly loadingOptions = signal(false);
   readonly loadingSupplierProducts = signal(false);
+<<<<<<< Updated upstream
+=======
+  readonly loadingSupplierCatalog = signal(false);
+>>>>>>> Stashed changes
   readonly error = signal<string | null>(null);
   readonly dialogError = signal<string | null>(null);
 
@@ -96,6 +104,10 @@ export class PurchasesStore {
   readonly suppliers = signal<PurchaseSupplierOption[]>([]);
   readonly warehouses = signal<PurchaseWarehouseOption[]>([]);
   readonly supplierProducts = signal<PurchaseSupplierProductOption[]>([]);
+<<<<<<< Updated upstream
+=======
+  readonly supplierProductsBySupplier = signal<Record<number, PurchaseSupplierProductOption[]>>({});
+>>>>>>> Stashed changes
 
   readonly canManage = computed(() => canManagePurchases(this.buildPermissionContext()));
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
@@ -163,6 +175,13 @@ export class PurchasesStore {
         next: ({ suppliers, warehouses }) => {
           this.suppliers.set(suppliers);
           this.warehouses.set(warehouses);
+<<<<<<< Updated upstream
+=======
+
+          if (this.dialogMode() === 'create') {
+            this.loadSupplierProductsCatalog();
+          }
+>>>>>>> Stashed changes
         },
         error: (err: unknown) => {
           this.dialogError.set(this.resolveErrorMessage(err, 'Unable to load purchase options.'));
@@ -190,9 +209,64 @@ export class PurchasesStore {
       });
   }
 
+<<<<<<< Updated upstream
   openCreateDialog(): void {
     this.selectedPurchase.set(null);
     this.supplierProducts.set([]);
+=======
+  loadSupplierProductsCatalog(): void {
+    const suppliers = this.suppliers();
+    if (suppliers.length === 0) {
+      this.supplierProductsBySupplier.set({});
+      return;
+    }
+
+    this.loadingSupplierCatalog.set(true);
+    this.dialogError.set(null);
+
+    const requests = suppliers.map((supplier) =>
+      this.getSupplierProductsForPurchaseUseCase
+        .execute(supplier.supplierId, this.buildPermissionContext())
+        .pipe(
+          take(1),
+          map((products) => ({
+            supplierId: supplier.supplierId,
+            products,
+          })),
+          catchError(() =>
+            of({
+              supplierId: supplier.supplierId,
+              products: [] as PurchaseSupplierProductOption[],
+            }),
+          ),
+        ),
+    );
+
+    forkJoin(requests)
+      .pipe(finalize(() => this.loadingSupplierCatalog.set(false)))
+      .subscribe({
+        next: (results) => {
+          const catalogBySupplier: Record<number, PurchaseSupplierProductOption[]> = {};
+
+          for (const result of results) {
+            catalogBySupplier[result.supplierId] = result.products;
+          }
+
+          this.supplierProductsBySupplier.set(catalogBySupplier);
+        },
+        error: (err: unknown) => {
+          this.dialogError.set(
+            this.resolveErrorMessage(err, 'Unable to load supplier product catalog.'),
+          );
+        },
+      });
+  }
+
+  openCreateDialog(): void {
+    this.selectedPurchase.set(null);
+    this.supplierProducts.set([]);
+    this.supplierProductsBySupplier.set({});
+>>>>>>> Stashed changes
     this.dialogMode.set('create');
     this.dialogError.set(null);
     this.dialogVisible.set(true);
@@ -219,6 +293,10 @@ export class PurchasesStore {
     this.dialogError.set(null);
     this.selectedPurchase.set(null);
     this.supplierProducts.set([]);
+<<<<<<< Updated upstream
+=======
+    this.supplierProductsBySupplier.set({});
+>>>>>>> Stashed changes
   }
 
   savePurchase(payload: CreatePurchasePayload | UpdatePurchasePayload): void {
