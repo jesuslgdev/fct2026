@@ -8,6 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Select } from 'primeng/select';
 import { TableComponent } from '@shared/ui/table/table.component';
 import { ButtonComponent } from '@shared/ui/button/button.component';
@@ -46,6 +47,7 @@ interface StatusOption { label: string; value: ProviderStatus | null; }
 export class SuppliersPageComponent implements OnInit {
   readonly store = inject(SuppliersStore);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
   readonly importDialog = viewChild(ImportDialogComponent);
 
   // Force CD when suppliers list changes.
@@ -54,7 +56,6 @@ export class SuppliersPageComponent implements OnInit {
     this.cdr.markForCheck();
   });
 
-  // Properties for details dialog
   detailsDialogVisible = false;
   selectedProviderForDetails: Provider | null = null;
 
@@ -73,16 +74,10 @@ export class SuppliersPageComponent implements OnInit {
     return parseInt(provider.id);
   }
 
-  // Open provider details dialog
-  async openDetailsDialog(provider: Provider): Promise<void> {
-    const fullProvider = await this.store.loadProviderById(provider.id);
-    if (fullProvider) {
-      this.selectedProviderForDetails = fullProvider;
-      this.detailsDialogVisible = true;
-    }
+  openSupplierDetail(provider: Provider): void {
+    this.router.navigate(['/suppliers', provider.id]);
   }
 
-  // Close details dialog
   closeDetailsDialog(): void {
     this.detailsDialogVisible = false;
     this.selectedProviderForDetails = null;
