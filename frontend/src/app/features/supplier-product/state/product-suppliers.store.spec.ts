@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
+import { ProviderStatus } from '@domain/enums/provider-status.enum';
 import { UserPermission } from '@domain/enums/user-permission.enum';
+import { Provider } from '@domain/models/provider.model';
 import {
   PagedResult,
   ProductSupplier,
   ProductSupplierQueryParams,
   UpdateSupplierProductPriceRequest,
 } from '@domain/models/supplier-product.model';
-import { SupplierProductValidationError } from '@domain/models/supplier-product-errors';
+import { GetProvidersUseCase } from '@domain/usecases/supplier/get-providers.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
 import { GetProductSuppliersUseCase } from '@domain/usecases/supplier-product/get-product-suppliers.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
@@ -29,6 +31,25 @@ const PRODUCT_SUPPLIER_B: ProductSupplier = {
   supplierName: 'Proveedor B',
   taxId: 'B87654321',
   supplierPrice: 90,
+};
+
+const ACTIVE_PROVIDER_A: Provider = {
+  id: '1',
+  name: 'Proveedor A',
+  taxId: 'B12345678',
+  email: 'a@example.com',
+  isActive: true,
+  status: ProviderStatus.ACTIVE,
+  createdAt: new Date('2026-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+};
+
+const ACTIVE_PROVIDER_C: Provider = {
+  ...ACTIVE_PROVIDER_A,
+  id: '3',
+  name: 'Proveedor C',
+  taxId: 'B11111111',
+  email: 'c@example.com',
 };
 
 class MockAuthService {
@@ -65,18 +86,24 @@ class MockRemoveProductFromSupplierUseCase {
   execute = vi.fn();
 }
 
+class MockGetProvidersUseCase {
+  execute = vi.fn();
+}
+
 describe('ProductSuppliersStore', () => {
   let store: ProductSuppliersStore;
   let getProductSuppliersUseCase: MockGetProductSuppliersUseCase;
   let addProductToSupplierUseCase: MockAddProductToSupplierUseCase;
   let updateSupplierProductPriceUseCase: MockUpdateSupplierProductPriceUseCase;
   let removeProductFromSupplierUseCase: MockRemoveProductFromSupplierUseCase;
+  let getProvidersUseCase: MockGetProvidersUseCase;
 
   beforeEach(() => {
     getProductSuppliersUseCase = new MockGetProductSuppliersUseCase();
     addProductToSupplierUseCase = new MockAddProductToSupplierUseCase();
     updateSupplierProductPriceUseCase = new MockUpdateSupplierProductPriceUseCase();
     removeProductFromSupplierUseCase = new MockRemoveProductFromSupplierUseCase();
+    getProvidersUseCase = new MockGetProvidersUseCase();
 
     TestBed.configureTestingModule({
       providers: [
@@ -86,6 +113,7 @@ describe('ProductSuppliersStore', () => {
         { provide: AddProductToSupplierUseCase, useValue: addProductToSupplierUseCase },
         { provide: UpdateSupplierProductPriceUseCase, useValue: updateSupplierProductPriceUseCase },
         { provide: RemoveProductFromSupplierUseCase, useValue: removeProductFromSupplierUseCase },
+        { provide: GetProvidersUseCase, useValue: getProvidersUseCase },
       ],
     });
 
@@ -116,15 +144,13 @@ describe('ProductSuppliersStore', () => {
     expect(store.error()).toBe('No hay producto seleccionado.');
   });
 
-  it('mapea validacion de decimales con punto final desde use case', async () => {
+  it('bloquea precio con mas de dos decimales antes del use case', async () => {
     store.productId.set(1);
-    addProductToSupplierUseCase.execute.mockReturnValue(
-      throwError(() => new SupplierProductValidationError({}, 'Supplier price must have maximum 2 decimal places.')),
-    );
 
     await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 10.123 });
 
     expect(store.error()).toBe('El precio del proveedor debe tener maximo 2 decimales.');
+    expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('agrega proveedor y recarga la lista', async () => {
@@ -161,6 +187,53 @@ describe('ProductSuppliersStore', () => {
 
     expect(updateSupplierProductPriceUseCase.execute).toHaveBeenCalledWith(1, 1, payload);
     expect(store.productSuppliers()[0]?.supplierPrice).toBe(120);
+  });
+
+  it('edita precio inline y recarga lista', async () => {
+    getProductSuppliersUseCase.execute
+      .mockReturnValueOnce(of({ data: [PRODUCT_SUPPLIER_A], total: 1, page: 1, pageSize: 10 }))
+      .mockReturnValueOnce(of({ data: [{ ...PRODUCT_SUPPLIER_A, supplierPrice: 115.5 }], total: 1, page: 1, pageSize: 10 }));
+
+    await store.loadProductSuppliers(1);
+    updateSupplierProductPriceUseCase.execute.mockReturnValue(of(undefined));
+
+    store.startInlinePriceEdit(PRODUCT_SUPPLIER_A);
+    store.setPriceDraft('115.50');
+    await store.saveInlinePrice(PRODUCT_SUPPLIER_A);
+
+    expect(updateSupplierProductPriceUseCase.execute).toHaveBeenCalledWith(1, 1, { supplierPrice: 115.5 });
+    expect(store.editingSupplierId()).toBeNull();
+    expect(store.productSuppliers()[0]?.supplierPrice).toBe(115.5);
+  });
+
+  it('bloquea precio inline invalido', async () => {
+    store.productId.set(1);
+    store.startInlinePriceEdit(PRODUCT_SUPPLIER_A);
+    store.setPriceDraft('10.123');
+
+    await store.saveInlinePrice(PRODUCT_SUPPLIER_A);
+
+    expect(updateSupplierProductPriceUseCase.execute).not.toHaveBeenCalled();
+    expect(store.error()).toBe('El precio del proveedor debe tener maximo 2 decimales.');
+  });
+
+  it('carga proveedores activos y excluye asociados', async () => {
+    store.productSuppliers.set([PRODUCT_SUPPLIER_A]);
+    getProvidersUseCase.execute.mockResolvedValue({
+      data: [ACTIVE_PROVIDER_A, ACTIVE_PROVIDER_C],
+      total: 2,
+    });
+
+    await store.loadActiveSuppliersForAdd();
+
+    expect(getProvidersUseCase.execute).toHaveBeenCalledWith({
+      page: 1,
+      rows: 100,
+      first: 0,
+      status: ProviderStatus.ACTIVE,
+      isActive: true,
+    });
+    expect(store.activeSuppliersForAdd()).toEqual([ACTIVE_PROVIDER_C]);
   });
 
   it('elimina proveedor y recarga lista', async () => {

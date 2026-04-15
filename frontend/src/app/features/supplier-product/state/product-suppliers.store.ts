@@ -2,12 +2,15 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { UserPermission } from '@domain/enums/user-permission.enum';
+import { ProviderStatus } from '@domain/enums/provider-status.enum';
+import { Provider } from '@domain/models/provider.model';
 import {
   AddSupplierProductRequest,
   ProductSupplier,
   ProductSupplierQueryParams,
   UpdateSupplierProductPriceRequest,
 } from '@domain/models/supplier-product.model';
+import { GetProvidersUseCase } from '@domain/usecases/supplier/get-providers.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
 import { GetProductSuppliersUseCase } from '@domain/usecases/supplier-product/get-product-suppliers.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
@@ -28,6 +31,7 @@ export class ProductSuppliersStore {
   private readonly addProductToSupplierUseCase = inject(AddProductToSupplierUseCase);
   private readonly updateSupplierProductPriceUseCase = inject(UpdateSupplierProductPriceUseCase);
   private readonly removeProductFromSupplierUseCase = inject(RemoveProductFromSupplierUseCase);
+  private readonly getProvidersUseCase = inject(GetProvidersUseCase);
 
   readonly productSuppliers = signal<ProductSupplier[]>([]);
   readonly productId = signal<number | null>(null);
@@ -37,17 +41,32 @@ export class ProductSuppliersStore {
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly suppliersLoading = signal(false);
 
   readonly addSupplierDialogVisible = signal(false);
   readonly editSupplierPriceDialogVisible = signal(false);
   readonly confirmDeleteSupplierDialogVisible = signal(false);
   readonly selectedProductSupplier = signal<ProductSupplier | null>(null);
+  readonly activeSuppliers = signal<Provider[]>([]);
+  readonly selectedSupplierId = signal<number | null>(null);
+  readonly addSupplierPriceDraft = signal('');
+  readonly editingSupplierId = signal<number | null>(null);
+  readonly priceDraft = signal('');
+  readonly savingSupplierIds = signal<ReadonlySet<number>>(new Set<number>());
 
   readonly canModify = computed(() =>
     this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager])
   );
 
   readonly productTotalPages = computed(() => Math.ceil(this.productTotal() / this.productPageSize()));
+
+  readonly activeSuppliersForAdd = computed(() => {
+    const associatedSupplierIds = new Set(
+      this.productSuppliers().map((supplier) => supplier.supplierId.toString()),
+    );
+
+    return this.activeSuppliers().filter((supplier) => !associatedSupplierIds.has(supplier.id));
+  });
 
   private buildQueryParams(): ProductSupplierQueryParams {
     return {
@@ -125,6 +144,23 @@ export class ProductSuppliersStore {
     return false;
   }
 
+  private parseSupplierPrice(value: number | string): number | null {
+    const normalized = value.toString().trim().replace(',', '.');
+    const price = Number(normalized);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      this.error.set('El precio del proveedor debe ser mayor que cero.');
+      return null;
+    }
+
+    if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+      this.error.set('El precio del proveedor debe tener maximo 2 decimales.');
+      return null;
+    }
+
+    return price;
+  }
+
   private async fetchProductSuppliers(productId: number): Promise<void> {
     const result = await firstValueFrom(this.getProductSuppliersUseCase.execute(productId, this.buildQueryParams()));
     this.productSuppliers.set(result.data);
@@ -136,6 +172,25 @@ export class ProductSuppliersStore {
       await this.fetchProductSuppliers(productId);
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, fallback));
+    }
+  }
+
+  async loadActiveSuppliersForAdd(): Promise<void> {
+    this.suppliersLoading.set(true);
+
+    try {
+      const result = await this.getProvidersUseCase.execute({
+        page: 1,
+        rows: 100,
+        first: 0,
+        status: ProviderStatus.ACTIVE,
+        isActive: true,
+      });
+      this.activeSuppliers.set(result.data.filter((supplier) => supplier.isActive));
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Error al cargar proveedores activos.'));
+    } finally {
+      this.suppliersLoading.set(false);
     }
   }
 
@@ -159,12 +214,17 @@ export class ProductSuppliersStore {
     }
 
     this.selectedProductSupplier.set(null);
+    this.selectedSupplierId.set(null);
+    this.addSupplierPriceDraft.set('');
     this.addSupplierDialogVisible.set(true);
+    void this.loadActiveSuppliersForAdd();
   }
 
   closeAddSupplierDialog(): void {
     this.addSupplierDialogVisible.set(false);
     this.selectedProductSupplier.set(null);
+    this.selectedSupplierId.set(null);
+    this.addSupplierPriceDraft.set('');
   }
 
   async addSupplierToProduct(request: { supplierId: number; supplierPrice: number }): Promise<void> {
@@ -179,11 +239,16 @@ export class ProductSuppliersStore {
       return;
     }
 
+    const supplierPrice = this.parseSupplierPrice(request.supplierPrice);
+    if (supplierPrice === null) {
+      return;
+    }
+
     this.loading.set(true);
     try {
       const addRequest: AddSupplierProductRequest = {
         productId: currentProductId,
-        supplierPrice: request.supplierPrice,
+        supplierPrice,
       };
 
       await firstValueFrom(this.addProductToSupplierUseCase.execute(request.supplierId, addRequest));
@@ -214,6 +279,66 @@ export class ProductSuppliersStore {
     this.selectedProductSupplier.set(null);
   }
 
+  startInlinePriceEdit(productSupplier: ProductSupplier): void {
+    if (!this.ensureCanModify()) {
+      return;
+    }
+
+    this.editingSupplierId.set(productSupplier.supplierId);
+    this.priceDraft.set(productSupplier.supplierPrice.toString());
+  }
+
+  cancelInlinePriceEdit(): void {
+    this.editingSupplierId.set(null);
+    this.priceDraft.set('');
+  }
+
+  setPriceDraft(value: string): void {
+    this.priceDraft.set(value);
+  }
+
+  async saveInlinePrice(productSupplier: ProductSupplier): Promise<void> {
+    this.error.set(null);
+
+    if (!this.ensureCanModify()) {
+      return;
+    }
+
+    const currentProductId = this.requireProductId('No hay producto seleccionado.');
+    if (!currentProductId) {
+      return;
+    }
+
+    const supplierPrice = this.parseSupplierPrice(this.priceDraft());
+    if (supplierPrice === null) {
+      return;
+    }
+
+    this.savingSupplierIds.update((ids) => new Set(ids).add(productSupplier.supplierId));
+    try {
+      await firstValueFrom(
+        this.updateSupplierProductPriceUseCase.execute(
+          productSupplier.supplierId,
+          currentProductId,
+          { supplierPrice },
+        ),
+      );
+      this.cancelInlinePriceEdit();
+      await this.refreshAfterMutation(
+        currentProductId,
+        'Se actualizo el precio, pero no se pudo recargar la lista.',
+      );
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Error al actualizar precio del proveedor.'));
+    } finally {
+      this.savingSupplierIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(productSupplier.supplierId);
+        return next;
+      });
+    }
+  }
+
   async updateSupplierPrice(request: UpdateSupplierProductPriceRequest): Promise<void> {
     this.error.set(null);
 
@@ -227,13 +352,18 @@ export class ProductSuppliersStore {
       return;
     }
 
+    const supplierPrice = this.parseSupplierPrice(request.supplierPrice);
+    if (supplierPrice === null) {
+      return;
+    }
+
     this.loading.set(true);
     try {
       await firstValueFrom(
         this.updateSupplierProductPriceUseCase.execute(
           currentProductSupplier.supplierId,
           currentProductId,
-          request,
+          { supplierPrice },
         ),
       );
 
