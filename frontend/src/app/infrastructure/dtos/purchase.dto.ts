@@ -1,0 +1,118 @@
+import { PaginatedResponse } from '@infrastructure/dtos/paginated-response.dto';
+
+export type BackendPurchaseStatus =
+  | 'Pending'
+  | 'Approved'
+  | 'In Process'
+  | 'Sent'
+  | 'Received'
+  | 'Cancelled';
+
+export interface PurchaseListItemDto {
+  purchase_id: number;
+  purchase_number: string;
+  supplier_name: string | null;
+  status: BackendPurchaseStatus | string;
+  warehouse_id: number;
+  created_at: string;
+  total: number | null;
+}
+
+export type PurchasesPageDto = PaginatedResponse<PurchaseListItemDto>;
+
+export interface PurchaseLineDto {
+  purchase_line_id: number;
+  purchase_id: number;
+  product_id: number;
+  product_name: string | null;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+  line_subtotal: number;
+  vat_rate: number;
+  line_tax: number;
+}
+
+export interface PurchaseDetailDto {
+  purchase_id: number;
+  purchase_number: string;
+  supplier_id: number;
+  supplier_name: string | null;
+  user_id: number;
+  user_name: string | null;
+  warehouse_id: number;
+  warehouse_name: string | null;
+  purchase_date: string;
+  status: BackendPurchaseStatus | string;
+  subtotal: number;
+  taxes: number;
+  total: number;
+  cancelled_at: string | null;
+  cancelled_by_user_id: number | null;
+  created_at: string;
+  updated_at: string | null;
+  lines: PurchaseLineDto[];
+}
+
+export interface CreatePurchaseLineRequestDto {
+  product_id: number;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+}
+
+export interface CreatePurchaseRequestDto {
+  supplier_id: number;
+  warehouse_id: number;
+  lines: CreatePurchaseLineRequestDto[];
+}
+
+export interface UpdatePurchaseRequestDto {
+  supplier_id: number;
+  warehouse_id: number;
+}
+
+export interface AddPurchaseLineRequestDto {
+  product_id: number;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+}
+
+export interface AdvancePurchaseStatusRequestDto {
+  status: 'Approved' | 'In Process' | 'Sent' | 'Received';
+}
+
+export interface SupplierDto {
+  supplier_id: number;
+  name: string;
+  tax_id: string;
+  city: string;
+  is_active: boolean;
+}
+
+export type SuppliersPageDto = PaginatedResponse<SupplierDto>;
+
+export interface SupplierProductDto {
+  product_id: number;
+  product_name: string | null;
+  product_code: string | null;
+  category_name: string | null;
+  supplier_price: number;
+}
+
+export type SupplierProductsPageDto = PaginatedResponse<SupplierProductDto>;
+
+export interface CatalogProductDto {
+  product_id: number;
+  product_code: string;
+  name: string;
+  description: string | null;
+  category_id: number;
+  category_name: string | null;
+  price: number;
+  vat_rate: number;
+  stock_current: number;
+  stock_min: number;
+  is_active: boolean;
+}

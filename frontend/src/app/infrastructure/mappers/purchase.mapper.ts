@@ -1,0 +1,280 @@
+import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
+import {
+  AddPurchaseLineRequestDto,
+  AdvancePurchaseStatusRequestDto,
+  BackendPurchaseStatus,
+  CreatePurchaseRequestDto,
+  PurchaseDetailDto,
+  PurchaseLineDto,
+  PurchaseListItemDto,
+  PurchasesPageDto,
+  SupplierDto,
+  SupplierProductDto,
+  UpdatePurchaseRequestDto,
+} from '@infrastructure/dtos/purchase.dto';
+import { WarehouseDto } from '@infrastructure/dtos/warehouse.dto';
+import {
+  CreatePurchasePayload,
+  PagedResult,
+  PurchaseDetail,
+  PurchaseLine,
+  PurchaseLineInput,
+  PurchaseQueryParams,
+  PurchaseSortField,
+  PurchaseStatusAuditEntry,
+  PurchaseSummary,
+  PurchaseSupplierOption,
+  PurchaseSupplierProductOption,
+  PurchaseWarehouseOption,
+} from '@domain/models/purchase.model';
+
+const SORT_FIELD_TO_BACKEND: Record<PurchaseSortField, string> = {
+  purchaseNumber: 'purchase_number',
+  supplierName: 'supplier_name',
+  status: 'status',
+  deliveryAddress: 'created_at',
+  createdAt: 'created_at',
+  total: 'total',
+};
+
+export class PurchaseMapper {
+  static toQueryParams(params: PurchaseQueryParams): Record<string, string | number | boolean> {
+    const query: Record<string, string | number | boolean> = {
+      page: params.page,
+      page_size: params.pageSize,
+    };
+
+    if (params.status !== undefined) {
+      query['status'] = this.toBackendStatus(params.status);
+    }
+
+    if (params.supplierId !== undefined) {
+      query['supplier_id'] = params.supplierId;
+    }
+
+    if (params.supplierSearch !== undefined) {
+      query['search'] = params.supplierSearch;
+    }
+
+    if (params.createdFrom !== undefined) {
+      query['date_from'] = params.createdFrom;
+    }
+
+    if (params.createdTo !== undefined) {
+      query['date_to'] = params.createdTo;
+    }
+
+    if (params.sort) {
+      query['sort_field'] = SORT_FIELD_TO_BACKEND[params.sort.field];
+      query['sort_order'] = params.sort.direction;
+    }
+
+    return query;
+  }
+
+  static fromSummaryDto(
+    dto: PurchaseListItemDto,
+    supplierId: number,
+    deliveryAddress: string,
+  ): PurchaseSummary {
+    return {
+      purchaseId: dto.purchase_id,
+      purchaseNumber: dto.purchase_number,
+      supplierId,
+      supplierName: dto.supplier_name ?? '',
+      deliveryWarehouseId: dto.warehouse_id,
+      deliveryAddress,
+      status: this.toDomainStatus(dto.status),
+      createdAt: dto.created_at,
+      total: this.toNumber(dto.total),
+    };
+  }
+
+  static toPagedResult(
+    pageDto: PurchasesPageDto,
+    data: PurchaseSummary[],
+  ): PagedResult<PurchaseSummary> {
+    return {
+      data,
+      total: pageDto.total,
+      page: pageDto.page,
+      pageSize: pageDto.page_size,
+    };
+  }
+
+  static fromDetailDto(dto: PurchaseDetailDto, deliveryAddress: string): PurchaseDetail {
+    return {
+      purchaseId: dto.purchase_id,
+      purchaseNumber: dto.purchase_number,
+      supplierId: dto.supplier_id,
+      supplierName: dto.supplier_name ?? '',
+      deliveryWarehouseId: dto.warehouse_id,
+      deliveryAddress,
+      status: this.toDomainStatus(dto.status),
+      createdAt: dto.created_at,
+      total: this.toNumber(dto.total),
+      subtotal: this.toNumber(dto.subtotal),
+      vatTotal: this.toNumber(dto.taxes),
+      lines: dto.lines.map((line) => this.fromLineDto(line)),
+      createdByUserId: dto.user_id,
+      createdByName: dto.user_name ?? '',
+      updatedAt: dto.updated_at,
+      cancelledAt: dto.cancelled_at,
+      cancelledByUserId: dto.cancelled_by_user_id,
+      cancelledByName: null,
+      statusHistory: this.toStatusHistory(dto),
+    };
+  }
+
+  static toCreateDto(payload: CreatePurchasePayload): CreatePurchaseRequestDto {
+    return {
+      supplier_id: payload.supplierId,
+      warehouse_id: payload.deliveryWarehouseId,
+      lines: payload.lines.map((line) => this.toCreateLineDto(line)),
+    };
+  }
+
+  static toUpdateDto(supplierId: number, warehouseId: number): UpdatePurchaseRequestDto {
+    return {
+      supplier_id: supplierId,
+      warehouse_id: warehouseId,
+    };
+  }
+
+  static toAddLineDto(line: PurchaseLineInput): AddPurchaseLineRequestDto {
+    return this.toCreateLineDto(line);
+  }
+
+  static toAdvanceStatusDto(status: PurchaseStatus): AdvancePurchaseStatusRequestDto {
+    const backendStatus = this.toBackendStatus(status);
+
+    if (backendStatus === 'Pending' || backendStatus === 'Cancelled') {
+      throw new Error('Invalid purchase transition target for backend status endpoint.');
+    }
+
+    return { status: backendStatus };
+  }
+
+  static fromSupplierDto(dto: SupplierDto): PurchaseSupplierOption {
+    return {
+      supplierId: dto.supplier_id,
+      supplierName: dto.name,
+      isActive: dto.is_active,
+    };
+  }
+
+  static fromWarehouseDto(dto: WarehouseDto): PurchaseWarehouseOption {
+    return {
+      warehouseId: dto.warehouse_id,
+      warehouseName: dto.name,
+      address: dto.address,
+    };
+  }
+
+  static toSupplierProductOption(
+    supplierId: number,
+    dto: SupplierProductDto,
+    vatRate: number,
+  ): PurchaseSupplierProductOption {
+    return {
+      productId: dto.product_id,
+      productName: dto.product_name ?? '',
+      supplierId,
+      unitPrice: this.toNumber(dto.supplier_price),
+      vatRate,
+    };
+  }
+
+  static toDomainVatRate(vatRate: number): number {
+    if (vatRate <= 1) {
+      return Math.round((vatRate + Number.EPSILON) * 10000) / 100;
+    }
+
+    return vatRate;
+  }
+
+  static toDomainStatus(status: string): PurchaseStatus {
+    switch (status) {
+      case 'Pending':
+        return 'Pending';
+      case 'Approved':
+        return 'Approved';
+      case 'In Process':
+      case 'InProcess':
+        return 'InProcess';
+      case 'Sent':
+      case 'Shipped':
+        return 'Shipped';
+      case 'Received':
+        return 'Received';
+      case 'Cancelled':
+        return 'Cancelled';
+      default:
+        return 'Pending';
+    }
+  }
+
+  static toBackendStatus(status: PurchaseStatus): BackendPurchaseStatus {
+    switch (status) {
+      case 'Pending':
+        return 'Pending';
+      case 'Approved':
+        return 'Approved';
+      case 'InProcess':
+        return 'In Process';
+      case 'Shipped':
+        return 'Sent';
+      case 'Received':
+        return 'Received';
+      case 'Cancelled':
+        return 'Cancelled';
+    }
+  }
+
+  private static fromLineDto(dto: PurchaseLineDto): PurchaseLine {
+    const subtotal = this.toNumber(dto.line_subtotal);
+    const vatAmount = this.toNumber(dto.line_tax);
+
+    return {
+      lineId: dto.purchase_line_id,
+      productId: dto.product_id,
+      productName: dto.product_name ?? '',
+      quantity: dto.quantity,
+      unitPrice: this.toNumber(dto.unit_price),
+      vatRate: this.toDomainVatRate(this.toNumber(dto.vat_rate)),
+      subtotal,
+      vatAmount,
+      total: subtotal + vatAmount,
+    };
+  }
+
+  private static toCreateLineDto(line: PurchaseLineInput): AddPurchaseLineRequestDto {
+    return {
+      product_id: line.productId,
+      quantity: line.quantity,
+      unit_price: line.unitPrice,
+      discount: 0,
+    };
+  }
+
+  private static toStatusHistory(dto: PurchaseDetailDto): PurchaseStatusAuditEntry[] {
+    return [
+      {
+        fromStatus: null,
+        toStatus: this.toDomainStatus(dto.status),
+        changedAt: dto.updated_at ?? dto.created_at,
+        changedByUserId: dto.user_id,
+        changedByName: dto.user_name ?? '',
+        effect: 'none',
+      },
+    ];
+  }
+
+  private static toNumber(value: number | null | undefined): number {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+      return 0;
+    }
+
+    return value;
+  }
+}
