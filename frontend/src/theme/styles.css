@@ -67,6 +67,14 @@
   background-color: color-mix(in srgb, var(--p-red-500) 10%, transparent);
 }
 
+@utility bg-warning-subtle {
+  background-color: color-mix(in srgb, var(--p-amber-500, #f59e0b) 12%, transparent);
+}
+
+@utility bg-success-subtle {
+  background-color: color-mix(in srgb, var(--p-green-500) 12%, transparent);
+}
+
 @utility border-danger-subtle {
   border-color: color-mix(in srgb, var(--p-red-500) 25%, transparent);
 }
