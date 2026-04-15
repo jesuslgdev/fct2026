@@ -14,16 +14,21 @@ import {
   CreateProductPayload,
   UpdateProductPayload,
   ProductQueryParams,
+  ProductStockByWarehouse,
 } from '@domain/models/product.model';
 import {
   ProductDto,
   ProductsPageDto,
+  ProductStockOverviewDto,
+  ProductSuppliersPaginatedDto,
   SetProductActiveDto,
 } from '@infrastructure/dtos/product.dto';
 import { ProductMapper } from '@infrastructure/mappers/product.mapper';
 import { environment } from 'environments/environment';
 
 const BASE_URL = `${environment.apiUrl}/api/v1/catalog/products`;
+const SUPPLIERS_BY_PRODUCT_URL = `${environment.apiUrl}/api/v1/suppliers/products`;
+const STOCK_BY_PRODUCT_URL = `${environment.apiUrl}/api/v1/warehouse/products`;
 
 type ProductsPageResponse = Partial<ProductsPageDto> & {
   items?: ProductDto[];
@@ -239,6 +244,35 @@ export class HttpProductRepository implements ProductRepository {
   getLowStockProducts() {
     return this.getAllProducts().pipe(
       map((products: Product[]) => products.filter((product) => product.stock < product.minStock)),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
+  }
+
+  getProductSuppliers(productId: number) {
+    return this.http.get<ProductSuppliersPaginatedDto>(`${SUPPLIERS_BY_PRODUCT_URL}/${productId}/suppliers`, {
+      params: {
+        page: 1,
+        page_size: 100,
+      },
+    }).pipe(
+      map((response) => {
+        const items = Array.isArray(response.items) ? response.items : [];
+        return items.map(ProductMapper.supplierFromDto);
+      }),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
+    );
+  }
+
+  getProductStockByWarehouses(productId: number) {
+    return this.http.get<ProductStockOverviewDto>(`${STOCK_BY_PRODUCT_URL}/${productId}/stock`).pipe(
+      map((response) => {
+        const fallbackMinStock = typeof response.stock_min === 'number' ? response.stock_min : 0;
+        const warehouses = Array.isArray(response.warehouses) ? response.warehouses : [];
+
+        return warehouses.map((warehouse): ProductStockByWarehouse => {
+          return ProductMapper.stockByWarehouseFromDto(warehouse, fallbackMinStock);
+        });
+      }),
       catchError((err) => throwError(() => this.mapHttpError(err)))
     );
   }
