@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select, text
@@ -61,6 +61,7 @@ class SaleRepository(ISaleRepository):
             delivery_address=delivery_address,
             user_id=user_id,
             status=status,
+            status_changed_at=datetime.now(UTC),
             subtotal=subtotal,
             taxes=taxes,
             total=total,
