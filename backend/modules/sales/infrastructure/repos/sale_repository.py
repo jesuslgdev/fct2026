@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.clients.domain.entities.client import Client
 from modules.sales.domain.entities.sale import Sale
 from modules.sales.domain.entities.sale_line import SaleLine
+from modules.sales.domain.entities.sale_status_history import SaleStatusHistory
 from modules.sales.domain.interfaces.repositories.i_sale_repository import (
     ISaleRepository,
 )
@@ -82,6 +83,16 @@ class SaleRepository(ISaleRepository):
         await self._db.flush()
         await self._db.refresh(sale, ["lines"])
         return sale
+
+    async def save(self, sale: Sale) -> Sale:
+        self._db.add(sale)
+        await self._db.flush()
+        await self._db.refresh(sale, ["lines"])
+        return sale
+
+    async def add_status_history(self, history: SaleStatusHistory) -> None:
+        self._db.add(history)
+        await self._db.flush()
 
     async def get_by_id(self, sale_id: int) -> Sale | None:
         result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
