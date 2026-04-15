@@ -21,6 +21,7 @@ class MockProductSuppliersStore {
   readonly loadProductSuppliers = vi.fn();
   readonly onProductPageChange = vi.fn();
   readonly setPriceDraft = vi.fn();
+  readonly setAddSupplierPriceDraft = vi.fn();
 }
 
 describe('ProductDetailPageComponent', () => {
@@ -82,5 +83,16 @@ describe('ProductDetailPageComponent', () => {
     component.onSupplierPriceInput({ target: input } as unknown as Event);
 
     expect(productSuppliersStore.setPriceDraft).toHaveBeenCalledWith('24.50');
+  });
+
+  it('actualiza borrador de precio del modal de alta', () => {
+    const fixture = TestBed.createComponent(ProductDetailPageComponent);
+    const component = fixture.componentInstance;
+    const input = document.createElement('input');
+    input.value = '31.20';
+
+    component.onAddSupplierPriceInput({ target: input } as unknown as Event);
+
+    expect(productSuppliersStore.setAddSupplierPriceDraft).toHaveBeenCalledWith('31.20');
   });
 });

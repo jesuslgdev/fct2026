@@ -64,7 +64,17 @@
       </div>
 
       <div class="mt-4">
-        <h2 class="text-style-subtitle">Proveedores</h2>
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <h2 class="text-style-subtitle">Proveedores</h2>
+          @if (supplierStore.canModify()) {
+            <ui-button
+              label="Añadir proveedor"
+              icon="pi pi-plus"
+              size="sm"
+              (clicked)="supplierStore.openAddSupplierDialog()"
+            />
+          }
+        </div>
 
         @if (supplierStore.error(); as supplierErrorMessage) {
           <p class="warning-text" role="alert">{{ supplierErrorMessage }}</p>
@@ -162,3 +172,45 @@
 </section>
 
 <app-product-form-dialog />
+
+<ui-dialog
+  [(visible)]="supplierStore.addSupplierDialogVisible"
+  header="Añadir proveedor"
+  size="sm"
+  confirmLabel="Guardar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="supplierStore.loading()"
+  [confirmDisabled]="!supplierStore.selectedSupplierId() || !supplierStore.addSupplierPriceDraft()"
+  (confirmed)="supplierStore.addSelectedSupplierToProduct()"
+  (cancelled)="supplierStore.closeAddSupplierDialog()"
+>
+  <div class="dialog-form">
+    <label class="dialog-field">
+      <span class="dialog-field-label">Proveedor</span>
+      <p-select
+        [options]="supplierStore.activeSuppliersForAdd()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecciona un proveedor activo"
+        styleClass="w-full"
+        appendTo="body"
+        [loading]="supplierStore.suppliersLoading()"
+        [ngModel]="supplierStore.selectedSupplierId()"
+        (ngModelChange)="supplierStore.setSelectedSupplierId($event)"
+      />
+    </label>
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Precio proveedor</span>
+      <input
+        class="p-inputtext p-component w-full"
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="0.00"
+        [value]="supplierStore.addSupplierPriceDraft()"
+        (input)="onAddSupplierPriceInput($event)"
+      />
+    </label>
+  </div>
+</ui-dialog>

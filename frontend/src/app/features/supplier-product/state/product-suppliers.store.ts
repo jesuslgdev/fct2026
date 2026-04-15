@@ -48,7 +48,7 @@ export class ProductSuppliersStore {
   readonly confirmDeleteSupplierDialogVisible = signal(false);
   readonly selectedProductSupplier = signal<ProductSupplier | null>(null);
   readonly activeSuppliers = signal<Provider[]>([]);
-  readonly selectedSupplierId = signal<number | null>(null);
+  readonly selectedSupplierId = signal<string | null>(null);
   readonly addSupplierPriceDraft = signal('');
   readonly editingSupplierId = signal<number | null>(null);
   readonly priceDraft = signal('');
@@ -161,6 +161,17 @@ export class ProductSuppliersStore {
     return price;
   }
 
+  private parseSupplierId(value: string | null): number | null {
+    const supplierId = Number(value);
+
+    if (!Number.isInteger(supplierId) || supplierId <= 0) {
+      this.error.set('Proveedor seleccionado invalido.');
+      return null;
+    }
+
+    return supplierId;
+  }
+
   private async fetchProductSuppliers(productId: number): Promise<void> {
     const result = await firstValueFrom(this.getProductSuppliersUseCase.execute(productId, this.buildQueryParams()));
     this.productSuppliers.set(result.data);
@@ -227,7 +238,33 @@ export class ProductSuppliersStore {
     this.addSupplierPriceDraft.set('');
   }
 
-  async addSupplierToProduct(request: { supplierId: number; supplierPrice: number }): Promise<void> {
+  setSelectedSupplierId(supplierId: string | null): void {
+    this.selectedSupplierId.set(supplierId);
+  }
+
+  setAddSupplierPriceDraft(value: string): void {
+    this.addSupplierPriceDraft.set(value);
+  }
+
+  async addSelectedSupplierToProduct(): Promise<void> {
+    this.error.set(null);
+
+    if (!this.ensureCanModify()) {
+      return;
+    }
+
+    const supplierId = this.parseSupplierId(this.selectedSupplierId());
+    if (supplierId === null) {
+      return;
+    }
+
+    await this.addSupplierToProduct({
+      supplierId,
+      supplierPrice: this.addSupplierPriceDraft(),
+    });
+  }
+
+  async addSupplierToProduct(request: { supplierId: number; supplierPrice: number | string }): Promise<void> {
     this.error.set(null);
 
     if (!this.ensureCanModify()) {
