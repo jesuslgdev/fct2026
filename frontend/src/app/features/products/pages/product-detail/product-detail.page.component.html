@@ -18,11 +18,11 @@
     </div>
   </div>
 
-  @if (store.loading()) {
+  @if (store.detailLoading()) {
     <p class="warning-text">Cargando detalle del producto...</p>
   }
 
-  @if (store.error(); as errorMessage) {
+  @if (store.detailError(); as errorMessage) {
     <p class="warning-text" role="alert">{{ errorMessage }}</p>
   }
 
@@ -63,109 +63,159 @@
         <p>{{ product.description }}</p>
       </div>
 
-      <div class="mt-4">
-        <div class="mb-3 flex items-center justify-between gap-2">
-          <h2 class="text-style-subtitle">Proveedores</h2>
-          @if (supplierStore.canModify()) {
-            <ui-button
-              label="Añadir proveedor"
-              icon="pi pi-plus"
-              size="sm"
-              (clicked)="supplierStore.openAddSupplierDialog()"
-            />
-          }
+      <div class="mt-6">
+        <div class="flex flex-wrap gap-2">
+          <ui-button
+            label="Almacenes"
+            [variant]="activeDetailView() === 'warehouses' ? 'default' : 'outline'"
+            (clicked)="setDetailView('warehouses')"
+          />
+          <ui-button
+            label="Proveedores"
+            [variant]="activeDetailView() === 'suppliers' ? 'default' : 'outline'"
+            (clicked)="setDetailView('suppliers')"
+          />
         </div>
 
-        @if (supplierStore.error(); as supplierErrorMessage) {
-          <p class="warning-text" role="alert">{{ supplierErrorMessage }}</p>
-        }
+        @if (activeDetailView() === 'warehouses') {
+          <h2 class="mt-4 text-style-subtitle">Almacenes disponibles</h2>
 
-        <ui-table
-          [value]="supplierStore.productSuppliers()"
-          [loading]="supplierStore.loading()"
-          [paginator]="true"
-          [lazy]="true"
-          [first]="(supplierStore.productPage() - 1) * supplierStore.productPageSize()"
-          [rows]="supplierStore.productPageSize()"
-          [totalRecords]="supplierStore.productTotal()"
-          [rowsPerPageOptions]="[10, 20, 50]"
-          tableClass="ui-table-base ui-table-compact ui-table-bordered"
-          dataKey="supplierId"
-          (page)="onProductSuppliersPageChange($event)"
-        >
-          <ng-template #header>
-            <tr>
-              <th>Proveedor</th>
-              <th>CIF</th>
-              <th>Precio proveedor</th>
-              @if (supplierStore.canModify()) { <th>Acciones</th> }
-            </tr>
-          </ng-template>
-
-          <ng-template #body let-supplier>
-            <tr>
-              <td>{{ supplier.supplierName }}</td>
-              <td>{{ supplier.taxId }}</td>
-              <td>
-                @if (supplierStore.editingSupplierId() === supplier.supplierId) {
-                  <input
-                    class="p-inputtext p-component w-32"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    [value]="supplierStore.priceDraft()"
-                    [disabled]="supplierStore.savingSupplierIds().has(supplier.supplierId)"
-                    (input)="onSupplierPriceInput($event)"
-                  />
-                } @else {
-                  {{ supplier.supplierPrice | currency: 'EUR' }}
-                }
-              </td>
-              @if (supplierStore.canModify()) {
-                <td>
-                  <div class="flex flex-wrap gap-2">
-                    @if (supplierStore.editingSupplierId() === supplier.supplierId) {
-                      <ui-button
-                        icon="pi pi-check"
-                        variant="ghost"
-                        size="sm"
-                        [loading]="supplierStore.savingSupplierIds().has(supplier.supplierId)"
-                        (clicked)="supplierStore.saveInlinePrice(supplier)"
-                      />
-                      <ui-button
-                        icon="pi pi-times"
-                        variant="ghost"
-                        size="sm"
-                        (clicked)="supplierStore.cancelInlinePriceEdit()"
-                      />
-                    } @else {
-                      <ui-button
-                        icon="pi pi-pencil"
-                        variant="ghost"
-                        size="sm"
-                        (clicked)="supplierStore.startInlinePriceEdit(supplier)"
-                      />
-                      <ui-button
-                        icon="pi pi-trash"
-                        variant="destructive"
-                        size="sm"
-                        (clicked)="supplierStore.requestDeleteSupplier(supplier)"
-                      />
-                    }
+          @if (store.productStockByWarehouses().length) {
+            <ul class="mt-2 space-y-2 list-none p-0">
+              @for (warehouse of store.productStockByWarehouses(); track warehouse.warehouseId) {
+                <li class="rounded border border-surface-200 px-3 py-2">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-medium">{{ warehouse.warehouseName }}</span>
+                    <span
+                      class="rounded-full px-2 py-0.5 text-xs font-semibold"
+                      [class.bg-danger-subtle]="warehouse.status === 'out' || warehouse.status === 'critical'"
+                      [class.text-danger]="warehouse.status === 'out' || warehouse.status === 'critical'"
+                      [class.bg-warning-subtle]="warehouse.status === 'low'"
+                      [class.text-warning]="warehouse.status === 'low'"
+                      [class.bg-success-subtle]="warehouse.status === 'normal'"
+                      [class.text-success]="warehouse.status === 'normal'"
+                    >
+                      @switch (warehouse.status) {
+                        @case ('out') { Sin stock }
+                        @case ('critical') { Critico }
+                        @case ('low') { Bajo }
+                        @default { Normal }
+                      }
+                    </span>
                   </div>
-                </td>
+                  <p class="mt-1 text-sm text-surface-600">
+                    Disponible: {{ warehouse.currentStock }} - Minimo: {{ warehouse.minStock }}
+                  </p>
+                </li>
               }
-            </tr>
-          </ng-template>
+            </ul>
+          } @else {
+            <p class="mt-2 text-surface-500">Sin stock por almacen para este producto.</p>
+          }
+        } @else {
+          <div class="mt-4 mb-3 flex items-center justify-between gap-2">
+            <h2 class="text-style-subtitle">Proveedores</h2>
+            @if (supplierStore.canModify()) {
+              <ui-button
+                label="Añadir proveedor"
+                icon="pi pi-plus"
+                size="sm"
+                (clicked)="supplierStore.openAddSupplierDialog()"
+              />
+            }
+          </div>
 
-          <ng-template #emptymessage>
-            <tr>
-              <td [attr.colspan]="supplierStore.canModify() ? 4 : 3" class="empty-state">
-                Sin proveedores asociados.
-              </td>
-            </tr>
-          </ng-template>
-        </ui-table>
+          @if (supplierStore.error(); as supplierErrorMessage) {
+            <p class="warning-text" role="alert">{{ supplierErrorMessage }}</p>
+          }
+
+          <ui-table
+            [value]="supplierStore.productSuppliers()"
+            [loading]="supplierStore.loading()"
+            [paginator]="true"
+            [lazy]="true"
+            [first]="(supplierStore.productPage() - 1) * supplierStore.productPageSize()"
+            [rows]="supplierStore.productPageSize()"
+            [totalRecords]="supplierStore.productTotal()"
+            [rowsPerPageOptions]="[10, 20, 50]"
+            tableClass="ui-table-base ui-table-compact ui-table-bordered"
+            dataKey="supplierId"
+            (page)="onProductSuppliersPageChange($event)"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Proveedor</th>
+                <th>CIF</th>
+                <th>Precio proveedor</th>
+                @if (supplierStore.canModify()) { <th>Acciones</th> }
+              </tr>
+            </ng-template>
+
+            <ng-template #body let-supplier>
+              <tr>
+                <td>{{ supplier.supplierName }}</td>
+                <td>{{ supplier.taxId }}</td>
+                <td>
+                  @if (supplierStore.editingSupplierId() === supplier.supplierId) {
+                    <input
+                      class="p-inputtext p-component w-32"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      [value]="supplierStore.priceDraft()"
+                      [disabled]="supplierStore.savingSupplierIds().has(supplier.supplierId)"
+                      (input)="onSupplierPriceInput($event)"
+                    />
+                  } @else {
+                    {{ supplier.supplierPrice | currency: 'EUR' }}
+                  }
+                </td>
+                @if (supplierStore.canModify()) {
+                  <td>
+                    <div class="flex flex-wrap gap-2">
+                      @if (supplierStore.editingSupplierId() === supplier.supplierId) {
+                        <ui-button
+                          icon="pi pi-check"
+                          variant="ghost"
+                          size="sm"
+                          [loading]="supplierStore.savingSupplierIds().has(supplier.supplierId)"
+                          (clicked)="supplierStore.saveInlinePrice(supplier)"
+                        />
+                        <ui-button
+                          icon="pi pi-times"
+                          variant="ghost"
+                          size="sm"
+                          (clicked)="supplierStore.cancelInlinePriceEdit()"
+                        />
+                      } @else {
+                        <ui-button
+                          icon="pi pi-pencil"
+                          variant="ghost"
+                          size="sm"
+                          (clicked)="supplierStore.startInlinePriceEdit(supplier)"
+                        />
+                        <ui-button
+                          icon="pi pi-trash"
+                          variant="destructive"
+                          size="sm"
+                          (clicked)="supplierStore.requestDeleteSupplier(supplier)"
+                        />
+                      }
+                    </div>
+                  </td>
+                }
+              </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+              <tr>
+                <td [attr.colspan]="supplierStore.canModify() ? 4 : 3" class="empty-state">
+                  Sin proveedores asociados.
+                </td>
+              </tr>
+            </ng-template>
+          </ui-table>
+        }
       </div>
     </ui-card>
   }

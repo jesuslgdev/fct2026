@@ -6,6 +6,8 @@ import { ProductCategoryRepository } from '@domain/repositories/product-category
 import {
   Product,
   ProductCategory,
+  ProductSupplier,
+  ProductStockByWarehouse,
   ProductQueryParams,
   CreateProductPayload,
   UpdateProductPayload,
@@ -18,6 +20,8 @@ import { ToggleProductStatusUseCase } from '@domain/usecases/product/toggle-prod
 import { CheckProductCodeUseCase } from '@domain/usecases/product/check-product-code.usecase';
 import { GetLowStockProductsUseCase } from '@domain/usecases/product/get-low-stock-products.usecase';
 import { GetProductCategoriesUseCase } from '@domain/usecases/product/get-product-categories.usecase';
+import { GetProductSuppliersUseCase } from '@domain/usecases/product/get-product-suppliers.usecase';
+import { GetProductStockByWarehousesUseCase } from '@domain/usecases/product/get-product-stock-by-warehouses.usecase';
 
 const PRODUCT_MOCK: Product = {
   productId: 1,
@@ -39,6 +43,20 @@ const CATEGORY_MOCK: ProductCategory = {
   description: 'Categoría de ejemplo',
 };
 
+const SUPPLIER_MOCK: ProductSupplier = {
+  supplierId: 10,
+  supplierName: 'Proveedor demo',
+  supplierPrice: 9.5,
+};
+
+const STOCK_WAREHOUSE_MOCK: ProductStockByWarehouse = {
+  warehouseId: 1,
+  warehouseName: 'Almacén central',
+  currentStock: 12,
+  minStock: 5,
+  status: 'normal',
+};
+
 class MockProductRepository implements ProductRepository {
   getProducts = vi.fn<
     (params: ProductQueryParams) => Observable<import('@domain/models/user.model').PagedResult<Product>>
@@ -51,6 +69,10 @@ class MockProductRepository implements ProductRepository {
   toggleProductStatus = vi.fn<(id: number, active: boolean) => Observable<void>>();
   checkCodeExists = vi.fn<(code: string) => Observable<boolean>>();
   getLowStockProducts = vi.fn<() => Observable<Product[]>>();
+  getProductSuppliers = vi.fn<(productId: number) => Observable<ProductSupplier[]>>();
+  getProductStockByWarehouses = vi.fn<
+    (productId: number) => Observable<ProductStockByWarehouse[]>
+  >();
 }
 
 class MockProductCategoryRepository implements ProductCategoryRepository {
@@ -77,6 +99,8 @@ describe('Product Use Cases', () => {
         CheckProductCodeUseCase,
         GetLowStockProductsUseCase,
         GetProductCategoriesUseCase,
+        GetProductSuppliersUseCase,
+        GetProductStockByWarehousesUseCase,
         { provide: ProductRepository, useValue: repo },
         { provide: ProductCategoryRepository, useValue: categoryRepo },
       ],
@@ -174,5 +198,25 @@ describe('Product Use Cases', () => {
 
     expect(categoryRepo.getCategories).toHaveBeenCalledOnce();
     expect(result).toEqual([CATEGORY_MOCK]);
+  });
+
+  it('GetProductSuppliersUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(GetProductSuppliersUseCase);
+    repo.getProductSuppliers.mockReturnValueOnce(of([SUPPLIER_MOCK]));
+
+    const result = await firstValueFrom(useCase.execute(1));
+
+    expect(repo.getProductSuppliers).toHaveBeenCalledWith(1);
+    expect(result).toEqual([SUPPLIER_MOCK]);
+  });
+
+  it('GetProductStockByWarehousesUseCase delegates to repository', async () => {
+    const useCase = TestBed.inject(GetProductStockByWarehousesUseCase);
+    repo.getProductStockByWarehouses.mockReturnValueOnce(of([STOCK_WAREHOUSE_MOCK]));
+
+    const result = await firstValueFrom(useCase.execute(1));
+
+    expect(repo.getProductStockByWarehouses).toHaveBeenCalledWith(1);
+    expect(result).toEqual([STOCK_WAREHOUSE_MOCK]);
   });
 });
