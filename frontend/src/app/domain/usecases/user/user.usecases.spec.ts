@@ -146,6 +146,65 @@ describe('User Use Cases', () => {
     expect(result).toEqual(USER_MOCK);
   });
 
+  it('CreateUserUseCase normalizes payload before delegating', async () => {
+    const useCase = TestBed.inject(CreateUserUseCase);
+    repo.createUser.mockReturnValueOnce(of(USER_MOCK));
+
+    await firstValueFrom(
+      useCase.execute({
+        firstName: '  Ana  ',
+        lastName: '  Garcia  ',
+        email: '  ana@example.com  ',
+        role: UserRole.Administrator,
+        departmentId: null,
+      }),
+    );
+
+    expect(repo.createUser).toHaveBeenCalledWith({
+      firstName: 'Ana',
+      lastName: 'Garcia',
+      email: 'ana@example.com',
+      role: UserRole.Administrator,
+      departmentId: null,
+    });
+  });
+
+  it('CreateUserUseCase rejects missing department for employees', async () => {
+    const useCase = TestBed.inject(CreateUserUseCase);
+
+    await expect(
+      firstValueFrom(
+        useCase.execute({
+          firstName: 'Ana',
+          lastName: 'Garcia',
+          email: 'ana@example.com',
+          role: UserRole.Employee,
+          departmentId: null,
+        }),
+      ),
+    ).rejects.toBeInstanceOf(UserValidationError);
+
+    expect(repo.createUser).not.toHaveBeenCalled();
+  });
+
+  it('CreateUserUseCase rejects invalid email', async () => {
+    const useCase = TestBed.inject(CreateUserUseCase);
+
+    await expect(
+      firstValueFrom(
+        useCase.execute({
+          firstName: 'Ana',
+          lastName: 'Garcia',
+          email: 'not-an-email',
+          role: UserRole.Administrator,
+          departmentId: null,
+        }),
+      ),
+    ).rejects.toBeInstanceOf(UserValidationError);
+
+    expect(repo.createUser).not.toHaveBeenCalled();
+  });
+
   it('UpdateUserUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(UpdateUserUseCase);
     const payload: UpdateUserPayload = { firstName: 'Ana Maria' };
@@ -158,12 +217,37 @@ describe('User Use Cases', () => {
     expect(result).toEqual(updated);
   });
 
+  it('UpdateUserUseCase normalizes payload before delegating', async () => {
+    const useCase = TestBed.inject(UpdateUserUseCase);
+    const updated: User = { ...USER_MOCK, firstName: 'Ana Maria' };
+    repo.updateUser.mockReturnValueOnce(of(updated));
+
+    await firstValueFrom(useCase.execute(1, { firstName: '  Ana Maria  ' }));
+
+    expect(repo.updateUser).toHaveBeenCalledWith(1, { firstName: 'Ana Maria' });
+  });
+
   it('UpdateUserUseCase rejects invalid ids', async () => {
     const useCase = TestBed.inject(UpdateUserUseCase);
 
     await expect(firstValueFrom(useCase.execute(0, { firstName: 'Ana' }))).rejects.toBeInstanceOf(
       UserValidationError,
     );
+
+    expect(repo.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('UpdateUserUseCase rejects missing department when changing to manager', async () => {
+    const useCase = TestBed.inject(UpdateUserUseCase);
+
+    await expect(
+      firstValueFrom(
+        useCase.execute(1, {
+          role: UserRole.Manager,
+          departmentId: null,
+        }),
+      ),
+    ).rejects.toBeInstanceOf(UserValidationError);
 
     expect(repo.updateUser).not.toHaveBeenCalled();
   });

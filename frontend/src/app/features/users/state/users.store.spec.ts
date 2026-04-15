@@ -149,16 +149,14 @@ describe('UsersStore', () => {
     repo.getUsers.mockReturnValueOnce(of({ data: [USER_A], total: 1, page: 1, pageSize: 20 }));
     await store.loadUsers();
     
-    // Mock user creation
     repo.createUser.mockReturnValueOnce(of(USER_B));
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
     
-    // Open dialog and save user
     store.openCreateDialog();
     await store.saveUser(payload);
 
     expect(repo.createUser).toHaveBeenCalledWith(payload);
-    expect(store.users()).toEqual([USER_A, USER_B]);
-    expect(store.total()).toBe(2);
+    expect(refreshSpy).toHaveBeenCalledOnce();
     expect(store.dialogVisible()).toBe(false);
     expect(store.selectedUser()).toBeNull();
   });
@@ -185,7 +183,7 @@ describe('UsersStore', () => {
     await store.loadUsers();
 
     repo.deactivateUser.mockReturnValueOnce(of(void 0));
-    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
     
     store.requestToggleStatus(USER_A);
     await store.confirmToggleStatus();
@@ -222,7 +220,7 @@ describe('UsersStore', () => {
 
     store.requestToggleStatus(inactiveUser);
     repo.activateUser.mockReturnValueOnce(of(void 0));
-    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
 
     await store.confirmToggleStatus();
 
@@ -235,7 +233,7 @@ describe('UsersStore', () => {
   it('deletes a user and refreshes the list', async () => {
     store.requestDeleteUser(USER_A);
     repo.deleteUser.mockReturnValueOnce(of(void 0));
-    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
 
     await store.confirmDeleteUser();
 
@@ -246,7 +244,7 @@ describe('UsersStore', () => {
   });
 
   it('search resets page and triggers load', () => {
-    const spy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+    const spy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
     store.page.set(5);
 
     store.onSearch('ana');
@@ -257,7 +255,7 @@ describe('UsersStore', () => {
   });
 
   it('page change updates pagination and triggers load', () => {
-    const spy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+    const spy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
 
     store.onPageChange({ first: 20, rows: 10 });
 
