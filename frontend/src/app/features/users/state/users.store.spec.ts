@@ -256,6 +256,16 @@ describe('UsersStore', () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 
+  it('page change updates pagination and triggers load', () => {
+    const spy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+
+    store.onPageChange({ first: 20, rows: 10 });
+
+    expect(store.page()).toBe(3);
+    expect(store.pageSize()).toBe(10);
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
   it('loads departments and stores result', async () => {
     const departments: Department[] = [
       { id: 1, name: 'Tecnologia' },

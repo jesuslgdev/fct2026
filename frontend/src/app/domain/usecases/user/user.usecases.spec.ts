@@ -18,6 +18,7 @@ import { UpdateUserUseCase } from '@domain/usecases/user/update-user.usecase';
 import { ActivateUserUseCase } from '@domain/usecases/user/activate-user.usecase';
 import { DeactivateUserUseCase } from '@domain/usecases/user/deactivate-user.usecase';
 import { DeleteUserUseCase } from '@domain/usecases/user/delete-user.usecase';
+import { UserValidationError } from '@domain/models/user-errors';
 
 const USER_MOCK: User = {
   id: 1,
@@ -79,6 +80,35 @@ describe('User Use Cases', () => {
     expect(result).toEqual(resultMock);
   });
 
+  it('GetUsersUseCase normalizes search before delegating', async () => {
+    const useCase = TestBed.inject(GetUsersUseCase);
+    const resultMock: PagedResult<User> = {
+      data: [USER_MOCK],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    };
+    repo.getUsers.mockReturnValueOnce(of(resultMock));
+
+    await firstValueFrom(useCase.execute({ page: 1, pageSize: 20, search: '  ana  ' }));
+
+    expect(repo.getUsers).toHaveBeenCalledWith({
+      page: 1,
+      pageSize: 20,
+      search: 'ana',
+    });
+  });
+
+  it('GetUsersUseCase rejects invalid pagination', async () => {
+    const useCase = TestBed.inject(GetUsersUseCase);
+
+    await expect(
+      firstValueFrom(useCase.execute({ page: 0, pageSize: 20 })),
+    ).rejects.toBeInstanceOf(UserValidationError);
+
+    expect(repo.getUsers).not.toHaveBeenCalled();
+  });
+
   it('GetUserByIdUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(GetUserByIdUseCase);
     repo.getUserById.mockReturnValueOnce(of(USER_MOCK));
@@ -87,6 +117,16 @@ describe('User Use Cases', () => {
 
     expect(repo.getUserById).toHaveBeenCalledWith(1);
     expect(result).toEqual(USER_MOCK);
+  });
+
+  it('GetUserByIdUseCase rejects invalid ids', async () => {
+    const useCase = TestBed.inject(GetUserByIdUseCase);
+
+    await expect(firstValueFrom(useCase.execute(0))).rejects.toBeInstanceOf(
+      UserValidationError,
+    );
+
+    expect(repo.getUserById).not.toHaveBeenCalled();
   });
 
   it('CreateUserUseCase delegates to repository', async () => {
@@ -118,6 +158,16 @@ describe('User Use Cases', () => {
     expect(result).toEqual(updated);
   });
 
+  it('UpdateUserUseCase rejects invalid ids', async () => {
+    const useCase = TestBed.inject(UpdateUserUseCase);
+
+    await expect(firstValueFrom(useCase.execute(0, { firstName: 'Ana' }))).rejects.toBeInstanceOf(
+      UserValidationError,
+    );
+
+    expect(repo.updateUser).not.toHaveBeenCalled();
+  });
+
   it('DeactivateUserUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(DeactivateUserUseCase);
     repo.deactivateUser.mockReturnValueOnce(of(void 0));
@@ -126,6 +176,16 @@ describe('User Use Cases', () => {
 
     expect(repo.deactivateUser).toHaveBeenCalledWith(1);
     expect(repo.deactivateUser).toHaveBeenCalledOnce();
+  });
+
+  it('DeactivateUserUseCase rejects invalid ids', async () => {
+    const useCase = TestBed.inject(DeactivateUserUseCase);
+
+    await expect(firstValueFrom(useCase.execute(0))).rejects.toBeInstanceOf(
+      UserValidationError,
+    );
+
+    expect(repo.deactivateUser).not.toHaveBeenCalled();
   });
 
   it('ActivateUserUseCase delegates to repository', async () => {
@@ -138,6 +198,16 @@ describe('User Use Cases', () => {
     expect(repo.activateUser).toHaveBeenCalledOnce();
   });
 
+  it('ActivateUserUseCase rejects invalid ids', async () => {
+    const useCase = TestBed.inject(ActivateUserUseCase);
+
+    await expect(firstValueFrom(useCase.execute(0))).rejects.toBeInstanceOf(
+      UserValidationError,
+    );
+
+    expect(repo.activateUser).not.toHaveBeenCalled();
+  });
+
   it('DeleteUserUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(DeleteUserUseCase);
     repo.deleteUser.mockReturnValueOnce(of(void 0));
@@ -146,5 +216,15 @@ describe('User Use Cases', () => {
 
     expect(repo.deleteUser).toHaveBeenCalledWith(1);
     expect(repo.deleteUser).toHaveBeenCalledOnce();
+  });
+
+  it('DeleteUserUseCase rejects invalid ids', async () => {
+    const useCase = TestBed.inject(DeleteUserUseCase);
+
+    await expect(firstValueFrom(useCase.execute(0))).rejects.toBeInstanceOf(
+      UserValidationError,
+    );
+
+    expect(repo.deleteUser).not.toHaveBeenCalled();
   });
 });
