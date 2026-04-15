@@ -1,5 +1,12 @@
 import { ProviderStatus } from '@domain/enums/provider-status.enum';
 
+export interface SupplierAddressDto {
+  street: string;
+  city: string;
+  province: string;
+  postal_code: string;
+}
+
 // Read DTO for list responses (returned by the API at /providers)
 export interface ProviderDto {
   supplier_id?: number;
@@ -10,7 +17,7 @@ export interface ProviderDto {
   is_active: boolean;
   email?: string | null;
   phone?: string | null;
-  address?: string | null;
+  address?: SupplierAddressDto | string | null;
   province?: string | null;
   postal_code?: string | null;
   status?: ProviderStatus;
@@ -18,7 +25,8 @@ export interface ProviderDto {
   updated_at?: string;
 }
 
-export interface ProviderDetailDto extends ProviderDto {
+export interface ProviderDetailDto extends Omit<ProviderDto, 'address'> {
+  address: SupplierAddressDto;
   products?: SupplierProductDto[];
 }
 
@@ -26,10 +34,7 @@ export interface ProviderDetailDto extends ProviderDto {
 export interface CreateProviderDto {
   name: string;
   tax_id: string;
-  address: string;
-  city: string;
-  province: string;
-  postal_code: string;
+  address: SupplierAddressDto;
   phone: string;
   email: string;
 }
@@ -37,10 +42,7 @@ export interface CreateProviderDto {
 // Update DTO
 export interface UpdateProviderDto {
   name?: string | null;
-  address?: string | null;
-  city?: string | null;
-  province?: string | null;
-  postal_code?: string | null;
+  address?: SupplierAddressDto | null;
   phone?: string | null;
   email?: string | null;
 }

@@ -9,6 +9,7 @@ import {
   ProviderDetailDto,
   CreateProviderDto,
   UpdateProviderDto,
+  SupplierAddressDto,
   SetSupplierActiveDto,
   ProvidersPageDto,
   SupplierProductDto,
@@ -23,23 +24,53 @@ export class ProviderMapper {
     return (rawId ?? '').toString();
   }
 
+  private static resolveAddress(dto: ProviderDto): SupplierAddressDto | null {
+    if (dto.address && typeof dto.address === 'object') {
+      return dto.address;
+    }
+
+    const legacyStreet = typeof dto.address === 'string' ? dto.address : null;
+    const legacyCity = typeof dto.city === 'string' ? dto.city : null;
+    const legacyProvince = typeof dto.province === 'string' ? dto.province : null;
+    const legacyPostalCode = typeof dto.postal_code === 'string' ? dto.postal_code : null;
+
+    const hasLegacyFlatAddress =
+      legacyStreet !== null &&
+      legacyCity !== null &&
+      legacyProvince !== null &&
+      legacyPostalCode !== null;
+
+    if (!hasLegacyFlatAddress) {
+      return null;
+    }
+
+    return {
+      street: legacyStreet,
+      city: legacyCity,
+      province: legacyProvince,
+      postal_code: legacyPostalCode,
+    };
+  }
+
   // DTO -> Domain (list)
   static fromDto(dto: ProviderDto): Provider {
-      const isActive = dto.is_active ?? false;
+    const isActive = dto.is_active ?? false;
+    const resolvedAddress = ProviderMapper.resolveAddress(dto);
+
     return {
       id: ProviderMapper.resolveProviderId(dto),
       name: dto.name ?? '',
       taxId: dto.tax_id ?? '',
       email: dto.email ?? '',
       phone: dto.phone ?? undefined,
-      address: dto.address ?? undefined,
-      city: dto.city ?? undefined,
-      province: dto.province ?? undefined,
-      postalCode: dto.postal_code ?? undefined,
-    isActive,
-    status: dto.status ?? (isActive ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE),
-    createdAt: dto.created_at ? new Date(dto.created_at) : new Date(),
-    updatedAt: dto.updated_at ? new Date(dto.updated_at) : new Date(),
+      address: resolvedAddress?.street ?? (typeof dto.address === 'string' ? dto.address : undefined),
+      city: resolvedAddress?.city ?? dto.city ?? undefined,
+      province: resolvedAddress?.province ?? dto.province ?? undefined,
+      postalCode: resolvedAddress?.postal_code ?? dto.postal_code ?? undefined,
+      isActive,
+      status: dto.status ?? (isActive ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE),
+      createdAt: dto.created_at ? new Date(dto.created_at) : new Date(),
+      updatedAt: dto.updated_at ? new Date(dto.updated_at) : new Date(),
     };
   }
 
@@ -84,23 +115,37 @@ export class ProviderMapper {
       tax_id: payload.taxId,
       email: payload.email,
       phone: payload.phone ?? '',
-      address: payload.address ?? '',
-      province: payload.province ?? '',
-      city: payload.city ?? '',
-      postal_code: payload.postalCode ?? '',
+      address: {
+        street: payload.address ?? '',
+        city: payload.city ?? '',
+        province: payload.province ?? '',
+        postal_code: payload.postalCode ?? '',
+      },
     };
   }
 
   // Domain -> DTO (update payload)
   static toUpdateDto(payload: UpdateProviderRequest): UpdateProviderDto {
+    const hasAddressUpdate =
+      typeof payload.address === 'string' && payload.address.trim().length > 0 &&
+      typeof payload.city === 'string' && payload.city.trim().length > 0 &&
+      typeof payload.province === 'string' && payload.province.trim().length > 0 &&
+      typeof payload.postalCode === 'string' && payload.postalCode.trim().length > 0;
+
+    const addressPayload: SupplierAddressDto | undefined = hasAddressUpdate
+      ? {
+          street: payload.address as string,
+          city: payload.city as string,
+          province: payload.province as string,
+          postal_code: payload.postalCode as string,
+        }
+      : undefined;
+
     return {
       ...(payload.name !== undefined && { name: payload.name }),
       ...(payload.email !== undefined && { email: payload.email }),
       ...(payload.phone !== undefined && { phone: payload.phone }),
-      ...(payload.address !== undefined && { address: payload.address }),
-      ...(payload.city !== undefined && { city: payload.city }),
-      ...(payload.province !== undefined && { province: payload.province }),
-      ...(payload.postalCode !== undefined && { postal_code: payload.postalCode }),
+      ...(addressPayload !== undefined && { address: addressPayload }),
       // Note: Backend does not allow tax_id updates
     };
   }
