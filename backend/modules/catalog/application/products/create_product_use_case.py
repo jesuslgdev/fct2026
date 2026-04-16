@@ -36,10 +36,15 @@ class CreateProductUseCase(ICreateProductUseCase):
         if category is None:
             raise CatalogException(CatalogExceptionInfo.CATEGORY_NOT_FOUND)
 
-        # 2. Generate next product code with fixed prefix (PROD-XXX)
+        # 2. Validate name uniqueness
+        existing_name = await self._product_repo.get_by_name(name)
+        if existing_name:
+            raise CatalogException(CatalogExceptionInfo.PRODUCT_NAME_ALREADY_EXISTS)
+
+        # 3. Generate next product code with fixed prefix (PROD-XXX)
         product_code = await self._generate_next_product_code(self.PRODUCT_CODE_PREFIX)
 
-        # 3. Persist via repository
+        # 4. Persist via repository
         return await self._product_repo.create(
             product_code=product_code,
             name=name,

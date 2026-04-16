@@ -99,6 +99,30 @@ async def test_create_product_generates_next_sequence_when_code_exists(
     assert response.json()["product_code"] == "PROD-002"
 
 
+async def test_create_product_duplicate_name(
+    admin_client: AsyncClient, db_session: AsyncSession, sample_category: Category
+):
+    existing_product = Product(
+        product_code="PROD-900",
+        name="Smartphone",
+        category_id=sample_category.category_id,
+        price=10,
+        stock_min=0,
+    )
+    db_session.add(existing_product)
+    await db_session.flush()
+
+    payload = {
+        "name": "smartphone",
+        "category_id": sample_category.category_id,
+        "price": 800.00,
+    }
+    response = await admin_client.post("/api/v1/catalog/products", json=payload)
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == 5203
+
+
 async def test_create_product_invalid_category(admin_client: AsyncClient):
     payload = {
         "name": "Ghost",
