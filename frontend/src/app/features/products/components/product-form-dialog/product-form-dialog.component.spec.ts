@@ -59,7 +59,6 @@ describe('ProductFormDialogComponent', () => {
       description: 'Desc',
       categoryId: 1,
       price: 5,
-      stock: 10,
       minStock: 2,
     });
 
@@ -72,7 +71,6 @@ describe('ProductFormDialogComponent', () => {
       description: 'Desc',
       categoryId: 1,
       price: 5,
-      stock: 10,
       minStock: 2,
     });
   });
@@ -89,7 +87,6 @@ describe('ProductFormDialogComponent', () => {
       description: 'Desc',
       categoryId: 1,
       price: 0,
-      stock: 10,
       minStock: 2,
     });
 
@@ -113,7 +110,6 @@ describe('ProductFormDialogComponent', () => {
       description: 'Desc',
       categoryId: 1,
       price: 5,
-      stock: 10,
       minStock: 2,
     });
 
@@ -135,7 +131,6 @@ describe('ProductFormDialogComponent', () => {
       description: 'Desc',
       categoryId: 1,
       price: 20,
-      stock: 3,
       minStock: 1,
     });
 
