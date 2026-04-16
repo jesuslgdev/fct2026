@@ -205,12 +205,17 @@
   size="sm"
   confirmLabel="Guardar"
   cancelLabel="Cancelar"
+  [closeOnConfirm]="false"
   [confirmLoading]="supplierProductsStore.loading()"
   [confirmDisabled]="!supplierProductsStore.selectedProductId() || !supplierProductsStore.addProductPriceDraft()"
   (confirmed)="supplierProductsStore.addSelectedProductToSupplier()"
   (cancelled)="supplierProductsStore.closeAddProductDialog()"
 >
   <div class="dialog-form">
+    @if (supplierProductsStore.addProductDialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
     <label class="dialog-field">
       <span class="dialog-field-label">Producto</span>
       <p-select
