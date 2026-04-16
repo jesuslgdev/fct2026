@@ -70,7 +70,7 @@
       <div class="mt-6">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h2 class="text-style-subtitle">Productos</h2>
-          @if (supplierProductsStore.canModify()) {
+          @if (supplierProductsStore.canModify() && supplierDetail.isActive) {
             <ui-button
               label="Añadir producto"
               icon="pi pi-plus"
