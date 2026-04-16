@@ -37,8 +37,10 @@ async def test_template_returns_example_row_without_selected_products():
 
 @pytest.mark.asyncio
 async def test_template_prefills_selected_product_codes():
-    product_1 = MagicMock(product_code="PROD-001", name="Producto 1", is_active=True)
-    product_2 = MagicMock(product_code="PROD-002", name="Producto 2", is_active=True)
+    product_1 = MagicMock(product_code="PROD-001", is_active=True)
+    product_1.name = "Producto 1"
+    product_2 = MagicMock(product_code="PROD-002", is_active=True)
+    product_2.name = "Producto 2"
     products = {1: product_1, 2: product_2}
 
     reader = MagicMock()
@@ -69,9 +71,8 @@ async def test_template_raises_when_product_not_found():
 
 @pytest.mark.asyncio
 async def test_template_raises_when_product_is_inactive():
-    inactive_product = MagicMock(
-        product_code="PROD-099", name="Producto 99", is_active=False
-    )
+    inactive_product = MagicMock(product_code="PROD-099", is_active=False)
+    inactive_product.name = "Producto 99"
     reader = MagicMock()
     reader.get_by_id = AsyncMock(return_value=inactive_product)
     use_case = DownloadSupplierProductTemplateUseCase(reader)
