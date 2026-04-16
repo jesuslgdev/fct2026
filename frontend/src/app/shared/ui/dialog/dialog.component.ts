@@ -91,7 +91,6 @@ export class DialogComponent {
   }
 
   onConfirm(): void {
-    this.visible.set(false);
     this.confirmed.emit();
   }
 
