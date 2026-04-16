@@ -1,17 +1,17 @@
-import { Injectable } from '@angular/core';
-import { ProviderRepository } from '@domain/repositories/provider.repository';
+﻿import { Injectable } from '@angular/core';
+import { SupplierRepository } from '@domain/repositories/supplier.repository';
 import {
-  Provider,
-  CreateProviderRequest,
-  UpdateProviderRequest,
-  ProviderImportExecutionResult,
-  ProviderImportTemplate,
-} from '@domain/models/provider.model';
-import { ProviderProduct } from '@domain/models/provider-product.model';
+  Supplier,
+  CreateSupplierRequest,
+  UpdateSupplierRequest,
+  SupplierImportExecutionResult,
+  SupplierImportTemplate,
+} from '@domain/models/supplier.model';
+import { SupplierProduct } from '@domain/models/supplier-product.model';
 import { PageEvent } from '@domain/models/page-event.model';
-import { ProviderStatus } from '@domain/enums/provider-status.enum';
+import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 
-const SEED_PROVIDERS: Provider[] = [
+const SEED_SUPPLIERS: Supplier[] = [
   {
     id: '1',
     name: 'TechSupply S.A.',
@@ -20,7 +20,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 123 456',
     address: 'Calle Innovación 123, Madrid',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
   },
@@ -32,7 +32,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 987 654',
     address: 'Industrial Park, Barcelona',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-02-20T14:30:00Z'),
     updatedAt: new Date('2024-02-20T14:30:00Z'),
   },
@@ -44,7 +44,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 456 789',
     address: 'Tech Hub, Valencia',
     isActive: false,
-    status: ProviderStatus.INACTIVE,
+    status: SupplierStatus.INACTIVE,
     createdAt: new Date('2023-12-10T09:15:00Z'),
     updatedAt: new Date('2024-01-05T16:45:00Z'),
   },
@@ -56,7 +56,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 321 654',
     address: 'Digital Campus, Seville',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-03-01T11:20:00Z'),
     updatedAt: new Date('2024-03-01T11:20:00Z'),
   },
@@ -68,7 +68,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 654 321',
     address: 'Logistics Center, Zaragoza',
     isActive: false,
-    status: ProviderStatus.INACTIVE,
+    status: SupplierStatus.INACTIVE,
     createdAt: new Date('2023-11-15T13:45:00Z'),
     updatedAt: new Date('2024-02-14T10:30:00Z'),
   },
@@ -80,7 +80,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 111 222',
     address: 'Green District, Palma',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-04-02T09:00:00Z'),
     updatedAt: new Date('2024-04-02T09:00:00Z'),
   },
@@ -92,7 +92,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 333 444',
     address: 'Plaza Central, Bilbao',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-04-04T15:30:00Z'),
     updatedAt: new Date('2024-04-04T15:30:00Z'),
   },
@@ -104,7 +104,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 555 666',
     address: 'R&D Park, Malaga',
     isActive: false,
-    status: ProviderStatus.INACTIVE,
+    status: SupplierStatus.INACTIVE,
     createdAt: new Date('2024-01-10T08:45:00Z'),
     updatedAt: new Date('2024-03-01T12:00:00Z'),
   },
@@ -116,7 +116,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 777 888',
     address: 'Port Zone, Valencia',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-02-01T10:00:00Z'),
     updatedAt: new Date('2024-02-01T10:00:00Z'),
   },
@@ -128,7 +128,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 999 000',
     address: 'Manufacturing Hub, Murcia',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-03-10T09:15:00Z'),
     updatedAt: new Date('2024-03-10T09:15:00Z'),
   },
@@ -140,7 +140,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 222 333',
     address: 'Tech Valley, Santander',
     isActive: false,
-    status: ProviderStatus.INACTIVE,
+    status: SupplierStatus.INACTIVE,
     createdAt: new Date('2024-02-25T14:00:00Z'),
     updatedAt: new Date('2024-03-20T11:30:00Z'),
   },
@@ -152,7 +152,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 444 555',
     address: 'Energy District, Alicante',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-04-10T10:00:00Z'),
     updatedAt: new Date('2024-04-10T10:00:00Z'),
   },
@@ -164,7 +164,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 666 777',
     address: 'Tooling Street, Zaragoza',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-01-18T09:30:00Z'),
     updatedAt: new Date('2024-01-18T09:30:00Z'),
   },
@@ -176,7 +176,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 888 999',
     address: 'Logistics Avenue, Sevilla',
     isActive: false,
-    status: ProviderStatus.INACTIVE,
+    status: SupplierStatus.INACTIVE,
     createdAt: new Date('2023-12-05T11:00:00Z'),
     updatedAt: new Date('2024-02-20T10:20:00Z'),
   },
@@ -188,7 +188,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 101 202',
     address: 'Solar Avenue, Córdoba',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-03-05T12:00:00Z'),
     updatedAt: new Date('2024-03-05T12:00:00Z'),
   },
@@ -200,7 +200,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 303 404',
     address: 'Auto Park, Vigo',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-04-12T14:20:00Z'),
     updatedAt: new Date('2024-04-12T14:20:00Z'),
   },
@@ -212,7 +212,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 505 606',
     address: 'Health Park, Granada',
     isActive: false,
-    status: ProviderStatus.INACTIVE,
+    status: SupplierStatus.INACTIVE,
     createdAt: new Date('2024-01-22T08:15:00Z'),
     updatedAt: new Date('2024-03-15T09:50:00Z'),
   },
@@ -224,7 +224,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 707 808',
     address: 'Creative District, Donostia',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-02-28T10:40:00Z'),
     updatedAt: new Date('2024-02-28T10:40:00Z'),
   },
@@ -236,7 +236,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 909 010',
     address: 'Food Park, Murcia',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-03-18T11:45:00Z'),
     updatedAt: new Date('2024-03-18T11:45:00Z'),
   },
@@ -248,7 +248,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 111 333',
     address: 'Packaging Lane, Alicante',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-04-01T13:00:00Z'),
     updatedAt: new Date('2024-04-01T13:00:00Z'),
   },
@@ -260,7 +260,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 212 314',
     address: 'Analytics Campus, León',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-04-08T14:10:00Z'),
     updatedAt: new Date('2024-04-08T14:10:00Z'),
   },
@@ -272,7 +272,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 414 516',
     address: 'Factory Zone, Bilbao',
     isActive: false,
-    status: ProviderStatus.INACTIVE,
+    status: SupplierStatus.INACTIVE,
     createdAt: new Date('2024-01-05T08:00:00Z'),
     updatedAt: new Date('2024-03-01T09:00:00Z'),
   },
@@ -284,7 +284,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 616 718',
     address: 'Water Park, Granada',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-02-12T10:30:00Z'),
     updatedAt: new Date('2024-02-12T10:30:00Z'),
   },
@@ -296,7 +296,7 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 818 920',
     address: 'Business Center, Palma',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-03-22T13:30:00Z'),
     updatedAt: new Date('2024-03-22T13:30:00Z'),
   },
@@ -308,18 +308,18 @@ const SEED_PROVIDERS: Provider[] = [
     phone: '+34 900 232 425',
     address: 'Innovation Boulevard, Madrid',
     isActive: true,
-    status: ProviderStatus.ACTIVE,
+    status: SupplierStatus.ACTIVE,
     createdAt: new Date('2024-04-14T15:00:00Z'),
     updatedAt: new Date('2024-04-14T15:00:00Z'),
   },
 ];
 
-const SEED_PROVIDER_PRODUCTS: ProviderProduct[] = [
+const SEED_SUPPLIER_PRODUCTS: SupplierProduct[] = [
   {
     id: '1',
     productId: '1',
     productName: 'Laptop Pro 15"',
-    providerId: '1',
+    supplierId: '1',
     specificPrice: 1299.99,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
@@ -328,7 +328,7 @@ const SEED_PROVIDER_PRODUCTS: ProviderProduct[] = [
     id: '2',
     productId: '2',
     productName: 'Wireless Mouse',
-    providerId: '1',
+    supplierId: '1',
     specificPrice: 29.99,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
@@ -337,7 +337,7 @@ const SEED_PROVIDER_PRODUCTS: ProviderProduct[] = [
     id: '3',
     productId: '1',
     productName: 'Laptop Pro 15"',
-    providerId: '2',
+    supplierId: '2',
     specificPrice: 1249.99,
     createdAt: new Date('2024-02-20T14:30:00Z'),
     updatedAt: new Date('2024-02-20T14:30:00Z'),
@@ -346,7 +346,7 @@ const SEED_PROVIDER_PRODUCTS: ProviderProduct[] = [
     id: '4',
     productId: '3',
     productName: 'USB-C Hub',
-    providerId: '2',
+    supplierId: '2',
     specificPrice: 49.99,
     createdAt: new Date('2024-02-20T14:30:00Z'),
     updatedAt: new Date('2024-02-20T14:30:00Z'),
@@ -354,31 +354,31 @@ const SEED_PROVIDER_PRODUCTS: ProviderProduct[] = [
 ];
 
 @Injectable()
-export class MockProviderRepository implements ProviderRepository {
-  private providers = structuredClone(SEED_PROVIDERS);
-  private providerProducts = structuredClone(SEED_PROVIDER_PRODUCTS);
+export class MockSupplierRepository implements SupplierRepository {
+  private suppliers = structuredClone(SEED_SUPPLIERS);
+  private supplierProducts = structuredClone(SEED_SUPPLIER_PRODUCTS);
 
-  async getProviders(pageEvent?: PageEvent): Promise<{
-    data: Provider[];
+  async getSuppliers(pageEvent?: PageEvent): Promise<{
+    data: Supplier[];
     total: number;
   }> {
-    let filtered = [...this.providers];
+    let filtered = [...this.suppliers];
 
     const normalizedQuery = pageEvent?.query?.trim().toLowerCase();
     if (normalizedQuery) {
       filtered = filtered.filter(
-        (provider) =>
-          provider.name.toLowerCase().includes(normalizedQuery) ||
-          provider.email.toLowerCase().includes(normalizedQuery) ||
-          provider.taxId.toLowerCase().includes(normalizedQuery),
+        (supplier) =>
+          supplier.name.toLowerCase().includes(normalizedQuery) ||
+          supplier.email.toLowerCase().includes(normalizedQuery) ||
+          supplier.taxId.toLowerCase().includes(normalizedQuery),
       );
     }
 
     if (pageEvent?.status) {
-      filtered = filtered.filter((provider) => provider.status === pageEvent.status);
+      filtered = filtered.filter((supplier) => supplier.status === pageEvent.status);
     }
     if (pageEvent?.isActive !== undefined) {
-      filtered = filtered.filter((provider) => provider.isActive === pageEvent.isActive);
+      filtered = filtered.filter((supplier) => supplier.isActive === pageEvent.isActive);
     }
 
     // Client-side pagination
@@ -392,96 +392,96 @@ export class MockProviderRepository implements ProviderRepository {
     return { data: filtered, total };
   }
 
-  async getProviderById(id: string): Promise<Provider> {
-    const provider = this.providers.find((p) => p.id === id);
-    if (!provider) throw new Error(`Provider with id "${id}" not found`);
-    return { ...provider };
+  async getSupplierById(id: string): Promise<Supplier> {
+    const supplier = this.suppliers.find((p) => p.id === id);
+    if (!supplier) throw new Error(`Supplier with id "${id}" not found`);
+    return { ...supplier };
   }
 
-  async createProvider(provider: CreateProviderRequest): Promise<Provider> {
-    const nextId = (Math.max(0, ...this.providers.map((p) => parseInt(p.id))) + 1).toString();
-    const newProvider: Provider = {
+  async createSupplier(supplier: CreateSupplierRequest): Promise<Supplier> {
+    const nextId = (Math.max(0, ...this.suppliers.map((p) => parseInt(p.id))) + 1).toString();
+    const newSupplier: Supplier = {
       id: nextId,
-      name: provider.name,
-      taxId: provider.taxId,
-      email: provider.email,
-      phone: provider.phone,
-      address: provider.address,
-      city: provider.city,
-      province: provider.province,
-      postalCode: provider.postalCode,
+      name: supplier.name,
+      taxId: supplier.taxId,
+      email: supplier.email,
+      phone: supplier.phone,
+      address: supplier.address,
+      city: supplier.city,
+      province: supplier.province,
+      postalCode: supplier.postalCode,
       isActive: true,
-      status: ProviderStatus.ACTIVE,
+      status: SupplierStatus.ACTIVE,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    this.providers = [...this.providers, newProvider];
-    return { ...newProvider };
+    this.suppliers = [...this.suppliers, newSupplier];
+    return { ...newSupplier };
   }
 
-  async updateProvider(id: string, provider: UpdateProviderRequest): Promise<Provider> {
-    const index = this.providers.findIndex((p) => p.id === id);
-    if (index === -1) throw new Error(`Provider with id "${id}" not found`);
+  async updateSupplier(id: string, supplier: UpdateSupplierRequest): Promise<Supplier> {
+    const index = this.suppliers.findIndex((p) => p.id === id);
+    if (index === -1) throw new Error(`Supplier with id "${id}" not found`);
 
-    const updated: Provider = {
-      ...this.providers[index],
-      ...(provider.name !== undefined && { name: provider.name }),
-      ...(provider.taxId !== undefined && { taxId: provider.taxId }),
-      ...(provider.email !== undefined && { email: provider.email }),
-      ...(provider.phone !== undefined && { phone: provider.phone }),
-      ...(provider.address !== undefined && { address: provider.address }),
-      ...(provider.city !== undefined && { city: provider.city }),
-      ...(provider.province !== undefined && { province: provider.province }),
-      ...(provider.postalCode !== undefined && { postalCode: provider.postalCode }),
-      ...(provider.isActive !== undefined && {
-        isActive: provider.isActive,
-        status: provider.isActive ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE,
+    const updated: Supplier = {
+      ...this.suppliers[index],
+      ...(supplier.name !== undefined && { name: supplier.name }),
+      ...(supplier.taxId !== undefined && { taxId: supplier.taxId }),
+      ...(supplier.email !== undefined && { email: supplier.email }),
+      ...(supplier.phone !== undefined && { phone: supplier.phone }),
+      ...(supplier.address !== undefined && { address: supplier.address }),
+      ...(supplier.city !== undefined && { city: supplier.city }),
+      ...(supplier.province !== undefined && { province: supplier.province }),
+      ...(supplier.postalCode !== undefined && { postalCode: supplier.postalCode }),
+      ...(supplier.isActive !== undefined && {
+        isActive: supplier.isActive,
+        status: supplier.isActive ? SupplierStatus.ACTIVE : SupplierStatus.INACTIVE,
       }),
       updatedAt: new Date(),
     };
 
-    this.providers = this.providers.map((p) => (p.id === id ? updated : p));
+    this.suppliers = this.suppliers.map((p) => (p.id === id ? updated : p));
     return { ...updated };
   }
 
-  async activateProvider(id: string): Promise<Provider> {
-    const index = this.providers.findIndex((p) => p.id === id);
-    if (index === -1) throw new Error(`Provider with id "${id}" not found`);
+  async activateSupplier(id: string): Promise<Supplier> {
+    const index = this.suppliers.findIndex((p) => p.id === id);
+    if (index === -1) throw new Error(`Supplier with id "${id}" not found`);
 
-    const activated: Provider = {
-      ...this.providers[index],
+    const activated: Supplier = {
+      ...this.suppliers[index],
       isActive: true,
-      status: ProviderStatus.ACTIVE,
+      status: SupplierStatus.ACTIVE,
       updatedAt: new Date(),
     };
 
-    this.providers = this.providers.map((p) => (p.id === id ? activated : p));
+    this.suppliers = this.suppliers.map((p) => (p.id === id ? activated : p));
     return { ...activated };
   }
 
-  async deactivateProvider(id: string): Promise<Provider> {
-    const index = this.providers.findIndex((p) => p.id === id);
-    if (index === -1) throw new Error(`Provider with id "${id}" not found`);
+  async deactivateSupplier(id: string): Promise<Supplier> {
+    const index = this.suppliers.findIndex((p) => p.id === id);
+    if (index === -1) throw new Error(`Supplier with id "${id}" not found`);
 
-    const deactivated: Provider = {
-      ...this.providers[index],
+    const deactivated: Supplier = {
+      ...this.suppliers[index],
       isActive: false,
-      status: ProviderStatus.INACTIVE,
+      status: SupplierStatus.INACTIVE,
       updatedAt: new Date(),
     };
 
-    this.providers = this.providers.map((p) => (p.id === id ? deactivated : p));
+    this.suppliers = this.suppliers.map((p) => (p.id === id ? deactivated : p));
     return { ...deactivated };
   }
 
-  async getProviderProducts(providerId: string): Promise<ProviderProduct[]> {
+  async getSupplierProducts(supplierId: string): Promise<SupplierProduct[]> {
     // TODO: replace with ProductRepository when Products feature becomes available
-    const products = this.providerProducts.filter((pp) => pp.providerId === providerId);
+    const products = this.supplierProducts.filter((pp) => pp.supplierId === supplierId);
 
     return products.map((product) => ({ ...product }));
   }
 
-  async downloadImportTemplate(): Promise<ProviderImportTemplate> {
+  async downloadImportTemplate(): Promise<SupplierImportTemplate> {
     const headers = [
       'Nombre',
       'CIF',
@@ -510,7 +510,7 @@ export class MockProviderRepository implements ProviderRepository {
     };
   }
 
-  async importProviders(file: File): Promise<ProviderImportExecutionResult> {
+  async importSuppliers(file: File): Promise<SupplierImportExecutionResult> {
     const content = await file.text();
     const rows = content.split('\n').filter((line) => line.trim().length > 0);
     const importedCount = Math.max(0, rows.length - 1);
@@ -522,4 +522,5 @@ export class MockProviderRepository implements ProviderRepository {
     };
   }
 }
+
 

@@ -1,35 +1,36 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { InputComponent } from '@shared/ui/input/input.component';
 import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
-import { CreateProviderRequest, UpdateProviderRequest } from '@domain/models/provider.model';
+import { CreateSupplierRequest, UpdateSupplierRequest } from '@domain/models/supplier.model';
 
 @Component({
-  selector: 'app-provider-form-dialog',
+  selector: 'app-supplier-form-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, DialogComponent, InputComponent],
-  templateUrl: './provider-form-dialog.component.html',
+  templateUrl: './supplier-form-dialog.component.html',
 })
-export class ProviderFormDialogComponent {
+export class SupplierFormDialogComponent {
   readonly store = inject(SuppliersStore);
   private readonly fb = inject(FormBuilder);
   readonly renderSelects = signal(true);
 
+  private static readonly TAX_ID_PATTERN = /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJKLMNPQRSUVW][0-9]{7}[0-9A-J])$/i;
   private static readonly PHONE_PATTERN = /^\+?[\d\s-]{9,20}$/;
   private static readonly POSTAL_CODE_PATTERN = /^\d{5}$/;
 
   // Typed form using FormBuilder
   readonly form = this.fb.group({
     name: ['', Validators.required],
-    taxId: ['', Validators.required],
+    taxId: ['', [Validators.required, Validators.pattern(SupplierFormDialogComponent.TAX_ID_PATTERN)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', Validators.pattern(ProviderFormDialogComponent.PHONE_PATTERN)],
+    phone: ['', Validators.pattern(SupplierFormDialogComponent.PHONE_PATTERN)],
     address: [''],
     city: [''],
     province: [''],
-    postalCode: ['', Validators.pattern(ProviderFormDialogComponent.POSTAL_CODE_PATTERN)],
+    postalCode: ['', Validators.pattern(SupplierFormDialogComponent.POSTAL_CODE_PATTERN)],
   });
 
 // Getters for quick access to controls
@@ -43,18 +44,18 @@ export class ProviderFormDialogComponent {
   get postalCode() { return this.form.controls.postalCode; }
 
   constructor() {
-    // Effect: keeps the form in sync when mode/selected provider changes
+    // Effect: keeps the form in sync when mode/selected supplier changes
     effect(() => {
-      const provider = this.store.selectedProvider();
+      const supplier = this.store.selectedSupplier();
       const mode = this.store.dialogMode();
 
       const addressValidators = mode === 'create' ? [Validators.required] : [];
       const phoneValidators = mode === 'create'
-        ? [Validators.required, Validators.pattern(ProviderFormDialogComponent.PHONE_PATTERN)]
-        : [Validators.pattern(ProviderFormDialogComponent.PHONE_PATTERN)];
+        ? [Validators.required, Validators.pattern(SupplierFormDialogComponent.PHONE_PATTERN)]
+        : [Validators.pattern(SupplierFormDialogComponent.PHONE_PATTERN)];
       const postalCodeValidators = mode === 'create'
-        ? [Validators.required, Validators.pattern(ProviderFormDialogComponent.POSTAL_CODE_PATTERN)]
-        : [Validators.pattern(ProviderFormDialogComponent.POSTAL_CODE_PATTERN)];
+        ? [Validators.required, Validators.pattern(SupplierFormDialogComponent.POSTAL_CODE_PATTERN)]
+        : [Validators.pattern(SupplierFormDialogComponent.POSTAL_CODE_PATTERN)];
 
       this.phone.setValidators(phoneValidators);
       this.address.setValidators(addressValidators);
@@ -68,16 +69,16 @@ export class ProviderFormDialogComponent {
       this.province.updateValueAndValidity({ emitEvent: false });
       this.postalCode.updateValueAndValidity({ emitEvent: false });
 
-      if (mode === 'edit' && provider) {
+      if (mode === 'edit' && supplier) {
         this.form.patchValue({
-          name: provider.name,
-          taxId: provider.taxId,
-          email: provider.email,
-          phone: provider.phone ?? '',
-          address: provider.address ?? '',
-          city: provider.city ?? '',
-          province: provider.province ?? '',
-          postalCode: provider.postalCode ?? '',
+          name: supplier.name,
+          taxId: supplier.taxId,
+          email: supplier.email,
+          phone: supplier.phone ?? '',
+          address: supplier.address ?? '',
+          city: supplier.city ?? '',
+          province: supplier.province ?? '',
+          postalCode: supplier.postalCode ?? '',
         });
       } else {
         this.form.reset({
@@ -103,11 +104,12 @@ export class ProviderFormDialogComponent {
       return;
     }
     const v = this.form.getRawValue();
+    const normalizedTaxId = v.taxId?.trim().toUpperCase() ?? '';
 
     if (this.store.dialogMode() === 'create') {
-      const payload: CreateProviderRequest = {
+      const payload: CreateSupplierRequest = {
         name: v.name!,
-        taxId: v.taxId!,
+        taxId: normalizedTaxId,
         email: v.email!,
         phone: v.phone ?? '',
         address: v.address ?? '',
@@ -115,11 +117,11 @@ export class ProviderFormDialogComponent {
         province: v.province ?? '',
         postalCode: v.postalCode ?? '',
       };
-      this.store.saveProvider(payload);
+      this.store.saveSupplier(payload);
     } else {
-      const payload: UpdateProviderRequest = {
+      const payload: UpdateSupplierRequest = {
         name: v.name ?? undefined,
-        taxId: v.taxId ?? undefined,
+        taxId: normalizedTaxId || undefined,
         email: v.email ?? undefined,
         phone: v.phone || undefined,
         address: v.address || undefined,
@@ -127,7 +129,7 @@ export class ProviderFormDialogComponent {
         province: v.province || undefined,
         postalCode: v.postalCode || undefined,
       };
-      this.store.saveProvider(payload);
+      this.store.saveSupplier(payload);
     }
   }
 
@@ -135,3 +137,4 @@ export class ProviderFormDialogComponent {
     this.store.closeDialog();
   }
 }
+

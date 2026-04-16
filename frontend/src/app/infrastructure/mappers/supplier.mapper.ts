@@ -1,30 +1,30 @@
+﻿import {
+  Supplier,
+  CreateSupplierRequest,
+  UpdateSupplierRequest,
+} from '@domain/models/supplier.model';
+import { SupplierProduct } from '@domain/models/supplier-product.model';
 import {
-  Provider,
-  CreateProviderRequest,
-  UpdateProviderRequest,
-} from '@domain/models/provider.model';
-import { ProviderProduct } from '@domain/models/provider-product.model';
-import {
-  ProviderDto,
-  ProviderDetailDto,
-  CreateProviderDto,
-  UpdateProviderDto,
+  SupplierDto,
+  SupplierDetailDto,
+  SupplierDetailProductDto,
+  CreateSupplierDto,
+  UpdateSupplierDto,
   SupplierAddressDto,
   SetSupplierActiveDto,
-  ProvidersPageDto,
+  SuppliersPageDto,
   SupplierProductDto,
-  ProviderProductDto,
-  ProviderProductsDto,
-} from '@infrastructure/dtos/provider.dto';
-import { ProviderStatus } from '@domain/enums/provider-status.enum';
+  SupplierProductsDto,
+} from '@infrastructure/dtos/supplier.dto';
+import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 
-export class ProviderMapper {
-  private static resolveProviderId(dto: ProviderDto): string {
+export class SupplierMapper {
+  private static resolveSupplierId(dto: SupplierDto): string {
     const rawId = dto.supplier_id ?? dto.provider_id;
     return (rawId ?? '').toString();
   }
 
-  private static resolveAddress(dto: ProviderDto): SupplierAddressDto | null {
+  private static resolveAddress(dto: SupplierDto): SupplierAddressDto | null {
     if (dto.address && typeof dto.address === 'object') {
       return dto.address;
     }
@@ -53,12 +53,12 @@ export class ProviderMapper {
   }
 
   // DTO -> Domain (list)
-  static fromDto(dto: ProviderDto): Provider {
+  static fromDto(dto: SupplierDto): Supplier {
     const isActive = dto.is_active ?? false;
-    const resolvedAddress = ProviderMapper.resolveAddress(dto);
+    const resolvedAddress = SupplierMapper.resolveAddress(dto);
 
     return {
-      id: ProviderMapper.resolveProviderId(dto),
+      id: SupplierMapper.resolveSupplierId(dto),
       name: dto.name ?? '',
       taxId: dto.tax_id ?? '',
       email: dto.email ?? '',
@@ -68,40 +68,40 @@ export class ProviderMapper {
       province: resolvedAddress?.province ?? dto.province ?? undefined,
       postalCode: resolvedAddress?.postal_code ?? dto.postal_code ?? undefined,
       isActive,
-      status: dto.status ?? (isActive ? ProviderStatus.ACTIVE : ProviderStatus.INACTIVE),
+      status: dto.status ?? (isActive ? SupplierStatus.ACTIVE : SupplierStatus.INACTIVE),
       createdAt: dto.created_at ? new Date(dto.created_at) : new Date(),
       updatedAt: dto.updated_at ? new Date(dto.updated_at) : new Date(),
     };
   }
 
   // DTO detail -> Domain
-  static fromDetailDto(dto: ProviderDetailDto): Provider {
-    const provider = ProviderMapper.fromDto(dto);
+  static fromDetailDto(dto: SupplierDetailDto): Supplier {
+    const supplier = SupplierMapper.fromDto(dto);
     return {
-      ...provider,
-      products: dto.products?.map((product) => ProviderMapper.productFromSupplierDto(product, provider.id)) ?? [],
+      ...supplier,
+      products: dto.products?.map((product) => SupplierMapper.productFromDetailDto(product, supplier.id)) ?? [],
     };
   }
 
-  private static productFromSupplierDto(dto: SupplierProductDto, providerId: string): ProviderProduct {
+  private static productFromDetailDto(dto: SupplierDetailProductDto, supplierId: string): SupplierProduct {
     return {
       id: (dto.id ?? dto.product_id).toString(),
       productId: dto.product_id.toString(),
       productName: dto.product_name ?? `Product ${dto.product_id}`,
-      providerId,
+      supplierId,
       specificPrice: Number(dto.supplier_price),
       createdAt: dto.created_at ? new Date(dto.created_at) : new Date(),
       updatedAt: dto.updated_at ? new Date(dto.updated_at) : new Date(),
     };
   }
 
-  // Helper entity DTO → Domain
-  static productFromDto(dto: ProviderProductDto): ProviderProduct {
+  // Helper entity DTO -> Domain
+  static productFromDto(dto: SupplierProductDto): SupplierProduct {
     return {
       id: dto.id?.toString() ?? '',
       productId: dto.product_id?.toString() ?? '',
       productName: dto.product_name ?? '',
-      providerId: dto.provider_id?.toString() ?? '',
+      supplierId: dto.provider_id?.toString() ?? '',
       specificPrice: dto.specific_price ?? 0,
       createdAt: new Date(dto.created_at ?? new Date()),
       updatedAt: new Date(dto.updated_at ?? new Date()),
@@ -109,7 +109,7 @@ export class ProviderMapper {
   }
 
   // Domain -> DTO (create payload)
-  static toCreateDto(payload: CreateProviderRequest): CreateProviderDto {
+  static toCreateDto(payload: CreateSupplierRequest): CreateSupplierDto {
     return {
       name: payload.name,
       tax_id: payload.taxId,
@@ -125,7 +125,7 @@ export class ProviderMapper {
   }
 
   // Domain -> DTO (update payload)
-  static toUpdateDto(payload: UpdateProviderRequest): UpdateProviderDto {
+  static toUpdateDto(payload: UpdateSupplierRequest): UpdateSupplierDto {
     const hasAddressUpdate =
       typeof payload.address === 'string' && payload.address.trim().length > 0 &&
       typeof payload.city === 'string' && payload.city.trim().length > 0 &&
@@ -158,18 +158,19 @@ export class ProviderMapper {
   }
 
   // Page DTO -> Domain
-  static fromPageDto(dto: ProvidersPageDto): {
-    data: Provider[];
+  static fromPageDto(dto: SuppliersPageDto): {
+    data: Supplier[];
     total: number;
   } {
     return {
-      data: dto.items.map(ProviderMapper.fromDto),
+      data: dto.items.map(SupplierMapper.fromDto),
       total: dto.total,
     };
   }
 
   // Products DTO -> Domain
-  static fromProductsDto(dto: ProviderProductsDto): ProviderProduct[] {
-    return dto.items.map(ProviderMapper.productFromDto);
+  static fromProductsDto(dto: SupplierProductsDto): SupplierProduct[] {
+    return dto.items.map(SupplierMapper.productFromDto);
   }
 }
+

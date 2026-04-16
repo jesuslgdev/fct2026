@@ -61,6 +61,7 @@ export class DialogComponent {
   cancelLabel   = input<string>('');                  // Cancel button label
   confirmLoading = input<boolean>(false);             // Confirm button loading state
   confirmDisabled = input<boolean>(false);            // Confirm button disabled state
+  closeOnConfirm = input<boolean>(true);              // Auto close when confirm is clicked
 
   // Outputs
   confirmed = output<void>();   // Emitted when confirm button is clicked
@@ -91,7 +92,9 @@ export class DialogComponent {
   }
 
   onConfirm(): void {
-    this.visible.set(false);
+    if (this.closeOnConfirm()) {
+      this.visible.set(false);
+    }
     this.confirmed.emit();
   }
 

@@ -5,10 +5,15 @@
   cancelLabel="Cancelar"
   [confirmLoading]="store.loading()"
   [confirmDisabled]="form.invalid"
+  [closeOnConfirm]="false"
   (confirmed)="onConfirm()"
   (cancelled)="onCancel()"
 >
   <form [formGroup]="form" class="dialog-form">
+    @if (store.formError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
     <!-- Grid de 2 columnas -->
     <div class="dialog-form-grid">
       <div class="dialog-field">
@@ -21,10 +26,13 @@
       </div>
       <div class="dialog-field">
         <label for="taxId" class="dialog-field-label">NIF/CIF</label>
-        <ui-input id="taxId" formControlName="taxId" placeholder="123456789A"
+        <ui-input id="taxId" formControlName="taxId" placeholder="12345678Z o B12345678"
           [state]="taxId.invalid && taxId.touched ? 'error' : 'default'" />
         @if (taxId.invalid && taxId.touched) {
-          <span class="dialog-field-error">El NIF/CIF es obligatorio.</span>
+          <span class="dialog-field-error">
+            @if (taxId.hasError('required')) { El NIF/CIF es obligatorio. }
+            @else { El formato de NIF/CIF no es válido. }
+          </span>
         }
       </div>
     </div>

@@ -1,9 +1,10 @@
-export interface ProviderProduct {
+﻿export interface SupplierProduct {
   id: string;
   productId: string;
   productName: string;
-  providerId: string;
+  supplierId: string;
   specificPrice: number;
   createdAt: Date;
   updatedAt: Date;
 }
+

@@ -1,53 +1,55 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ProviderFormDialogComponent } from './provider-form-dialog.component';
+import { SupplierFormDialogComponent } from './supplier-form-dialog.component';
 import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { InputComponent } from '@shared/ui/input/input.component';
-import { Provider } from '@domain/models/provider.model';
-import { ProviderStatus } from '@domain/enums/provider-status.enum';
+import { Supplier } from '@domain/models/supplier.model';
+import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 
-const MOCK_PROVIDER: Provider = {
+const MOCK_PROVIDER: Supplier = {
   id: '1',
-  name: 'Test Provider',
-  taxId: '123456789',
-  email: 'provider@test.com',
+  name: 'Test Supplier',
+  taxId: '12345678Z',
+  email: 'supplier@test.com',
   phone: '+1234567890',
   address: 'Test Address',
   city: 'Test City',
   province: '',
   postalCode: '',
   isActive: true,
-  status: ProviderStatus.ACTIVE,
+  status: SupplierStatus.ACTIVE,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
 
-describe('ProviderFormDialogComponent', () => {
-  let component: ProviderFormDialogComponent;
-  let fixture: ComponentFixture<ProviderFormDialogComponent>;
+describe('SupplierFormDialogComponent', () => {
+  let component: SupplierFormDialogComponent;
+  let fixture: ComponentFixture<SupplierFormDialogComponent>;
   let mockStore: {
-    selectedProvider: ReturnType<typeof vi.fn>;
+    selectedSupplier: ReturnType<typeof vi.fn>;
     dialogMode: ReturnType<typeof vi.fn>;
     dialogVisible: ReturnType<typeof vi.fn>;
     loading: ReturnType<typeof vi.fn>;
-    saveProvider: ReturnType<typeof vi.fn>;
+    formError: ReturnType<typeof vi.fn>;
+    saveSupplier: ReturnType<typeof vi.fn>;
     closeDialog: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     mockStore = {
-      selectedProvider: vi.fn().mockReturnValue(null),
+      selectedSupplier: vi.fn().mockReturnValue(null),
       dialogMode: vi.fn().mockReturnValue('create'),
       dialogVisible: vi.fn().mockReturnValue(false),
       loading: vi.fn().mockReturnValue(false),
-      saveProvider: vi.fn(),
+      formError: vi.fn().mockReturnValue(null),
+      saveSupplier: vi.fn(),
       closeDialog: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
-      imports: [ReactiveFormsModule, ProviderFormDialogComponent],
+      imports: [ReactiveFormsModule, SupplierFormDialogComponent],
       providers: [
         FormBuilder,
         { provide: SuppliersStore, useValue: mockStore },
@@ -56,7 +58,7 @@ describe('ProviderFormDialogComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(ProviderFormDialogComponent);
+    fixture = TestBed.createComponent(SupplierFormDialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -137,7 +139,7 @@ describe('ProviderFormDialogComponent', () => {
     });
   });
 
-  it('should patch form when mode is edit with provider', () => {
+  it('should patch form when mode is edit with supplier', () => {
     // Manually trigger the patchValue to simulate the effect
     component.form.patchValue({
       name: MOCK_PROVIDER.name,
@@ -195,19 +197,19 @@ describe('ProviderFormDialogComponent', () => {
     });
   });
 
-  it('should not save provider if form is invalid', () => {
+  it('should not save supplier if form is invalid', () => {
     component.form.markAllAsTouched();
     component.form.setErrors({ invalid: true });
 
     component.onConfirm();
 
-    expect(mockStore.saveProvider).not.toHaveBeenCalled();
+    expect(mockStore.saveSupplier).not.toHaveBeenCalled();
   });
 
-  it('should save provider with create payload when mode is create', () => {
+  it('should save supplier with create payload when mode is create', () => {
     component.form.setValue({
-      name: 'New Provider',
-      taxId: '123456789',
+      name: 'New Supplier',
+      taxId: '12345678Z',
       email: 'new@test.com',
       phone: '+1234567890',
       address: 'New Address',
@@ -221,9 +223,9 @@ describe('ProviderFormDialogComponent', () => {
 
     component.onConfirm();
 
-    expect(mockStore.saveProvider).toHaveBeenCalledWith({
-      name: 'New Provider',
-      taxId: '123456789',
+    expect(mockStore.saveSupplier).toHaveBeenCalledWith({
+      name: 'New Supplier',
+      taxId: '12345678Z',
       email: 'new@test.com',
       phone: '+1234567890',
       address: 'New Address',
@@ -233,10 +235,10 @@ describe('ProviderFormDialogComponent', () => {
     });
   });
 
-  it('should save provider with update payload when mode is edit', () => {
+  it('should save supplier with update payload when mode is edit', () => {
     component.form.setValue({
-      name: 'Updated Provider',
-      taxId: '987654321',
+      name: 'Updated Supplier',
+      taxId: 'B12345678',
       email: 'updated@test.com',
       phone: '+0987654321',
       address: 'Updated Address',
@@ -250,9 +252,9 @@ describe('ProviderFormDialogComponent', () => {
 
     component.onConfirm();
 
-    expect(mockStore.saveProvider).toHaveBeenCalledWith({
-      name: 'Updated Provider',
-      taxId: '987654321',
+    expect(mockStore.saveSupplier).toHaveBeenCalledWith({
+      name: 'Updated Supplier',
+      taxId: 'B12345678',
       email: 'updated@test.com',
       phone: '+0987654321',
       address: 'Updated Address',
@@ -281,3 +283,4 @@ describe('ProviderFormDialogComponent', () => {
     expect(component.renderSelects()).toBe(true);
   });
 });
+

@@ -1,4 +1,4 @@
-import { ProviderStatus } from '@domain/enums/provider-status.enum';
+﻿import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 
 export interface SupplierAddressDto {
   street: string;
@@ -7,8 +7,8 @@ export interface SupplierAddressDto {
   postal_code: string;
 }
 
-// Read DTO for list responses (returned by the API at /providers)
-export interface ProviderDto {
+// Read DTO for list responses (returned by the API at /suppliers)
+export interface SupplierDto {
   supplier_id?: number;
   provider_id?: number;
   name: string;
@@ -20,18 +20,28 @@ export interface ProviderDto {
   address?: SupplierAddressDto | string | null;
   province?: string | null;
   postal_code?: string | null;
-  status?: ProviderStatus;
+  status?: SupplierStatus;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface ProviderDetailDto extends Omit<ProviderDto, 'address'> {
-  address: SupplierAddressDto;
-  products?: SupplierProductDto[];
+export interface SupplierDetailProductDto {
+  id?: number;
+  product_id: number;
+  product_name?: string;
+  provider_id?: number;
+  supplier_price: string | number;
+  created_at?: string;
+  updated_at?: string;
 }
 
-// Create DTO (payload sent to the API to create a provider)
-export interface CreateProviderDto {
+export interface SupplierDetailDto extends Omit<SupplierDto, 'address'> {
+  address: SupplierAddressDto;
+  products?: SupplierDetailProductDto[];
+}
+
+// Create DTO (payload sent to the API to create a supplier)
+export interface CreateSupplierDto {
   name: string;
   tax_id: string;
   address: SupplierAddressDto;
@@ -40,7 +50,7 @@ export interface CreateProviderDto {
 }
 
 // Update DTO
-export interface UpdateProviderDto {
+export interface UpdateSupplierDto {
   name?: string | null;
   address?: SupplierAddressDto | null;
   phone?: string | null;
@@ -51,26 +61,14 @@ export interface SetSupplierActiveDto {
   is_active: boolean;
 }
 
-export type UpdateSupplierDto = UpdateProviderDto;
-
-export interface ProvidersPageDto {
-  items: ProviderDto[];
+export interface SuppliersPageDto {
+  items: SupplierDto[];
   total: number;
   page: number;
   page_size: number;
 }
 
 export interface SupplierProductDto {
-  id?: number;
-  product_id: number;
-  product_name?: string;
-  provider_id?: number;
-  supplier_price: string | number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ProviderProductDto {
   id: number;
   product_id: number;
   product_name: string;
@@ -80,6 +78,7 @@ export interface ProviderProductDto {
   updated_at: string;
 }
 
-export interface ProviderProductsDto {
-  items: ProviderProductDto[];
+export interface SupplierProductsDto {
+  items: SupplierProductDto[];
 }
+
