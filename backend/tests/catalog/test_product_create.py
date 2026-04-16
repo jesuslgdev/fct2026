@@ -21,7 +21,6 @@ async def test_create_product_success(
     sample_category: Category,
 ):
     payload = {
-        "product_code": "NEW-PROD-001",
         "name": "Smartphone",
         "description": "Latest model",
         "category_id": sample_category.category_id,
@@ -34,15 +33,17 @@ async def test_create_product_success(
 
     assert response.status_code == 201
     data = response.json()
-    assert data["product_code"] == "NEW-PROD-001"
+    assert data["product_code"] == "ELE-001"
     assert data["category_name"] == "Electronics"
     assert float(data["vat_rate"]) == 0.21
 
     # Verify DB
     result = await db_session.execute(
-        select(Product).where(Product.product_code == "NEW-PROD-001")
+        select(Product).where(Product.product_id == data["product_id"])
     )
-    assert result.scalar_one_or_none() is not None
+    product = result.scalar_one_or_none()
+    assert product is not None
+    assert product.product_code == "ELE-001"
 
 
 async def test_create_product_custom_vat_rate(
@@ -51,7 +52,6 @@ async def test_create_product_custom_vat_rate(
     sample_category: Category,
 ):
     payload = {
-        "product_code": "FOOD-001",
         "name": "Bread",
         "category_id": sample_category.category_id,
         "price": 1.50,
@@ -63,45 +63,44 @@ async def test_create_product_custom_vat_rate(
 
     assert response.status_code == 201
     data = response.json()
+    assert data["product_code"] == "ELE-001"
     assert float(data["vat_rate"]) == 0.04
 
     result = await db_session.execute(
-        select(Product).where(Product.product_code == "FOOD-001")
+        select(Product).where(Product.product_id == data["product_id"])
     )
     product = result.scalar_one_or_none()
     assert product is not None
+    assert product.product_code == "ELE-001"
     assert float(product.vat_rate) == 0.04
 
 
-async def test_create_product_duplicate_code(
+async def test_create_product_generates_next_sequence_when_code_exists(
     admin_client: AsyncClient, db_session: AsyncSession, sample_category: Category
 ):
-    # Setup existing product
-    p = Product(
-        product_code="DUP-CODE",
+    existing_product = Product(
+        product_code="ELE-001",
         name="X",
         category_id=sample_category.category_id,
         price=10,
         stock_min=0,
     )
-    db_session.add(p)
+    db_session.add(existing_product)
     await db_session.flush()
 
     payload = {
-        "product_code": "DUP-CODE",
         "name": "Another",
         "category_id": sample_category.category_id,
         "price": 800.00,
     }
     response = await admin_client.post("/api/v1/catalog/products", json=payload)
 
-    assert response.status_code == 409
-    assert response.json()["error_code"] == 5202
+    assert response.status_code == 201
+    assert response.json()["product_code"] == "ELE-002"
 
 
 async def test_create_product_invalid_category(admin_client: AsyncClient):
     payload = {
-        "product_code": "GHOST-PROD",
         "name": "Ghost",
         "category_id": 9999,
         "price": 10.00,
@@ -116,7 +115,6 @@ async def test_create_product_forbidden_for_other_manager(
     other_manager_client: AsyncClient, sample_category: Category
 ):
     payload = {
-        "product_code": "FORBIDDEN-PROD",
         "name": "Smartphone",
         "category_id": sample_category.category_id,
         "price": 100.00,
@@ -129,7 +127,6 @@ async def test_create_product_forbidden_for_employee(
     non_admin_client: AsyncClient, sample_category: Category
 ):
     payload = {
-        "product_code": "EMP-PROD",
         "name": "Smartphone",
         "category_id": sample_category.category_id,
         "price": 100.00,
