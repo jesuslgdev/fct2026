@@ -33,7 +33,7 @@ async def test_create_product_success(
 
     assert response.status_code == 201
     data = response.json()
-    assert data["product_code"] == "ELE-001"
+    assert data["product_code"] == "PROD-001"
     assert data["category_name"] == "Electronics"
     assert float(data["vat_rate"]) == 0.21
 
@@ -43,7 +43,7 @@ async def test_create_product_success(
     )
     product = result.scalar_one_or_none()
     assert product is not None
-    assert product.product_code == "ELE-001"
+    assert product.product_code == "PROD-001"
 
 
 async def test_create_product_custom_vat_rate(
@@ -63,7 +63,7 @@ async def test_create_product_custom_vat_rate(
 
     assert response.status_code == 201
     data = response.json()
-    assert data["product_code"] == "ELE-001"
+    assert data["product_code"] == "PROD-001"
     assert float(data["vat_rate"]) == 0.04
 
     result = await db_session.execute(
@@ -71,7 +71,7 @@ async def test_create_product_custom_vat_rate(
     )
     product = result.scalar_one_or_none()
     assert product is not None
-    assert product.product_code == "ELE-001"
+    assert product.product_code == "PROD-001"
     assert float(product.vat_rate) == 0.04
 
 
@@ -79,7 +79,7 @@ async def test_create_product_generates_next_sequence_when_code_exists(
     admin_client: AsyncClient, db_session: AsyncSession, sample_category: Category
 ):
     existing_product = Product(
-        product_code="ELE-001",
+        product_code="PROD-001",
         name="X",
         category_id=sample_category.category_id,
         price=10,
@@ -96,7 +96,7 @@ async def test_create_product_generates_next_sequence_when_code_exists(
     response = await admin_client.post("/api/v1/catalog/products", json=payload)
 
     assert response.status_code == 201
-    assert response.json()["product_code"] == "ELE-002"
+    assert response.json()["product_code"] == "PROD-002"
 
 
 async def test_create_product_invalid_category(admin_client: AsyncClient):
