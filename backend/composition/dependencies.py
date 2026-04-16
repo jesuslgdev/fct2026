@@ -611,10 +611,10 @@ async def get_list_product_suppliers_use_case(
     return ListProductSuppliersUseCase(SupplierRepository(db))
 
 
-def get_download_supplier_product_template_use_case() -> (
-    IDownloadSupplierProductTemplateUseCase
-):
-    return DownloadSupplierProductTemplateUseCase()
+async def get_download_supplier_product_template_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IDownloadSupplierProductTemplateUseCase:
+    return DownloadSupplierProductTemplateUseCase(ProductRepository(db))
 
 
 async def get_import_supplier_products_use_case(
