@@ -70,7 +70,7 @@
       <div class="mt-6">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h2 class="text-style-subtitle">Productos</h2>
-          @if (supplierProductsStore.canModify()) {
+          @if (supplierProductsStore.canModify() && supplierDetail.isActive) {
             <div class="flex flex-wrap gap-2">
               <ui-button
                 label="Importar Excel"
@@ -389,12 +389,17 @@
   size="sm"
   confirmLabel="Guardar"
   cancelLabel="Cancelar"
+  [closeOnConfirm]="false"
   [confirmLoading]="supplierProductsStore.loading()"
   [confirmDisabled]="!supplierProductsStore.selectedProductId() || !supplierProductsStore.addProductPriceDraft()"
   (confirmed)="supplierProductsStore.addSelectedProductToSupplier()"
   (cancelled)="supplierProductsStore.closeAddProductDialog()"
 >
   <div class="dialog-form">
+    @if (supplierProductsStore.addProductDialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
     <label class="dialog-field">
       <span class="dialog-field-label">Producto</span>
       <p-select
