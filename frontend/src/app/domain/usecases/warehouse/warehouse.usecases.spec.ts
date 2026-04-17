@@ -68,6 +68,20 @@ describe('Warehouse Use Cases', () => {
     expect(result).toEqual(WAREHOUSE_MOCK);
   });
 
+  it('GetWarehouseByIdUseCase should throw WarehouseValidationError when warehouseId is invalid', async () => {
+    const useCase = TestBed.inject(GetWarehouseByIdUseCase);
+
+    await expect(firstValueFrom(useCase.execute(0))).rejects.toBeInstanceOf(
+      WarehouseValidationError,
+    );
+
+    await expect(firstValueFrom(useCase.execute(1.5))).rejects.toMatchObject({
+      field: 'warehouseId',
+    });
+
+    expect(repo.getWarehouseById).not.toHaveBeenCalled();
+  });
+
   // ─── CreateWarehouseUseCase ────────────────────────────────────────────────
 
   describe('CreateWarehouseUseCase', () => {
