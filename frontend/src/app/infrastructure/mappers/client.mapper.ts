@@ -8,6 +8,7 @@ import {
 } from '@domain/models/client.model';
 import {
   ClientDto,
+  ClientAddressDto,
   CreateClientDto,
   UpdateClientDto,
   SetClientActiveDto,
@@ -31,10 +32,10 @@ export class ClientMapper {
       clientId: dto.client_id,
       name: dto.name,
       taxId: dto.tax_id,
-      address: dto.address,
-      city: dto.city,
-      province: dto.province,
-      postalCode: dto.postal_code,
+      address: dto.address.street,
+      city: dto.address.city,
+      province: dto.address.province,
+      postalCode: dto.address.postal_code,
       phone: dto.phone,
       email: dto.email,
       isActive: dto.is_active,
@@ -45,22 +46,39 @@ export class ClientMapper {
     return {
       name: payload.name,
       tax_id: payload.taxId,
-      address: payload.address,
-      city: payload.city,
-      province: payload.province,
-      postal_code: payload.postalCode,
+      address: {
+        street: payload.address,
+        city: payload.city,
+        province: payload.province,
+        postal_code: payload.postalCode,
+      },
       phone: payload.phone,
       email: payload.email,
     };
   }
 
   static toUpdateDto(payload: UpdateClientPayload): UpdateClientDto {
+    const hasCompleteAddress =
+      payload.address !== undefined &&
+      payload.address !== null &&
+      payload.city !== undefined &&
+      payload.city !== null &&
+      payload.province !== undefined &&
+      payload.province !== null &&
+      payload.postalCode !== undefined &&
+      payload.postalCode !== null;
+    const address: ClientAddressDto | undefined = hasCompleteAddress
+      ? {
+          street: payload.address as string,
+          city: payload.city as string,
+          province: payload.province as string,
+          postal_code: payload.postalCode as string,
+        }
+      : undefined;
+
     return {
       ...(payload.name !== undefined && { name: payload.name }),
-      ...(payload.address !== undefined && { address: payload.address }),
-      ...(payload.city !== undefined && { city: payload.city }),
-      ...(payload.province !== undefined && { province: payload.province }),
-      ...(payload.postalCode !== undefined && { postal_code: payload.postalCode }),
+      ...(address !== undefined && { address }),
       ...(payload.phone !== undefined && { phone: payload.phone }),
       ...(payload.email !== undefined && { email: payload.email }),
     };

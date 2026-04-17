@@ -17,6 +17,7 @@ import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.u
 import {
   ClientAlreadyExistsError,
   ClientApiError,
+  ClientEmailAlreadyExistsError,
   ClientForbiddenError,
   ClientNotFoundError,
   ClientUnauthorizedError,
@@ -60,6 +61,10 @@ export class ClientsStore {
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof ClientAlreadyExistsError) {
       return 'Ya existe un cliente con este Tax ID.';
+    }
+
+    if (err instanceof ClientEmailAlreadyExistsError) {
+      return 'Ya existe un cliente con este email.';
     }
 
     if (err instanceof ClientValidationError) {

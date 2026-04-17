@@ -21,6 +21,9 @@ class Sale(Base):
     client_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("clients.client_id"), nullable=False
     )
+    warehouse_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("warehouses.warehouse_id"), nullable=False
+    )
     delivery_address: Mapped[str] = mapped_column(String(500), nullable=False)
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.user_id"), nullable=False

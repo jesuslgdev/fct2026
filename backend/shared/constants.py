@@ -8,4 +8,4 @@ TAX_ID_PATTERN = (
 )
 EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 POSTAL_CODE_PATTERN = r"^\d{5}$"
-PHONE_PATTERN = r"^\+?[\d\s-]{9,20}$"
+PHONE_PATTERN = r"^\d{9}$"

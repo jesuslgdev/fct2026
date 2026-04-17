@@ -4,15 +4,19 @@ import { Observable, catchError, map, throwError } from 'rxjs';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
   UserAlreadyExistsError,
+  UserAlreadyActiveError,
   UserApiError,
+  UserDeletedError,
+  UserDepartmentNotFoundError,
+  UserDepartmentRequiredError,
   UserForbiddenError,
+  UserAlreadyInactiveError,
   UserNotFoundError,
   UserUnauthorizedError,
   UserValidationError,
 } from '@domain/models/user-errors';
 import {
   User,
-  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -47,19 +51,35 @@ export class HttpUserRepository implements UserRepository {
 
     switch (err.status) {
       case 400:
-      case 422:
         return new UserValidationError(err.error, message ?? 'Validation failed.');
       case 401:
         return new UserUnauthorizedError(message ?? 'Authentication required.');
       case 403:
         return new UserForbiddenError(message ?? 'Insufficient permissions.');
       case 404:
+        if (code === 1203) {
+          return new UserDepartmentNotFoundError(message);
+        }
         return new UserNotFoundError(message ?? 'User not found.');
       case 409:
         if (code === 1202) {
           return new UserAlreadyExistsError(message);
         }
+        if (code === 1206) {
+          return new UserAlreadyActiveError(message);
+        }
+        if (code === 1207) {
+          return new UserAlreadyInactiveError(message);
+        }
+        if (code === 1208) {
+          return new UserDeletedError(message);
+        }
         return new UserApiError(message ?? 'Users operation conflict.');
+      case 422:
+        if (code === 1204) {
+          return new UserDepartmentRequiredError(message);
+        }
+        return new UserValidationError(err.error, message ?? 'Validation failed.');
       default:
         return new UserApiError(message ?? 'Unexpected users API error.');
     }
@@ -164,12 +184,15 @@ export class HttpUserRepository implements UserRepository {
     );
   }
 
-  activateUser(id: number, payload: ActivateUserPayload): Observable<void> {
+  activateUser(id: number): Observable<void> {
     return this.withErrorMapping(() =>
-      this.http.patch<void>(
-        `${BASE_URL}/${id}/activate`,
-        UserMapper.toActivateDto(payload),
-      ),
+      this.http.patch<void>(`${BASE_URL}/${id}/activate`, null),
+    );
+  }
+
+  deleteUser(id: number): Observable<void> {
+    return this.withErrorMapping(() =>
+      this.http.delete<void>(`${BASE_URL}/${id}`),
     );
   }
 

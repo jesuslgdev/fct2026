@@ -44,6 +44,7 @@ class SaleRepository(ISaleRepository):
         self,
         sale_number: str,
         client_id: int,
+        warehouse_id: int,
         delivery_address: str,
         user_id: int,
         status: str,
@@ -55,6 +56,7 @@ class SaleRepository(ISaleRepository):
         sale = Sale(
             sale_number=sale_number,
             client_id=client_id,
+            warehouse_id=warehouse_id,
             delivery_address=delivery_address,
             user_id=user_id,
             status=status,

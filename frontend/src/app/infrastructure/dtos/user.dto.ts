@@ -26,12 +26,6 @@ export interface UpdateUserDto {
   department_id?: number | null;
 }
 
-export interface ActivateUserDto {
-  first_name: string;
-  last_name: string;
-  email: string;
-}
-
 export interface UsersPageDto {
   items: UserDto[];
   total: number;

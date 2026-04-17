@@ -20,14 +20,14 @@ export class ClientFormDialogComponent {
   private readonly fb = inject(FormBuilder);
 
   readonly form = this.fb.group({
-    name: ['', [Validators.required, Validators.minLength(3)]],
+    name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(200)]],
     taxId: ['', [Validators.required, Validators.pattern(TAX_ID_PATTERN)]],
-    address: ['', Validators.required],
-    city: ['', Validators.required],
-    province: ['', Validators.required],
-    postalCode: ['', [Validators.required, Validators.pattern(/^[0-9]{5}$/)]],
-    phone: ['', [Validators.required, Validators.pattern(/^[6-9][0-9]{8}$/)]],
-    email: ['', [Validators.required, Validators.email]],
+    address: ['', [Validators.required, Validators.maxLength(300)]],
+    city: ['', [Validators.required, Validators.maxLength(100)]],
+    province: ['', [Validators.required, Validators.maxLength(100)]],
+    postalCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
+    phone: ['', [Validators.required, Validators.pattern(/^\+?[\d\s-]{9,20}$/)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
   });
 
   readonly isViewMode = computed(() => this.store.dialogMode() === 'view');

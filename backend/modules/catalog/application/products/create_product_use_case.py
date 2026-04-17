@@ -28,7 +28,6 @@ class CreateProductUseCase(ICreateProductUseCase):
         category_id: int,
         price: Decimal,
         vat_rate: Decimal,
-        stock_current: int,
         stock_min: int,
     ) -> Product:
         # 1. Validate category exists
@@ -49,6 +48,5 @@ class CreateProductUseCase(ICreateProductUseCase):
             category_id=category_id,
             price=price,
             vat_rate=vat_rate,
-            stock_current=stock_current,
             stock_min=stock_min,
         )

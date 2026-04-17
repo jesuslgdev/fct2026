@@ -1,6 +1,5 @@
 import {
   User,
-  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
 } from '@domain/models/user.model';
@@ -9,7 +8,6 @@ import {
   UserDto,
   CreateUserDto,
   UpdateUserDto,
-  ActivateUserDto,
 } from '@infrastructure/dtos/user.dto';
 import { DepartmentDto } from '@infrastructure/dtos/department.dto';
 
@@ -55,11 +53,4 @@ export class UserMapper {
     };
   }
 
-  static toActivateDto(payload: ActivateUserPayload): ActivateUserDto {
-    return {
-      first_name: payload.firstName,
-      last_name: payload.lastName,
-      email: payload.email,
-    };
-  }
 }

@@ -54,6 +54,10 @@ export const routes: Routes = [
 				loadChildren: () => import('@features/warehouses/warehouses.routes').then(m => m.WAREHOUSES_ROUTES),
 			},
 			{
+				path: 'suppliers',
+				loadChildren: () => import('@features/suppliers/suppliers.routes').then(m => m.SUPPLIERS_ROUTES),
+			},
+			{
 				path: '',
 				redirectTo: 'legal',
 				pathMatch: 'full',
@@ -64,7 +68,6 @@ export const routes: Routes = [
 			},
 		],
 	},
-	
 	{
 		path: '**',
 		redirectTo: '',

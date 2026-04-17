@@ -287,19 +287,24 @@ describe('Stock Distribution Use Cases', () => {
       expect(repo.adjustStock).not.toHaveBeenCalled();
     });
 
-    it('should throw InvalidQuantityError when newQuantity is exactly zero (edge case)', async () => {
+    it('should accept newQuantity when it is exactly zero', async () => {
       const useCase = TestBed.inject(AdjustStockUseCase);
       const payload: AdjustStockPayload = {
         warehouseId: 1,
         productId: 10,
         newQuantity: 0,
       };
-      repo.adjustStock.mockReturnValue(of(ADJUST_STOCK_RESULT_MOCK));
+      const zeroStockResult: AdjustStockResult = {
+        ...ADJUST_STOCK_RESULT_MOCK,
+        newQuantity: 0,
+        difference: -50,
+      };
+      repo.adjustStock.mockReturnValue(of(zeroStockResult));
 
       const result = await firstValueFrom(useCase.execute(payload));
 
       expect(repo.adjustStock).toHaveBeenCalledWith(payload);
-      expect(result).toEqual(ADJUST_STOCK_RESULT_MOCK);
+      expect(result).toEqual(zeroStockResult);
     });
 
     it('should throw ReasonTooLongError when reason exceeds 300 characters', async () => {

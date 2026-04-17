@@ -17,6 +17,7 @@ class SaleLineInput(BaseModel):
 
 class CreateSaleRequest(BaseModel):
     client_id: int
+    warehouse_id: int = Field(gt=0)
     lines: list[SaleLineInput] = Field(min_length=1)
 
 
@@ -45,6 +46,7 @@ class SaleDetailDTO(BaseModel):
     sale_id: int
     sale_number: str
     client_id: int
+    warehouse_id: int
     delivery_address: str
     user_id: int
     sale_date: datetime
@@ -62,6 +64,7 @@ class SaleDetailDTO(BaseModel):
             sale_id=sale.sale_id,
             sale_number=sale.sale_number,
             client_id=sale.client_id,
+            warehouse_id=sale.warehouse_id,
             delivery_address=sale.delivery_address,
             user_id=sale.user_id,
             sale_date=sale.sale_date,

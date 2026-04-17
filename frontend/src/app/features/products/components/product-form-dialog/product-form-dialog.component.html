@@ -79,16 +79,6 @@
           <span class="dialog-field-error">El precio no puede ser menor ni igual a 0.</span>
         }
       </label>
-
-      <label class="dialog-field">
-        <span class="dialog-field-label">Stock</span>
-        <ui-input
-          formControlName="stock"
-          type="number"
-          placeholder="0"
-          [state]="stock.invalid && stock.touched ? 'error' : 'default'"
-        />
-      </label>
     </div>
 
     <label class="dialog-field">

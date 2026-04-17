@@ -17,7 +17,6 @@ async def sample_product(db_session: AsyncSession) -> Product:
         name="Laptop",
         category_id=cat.category_id,
         price=999.99,
-        stock_current=10,
         stock_min=2,
         is_active=True,
     )
@@ -49,7 +48,6 @@ async def test_update_product_duplicate_code(
         name="X",
         category_id=sample_product.category_id,
         price=10,
-        stock_current=0,
         stock_min=0,
     )
     db_session.add(p2)
