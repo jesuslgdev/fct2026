@@ -81,13 +81,13 @@ class SaleRepository(ISaleRepository):
             self._db.add(sale_line)
 
         await self._db.flush()
-        await self._db.refresh(sale, ["lines"])
+        await self._db.refresh(sale)
         return sale
 
     async def save(self, sale: Sale) -> Sale:
         self._db.add(sale)
         await self._db.flush()
-        await self._db.refresh(sale, ["lines"])
+        await self._db.refresh(sale)
         return sale
 
     async def add_status_history(self, history: SaleStatusHistory) -> None:
