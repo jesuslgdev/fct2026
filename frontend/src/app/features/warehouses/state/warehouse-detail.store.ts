@@ -68,6 +68,11 @@ export class WarehouseDetailStore {
     this.loadStock();
   }
 
+  showInvalidWarehouseIdError(): void {
+    this.error.set('El identificador del almacen debe ser un entero positivo.');
+    this.stockError.set(null);
+  }
+
   loadWarehouse(): void {
     const warehouseId = this.warehouseId();
     if (!warehouseId) return;

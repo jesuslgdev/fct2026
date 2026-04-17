@@ -52,6 +52,7 @@ class MockWarehouseDetailStore {
   readonly selectedProductLabel = signal('');
 
   readonly init = vi.fn();
+  readonly showInvalidWarehouseIdError = vi.fn();
   readonly onStockSearch = vi.fn();
   readonly onStockPageChange = vi.fn();
   readonly openInitialStockDialog = vi.fn();
@@ -67,10 +68,12 @@ describe('WarehouseDetailPageComponent', () => {
   let component: WarehouseDetailPageComponent;
   let store: MockWarehouseDetailStore;
   let router: { navigate: ReturnType<typeof vi.fn> };
+  let warehouseIdParam: string | null;
 
   beforeEach(async () => {
     store = new MockWarehouseDetailStore();
     router = { navigate: vi.fn() };
+    warehouseIdParam = '1';
 
     await TestBed.configureTestingModule({
       imports: [WarehouseDetailPageComponent],
@@ -80,7 +83,7 @@ describe('WarehouseDetailPageComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: () => '1',
+                get: () => warehouseIdParam,
               },
             },
           },
@@ -97,10 +100,11 @@ describe('WarehouseDetailPageComponent', () => {
 
     fixture = TestBed.createComponent(WarehouseDetailPageComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('renders the warehouse summary card', () => {
+    fixture.detectChanges();
+
     const text = fixture.nativeElement.textContent;
 
     expect(text).toContain('Detalle de almacen');
@@ -112,6 +116,8 @@ describe('WarehouseDetailPageComponent', () => {
   });
 
   it('keeps the back button behavior', () => {
+    fixture.detectChanges();
+
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('Volver');
 
@@ -121,6 +127,20 @@ describe('WarehouseDetailPageComponent', () => {
   });
 
   it('initializes the detail store with the route warehouse id', () => {
+    fixture.detectChanges();
+
     expect(store.init).toHaveBeenCalledWith(1);
   });
+
+  it.each(['abc', '1.5', '0'])(
+    'shows a handled error when the route warehouse id is %s',
+    (invalidWarehouseId) => {
+      warehouseIdParam = invalidWarehouseId;
+
+      fixture.detectChanges();
+
+      expect(store.showInvalidWarehouseIdError).toHaveBeenCalledOnce();
+      expect(store.init).not.toHaveBeenCalled();
+    },
+  );
 });

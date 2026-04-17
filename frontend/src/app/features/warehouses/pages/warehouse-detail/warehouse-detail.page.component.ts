@@ -38,6 +38,11 @@ export class WarehouseDetailPageComponent implements OnInit {
 
   ngOnInit(): void {
     const warehouseId = Number(this.route.snapshot.paramMap.get('warehouseId'));
+    if (!Number.isInteger(warehouseId) || warehouseId <= 0) {
+      this.store.showInvalidWarehouseIdError();
+      return;
+    }
+
     this.store.init(warehouseId);
   }
 

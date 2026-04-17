@@ -110,6 +110,15 @@ describe('WarehouseDetailStore', () => {
     expect(store.availableStockItems()).toEqual([STOCK_ITEM]);
   });
 
+  it('shows a handled error for an invalid warehouse id', () => {
+    store.stockError.set('Error previo de stock.');
+
+    store.showInvalidWarehouseIdError();
+
+    expect(store.error()).toBe('El identificador del almacen debe ser un entero positivo.');
+    expect(store.stockError()).toBeNull();
+  });
+
   it('searches stock by product name and resets page', () => {
     store.init(1);
     store.page.set(3);
