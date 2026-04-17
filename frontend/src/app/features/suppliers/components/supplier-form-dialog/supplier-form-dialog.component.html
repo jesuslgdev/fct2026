@@ -105,12 +105,12 @@
       </div>
       <div class="dialog-field">
         <label for="phone" class="dialog-field-label">Teléfono</label>
-        <ui-input id="phone" formControlName="phone" placeholder="+34 900 123 456"
+        <ui-input id="phone" formControlName="phone" placeholder="912345678"
           [state]="phone.invalid && phone.touched ? 'error' : 'default'" />
         @if (phone.invalid && phone.touched) {
           <span class="dialog-field-error">
             @if (phone.hasError('required')) { El teléfono es obligatorio. }
-            @else { Formato de teléfono no válido. }
+            @else { El teléfono debe tener exactamente 9 dígitos. }
           </span>
         }
       </div>

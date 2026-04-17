@@ -18,7 +18,7 @@ export class SupplierFormDialogComponent {
   readonly renderSelects = signal(true);
 
   private static readonly TAX_ID_PATTERN = /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJKLMNPQRSUVW][0-9]{7}[0-9A-J])$/i;
-  private static readonly PHONE_PATTERN = /^\+?[\d\s-]{9,20}$/;
+  private static readonly PHONE_PATTERN = /^\d{9}$/;
   private static readonly POSTAL_CODE_PATTERN = /^\d{5}$/;
 
   // Typed form using FormBuilder

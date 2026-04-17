@@ -40,6 +40,7 @@ export interface ExcelTemplate {
 export class ExcelImportService {
   private readonly downloadSupplierTemplateUseCase = inject(DownloadSupplierTemplateUseCase);
   private readonly importSuppliersUseCase = inject(ImportSuppliersUseCase);
+  private static readonly PHONE_PATTERN = /^\d{9}$/;
 
   // Download Excel template
   async downloadTemplate(): Promise<ExcelTemplate> {
@@ -239,13 +240,20 @@ export class ExcelImportService {
       });
     }
 
-    // Validate phone (optional)
-    if (supplier.phone && !/^[0-9]{9}$/.test(supplier.phone.replace(/\s/g, ''))) {
+    // Validate phone (required in backend import contract)
+    if (!supplier.phone || supplier.phone.trim().length === 0) {
+      errors.push({
+        row: rowNumber,
+        field: 'Teléfono',
+        value: supplier.phone || '',
+        message: 'El teléfono es obligatorio'
+      });
+    } else if (!ExcelImportService.PHONE_PATTERN.test(supplier.phone)) {
       errors.push({
         row: rowNumber,
         field: 'Teléfono',
         value: supplier.phone,
-        message: 'El formato del teléfono no es válido (9 dígitos)'
+        message: 'El formato del teléfono no es válido (exactamente 9 dígitos)'
       });
     }
 
