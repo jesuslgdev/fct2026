@@ -12,7 +12,7 @@ export class GetWarehouseByIdUseCase {
 
   execute(warehouseId: number): Observable<Warehouse> {
     if (!Number.isInteger(warehouseId) || warehouseId <= 0) {
-      return throwError(() => new WarehouseValidationError('warehouseId', 'Warehouse id must be a positive integer.'));
+      return throwError(() => new WarehouseValidationError('warehouseId', 'Warehouse ID must be a positive integer.'));
     }
 
     return this.warehouseRepository.getWarehouseById(warehouseId);

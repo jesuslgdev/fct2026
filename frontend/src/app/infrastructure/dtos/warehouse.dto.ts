@@ -14,10 +14,10 @@ export interface WarehouseDto {
 
 export interface CreateWarehouseDto {
   name: string;
-  address: string;
+  address: WarehouseAddressDto;
 }
 
 export interface UpdateWarehouseDto {
   name: string;
-  address: string;
+  address: WarehouseAddressDto;
 }

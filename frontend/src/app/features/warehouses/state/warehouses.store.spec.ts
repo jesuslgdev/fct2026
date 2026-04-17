@@ -20,17 +20,33 @@ import { UpdateWarehouseUseCase } from '@domain/usecases/warehouse/update-wareho
 import { DeleteWarehouseUseCase } from '@domain/usecases/warehouse/delete-warehouse.usecase';
 import { Observable, of, throwError } from 'rxjs';
 
+const ADDRESS_A = {
+  street: 'Calle Principal 123',
+  city: 'Madrid',
+  province: 'Madrid',
+  postalCode: '28001',
+};
+
+const ADDRESS_B = {
+  street: 'Poligono Industrial 45',
+  city: 'Barcelona',
+  province: 'Barcelona',
+  postalCode: '08001',
+};
+
 const WAREHOUSE_A: Warehouse = {
   warehouseId: 1,
-  name: 'Almacén Central',
-  address: 'Calle Principal 123, Madrid',
+  name: 'Almacen Central',
+  address: 'Calle Principal 123, Madrid, Madrid, 28001',
+  addressData: ADDRESS_A,
   totalStock: 150,
 };
 
 const WAREHOUSE_B: Warehouse = {
   warehouseId: 2,
-  name: 'Almacén Norte',
-  address: 'Polígono Industrial 45, Barcelona',
+  name: 'Almacen Norte',
+  address: 'Poligono Industrial 45, Barcelona, Barcelona, 08001',
+  addressData: ADDRESS_B,
   totalStock: 75,
 };
 
@@ -128,8 +144,8 @@ describe('WarehousesStore', () => {
     );
 
     store.saveWarehouse({
-      name: 'Almacén Central',
-      address: 'Calle Principal 123',
+      name: 'Almacen Central',
+      address: ADDRESS_A,
     });
 
     expect(store.dialogError()).toBe('Name already exists.');
@@ -138,8 +154,13 @@ describe('WarehousesStore', () => {
 
   it('creates a new warehouse and updates state', () => {
     const payload: CreateWarehousePayload = {
-      name: 'Almacén Sur',
-      address: 'Avenida de la Industria 789, Valencia',
+      name: 'Almacen Sur',
+      address: {
+        street: 'Avenida de la Industria 789',
+        city: 'Valencia',
+        province: 'Valencia',
+        postalCode: '46001',
+      },
     };
 
     createWarehouseUseCase.execute.mockReturnValueOnce(of(WAREHOUSE_B));
@@ -154,11 +175,14 @@ describe('WarehousesStore', () => {
   });
 
   it('updates an existing warehouse in edit mode', () => {
-    const updated: Warehouse = { ...WAREHOUSE_A, name: 'Almacén Principal' };
-    const payload: UpdateWarehousePayload = { name: 'Almacén Principal', address: WAREHOUSE_A.address };
+    const updated: Warehouse = { ...WAREHOUSE_A, name: 'Almacen Principal' };
+    const payload: UpdateWarehousePayload = {
+      name: 'Almacen Principal',
+      address: WAREHOUSE_A.addressData,
+    };
     const expectedPayload: UpdateWarehousePayload = {
-      name: 'Almacén Principal',
-      address: WAREHOUSE_A.address,
+      name: 'Almacen Principal',
+      address: WAREHOUSE_A.addressData,
     };
 
     getWarehousesUseCase.execute.mockReturnValueOnce(of([WAREHOUSE_A]));

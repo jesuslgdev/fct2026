@@ -5,10 +5,18 @@ import { WarehouseFormDialogComponent } from '@features/warehouses/components/wa
 import { WarehousesStore } from '@features/warehouses/state/warehouses.store';
 import { Warehouse } from '@domain/models/warehouse.model';
 
+const ADDRESS = {
+  street: 'Calle Mayor 10',
+  city: 'Madrid',
+  province: 'Madrid',
+  postalCode: '28001',
+};
+
 const WAREHOUSE_MOCK: Warehouse = {
   warehouseId: 10,
   name: 'Almacen Centro',
-  address: 'Calle Mayor 10, Madrid',
+  address: 'Calle Mayor 10, Madrid, Madrid, 28001',
+  addressData: ADDRESS,
   totalStock: 0,
 };
 
@@ -17,6 +25,7 @@ class MockWarehousesStore {
   readonly dialogMode = signal<'create' | 'edit'>('create');
   readonly dialogVisible = signal(false);
   readonly loading = signal(false);
+  readonly dialogError = signal<string | null>(null);
 
   readonly saveWarehouse = vi.fn();
   readonly closeDialog = vi.fn();
@@ -47,13 +56,21 @@ describe('WarehouseFormDialogComponent', () => {
     component.form.setValue({
       name: 'Almacen Norte',
       address: 'Poligono 2, Nave 4',
+      city: 'Madrid',
+      province: 'Madrid',
+      postalCode: '28002',
     });
 
     component.onConfirm();
 
     expect(store.saveWarehouse).toHaveBeenCalledWith({
       name: 'Almacen Norte',
-      address: 'Poligono 2, Nave 4',
+      address: {
+        street: 'Poligono 2, Nave 4',
+        city: 'Madrid',
+        province: 'Madrid',
+        postalCode: '28002',
+      },
     });
   });
 
@@ -67,14 +84,17 @@ describe('WarehouseFormDialogComponent', () => {
 
     component.form.patchValue({
       name: 'Almacen Centro Actualizado',
-      address: 'Calle Mayor 10, Madrid',
+      address: 'Calle Mayor 10',
+      city: 'Madrid',
+      province: 'Madrid',
+      postalCode: '28001',
     });
 
     component.onConfirm();
 
     expect(store.saveWarehouse).toHaveBeenCalledWith({
       name: 'Almacen Centro Actualizado',
-      address: 'Calle Mayor 10, Madrid',
+      address: ADDRESS,
     });
   });
 
@@ -89,7 +109,7 @@ describe('WarehouseFormDialogComponent', () => {
     expect(store.saveWarehouse).not.toHaveBeenCalled();
   });
 
-  it('marks max length violations on name and address', () => {
+  it('marks max length violations on address fields', () => {
     const fixture = TestBed.createComponent(WarehouseFormDialogComponent);
     const component = fixture.componentInstance;
     fixture.detectChanges();
@@ -97,10 +117,16 @@ describe('WarehouseFormDialogComponent', () => {
     component.form.setValue({
       name: 'N'.repeat(101),
       address: 'D'.repeat(256),
+      city: 'C'.repeat(101),
+      province: 'P'.repeat(101),
+      postalCode: '1'.repeat(11),
     });
 
     expect(component.name.hasError('maxlength')).toBe(true);
     expect(component.address.hasError('maxlength')).toBe(true);
+    expect(component.city.hasError('maxlength')).toBe(true);
+    expect(component.province.hasError('maxlength')).toBe(true);
+    expect(component.postalCode.hasError('maxlength')).toBe(true);
   });
 
   it('calls closeDialog on cancel', () => {
