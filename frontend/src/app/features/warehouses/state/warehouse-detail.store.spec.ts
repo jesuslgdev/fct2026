@@ -1,14 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Observable, of, throwError } from 'rxjs';
+import { Product, PagedResult } from '@domain/models/product.model';
 import {
+  AdjustStockPayload,
+  AdjustStockResult,
   StockDistributionFilters,
   StockDistributionItem,
   StockDistributionListResult,
 } from '@domain/models/stock-distribution.model';
-import { StockDistributionValidationError } from '@domain/models/stock-distribution-errors';
+import {
+  InvalidQuantityError,
+  StockDistributionValidationError,
+} from '@domain/models/stock-distribution-errors';
 import { Warehouse } from '@domain/models/warehouse.model';
 import { WarehouseValidationError } from '@domain/models/warehouse-errors';
+import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
+import { AdjustStockUseCase } from '@domain/usecases/stock-distribution/adjust-stock.usecase';
 import { GetStockDistributionUseCase } from '@domain/usecases/stock-distribution/get-stock-distribution.usecase';
 import { GetWarehouseByIdUseCase } from '@domain/usecases/warehouse/get-warehouse-by-id.usecase';
 import { WarehouseDetailStore } from './warehouse-detail.store';
@@ -47,6 +55,30 @@ const ZERO_AVAILABLE_STOCK_ITEM: StockDistributionItem = {
   availableStock: 0,
 };
 
+const PRODUCT: Product = {
+  productId: 20,
+  code: 'SKU-20',
+  name: 'Producto C',
+  description: 'Producto C',
+  categoryId: 1,
+  categoryName: 'General',
+  price: 10,
+  stock: 0,
+  minStock: 0,
+  isActive: true,
+};
+
+const ADJUST_RESULT: AdjustStockResult = {
+  movementId: 100,
+  warehouseId: 1,
+  productId: 10,
+  previousQuantity: 50,
+  newQuantity: 80,
+  difference: 30,
+  globalStock: 120,
+  createdAt: '2026-04-13T09:00:00Z',
+};
+
 class MockGetWarehouseByIdUseCase {
   execute = vi.fn<(warehouseId: number) => Observable<Warehouse>>();
 }
@@ -55,18 +87,41 @@ class MockGetStockDistributionUseCase {
   execute = vi.fn<(filters?: StockDistributionFilters) => Observable<StockDistributionListResult>>();
 }
 
+class MockAdjustStockUseCase {
+  execute = vi.fn<(payload: AdjustStockPayload) => Observable<AdjustStockResult>>();
+}
+
+class MockGetProductsUseCase {
+  execute = vi.fn<(params: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    active?: boolean;
+  }) => Observable<PagedResult<Product>>>();
+}
+
 describe('WarehouseDetailStore', () => {
   let store: WarehouseDetailStore;
   let getWarehouseByIdUseCase: MockGetWarehouseByIdUseCase;
   let getStockDistributionUseCase: MockGetStockDistributionUseCase;
+  let adjustStockUseCase: MockAdjustStockUseCase;
+  let getProductsUseCase: MockGetProductsUseCase;
 
   beforeEach(() => {
     getWarehouseByIdUseCase = new MockGetWarehouseByIdUseCase();
     getStockDistributionUseCase = new MockGetStockDistributionUseCase();
+    adjustStockUseCase = new MockAdjustStockUseCase();
+    getProductsUseCase = new MockGetProductsUseCase();
 
     getWarehouseByIdUseCase.execute.mockReturnValue(of(WAREHOUSE));
     getStockDistributionUseCase.execute.mockReturnValue(of({
       data: [STOCK_ITEM],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    }));
+    getProductsUseCase.execute.mockReturnValue(of({
+      data: [PRODUCT],
       total: 1,
       page: 1,
       pageSize: 20,
@@ -77,6 +132,8 @@ describe('WarehouseDetailStore', () => {
         WarehouseDetailStore,
         { provide: GetWarehouseByIdUseCase, useValue: getWarehouseByIdUseCase },
         { provide: GetStockDistributionUseCase, useValue: getStockDistributionUseCase },
+        { provide: AdjustStockUseCase, useValue: adjustStockUseCase },
+        { provide: GetProductsUseCase, useValue: getProductsUseCase },
       ],
     });
 
@@ -153,6 +210,103 @@ describe('WarehouseDetailStore', () => {
       pageSize: 20,
       productName: undefined,
     });
+  });
+
+  it('opens existing stock adjustment dialog with selected item', () => {
+    store.openAdjustExistingDialog(STOCK_ITEM);
+
+    expect(store.adjustMode()).toBe('existing');
+    expect(store.selectedStockItem()).toEqual(STOCK_ITEM);
+    expect(store.selectedProductLabel()).toBe('SKU-10 - Producto A');
+    expect(store.adjustDialogVisible()).toBe(true);
+  });
+
+  it('opens initial stock dialog and loads active products', () => {
+    store.openInitialStockDialog();
+
+    expect(store.adjustMode()).toBe('initial');
+    expect(getProductsUseCase.execute).toHaveBeenCalledWith({
+      page: 1,
+      pageSize: 20,
+      search: undefined,
+      active: true,
+    });
+    expect(store.productOptions()).toEqual([
+      {
+        productId: 20,
+        label: 'SKU-20 - Producto C',
+        product: PRODUCT,
+      },
+    ]);
+  });
+
+  it('searches active products for initial stock', () => {
+    store.searchProducts(' Producto C ');
+
+    expect(getProductsUseCase.execute).toHaveBeenCalledWith({
+      page: 1,
+      pageSize: 20,
+      search: 'Producto C',
+      active: true,
+    });
+  });
+
+  it('adjusts existing stock and updates local state immediately', () => {
+    store.init(1);
+    store.openAdjustExistingDialog(STOCK_ITEM);
+    adjustStockUseCase.execute.mockReturnValueOnce(of(ADJUST_RESULT));
+
+    store.confirmAdjustStock(80, 'Count');
+
+    expect(adjustStockUseCase.execute).toHaveBeenCalledWith({
+      warehouseId: 1,
+      productId: 10,
+      newQuantity: 80,
+      reason: 'Count',
+    });
+    expect(store.stockItems()[0]).toMatchObject({
+      stock: 80,
+      availableStock: 70,
+    });
+    expect(store.warehouse()?.totalStock).toBe(80);
+    expect(store.adjustDialogVisible()).toBe(false);
+  });
+
+  it('creates initial stock for selected product and refreshes warehouse and stock', () => {
+    store.init(1);
+    store.openInitialStockDialog();
+    store.selectProduct(20);
+    adjustStockUseCase.execute.mockReturnValueOnce(of({
+      ...ADJUST_RESULT,
+      productId: 20,
+      previousQuantity: 0,
+      newQuantity: 12,
+      difference: 12,
+    }));
+
+    store.confirmAdjustStock(12);
+
+    expect(adjustStockUseCase.execute).toHaveBeenCalledWith({
+      warehouseId: 1,
+      productId: 20,
+      newQuantity: 12,
+      reason: undefined,
+    });
+    expect(getWarehouseByIdUseCase.execute).toHaveBeenCalledTimes(2);
+    expect(getStockDistributionUseCase.execute).toHaveBeenCalledTimes(2);
+  });
+
+  it('maps stock adjustment errors to dialog message', () => {
+    store.init(1);
+    store.openAdjustExistingDialog(STOCK_ITEM);
+    adjustStockUseCase.execute.mockReturnValueOnce(
+      throwError(() => new InvalidQuantityError()),
+    );
+
+    store.confirmAdjustStock(-1);
+
+    expect(store.adjustDialogError()).toBe('La cantidad debe ser mayor o igual que 0.');
+    expect(store.adjustingStock()).toBe(false);
   });
 
   it('maps warehouse and stock validation errors to Spanish messages', () => {
