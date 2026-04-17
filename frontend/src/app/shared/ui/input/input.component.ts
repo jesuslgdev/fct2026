@@ -60,6 +60,7 @@ const STATE_ICON_COLOR: Record<InputState, string> = {
 export class InputComponent implements ControlValueAccessor {
   // Inputs
   type = input<string>('text'); // Input type
+  step = input<string | null>(null); // Step for number-like inputs
   placeholder = input<string>(''); // Placeholder text
   disabled = input<boolean>(false); // Disabled state (external)
   variant = input<InputVariant>('default'); // Input variant
@@ -99,15 +100,33 @@ export class InputComponent implements ControlValueAccessor {
 
   // Input event handler
   onInput(event: Event) {
-    const val = (event.target as HTMLInputElement).value;
-    this.value.set(val);
-    this.onChange(val);
-    this.valueChange.emit(val);
+    const rawValue = (event.target as HTMLInputElement).value;
+    this.value.set(rawValue);
+
+    if (this.type() === 'number') {
+      if (rawValue === '') {
+        this.onChange(null);
+      } else {
+        const parsed = Number(rawValue);
+        this.onChange(Number.isFinite(parsed) ? parsed : null);
+      }
+
+      this.valueChange.emit(rawValue);
+      return;
+    }
+
+    this.onChange(rawValue);
+    this.valueChange.emit(rawValue);
   }
 
   // ControlValueAccessor methods
-  writeValue(val: string): void {
-    this.value.set(val ?? '');
+  writeValue(val: unknown): void {
+    if (val === null || val === undefined) {
+      this.value.set('');
+      return;
+    }
+
+    this.value.set(String(val));
   }
   registerOnChange(fn: (_: unknown) => void): void {
     this.onChange = fn;
