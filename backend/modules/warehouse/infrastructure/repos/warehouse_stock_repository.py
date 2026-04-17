@@ -120,6 +120,9 @@ class WarehouseStockRepository(IWarehouseStockRepository, IStockAvailabilityRead
         if search is not None:
             query = query.where(products_table.c.name.ilike(f"%{search}%"))
 
+        # Filter out products with zero stock
+        query = query.where(WarehouseStock.stock > 0)
+
         count_query = select(func.count()).select_from(query.subquery())
         total = (await self._db.execute(count_query)).scalar_one()
 
