@@ -75,6 +75,33 @@ describe('ProductFormDialogComponent', () => {
     });
   });
 
+  it('submits decimal price in create mode', async () => {
+    const fixture = TestBed.createComponent(ProductFormDialogComponent);
+    const component = fixture.componentInstance;
+    store.dialogMode.set('create');
+    fixture.detectChanges();
+
+    component.form.setValue({
+      code: 'P-0004',
+      name: 'Producto decimal',
+      description: 'Desc',
+      categoryId: 1,
+      price: 12.34,
+      minStock: 2,
+    });
+
+    await component.onConfirm();
+
+    expect(store.createProduct).toHaveBeenCalledWith({
+      code: 'P-0004',
+      name: 'Producto decimal',
+      description: 'Desc',
+      categoryId: 1,
+      price: 12.34,
+      minStock: 2,
+    });
+  });
+
   it('does not submit when price is zero', async () => {
     const fixture = TestBed.createComponent(ProductFormDialogComponent);
     const component = fixture.componentInstance;
@@ -141,6 +168,33 @@ describe('ProductFormDialogComponent', () => {
       description: 'Desc',
       categoryId: 1,
       price: 20,
+      minStock: 1,
+    });
+  });
+
+  it('submits decimal price in edit mode', async () => {
+    store.dialogMode.set('edit');
+    store.selectedProduct.set(PRODUCT_MOCK);
+
+    const fixture = TestBed.createComponent(ProductFormDialogComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    component.form.patchValue({
+      name: 'Producto editado',
+      description: 'Desc',
+      categoryId: 1,
+      price: 20.75,
+      minStock: 1,
+    });
+
+    await component.onConfirm();
+
+    expect(store.updateProduct).toHaveBeenCalledWith(PRODUCT_MOCK.productId, {
+      name: 'Producto editado',
+      description: 'Desc',
+      categoryId: 1,
+      price: 20.75,
       minStock: 1,
     });
   });
