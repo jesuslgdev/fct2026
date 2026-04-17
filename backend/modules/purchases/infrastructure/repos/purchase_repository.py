@@ -26,6 +26,13 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
+    async def _refresh_purchase_with_lines(self, purchase: Purchase) -> Purchase:
+        # Ensure server-managed scalar fields (e.g. updated_at via onupdate)
+        # and relationship lines are fully loaded before response serialization.
+        await self._db.refresh(purchase)
+        await self._db.refresh(purchase, ["lines"])
+        return purchase
+
     async def get_all_paginated(
         self,
         page: int,
@@ -147,8 +154,7 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
             self._db.add(purchase_line)
 
         await self._db.flush()
-        await self._db.refresh(purchase, ["lines"])
-        return purchase
+        return await self._refresh_purchase_with_lines(purchase)
 
     async def get_line_by_id(self, purchase_line_id: int) -> PurchaseLine | None:
         result = await self._db.execute(
@@ -227,8 +233,7 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         purchase.taxes = taxes
         purchase.total = total
         await self._db.flush()
-        await self._db.refresh(purchase, ["lines"])
-        return purchase
+        return await self._refresh_purchase_with_lines(purchase)
 
     async def update_header(
         self,
@@ -243,8 +248,7 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         purchase.supplier_id = supplier_id
         purchase.warehouse_id = warehouse_id
         await self._db.flush()
-        await self._db.refresh(purchase, ["lines"])
-        return purchase
+        return await self._refresh_purchase_with_lines(purchase)
 
     async def delete_all_lines(self, purchase_id: int) -> None:
         result = await self._db.execute(
@@ -263,8 +267,7 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         purchase.cancelled_at = datetime.now(UTC)
         purchase.cancelled_by_user_id = user_id
         await self._db.flush()
-        await self._db.refresh(purchase, ["lines"])
-        return purchase
+        return await self._refresh_purchase_with_lines(purchase)
 
     async def delete_purchase(self, purchase_id: int) -> None:
         await self.delete_all_lines(purchase_id)
@@ -282,8 +285,7 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         purchase = result.scalar_one()
         purchase.status = new_status
         await self._db.flush()
-        await self._db.refresh(purchase, ["lines"])
-        return purchase
+        return await self._refresh_purchase_with_lines(purchase)
 
     async def has_purchases_for_user(self, user_id: int) -> bool:
         result = await self._db.execute(
