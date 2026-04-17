@@ -234,7 +234,6 @@ async def create_product(
 ):
     """Create a new product."""
     result = await use_case.execute(
-        product_code=body.product_code,
         name=body.name,
         description=body.description,
         category_id=body.category_id,

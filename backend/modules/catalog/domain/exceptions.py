@@ -27,6 +27,7 @@ class CatalogExceptionInfo(AppExceptionInfo):
     # Products (52xx)
     PRODUCT_NOT_FOUND = (5201, "Product not found", 404)
     PRODUCT_CODE_ALREADY_EXISTS = (5202, "Product code already exists", 409)
+    PRODUCT_NAME_ALREADY_EXISTS = (5203, "Product name already exists", 409)
 
 
 class CatalogException(AppException):

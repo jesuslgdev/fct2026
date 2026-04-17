@@ -36,7 +36,6 @@ class ProductDTO(BaseModel):
 
 
 class CreateProductRequest(BaseModel):
-    product_code: str = Field(..., min_length=1, max_length=50, pattern=r"^\S+$")
     name: str = Field(..., min_length=1, max_length=150)
     description: str | None = Field(None, max_length=500)
     category_id: int = Field(..., gt=0)
