@@ -60,13 +60,8 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthRepository, AuthService],
       multi: true,
     },
-    { provide: CategoryRepository, useClass: HttpCategoryRepository },
-    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
-    { provide: ClientRepository, useClass: HttpClientRepository },
-    { provide: UserRepository, useClass: HttpUserRepository },
     { provide: ProductRepository, useClass: HttpProductRepository },
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
-    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
     providePrimeNG({
       ripple: true,
       theme: {
