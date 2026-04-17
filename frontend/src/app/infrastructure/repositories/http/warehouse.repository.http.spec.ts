@@ -20,14 +20,19 @@ const BASE_URL = `${environment.apiUrl}/api/v1/warehouse/warehouses`;
 const WAREHOUSE_DTO = {
   warehouse_id: 1,
   name: 'Almacén Central',
-  address: 'Calle Principal 123',
+  address: {
+    street: 'Calle Principal 123',
+    city: 'Madrid',
+    province: 'Madrid',
+    postal_code: '28001',
+  },
   total_stock: 42,
 };
 
 const WAREHOUSE_DOMAIN = {
   warehouseId: 1,
   name: 'Almacén Central',
-  address: 'Calle Principal 123',
+  address: 'Calle Principal 123, Madrid, Madrid, 28001',
   totalStock: 42,
 };
 
@@ -178,10 +183,22 @@ describe('HttpWarehouseRepository', () => {
 
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual({ name: 'Almacén Norte', address: 'Calle Nueva 456' });
-      req.flush({ ...WAREHOUSE_DTO, name: 'Almacén Norte', address: 'Calle Nueva 456' });
+      req.flush({
+        ...WAREHOUSE_DTO,
+        name: 'Almacén Norte',
+        address: {
+          street: 'Calle Nueva 456',
+          city: 'Madrid',
+          province: 'Madrid',
+          postal_code: '28002',
+        },
+      });
 
       const result = await promise;
-      expect(result).toMatchObject({ name: 'Almacén Norte', address: 'Calle Nueva 456' });
+      expect(result).toMatchObject({
+        name: 'Almacén Norte',
+        address: 'Calle Nueva 456, Madrid, Madrid, 28002',
+      });
     });
 
     it('should throw WarehouseNotFoundError on 404', async () => {

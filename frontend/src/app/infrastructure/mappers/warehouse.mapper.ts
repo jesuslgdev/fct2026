@@ -5,6 +5,7 @@ import {
 } from '@domain/models/warehouse.model';
 import {
   WarehouseDto,
+  WarehouseAddressDto,
   CreateWarehouseDto,
   UpdateWarehouseDto,
 } from '@infrastructure/dtos/warehouse.dto';
@@ -14,9 +15,13 @@ export class WarehouseMapper {
     return {
       warehouseId: dto.warehouse_id,
       name: dto.name,
-      address: dto.address,
+      address: WarehouseMapper.fromAddressDto(dto.address),
       totalStock: dto.total_stock,
     };
+  }
+
+  private static fromAddressDto(dto: WarehouseAddressDto): string {
+    return [dto.street, dto.city, dto.province, dto.postal_code].join(', ');
   }
 
   static toCreateDto(payload: CreateWarehousePayload): CreateWarehouseDto {
