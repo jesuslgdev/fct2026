@@ -95,7 +95,7 @@ export class HttpProviderRepository implements ProviderRepository {
         query['q'] = pageEvent.query;
       }
       if (pageEvent?.status) query['status'] = pageEvent.status;
-      if (pageEvent?.isActive !== undefined) query['is_active'] = pageEvent.isActive;
+      if (pageEvent?.isActive !== undefined) query['active'] = pageEvent.isActive;
 
       const response = await firstValueFrom(
         this.http.get<ProvidersPageDto>(BASE_URL, { params: query }),

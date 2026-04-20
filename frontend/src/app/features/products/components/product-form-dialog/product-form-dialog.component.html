@@ -1,6 +1,7 @@
 <ui-dialog
   [(visible)]="store.dialogVisible"
   [header]="dialogTitle()"
+  [closeOnConfirm]="false"
   [confirmLabel]="isViewMode() ? '' : 'Guardar'"
   [cancelLabel]="isViewMode() ? 'Cerrar' : 'Cancelar'"
   [confirmLoading]="store.loading()"
@@ -10,18 +11,6 @@
 >
   <form [formGroup]="form" class="dialog-form">
     <div class="dialog-form-grid">
-      <label class="dialog-field">
-        <span class="dialog-field-label">Codigo</span>
-        <ui-input
-          formControlName="code"
-          placeholder="PRD-0001"
-          [state]="code.invalid && code.touched ? 'error' : 'default'"
-        />
-        @if (code.invalid && code.touched) {
-          <span class="dialog-field-error">El codigo es obligatorio.</span>
-        }
-      </label>
-
       <div class="dialog-field">
         <span class="dialog-field-label">Categoria</span>
         <p-select
@@ -93,8 +82,9 @@
       />
     </label>
 
-    @if (store.codeValidationError()) {
-      <span class="dialog-field-error">{{ store.codeValidationError() }}</span>
+    @if (store.dialogError(); as dialogError) {
+      <span class="dialog-field-error" role="alert">{{ dialogError }}</span>
     }
+
   </form>
 </ui-dialog>
