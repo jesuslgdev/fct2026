@@ -380,6 +380,9 @@ from modules.warehouse.infrastructure.repos.stock_movement_repository import (
 from modules.warehouse.infrastructure.repos.stock_output_recorder import (
     StockOutputRecorder,
 )
+from modules.warehouse.infrastructure.repos.stock_reservation_recorder import (
+    StockReservationRecorder,
+)
 from modules.warehouse.infrastructure.repos.warehouse_repository import (
     WarehouseRepository,
 )
@@ -855,15 +858,16 @@ async def get_update_sale_use_case(
 async def get_advance_sale_status_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IAdvanceSaleStatusUseCase:
+    stock_repo = WarehouseStockRepository(db)
+    movement_repo = StockMovementRepository(db)
     return AdvanceSaleStatusUseCase(
         sale_repo=SaleRepository(db),
-        product_reader=ProductRepository(db),
+        stock_reader=stock_repo,
+        stock_reservation_recorder=StockReservationRecorder(stock_repo=stock_repo),
         stock_output_recorder=StockOutputRecorder(
-            stock_repo=WarehouseStockRepository(db),
-            movement_repo=StockMovementRepository(db),
+            stock_repo=stock_repo,
+            movement_repo=movement_repo,
         ),
-        stock_entry_recorder=StockEntryRecorder(
-            stock_repo=WarehouseStockRepository(db),
-            movement_repo=StockMovementRepository(db),
-        ),
+        user_reader=UserRepository(db),
+        client_reader=ClientRepository(db),
     )

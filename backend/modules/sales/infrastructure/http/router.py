@@ -104,6 +104,8 @@ async def list_sales(
                 status=sale.status,
                 allowed_transitions=allowed_next(sale.status),
                 sale_date=sale.sale_date,
+                delivery_address=sale.delivery_address,
+                created_at=sale.created_at,
                 total=sale.total,
             )
             for sale, client_name, creator_name in result.items

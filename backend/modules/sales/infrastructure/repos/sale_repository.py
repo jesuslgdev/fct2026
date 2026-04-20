@@ -83,6 +83,7 @@ class SaleRepository(ISaleRepository, ISaleReader):
                 product_id=line["product_id"],
                 quantity=line["quantity"],
                 unit_price=line["unit_price"],
+                discount=line.get("discount", Decimal("0")),
                 vat_rate=line["vat_rate"],
                 line_subtotal=line["line_subtotal"],
                 line_tax=line["line_tax"],
@@ -102,6 +103,7 @@ class SaleRepository(ISaleRepository, ISaleReader):
     async def add_status_history(self, history: SaleStatusHistory) -> None:
         self._db.add(history)
         await self._db.flush()
+        await self._db.refresh(history)
 
     async def get_by_id(self, sale_id: int) -> Sale | None:
         result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
@@ -139,6 +141,7 @@ class SaleRepository(ISaleRepository, ISaleReader):
                 product_id=line["product_id"],
                 quantity=line["quantity"],
                 unit_price=line["unit_price"],
+                discount=line.get("discount", Decimal("0")),
                 vat_rate=line["vat_rate"],
                 line_subtotal=line["line_subtotal"],
                 line_tax=line["line_tax"],
