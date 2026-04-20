@@ -239,6 +239,7 @@ async def seeded_dashboard_data(db_session: AsyncSession):
             Sale(
                 sale_number=number,
                 client_id=clients[client_idx].client_id,
+                warehouse_id=warehouse.warehouse_id,
                 delivery_address=f"Address {idx}",
                 user_id=sales_user.user_id,
                 sale_date=current_month_start + timedelta(days=idx),
