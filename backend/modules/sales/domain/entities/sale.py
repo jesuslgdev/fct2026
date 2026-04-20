@@ -11,6 +11,7 @@ from shared.infrastructure.database.base_model import Base
 
 if TYPE_CHECKING:
     from modules.sales.domain.entities.sale_line import SaleLine
+    from modules.sales.domain.entities.sale_status_history import SaleStatusHistory
 
 
 class Sale(Base):
@@ -46,3 +47,6 @@ class Sale(Base):
     )
 
     lines: Mapped[list[SaleLine]] = relationship("SaleLine", lazy="selectin")
+    status_history: Mapped[list[SaleStatusHistory]] = relationship(
+        "SaleStatusHistory", lazy="select", order_by="SaleStatusHistory.changed_at"
+    )

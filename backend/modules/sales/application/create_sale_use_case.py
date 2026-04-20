@@ -8,6 +8,7 @@ from modules.sales.domain.interfaces.repositories.i_sale_repository import (
 from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
     ICreateSaleUseCase,
 )
+from modules.sales.domain.sale_status import PENDING
 from shared.domain.interfaces.i_client_reader import IClientReader
 from shared.domain.interfaces.i_product_reader import IProductReader
 from shared.domain.interfaces.i_stock_availability_reader import (
@@ -99,7 +100,7 @@ class CreateSaleUseCase(ICreateSaleUseCase):
             warehouse_id=warehouse_id,
             delivery_address=delivery_address,
             user_id=user_id,
-            status="Pending",
+            status=PENDING,
             subtotal=subtotal,
             taxes=taxes,
             total=total,
