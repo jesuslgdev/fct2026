@@ -1,10 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { TablePageEvent } from 'primeng/table';
 import { Product } from '@domain/models/product.model';
-import {
-  AdjustStockResult,
-  StockDistributionItem,
-} from '@domain/models/stock-distribution.model';
+import { StockDistributionItem } from '@domain/models/stock-distribution.model';
 import {
   InvalidQuantityError,
   ProductNotActiveError,
@@ -81,10 +78,6 @@ export class WarehouseDetailStore {
   readonly stockError = signal<string | null>(null);
   readonly adjustDialogError = signal<string | null>(null);
   readonly adjustDialogVisible = signal(false);
-
-  readonly availableStockItems = computed(() =>
-    this.stockItems().filter((item) => item.availableStock > 0),
-  );
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
 
@@ -246,7 +239,7 @@ export class WarehouseDetailStore {
       newQuantity,
       reason,
     }).subscribe({
-      next: (result) => this.handleAdjustStockSuccess(result),
+      next: () => this.handleAdjustStockSuccess(),
       error: (err) => {
         this.adjustDialogError.set(this.resolveStockErrorMessage(err, 'No se pudo ajustar el stock.'));
         this.adjustingStock.set(false);
@@ -262,36 +255,7 @@ export class WarehouseDetailStore {
     return this.selectedProduct()?.productId ?? null;
   }
 
-  private handleAdjustStockSuccess(result: AdjustStockResult): void {
-    if (this.adjustMode() === 'existing') {
-      this.stockItems.update((items) =>
-        items.map((item) => {
-          if (item.productId !== result.productId) {
-            return item;
-          }
-
-          return {
-            ...item,
-            stock: result.newQuantity,
-            availableStock: result.newQuantity - item.reservedStock,
-          };
-        }),
-      );
-
-      this.warehouse.update((warehouse) =>
-        warehouse
-          ? {
-              ...warehouse,
-              totalStock: warehouse.totalStock + result.difference,
-            }
-          : warehouse,
-      );
-
-      this.adjustingStock.set(false);
-      this.closeAdjustDialog();
-      return;
-    }
-
+  private handleAdjustStockSuccess(): void {
     this.adjustingStock.set(false);
     this.closeAdjustDialog();
     this.loadWarehouse();
