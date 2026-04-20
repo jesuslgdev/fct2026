@@ -41,7 +41,6 @@ class IProductRepository(ABC):
         category_id: int,
         price: Decimal,
         vat_rate: Decimal,
-        stock_current: int,
         stock_min: int,
     ) -> Product:
         """Persist a new product entity."""

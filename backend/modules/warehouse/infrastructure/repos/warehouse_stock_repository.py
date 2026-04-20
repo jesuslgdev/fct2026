@@ -1,7 +1,6 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.dtos.product_stock_overview import WarehouseStockDetail
 from modules.warehouse.domain.dtos.stock_distribution import StockDistributionItem
 from modules.warehouse.domain.entities.warehouse import Warehouse
@@ -10,9 +9,13 @@ from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_reposito
     IWarehouseStockRepository,
 )
 from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.interfaces.i_stock_availability_reader import (
+    IStockAvailabilityReader,
+)
+from shared.infrastructure.database.read_tables import products_table
 
 
-class WarehouseStockRepository(IWarehouseStockRepository):
+class WarehouseStockRepository(IWarehouseStockRepository, IStockAvailabilityReader):
     """SQLAlchemy implementation of the warehouse stock repository."""
 
     def __init__(self, db: AsyncSession) -> None:
@@ -58,6 +61,13 @@ class WarehouseStockRepository(IWarehouseStockRepository):
         )
         return result.scalar_one_or_none()
 
+    async def get_available_stock(self, warehouse_id: int, product_id: int) -> int:
+        """Return available (unreserved) stock for a product in a warehouse."""
+        record = await self.get_by_warehouse_and_product(warehouse_id, product_id)
+        if record is None:
+            return 0
+        return record.available_stock
+
     async def upsert_stock(
         self, warehouse_id: int, product_id: int, new_stock: int
     ) -> WarehouseStock:
@@ -85,17 +95,20 @@ class WarehouseStockRepository(IWarehouseStockRepository):
         page_size: int,
         warehouse_id: int | None = None,
         product_id: int | None = None,
+        search: str | None = None,
     ) -> PaginatedResult[StockDistributionItem]:
         """Return paginated stock distribution with server-side filtering."""
         query = (
             select(
                 WarehouseStock,
                 Warehouse.name.label("warehouse_name"),
-                Product.product_code,
-                Product.name.label("product_name"),
+                products_table.c.product_code,
+                products_table.c.name.label("product_name"),
             )
             .join(Warehouse, WarehouseStock.warehouse_id == Warehouse.warehouse_id)
-            .join(Product, WarehouseStock.product_id == Product.product_id)
+            .join(
+                products_table, WarehouseStock.product_id == products_table.c.product_id
+            )
         )
 
         if warehouse_id is not None:
@@ -104,12 +117,17 @@ class WarehouseStockRepository(IWarehouseStockRepository):
         if product_id is not None:
             query = query.where(WarehouseStock.product_id == product_id)
 
+        if search is not None:
+            query = query.where(products_table.c.name.ilike(f"%{search}%"))
+
         count_query = select(func.count()).select_from(query.subquery())
         total = (await self._db.execute(count_query)).scalar_one()
 
         offset = (page - 1) * page_size
         query = (
-            query.order_by(Warehouse.name, Product.name).offset(offset).limit(page_size)
+            query.order_by(Warehouse.name, products_table.c.name)
+            .offset(offset)
+            .limit(page_size)
         )
 
         result = await self._db.execute(query)

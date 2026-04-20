@@ -5,6 +5,7 @@ import { ClientRepository } from '@domain/repositories/client.repository';
 import {
   ClientAlreadyExistsError,
   ClientApiError,
+  ClientEmailAlreadyExistsError,
   ClientForbiddenError,
   ClientNotFoundError,
   ClientUnauthorizedError,
@@ -38,6 +39,7 @@ export class HttpClientRepository implements ClientRepository {
     }
 
     const message = this.extractErrorMessage(err);
+    const errorCode = this.extractErrorCode(err);
 
     switch (err.status) {
       case 400:
@@ -50,6 +52,9 @@ export class HttpClientRepository implements ClientRepository {
       case 404:
         return new ClientNotFoundError(message ?? 'Client not found.');
       case 409:
+        if (errorCode === 4104 || (message ?? '').toLowerCase().includes('email')) {
+          return new ClientEmailAlreadyExistsError(message ?? 'A client with this email already exists.');
+        }
         return new ClientAlreadyExistsError(message ?? 'A client with this tax ID already exists.');
       default:
         return new ClientApiError(message ?? 'Unexpected clients API error.');
@@ -66,6 +71,15 @@ export class HttpClientRepository implements ClientRepository {
       const rawDetail = payload['detail'];
       if (typeof rawMessage === 'string' && rawMessage.trim()) return rawMessage;
       if (typeof rawDetail === 'string' && rawDetail.trim()) return rawDetail;
+    }
+    return undefined;
+  }
+
+  private extractErrorCode(err: HttpErrorResponse): number | undefined {
+    if (err.error && typeof err.error === 'object') {
+      const payload = err.error as Record<string, unknown>;
+      const rawCode = payload['error_code'];
+      return typeof rawCode === 'number' ? rawCode : undefined;
     }
     return undefined;
   }

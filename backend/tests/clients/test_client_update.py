@@ -9,7 +9,7 @@ async def _seed_client(db_session: AsyncSession) -> Client:
     client = Client(
         name="Original Name",
         tax_id="12345678A",
-        address="Calle Mayor 1",
+        street="Calle Mayor 1",
         city="Madrid",
         province="Madrid",
         postal_code="28001",
@@ -27,10 +27,12 @@ async def test_update_client_success(
     client = await _seed_client(db_session)
     payload = {
         "name": "Updated Name",
-        "address": "Nueva Calle 99",
-        "city": "Barcelona",
-        "province": "Barcelona",
-        "postal_code": "08001",
+        "address": {
+            "street": "Nueva Calle 99",
+            "city": "Barcelona",
+            "province": "Barcelona",
+            "postal_code": "08001",
+        },
         "phone": "611111111",
         "email": "updated@example.com",
     }
@@ -41,6 +43,7 @@ async def test_update_client_success(
     data = response.json()
     assert data["name"] == "Updated Name"
     assert data["city"] == "Barcelona"
+    assert data["address"]["street"] == "Nueva Calle 99"
     assert data["email"] == "updated@example.com"
 
 
@@ -65,6 +68,41 @@ async def test_update_client_not_found(sales_manager_client: AsyncClient):
     )
     assert response.status_code == 404
     assert response.json()["error_code"] == 4101
+
+
+async def test_update_client_duplicate_email(
+    sales_manager_client: AsyncClient, db_session: AsyncSession
+):
+    source_client = await _seed_client(db_session)
+    target_client = Client(
+        name="Second Client",
+        tax_id="87654321B",
+        street="Avenida 2",
+        city="Sevilla",
+        province="Sevilla",
+        postal_code="41001",
+        phone="622222222",
+        email="second@example.com",
+    )
+    db_session.add(target_client)
+    await db_session.flush()
+
+    response = await sales_manager_client.put(
+        f"/api/v1/clients/{source_client.client_id}",
+        json={"email": "second@example.com"},
+    )
+    assert response.status_code == 409
+    assert response.json()["error_code"] == 4104
+
+
+async def test_update_client_invalid_email_format(
+    sales_manager_client: AsyncClient, db_session: AsyncSession
+):
+    client = await _seed_client(db_session)
+    response = await sales_manager_client.put(
+        f"/api/v1/clients/{client.client_id}", json={"email": "invalid-email"}
+    )
+    assert response.status_code == 422
 
 
 async def test_update_client_unauthenticated(unauthenticated_client: AsyncClient):

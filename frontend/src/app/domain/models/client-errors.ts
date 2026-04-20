@@ -49,6 +49,14 @@ export class ClientForbiddenError extends Error {
   }
 }
 
+export class ClientEmailAlreadyExistsError extends Error {
+  override readonly name = 'ClientEmailAlreadyExistsError';
+
+  constructor(message = 'A client with this email already exists.') {
+    super(message);
+  }
+}
+
 export class ClientApiError extends Error {
   override readonly name = 'ClientApiError';
 

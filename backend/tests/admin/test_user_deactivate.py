@@ -33,9 +33,10 @@ async def test_deactivate_user_success(
 
     await db_session.refresh(user)
     assert user.is_active is False
-    assert user.first_name == "DELETED"
-    assert user.last_name == "DELETED"
-    assert user.email == f"deleted_{user.user_id}@deleted.com"
+    assert user.is_deleted is False
+    assert user.first_name == "Alice"
+    assert user.last_name == "Smith"
+    assert user.email == "alice@example.com"
 
 
 async def test_deactivate_user_already_inactive(

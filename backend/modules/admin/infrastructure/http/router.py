@@ -54,7 +54,6 @@ from modules.admin.domain.interfaces.use_cases.users.i_update_user_use_case impo
     IUpdateUserUseCase,
 )
 from modules.admin.infrastructure.http.schemas import (
-    ActivateUserDTO,
     CreateDepartmentDTO,
     CreateUserDTO,
     DepartmentDTO,
@@ -232,7 +231,7 @@ async def deactivate_user(
     use_case: IDeactivateUserUseCase = Depends(get_deactivate_user_use_case),
     _: dict = Depends(require_admin),
 ):
-    """Deactivate a user and erase their personal data."""
+    """Deactivate a user. Data is preserved and the user can be reactivated."""
     await use_case.execute(user_id)
     return Response(status_code=204)
 
@@ -240,12 +239,11 @@ async def deactivate_user(
 @router.patch("/users/{user_id}/activate", status_code=204, tags=["Admin - Users"])
 async def activate_user(
     user_id: int,
-    body: ActivateUserDTO,
     use_case: IActivateUserUseCase = Depends(get_activate_user_use_case),
     _: dict = Depends(require_admin),
 ):
-    """Activate a user, restoring their personal data."""
-    await use_case.execute(user_id, body.first_name, body.last_name, body.email)
+    """Reactivate a previously deactivated user."""
+    await use_case.execute(user_id)
     return Response(status_code=204)
 
 
@@ -255,6 +253,6 @@ async def delete_user(
     use_case: IDeleteUserUseCase = Depends(get_delete_user_use_case),
     _: dict = Depends(require_admin),
 ):
-    """Permanently delete a user with no purchase history."""
+    """Delete a user. Anonymizes data if referenced elsewhere, hard-deletes otherwise."""
     await use_case.execute(user_id)
     return Response(status_code=204)

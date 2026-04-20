@@ -11,7 +11,7 @@ from modules.warehouse.domain.interfaces.use_cases.i_delete_warehouse_use_case i
 
 
 class DeleteWarehouseUseCase(IDeleteWarehouseUseCase):
-    """Deletes a warehouse if it has no stock associated."""
+    """Deletes a warehouse only if it has no stock records or movement history."""
 
     def __init__(self, repo: IWarehouseRepository) -> None:
         self._repo = repo
@@ -21,8 +21,7 @@ class DeleteWarehouseUseCase(IDeleteWarehouseUseCase):
         if warehouse is None:
             raise WarehouseException(WarehouseExceptionInfo.WAREHOUSE_NOT_FOUND)
 
-        total_stock = await self._repo.get_total_stock(warehouse_id)
-        if total_stock > 0:
+        if await self._repo.has_stock_history(warehouse_id):
             raise WarehouseException(WarehouseExceptionInfo.WAREHOUSE_HAS_STOCK)
 
         await self._repo.delete(warehouse_id)

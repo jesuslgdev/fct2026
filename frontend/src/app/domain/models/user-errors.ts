@@ -41,6 +41,46 @@ export class UserAlreadyExistsError extends Error {
   }
 }
 
+export class UserDepartmentNotFoundError extends Error {
+  override readonly name = 'UserDepartmentNotFoundError';
+
+  constructor(message = 'Department not found.') {
+    super(message);
+  }
+}
+
+export class UserDepartmentRequiredError extends Error {
+  override readonly name = 'UserDepartmentRequiredError';
+
+  constructor(message = 'Department is required for this role.') {
+    super(message);
+  }
+}
+
+export class UserAlreadyActiveError extends Error {
+  override readonly name = 'UserAlreadyActiveError';
+
+  constructor(message = 'User is already active.') {
+    super(message);
+  }
+}
+
+export class UserAlreadyInactiveError extends Error {
+  override readonly name = 'UserAlreadyInactiveError';
+
+  constructor(message = 'User is already inactive.') {
+    super(message);
+  }
+}
+
+export class UserDeletedError extends Error {
+  override readonly name = 'UserDeletedError';
+
+  constructor(message = 'User has been deleted.') {
+    super(message);
+  }
+}
+
 export class UserApiError extends Error {
   override readonly name = 'UserApiError';
 

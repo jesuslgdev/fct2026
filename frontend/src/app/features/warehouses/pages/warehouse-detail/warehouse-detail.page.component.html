@@ -1,0 +1,133 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Detalle de almacen</h1>
+    <ui-button
+      label="Volver"
+      icon="pi pi-arrow-left"
+      variant="outline"
+      (clicked)="goBack()"
+    />
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (store.warehouse(); as warehouse) {
+    <ui-card styleClass="shadow-sm">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div class="flex gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-surface-100 text-surface-700">
+              <i class="pi pi-warehouse text-xl" aria-hidden="true"></i>
+            </div>
+
+            <div class="min-w-0">
+              <h2 class="text-xl font-semibold text-surface-900">{{ warehouse.name }}</h2>
+              <p class="mt-1 text-sm leading-6 text-surface-600">{{ warehouse.address }}</p>
+            </div>
+          </div>
+
+          <ui-badge
+            [label]="warehouse.totalStock === 0 ? 'Sin stock' : 'Con stock'"
+            [variant]="warehouse.totalStock === 0 ? 'secondary' : 'success'"
+            [icon]="warehouse.totalStock === 0 ? 'pi pi-box' : 'pi pi-check-circle'"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Nombre</span>
+            <p class="mt-2 font-medium text-surface-900">{{ warehouse.name }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Direccion</span>
+            <p class="mt-2 leading-6 text-surface-800">{{ warehouse.address }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Stock total</span>
+            <p class="mt-2 text-2xl font-semibold text-surface-900">{{ warehouse.totalStock }}</p>
+          </div>
+        </div>
+      </div>
+    </ui-card>
+  }
+
+  <p-tabs value="stock">
+    <p-tablist>
+      <p-tab value="stock">Stock</p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <p-tabpanel value="stock">
+        @if (store.stockError(); as stockError) {
+          <p class="warning-text" role="alert">{{ stockError }}</p>
+        }
+
+        <div class="filters-row">
+          <ui-input
+            type="text"
+            placeholder="Buscar por nombre de producto..."
+            styleClass="flex-1 min-w-64"
+            [ngModel]="store.productNameFilter()"
+            (valueChange)="store.onStockSearch($event)"
+          />
+          <ui-button
+            label="Añadir producto"
+            icon="pi pi-plus"
+            (clicked)="store.openInitialStockDialog()"
+          />
+        </div>
+
+        <ui-table
+          [value]="store.availableStockItems()"
+          [loading]="store.loadingStock()"
+          [paginator]="true"
+          [lazy]="true"
+          [rows]="store.pageSize()"
+          [totalRecords]="store.total()"
+          [rowsPerPageOptions]="[20, 50, 100]"
+          tableClass="ui-table-base ui-table-compact ui-table-bordered mt-4"
+          dataKey="productId"
+          (page)="store.onStockPageChange($event)"
+        >
+          <ng-template #header>
+            <tr>
+              <th>Producto</th>
+              <th>Stock disponible</th>
+              <th>Acciones</th>
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-item>
+            <tr>
+              <td>{{ item.productName }}</td>
+              <td>{{ item.availableStock }}</td>
+              <td>
+                <ui-button
+                  label="Ajustar"
+                  icon="pi pi-pencil"
+                  variant="ghost"
+                  size="sm"
+                  (clicked)="store.openAdjustExistingDialog(item)"
+                />
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template #emptymessage>
+            <tr>
+              <td colspan="3" class="empty-state">
+                No se encontraron productos con stock disponible.
+              </td>
+            </tr>
+          </ng-template>
+        </ui-table>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</section>
+
+<app-stock-adjustment-dialog />

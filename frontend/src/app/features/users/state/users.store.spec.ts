@@ -7,7 +7,6 @@ import { AuthService } from '@core/services/auth.service';
 import { UserRepository } from '@domain/repositories/user.repository';
 import {
   User,
-  ActivateUserPayload,
   CreateUserPayload,
   UpdateUserPayload,
   UserQueryParams,
@@ -57,7 +56,8 @@ class MockUserRepository implements UserRepository {
   createUser = vi.fn<(payload: CreateUserPayload) => Observable<User>>();
   updateUser = vi.fn<(id: number, payload: UpdateUserPayload) => Observable<User>>();
   deactivateUser = vi.fn<(id: number) => Observable<void>>();
-  activateUser = vi.fn<(id: number, payload: ActivateUserPayload) => Observable<void>>();
+  activateUser = vi.fn<(id: number) => Observable<void>>();
+  deleteUser = vi.fn<(id: number) => Observable<void>>();
   getDepartments = vi.fn<() => Observable<Department[]>>();
 }
 
@@ -117,7 +117,7 @@ describe('UsersStore', () => {
 
     await store.loadUsers();
 
-    expect(store.error()).toBe('No tienes permisos para realizar esta acción.');
+    expect(store.error()).toBe('No tienes permisos para realizar esta accion.');
   });
 
   it('maps validation users error to backend message', async () => {
@@ -149,16 +149,14 @@ describe('UsersStore', () => {
     repo.getUsers.mockReturnValueOnce(of({ data: [USER_A], total: 1, page: 1, pageSize: 20 }));
     await store.loadUsers();
     
-    // Mock user creation
     repo.createUser.mockReturnValueOnce(of(USER_B));
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
     
-    // Open dialog and save user
     store.openCreateDialog();
     await store.saveUser(payload);
 
     expect(repo.createUser).toHaveBeenCalledWith(payload);
-    expect(store.users()).toEqual([USER_A, USER_B]);
-    expect(store.total()).toBe(2);
+    expect(refreshSpy).toHaveBeenCalledOnce();
     expect(store.dialogVisible()).toBe(false);
     expect(store.selectedUser()).toBeNull();
   });
@@ -185,7 +183,7 @@ describe('UsersStore', () => {
     await store.loadUsers();
 
     repo.deactivateUser.mockReturnValueOnce(of(void 0));
-    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
     
     store.requestToggleStatus(USER_A);
     await store.confirmToggleStatus();
@@ -196,7 +194,7 @@ describe('UsersStore', () => {
     expect(store.userToToggle()).toBeNull();
   });
 
-  it('opens reactivation dialog when requesting status change on inactive user', () => {
+  it('opens status confirmation when requesting status change on inactive user', () => {
     const inactiveUser: User = {
       ...USER_A,
       id: 10,
@@ -207,8 +205,7 @@ describe('UsersStore', () => {
 
     store.requestToggleStatus(inactiveUser);
 
-    expect(store.reactivateDialogVisible()).toBe(true);
-    expect(store.confirmDialogVisible()).toBe(false);
+    expect(store.confirmDialogVisible()).toBe(true);
     expect(store.userToToggle()).toEqual(inactiveUser);
   });
 
@@ -220,32 +217,50 @@ describe('UsersStore', () => {
       lastName: null,
       email: null,
     };
-    const payload: ActivateUserPayload = {
-      firstName: 'Ana',
-      lastName: 'Garcia',
-      email: 'ana@example.com',
-    };
 
     store.requestToggleStatus(inactiveUser);
     repo.activateUser.mockReturnValueOnce(of(void 0));
-    const refreshSpy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
 
-    await store.confirmReactivateUser(payload);
+    await store.confirmToggleStatus();
 
-    expect(repo.activateUser).toHaveBeenCalledWith(inactiveUser.id, payload);
+    expect(repo.activateUser).toHaveBeenCalledWith(inactiveUser.id);
     expect(refreshSpy).toHaveBeenCalledOnce();
-    expect(store.reactivateDialogVisible()).toBe(false);
+    expect(store.confirmDialogVisible()).toBe(false);
     expect(store.userToToggle()).toBeNull();
   });
 
+  it('deletes a user and refreshes the list', async () => {
+    store.requestDeleteUser(USER_A);
+    repo.deleteUser.mockReturnValueOnce(of(void 0));
+    const refreshSpy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
+
+    await store.confirmDeleteUser();
+
+    expect(repo.deleteUser).toHaveBeenCalledWith(USER_A.id);
+    expect(refreshSpy).toHaveBeenCalledOnce();
+    expect(store.deleteDialogVisible()).toBe(false);
+    expect(store.userToDelete()).toBeNull();
+  });
+
   it('search resets page and triggers load', () => {
-    const spy = vi.spyOn(store, 'loadUsers').mockResolvedValue();
+    const spy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
     store.page.set(5);
 
     store.onSearch('ana');
 
     expect(store.searchQuery()).toBe('ana');
     expect(store.page()).toBe(1);
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
+  it('page change updates pagination and triggers load', () => {
+    const spy = vi.spyOn(store, 'loadUsers').mockImplementation(() => undefined);
+
+    store.onPageChange({ first: 20, rows: 10 });
+
+    expect(store.page()).toBe(3);
+    expect(store.pageSize()).toBe(10);
     expect(spy).toHaveBeenCalledOnce();
   });
 
