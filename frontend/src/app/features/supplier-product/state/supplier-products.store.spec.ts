@@ -8,7 +8,7 @@ import { UserPermission } from '@domain/enums/user-permission.enum';
 import { UserRole } from '@domain/enums/user-role.enum';
 import { AuthUser } from '@domain/models/auth-user.model';
 import { Product } from '@domain/models/product.model';
-import { PagedResult, SupplierProduct } from '@domain/models/supplier-product.model';
+import { ImportResult, PagedResult, SupplierProduct } from '@domain/models/supplier-product.model';
 import { SupplierProductDuplicateError } from '@domain/models/supplier-product-errors';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
@@ -97,10 +97,12 @@ describe('SupplierProductsStore', () => {
   let store: SupplierProductsStore;
   let addProductToSupplierUseCase: MockAddProductToSupplierUseCase;
   let getSupplierProductsUseCase: MockGetSupplierProductsUseCase;
+  let importSupplierProductsUseCase: MockImportSupplierProductsUseCase;
 
   beforeEach(() => {
     addProductToSupplierUseCase = new MockAddProductToSupplierUseCase();
     getSupplierProductsUseCase = new MockGetSupplierProductsUseCase();
+    importSupplierProductsUseCase = new MockImportSupplierProductsUseCase();
 
     TestBed.configureTestingModule({
       providers: [
@@ -110,7 +112,7 @@ describe('SupplierProductsStore', () => {
         { provide: AddProductToSupplierUseCase, useValue: addProductToSupplierUseCase },
         { provide: UpdateSupplierProductPriceUseCase, useClass: MockUpdateSupplierProductPriceUseCase },
         { provide: RemoveProductFromSupplierUseCase, useClass: MockRemoveProductFromSupplierUseCase },
-        { provide: ImportSupplierProductsUseCase, useClass: MockImportSupplierProductsUseCase },
+        { provide: ImportSupplierProductsUseCase, useValue: importSupplierProductsUseCase },
         { provide: DownloadTemplateUseCase, useClass: MockDownloadTemplateUseCase },
         { provide: GetProductsUseCase, useClass: MockGetProductsUseCase },
       ],
@@ -173,5 +175,60 @@ describe('SupplierProductsStore', () => {
 
     expect(store.addProductDialogError()).toBeNull();
     expect(store.addProductDialogVisible()).toBe(false);
+  });
+
+  it('translates exact import validation errors before storing the result', async () => {
+    const importResult: ImportResult = {
+      total: 1,
+      created: 0,
+      errors: 1,
+      errorDetail: [{ row: 2, reason: 'Invalid price format' }],
+    };
+    importSupplierProductsUseCase.execute.mockReturnValueOnce(of(importResult));
+    store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
+
+    await store.importSupplierProducts();
+
+    expect(store.importResult()?.errorDetail).toEqual([
+      { row: 2, reason: 'Formato de precio invalido.' },
+    ]);
+  });
+
+  it('translates dynamic import validation errors before storing the result', async () => {
+    const importResult: ImportResult = {
+      total: 2,
+      created: 0,
+      errors: 2,
+      errorDetail: [
+        { row: 3, reason: 'Product with code PRD-404 not found' },
+        { row: 4, reason: 'Association already exists for product PRD-001' },
+      ],
+    };
+    importSupplierProductsUseCase.execute.mockReturnValueOnce(of(importResult));
+    store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
+
+    await store.importSupplierProducts();
+
+    expect(store.importResult()?.errorDetail).toEqual([
+      { row: 3, reason: 'Producto con codigo PRD-404 no encontrado.' },
+      { row: 4, reason: 'La asociacion ya existe para el producto PRD-001.' },
+    ]);
+  });
+
+  it('keeps unknown import validation errors unchanged', async () => {
+    const importResult: ImportResult = {
+      total: 1,
+      created: 0,
+      errors: 1,
+      errorDetail: [{ row: 2, reason: 'Unexpected import rule from API' }],
+    };
+    importSupplierProductsUseCase.execute.mockReturnValueOnce(of(importResult));
+    store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
+
+    await store.importSupplierProducts();
+
+    expect(store.importResult()?.errorDetail).toEqual([
+      { row: 2, reason: 'Unexpected import rule from API' },
+    ]);
   });
 });

@@ -176,6 +176,56 @@ export class SupplierProductsStore {
     return fallback;
   }
 
+  private translateImportErrorReason(reason: string): string {
+    const exactTranslations: Record<string, string> = {
+      'Invalid or corrupted file': 'Archivo invalido o corrupto.',
+      'File is empty or has no data rows': 'El archivo esta vacio o no contiene filas de datos.',
+      'Invalid headers. Use the provided template': 'Cabeceras invalidas. Usa la plantilla proporcionada.',
+      'Product code is required': 'El codigo de producto es obligatorio.',
+      'Price is required': 'El precio es obligatorio.',
+      'Price must be greater than zero': 'El precio debe ser mayor que cero.',
+      'Price cannot have more than 2 decimal places': 'El precio no puede tener mas de 2 decimales.',
+      'Invalid price format': 'Formato de precio invalido.',
+    };
+
+    const exactTranslation = exactTranslations[reason];
+    if (exactTranslation) {
+      return exactTranslation;
+    }
+
+    const productNotFound = reason.match(/^Product with code (.+) not found$/);
+    if (productNotFound?.[1]) {
+      return `Producto con codigo ${productNotFound[1]} no encontrado.`;
+    }
+
+    const productInactive = reason.match(/^Product (.+) is not active$/);
+    if (productInactive?.[1]) {
+      return `El producto ${productInactive[1]} no esta activo.`;
+    }
+
+    const associationExists = reason.match(/^Association already exists for product (.+)$/);
+    if (associationExists?.[1]) {
+      return `La asociacion ya existe para el producto ${associationExists[1]}.`;
+    }
+
+    const duplicateProductCode = reason.match(/^Duplicate product code in file: (.+)$/);
+    if (duplicateProductCode?.[1]) {
+      return `Codigo de producto duplicado en el archivo: ${duplicateProductCode[1]}.`;
+    }
+
+    return reason;
+  }
+
+  private translateImportResult(result: ImportResult): ImportResult {
+    return {
+      ...result,
+      errorDetail: result.errorDetail.map((error) => ({
+        ...error,
+        reason: this.translateImportErrorReason(error.reason),
+      })),
+    };
+  }
+
   private setAddProductDialogError(message: string): void {
     this.addProductDialogError.set(message);
     this.addProductDialogVisible.set(true);
@@ -477,7 +527,7 @@ export class SupplierProductsStore {
     this.importLoading.set(true);
     try {
       const result = await firstValueFrom(this.importSupplierProductsUseCase.execute(supplierId, { file }));
-      this.importResult.set(result);
+      this.importResult.set(this.translateImportResult(result));
       if (result.errors === 0) {
         await this.fetchSupplierProducts(supplierId);
         this.clearTemplateSelection();
