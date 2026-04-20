@@ -3,9 +3,13 @@ from decimal import Decimal
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.purchases.domain.entities.purchase_line import PurchaseLine
+from modules.purchases.domain.entities.purchase_status_history import (
+    PurchaseStatusHistory,
+)
 from modules.purchases.domain.interfaces.repositories.i_purchase_repository import (
     IPurchaseRepository,
 )
@@ -28,9 +32,9 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
 
     async def _refresh_purchase_with_lines(self, purchase: Purchase) -> Purchase:
         # Ensure server-managed scalar fields (e.g. updated_at via onupdate)
-        # and relationship lines are fully loaded before response serialization.
+        # and relationship collections are fully loaded before serialization.
         await self._db.refresh(purchase)
-        await self._db.refresh(purchase, ["lines"])
+        await self._db.refresh(purchase, ["lines", "status_history"])
         return purchase
 
     async def get_all_paginated(
@@ -93,9 +97,16 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
 
     async def get_by_id(self, purchase_id: int) -> Purchase | None:
-        result = await self._db.execute(
-            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        stmt = (
+            select(Purchase)
+            .where(Purchase.purchase_id == purchase_id)
+            .options(
+                selectinload(Purchase.lines),
+                selectinload(Purchase.status_history),
+            )
+            .execution_options(populate_existing=True)
         )
+        result = await self._db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def generate_purchase_number(self) -> str:
@@ -280,7 +291,11 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         await self._db.delete(purchase)
         await self._db.flush()
 
-    async def advance_status(self, purchase_id: int, new_status: str) -> Purchase:
+    async def advance_status(
+        self,
+        purchase_id: int,
+        new_status: str,
+    ) -> Purchase:
         result = await self._db.execute(
             select(Purchase).where(Purchase.purchase_id == purchase_id)
         )
@@ -289,6 +304,10 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         purchase.status_changed_at = datetime.now(UTC)
         await self._db.flush()
         return await self._refresh_purchase_with_lines(purchase)
+
+    async def add_status_history(self, history: PurchaseStatusHistory) -> None:
+        self._db.add(history)
+        await self._db.flush()
 
     async def has_purchases_for_user(self, user_id: int) -> bool:
         result = await self._db.execute(

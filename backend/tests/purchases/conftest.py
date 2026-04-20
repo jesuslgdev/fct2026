@@ -10,6 +10,9 @@ from main import app
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.purchases.domain.entities.purchase_enriched import PurchaseEnriched
 from modules.purchases.domain.entities.purchase_line import PurchaseLine
+from modules.purchases.domain.entities.purchase_status_history import (
+    PurchaseStatusHistory,
+)
 from shared.domain.dtos.user_session import UserSession
 
 
@@ -47,6 +50,22 @@ def make_purchase_line(**kwargs) -> MagicMock:
     return line
 
 
+def make_purchase_status_history(**kwargs) -> MagicMock:
+    defaults = {
+        "history_id": 1,
+        "purchase_id": 1,
+        "from_status": "Pending",
+        "to_status": "Approved",
+        "changed_at": datetime(2026, 1, 16, tzinfo=UTC),
+        "changed_by_user_id": 3,
+    }
+    defaults.update(kwargs)
+    history = MagicMock(spec=PurchaseStatusHistory)
+    for k, v in defaults.items():
+        setattr(history, k, v)
+    return history
+
+
 def make_purchase(**kwargs) -> MagicMock:
     line = make_purchase_line()
     defaults = {
@@ -65,6 +84,7 @@ def make_purchase(**kwargs) -> MagicMock:
         "created_at": datetime(2026, 1, 15, tzinfo=UTC),
         "updated_at": datetime(2026, 1, 15, tzinfo=UTC),
         "lines": [line],
+        "status_history": [],
     }
     defaults.update(kwargs)
     purchase = MagicMock(spec=Purchase)
