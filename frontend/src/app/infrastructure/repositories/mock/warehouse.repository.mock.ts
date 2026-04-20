@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
-import { Warehouse,
+import {
+  Warehouse,
   CreateWarehousePayload,
   UpdateWarehousePayload,
   WarehouseListResult,
@@ -15,20 +16,38 @@ import {
 const INITIAL_MOCK_WAREHOUSES: Warehouse[] = [
   {
     warehouseId: 1,
-    name: 'Almacén Central',
-    address: 'Calle Principal 123, Madrid',
+    name: 'Almacen Central',
+    address: 'Calle Principal 123, Madrid, Madrid, 28001',
+    addressData: {
+      street: 'Calle Principal 123',
+      city: 'Madrid',
+      province: 'Madrid',
+      postalCode: '28001',
+    },
     totalStock: 150,
   },
   {
     warehouseId: 2,
-    name: 'Almacén Norte',
-    address: 'Polígono Industrial 45, Barcelona',
+    name: 'Almacen Norte',
+    address: 'Poligono Industrial 45, Barcelona, Barcelona, 08001',
+    addressData: {
+      street: 'Poligono Industrial 45',
+      city: 'Barcelona',
+      province: 'Barcelona',
+      postalCode: '08001',
+    },
     totalStock: 75,
   },
   {
     warehouseId: 3,
-    name: 'Almacén Sur',
-    address: 'Avenida de la Industria 789, Valencia',
+    name: 'Almacen Sur',
+    address: 'Avenida de la Industria 789, Valencia, Valencia, 46001',
+    addressData: {
+      street: 'Avenida de la Industria 789',
+      city: 'Valencia',
+      province: 'Valencia',
+      postalCode: '46001',
+    },
     totalStock: 200,
   },
 ];
@@ -58,6 +77,10 @@ export class MockWarehouseRepository implements WarehouseRepository {
     }
   }
 
+  private formatAddress(address: CreateWarehousePayload['address']): string {
+    return [address.street, address.city, address.province, address.postalCode].join(', ');
+  }
+
   getWarehouses(): Observable<WarehouseListResult> {
     return of([...this.warehouses]);
   }
@@ -79,7 +102,8 @@ export class MockWarehouseRepository implements WarehouseRepository {
       const newWarehouse: Warehouse = {
         warehouseId: nextId,
         name: payload.name,
-        address: payload.address,
+        address: this.formatAddress(payload.address),
+        addressData: payload.address,
         totalStock: 0,
       };
       this.warehouses = [...this.warehouses, newWarehouse];
@@ -98,7 +122,8 @@ export class MockWarehouseRepository implements WarehouseRepository {
       const updated: Warehouse = {
         ...existing,
         name: payload.name,
-        address: payload.address,
+        address: this.formatAddress(payload.address),
+        addressData: payload.address,
       };
 
       this.warehouses = this.warehouses.map((w) => (w.warehouseId === warehouseId ? updated : w));

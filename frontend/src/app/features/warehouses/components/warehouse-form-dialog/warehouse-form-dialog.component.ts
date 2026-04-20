@@ -36,11 +36,17 @@ export class WarehouseFormDialogComponent {
 
   readonly form = this.formBuilder.group({
     name: ['', [Validators.required, this.nonBlankValidator, Validators.maxLength(100)]],
-    address: ['', [Validators.required, Validators.maxLength(255)]],
+    address: ['', [Validators.required, this.nonBlankValidator, Validators.maxLength(255)]],
+    city: ['', [Validators.required, this.nonBlankValidator, Validators.maxLength(100)]],
+    province: ['', [Validators.required, this.nonBlankValidator, Validators.maxLength(100)]],
+    postalCode: ['', [Validators.required, this.nonBlankValidator, Validators.maxLength(10)]],
   });
 
   get name() { return this.form.controls.name; }
   get address() { return this.form.controls.address; }
+  get city() { return this.form.controls.city; }
+  get province() { return this.form.controls.province; }
+  get postalCode() { return this.form.controls.postalCode; }
 
   constructor() {
     effect(() => {
@@ -50,7 +56,10 @@ export class WarehouseFormDialogComponent {
       if (mode === 'edit' && warehouse) {
         this.form.patchValue({
           name: warehouse.name,
-          address: warehouse.address,
+          address: warehouse.addressData.street,
+          city: warehouse.addressData.city,
+          province: warehouse.addressData.province,
+          postalCode: warehouse.addressData.postalCode,
         });
       } else {
         this.form.reset();
@@ -69,7 +78,12 @@ export class WarehouseFormDialogComponent {
     if (this.store.dialogMode() === 'create') {
       const payload: CreateWarehousePayload = {
         name: value.name!.trim(),
-        address: value.address!.trim(),
+        address: {
+          street: value.address!.trim(),
+          city: value.city!.trim(),
+          province: value.province!.trim(),
+          postalCode: value.postalCode!.trim(),
+        },
       };
       this.store.saveWarehouse(payload);
       return;
@@ -77,7 +91,12 @@ export class WarehouseFormDialogComponent {
 
     const payload: UpdateWarehousePayload = {
       name: value.name!.trim(),
-      address: value.address!.trim(),
+      address: {
+        street: value.address!.trim(),
+        city: value.city!.trim(),
+        province: value.province!.trim(),
+        postalCode: value.postalCode!.trim(),
+      },
     };
     this.store.saveWarehouse(payload);
   }

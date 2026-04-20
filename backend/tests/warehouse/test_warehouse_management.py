@@ -65,6 +65,17 @@ async def test_create_warehouse_empty_name(admin_client: AsyncClient):
     assert response.status_code == 422
 
 
+async def test_create_warehouse_invalid_postal_code(admin_client: AsyncClient):
+    """Returns 422 when postal code is not exactly 5 digits."""
+    invalid_address = _address("Invalid Postal")
+    invalid_address["postal_code"] = "2800"
+    response = await admin_client.post(
+        BASE, json={"name": "Postal Warehouse", "address": invalid_address}
+    )
+
+    assert response.status_code == 422
+
+
 # ── List ──────────────────────────────────────────────────────────
 
 
@@ -183,6 +194,20 @@ async def test_update_warehouse_not_found(admin_client: AsyncClient):
 
     assert response.status_code == 404
     assert response.json()["error_code"] == 6101
+
+
+async def test_update_warehouse_invalid_postal_code(
+    admin_client: AsyncClient, sample_warehouse: Warehouse
+):
+    """Returns 422 when postal code is not exactly 5 digits."""
+    invalid_address = _address("Updated Address")
+    invalid_address["postal_code"] = "2800A"
+    response = await admin_client.put(
+        f"{BASE}/{sample_warehouse.warehouse_id}",
+        json={"name": "Updated Name", "address": invalid_address},
+    )
+
+    assert response.status_code == 422
 
 
 # ── Delete ────────────────────────────────────────────────────────

@@ -132,9 +132,6 @@ from modules.catalog.domain.interfaces.use_cases.products.i_update_product_use_c
 )
 from modules.catalog.infrastructure.repos.category_repository import CategoryRepository
 from modules.catalog.infrastructure.repos.product_repository import ProductRepository
-from modules.catalog.infrastructure.repos.product_stock_updater import (
-    ProductStockUpdater,
-)
 from modules.clients.application.create_client_use_case import CreateClientUseCase
 from modules.clients.application.get_client_use_case import GetClientUseCase
 from modules.clients.application.list_clients_use_case import ListClientsUseCase
@@ -158,6 +155,13 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.repos.client_repository import ClientRepository
+from modules.dashboard.application.get_dashboard_use_case import GetDashboardUseCase
+from modules.dashboard.domain.interfaces.use_cases.i_get_dashboard_use_case import (
+    IGetDashboardUseCase,
+)
+from modules.dashboard.infrastructure.repos.dashboard_repository import (
+    DashboardRepository,
+)
 from modules.purchases.application.add_purchase_line_use_case import (
     AddPurchaseLineUseCase,
 )
@@ -219,6 +223,25 @@ from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case im
 from modules.purchases.infrastructure.repos.purchase_repository import (
     PurchaseRepository,
 )
+from modules.sales.application.advance_sale_status_use_case import (
+    AdvanceSaleStatusUseCase,
+)
+from modules.sales.application.create_sale_use_case import CreateSaleUseCase
+from modules.sales.application.get_sale_use_case import GetSaleUseCase
+from modules.sales.application.list_sales_use_case import ListSalesUseCase
+from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case import (
+    IAdvanceSaleStatusUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
+    ICreateSaleUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
+    IGetSaleUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_list_sales_use_case import (
+    IListSalesUseCase,
+)
+from modules.sales.infrastructure.repos.sale_repository import SaleRepository
 from modules.suppliers.application.add_product_to_supplier_use_case import (
     AddProductToSupplierUseCase,
 )
@@ -350,12 +373,16 @@ from modules.warehouse.infrastructure.repos.stock_entry_recorder import (
 from modules.warehouse.infrastructure.repos.stock_movement_repository import (
     StockMovementRepository,
 )
+from modules.warehouse.infrastructure.repos.stock_output_recorder import (
+    StockOutputRecorder,
+)
 from modules.warehouse.infrastructure.repos.warehouse_repository import (
     WarehouseRepository,
 )
 from modules.warehouse.infrastructure.repos.warehouse_stock_repository import (
     WarehouseStockRepository,
 )
+from shared.config import settings
 from shared.infrastructure.database.connection import get_db
 
 
@@ -571,6 +598,17 @@ async def get_set_client_active_use_case(
     return SetClientActiveUseCase(ClientRepository(db))
 
 
+async def get_dashboard_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetDashboardUseCase:
+    return GetDashboardUseCase(
+        dashboard_repo=DashboardRepository(db),
+        department_reader=DepartmentRepository(db),
+        stale_days=settings.dashboard_stale_days,
+        recent_limit=settings.dashboard_recent_limit,
+    )
+
+
 async def get_add_product_to_supplier_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IAddProductToSupplierUseCase:
@@ -601,10 +639,10 @@ async def get_list_product_suppliers_use_case(
     return ListProductSuppliersUseCase(SupplierRepository(db))
 
 
-def get_download_supplier_product_template_use_case() -> (
-    IDownloadSupplierProductTemplateUseCase
-):
-    return DownloadSupplierProductTemplateUseCase()
+async def get_download_supplier_product_template_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IDownloadSupplierProductTemplateUseCase:
+    return DownloadSupplierProductTemplateUseCase(ProductRepository(db))
 
 
 async def get_import_supplier_products_use_case(
@@ -689,7 +727,6 @@ async def get_advance_purchase_status_use_case(
         stock_recorder=StockEntryRecorder(
             stock_repo=WarehouseStockRepository(db),
             movement_repo=StockMovementRepository(db),
-            stock_updater=ProductStockUpdater(db),
         ),
     )
 
@@ -760,5 +797,48 @@ async def get_adjust_stock_use_case(
         stock_repo=WarehouseStockRepository(db),
         movement_repo=StockMovementRepository(db),
         product_reader=ProductRepository(db),
-        stock_updater=ProductStockUpdater(db),
+    )
+
+
+# ── Sales ──────────────────────────────────────────────────────────
+
+
+async def get_create_sale_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> ICreateSaleUseCase:
+    return CreateSaleUseCase(
+        sale_repo=SaleRepository(db),
+        client_reader=ClientRepository(db),
+        product_reader=ProductRepository(db),
+        warehouse_reader=WarehouseRepository(db),
+        stock_reader=WarehouseStockRepository(db),
+    )
+
+
+async def get_get_sale_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetSaleUseCase:
+    return GetSaleUseCase(SaleRepository(db))
+
+
+async def get_list_sales_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListSalesUseCase:
+    return ListSalesUseCase(SaleRepository(db))
+
+
+async def get_advance_sale_status_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IAdvanceSaleStatusUseCase:
+    return AdvanceSaleStatusUseCase(
+        sale_repo=SaleRepository(db),
+        product_reader=ProductRepository(db),
+        stock_output_recorder=StockOutputRecorder(
+            stock_repo=WarehouseStockRepository(db),
+            movement_repo=StockMovementRepository(db),
+        ),
+        stock_entry_recorder=StockEntryRecorder(
+            stock_repo=WarehouseStockRepository(db),
+            movement_repo=StockMovementRepository(db),
+        ),
     )

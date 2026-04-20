@@ -175,7 +175,24 @@ async def test_list_product_suppliers_from_catalog(auth_client: AsyncClient):
 
 async def test_download_products_template(auth_client: AsyncClient):
     mock = MagicMock()
-    mock.execute = MagicMock(return_value=b"fake-excel-content")
+    mock.execute = AsyncMock(return_value=b"fake-excel-content")
+    app.dependency_overrides[get_download_supplier_product_template_use_case] = (
+        lambda: (mock)
+    )
+
+    response = await auth_client.get(
+        "/api/v1/suppliers/1/products/template?product_ids=10&product_ids=20"
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"fake-excel-content"
+    assert "spreadsheetml.sheet" in response.headers["content-type"]
+    mock.execute.assert_awaited_once_with(product_ids=[10, 20])
+
+
+async def test_download_products_template_without_product_ids(auth_client: AsyncClient):
+    mock = MagicMock()
+    mock.execute = AsyncMock(return_value=b"fake-excel-content")
     app.dependency_overrides[get_download_supplier_product_template_use_case] = (
         lambda: (mock)
     )
@@ -185,6 +202,7 @@ async def test_download_products_template(auth_client: AsyncClient):
     assert response.status_code == 200
     assert response.content == b"fake-excel-content"
     assert "spreadsheetml.sheet" in response.headers["content-type"]
+    mock.execute.assert_awaited_once_with(product_ids=None)
 
 
 async def test_import_supplier_products(auth_client: AsyncClient):

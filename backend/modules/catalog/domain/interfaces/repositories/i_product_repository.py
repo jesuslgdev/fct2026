@@ -33,6 +33,11 @@ class IProductRepository(ABC):
         ...
 
     @abstractmethod
+    async def get_by_name(self, name: str) -> Product | None:
+        """Fetch a single product by normalized name."""
+        ...
+
+    @abstractmethod
     async def create(
         self,
         product_code: str,
@@ -41,7 +46,6 @@ class IProductRepository(ABC):
         category_id: int,
         price: Decimal,
         vat_rate: Decimal,
-        stock_current: int,
         stock_min: int,
     ) -> Product:
         """Persist a new product entity."""
