@@ -1,0 +1,98 @@
+<ui-dialog
+  [(visible)]="store.dialogVisible"
+  [header]="dialogTitle()"
+  [confirmLabel]="isViewMode() ? '' : 'Guardar'"
+  [cancelLabel]="isViewMode() ? 'Cerrar' : 'Cancelar'"
+  [confirmLoading]="store.loading()"
+  [confirmDisabled]="!isViewMode() && form.invalid"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+>
+  <form [formGroup]="form" class="dialog-form">
+    <div class="dialog-form-grid">
+      <label class="dialog-field">
+        <span class="dialog-field-label">Codigo</span>
+        <ui-input
+          formControlName="code"
+          placeholder="PRD-0001"
+          [state]="code.invalid && code.touched ? 'error' : 'default'"
+        />
+        @if (code.invalid && code.touched) {
+          <span class="dialog-field-error">El codigo es obligatorio.</span>
+        }
+      </label>
+
+      <div class="dialog-field">
+        <span class="dialog-field-label">Categoria</span>
+        <p-select
+          formControlName="categoryId"
+          [options]="store.categories()"
+          optionLabel="name"
+          optionValue="categoryId"
+          placeholder="Selecciona una categoria"
+          styleClass="w-full"
+          appendTo="body"
+        />
+        @if (categoryId.invalid && categoryId.touched) {
+          <span class="dialog-field-error">La categoria es obligatoria.</span>
+        }
+      </div>
+    </div>
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Nombre</span>
+      <ui-input
+        formControlName="name"
+        placeholder="Nombre del producto"
+        [state]="name.invalid && name.touched ? 'error' : 'default'"
+      />
+      @if (name.invalid && name.touched) {
+        <span class="dialog-field-error">El nombre es obligatorio.</span>
+      }
+    </label>
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Descripcion</span>
+      <ui-input
+        formControlName="description"
+        placeholder="Descripcion breve del producto"
+        [state]="description.invalid && description.touched ? 'error' : 'default'"
+      />
+      @if (description.invalid && description.touched) {
+        <span class="dialog-field-error">La descripcion es obligatoria.</span>
+      }
+    </label>
+
+    <div class="dialog-form-grid">
+      <label class="dialog-field">
+        <span class="dialog-field-label">Precio</span>
+        <ui-input
+          formControlName="price"
+          type="number"
+          placeholder="0"
+          [state]="price.invalid && price.touched ? 'error' : 'default'"
+        />
+        @if (price.touched && price.hasError('required')) {
+          <span class="dialog-field-error">El precio es obligatorio.</span>
+        }
+        @if (price.touched && price.hasError('min')) {
+          <span class="dialog-field-error">El precio no puede ser menor ni igual a 0.</span>
+        }
+      </label>
+    </div>
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Stock minimo</span>
+      <ui-input
+        formControlName="minStock"
+        type="number"
+        placeholder="0"
+        [state]="minStock.invalid && minStock.touched ? 'error' : 'default'"
+      />
+    </label>
+
+    @if (store.codeValidationError()) {
+      <span class="dialog-field-error">{{ store.codeValidationError() }}</span>
+    }
+  </form>
+</ui-dialog>

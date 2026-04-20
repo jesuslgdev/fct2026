@@ -24,7 +24,7 @@ from shared.constants import (
 COLUMN_MAP = {
     "Nombre": "name",
     "CIF": "tax_id",
-    "Dirección": "address",
+    "Dirección": "street",
     "Ciudad": "city",
     "Provincia": "province",
     "Código Postal": "postal_code",
@@ -39,7 +39,7 @@ PHONE_REGEX = re.compile(PHONE_PATTERN)
 
 MAX_LENGTHS = {
     "name": 150,
-    "address": 255,
+    "street": 255,
     "city": 100,
     "province": 100,
     "email": 150,

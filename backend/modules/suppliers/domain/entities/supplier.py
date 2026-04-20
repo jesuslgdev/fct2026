@@ -1,8 +1,9 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, composite, mapped_column
 
+from shared.domain.dtos.address import Address
 from shared.infrastructure.database.base_model import Base
 
 
@@ -12,10 +13,13 @@ class Supplier(Base):
     supplier_id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     tax_id: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
-    address: Mapped[str] = mapped_column(String(300), nullable=False)
+    street: Mapped[str] = mapped_column(String(300), nullable=False)
     city: Mapped[str] = mapped_column(String(100), nullable=False)
     province: Mapped[str] = mapped_column(String(100), nullable=False)
     postal_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    address_data: Mapped[Address] = composite(
+        Address, street, city, province, postal_code
+    )
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

@@ -24,6 +24,20 @@ export type DialogMode = 'create' | 'edit';
 
 @Injectable()
 export class WarehousesStore {
+  private readonly warehouseValidationTranslations = new Map<string, string>([
+    ['Name is required.', 'El nombre es obligatorio.'],
+    ['Name must be between 2 and 100 characters.', 'El nombre debe tener entre 2 y 100 caracteres.'],
+    ['Street is required.', 'La direccion es obligatoria.'],
+    ['Street must be between 5 and 255 characters.', 'La direccion debe tener entre 5 y 255 caracteres.'],
+    ['City is required.', 'La ciudad es obligatoria.'],
+    ['City cannot exceed 100 characters.', 'La ciudad no puede superar 100 caracteres.'],
+    ['Province is required.', 'La provincia es obligatoria.'],
+    ['Province cannot exceed 100 characters.', 'La provincia no puede superar 100 caracteres.'],
+    ['Postal code is required.', 'El codigo postal es obligatorio.'],
+    ['Postal code cannot exceed 10 characters.', 'El codigo postal no puede superar 10 caracteres.'],
+    ['Warehouse ID must be a positive integer.', 'El identificador del almacen debe ser un entero positivo.'],
+  ]);
+
   private readonly authService = inject(AuthService);
   private readonly getWarehousesUseCase = inject(GetWarehousesUseCase);
   private readonly createWarehouseUseCase = inject(CreateWarehouseUseCase);
@@ -112,7 +126,7 @@ export class WarehousesStore {
       const current = this.selectedWarehouse()!;
       const updatePayload: UpdateWarehousePayload = {
         name: payload.name ?? current.name,
-        address: payload.address ?? current.address,
+        address: payload.address ?? current.addressData,
       };
 
       this.updateWarehouseUseCase.execute(current.warehouseId, updatePayload).subscribe({
@@ -172,7 +186,7 @@ export class WarehousesStore {
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof WarehouseValidationError) {
-      return err.message || 'Por favor, revisa los datos enviados.';
+      return this.translateWarehouseValidationError(err, 'Por favor, revisa los datos enviados.');
     }
 
     if (err instanceof WarehouseAlreadyExistsError) {
@@ -200,5 +214,9 @@ export class WarehousesStore {
     }
 
     return fallback;
+  }
+
+  private translateWarehouseValidationError(err: WarehouseValidationError, fallback: string): string {
+    return this.warehouseValidationTranslations.get(err.message) ?? (err.message || fallback);
   }
 }

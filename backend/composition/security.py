@@ -103,3 +103,4 @@ def require_department_or_admin(department_name: str):
 
 
 require_purchases_department_or_admin = require_department_or_admin("Purchases")
+require_sales_department_or_admin = require_department_or_admin("Sales")

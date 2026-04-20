@@ -19,13 +19,21 @@ import { DepartmentRepository } from '@domain/repositories/department.repository
 import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
+import { HttpProviderRepository } from '@infrastructure/repositories/http/provider.repository.http';
+import { ProviderRepository } from '@domain/repositories/provider.repository';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
 import { SaleRepository } from '@domain/repositories/sale.repository';
 import { HttpSaleRepository } from '@infrastructure/repositories/http/sale.repository.http';
+import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
+import { HttpStockDistributionRepository } from '@infrastructure/repositories/http/stock-distribution.repository.http';
+import { HttpProductRepository } from '@infrastructure/repositories/http/product.repository.http';
+import { HttpProductCategoryRepository } from '@infrastructure/repositories/http/product-category.repository.http';
 import { AuthService } from '@core/services/auth.service';
+import { ProductRepository } from '@domain/repositories/product.repository';
+import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -47,7 +55,9 @@ export const appConfig: ApplicationConfig = {
     { provide: UserRepository, useClass: HttpUserRepository },
     { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
     { provide: SaleRepository, useClass: HttpSaleRepository },
+    { provide: StockDistributionRepository, useClass: HttpStockDistributionRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
+    { provide: ProviderRepository, useClass: HttpProviderRepository },
     {
       provide: APP_INITIALIZER,
       useFactory: (authRepo: AuthRepository, authService: AuthService) =>
@@ -55,6 +65,8 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthRepository, AuthService],
       multi: true,
     },
+    { provide: ProductRepository, useClass: HttpProductRepository },
+    { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
     providePrimeNG({
       ripple: true,
       theme: {
@@ -71,5 +83,8 @@ export const appConfig: ApplicationConfig = {
     }),
     MessageService,
     ConfirmationService,
+
+    // TODO add base url for API REST
+    // { provide: PurchaseRepository, useClass: PurchaseRepositoryMock },
   ],
 };

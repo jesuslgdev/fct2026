@@ -18,8 +18,12 @@ class DeleteUserUseCase(IDeleteUserUseCase):
         self.purchase_reader = purchase_reader
 
     async def execute(self, user_id: int) -> None:
-        if await self.user_repo.get_by_id(user_id) is None:
+        user = await self.user_repo.get_by_id(user_id)
+        if user is None:
             raise AdminException(AdminExceptionInfo.USER_NOT_FOUND)
+        if user.is_deleted:
+            raise AdminException(AdminExceptionInfo.USER_IS_DELETED)
         if await self.purchase_reader.has_purchases_for_user(user_id):
-            raise AdminException(AdminExceptionInfo.USER_HAS_REFERENCES)
-        await self.user_repo.delete(user_id)
+            await self.user_repo.anonymize(user_id)
+        else:
+            await self.user_repo.delete(user_id)

@@ -12,6 +12,7 @@ engine = create_async_engine(
     settings.database_url,
     echo=False,
     pool_pre_ping=True,
+    connect_args={"prepare_threshold": None},
 )
 
 # Session factory that produces AsyncSession instances.

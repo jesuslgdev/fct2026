@@ -1,4 +1,5 @@
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.warehouse import Warehouse
@@ -27,8 +28,8 @@ async def test_list_distribution_empty(client: AsyncClient):
 async def test_list_distribution_with_data(
     client: AsyncClient,
     stock_distribution_seed: list[WarehouseStock],
-    sample_product: Product,
-    second_product: Product,
+    sample_product,
+    second_product,
     warehouse_a: Warehouse,
     warehouse_b: Warehouse,
 ):
@@ -84,7 +85,7 @@ async def test_filter_by_warehouse(
 async def test_filter_by_product(
     client: AsyncClient,
     stock_distribution_seed: list[WarehouseStock],
-    sample_product: Product,
+    sample_product,
 ):
     """Filtering by product_id returns only that product's records."""
     response = await client.get(BASE, params={"product_id": sample_product.product_id})
@@ -101,7 +102,7 @@ async def test_filter_by_warehouse_and_product(
     client: AsyncClient,
     stock_distribution_seed: list[WarehouseStock],
     warehouse_a: Warehouse,
-    second_product: Product,
+    second_product,
 ):
     """Combined warehouse + product filter returns exactly one record."""
     response = await client.get(
@@ -117,6 +118,97 @@ async def test_filter_by_warehouse_and_product(
     assert data["total"] == 1
     assert data["items"][0]["warehouse_id"] == warehouse_a.warehouse_id
     assert data["items"][0]["product_id"] == second_product.product_id
+
+
+async def test_filter_by_search_partial_match(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+    sample_product: Product,
+):
+    """search filter returns only records whose product name contains the term."""
+    response = await client.get(BASE, params={"search": "smart"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 2
+    assert all(
+        item["product_id"] == sample_product.product_id for item in data["items"]
+    )
+
+
+async def test_filter_by_search_case_insensitive(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+    sample_product: Product,
+):
+    """search filter is case-insensitive."""
+    response = await client.get(BASE, params={"search": "SMART"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 2
+    assert all(
+        item["product_id"] == sample_product.product_id for item in data["items"]
+    )
+
+
+async def test_filter_by_search_no_match(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+):
+    """search filter returns empty when no product name matches."""
+    response = await client.get(BASE, params={"search": "nonexistent"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 0
+    assert data["items"] == []
+
+
+async def test_filter_by_search_and_warehouse(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+    warehouse_a: Warehouse,
+    second_product: Product,
+):
+    """Combined search + warehouse_id filter returns only the matching record."""
+    response = await client.get(
+        BASE,
+        params={"warehouse_id": warehouse_a.warehouse_id, "search": "tablet"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 1
+    assert data["items"][0]["product_id"] == second_product.product_id
+    assert data["items"][0]["warehouse_id"] == warehouse_a.warehouse_id
+
+
+async def test_zero_stock_excluded(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+    db_session: AsyncSession,
+    second_product: Product,
+    warehouse_b: Warehouse,
+):
+    """Records with stock=0 are excluded from the response."""
+    zero_stock = WarehouseStock(
+        warehouse_id=warehouse_b.warehouse_id,
+        product_id=second_product.product_id,
+        stock=0,
+        reserved_stock=0,
+    )
+    db_session.add(zero_stock)
+    await db_session.flush()
+
+    response = await client.get(BASE)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 3
+    assert len(data["items"]) == 3
+    for item in data["items"]:
+        assert item["stock"] > 0
 
 
 # ── Pagination ─────────────────────────────────────────────────────
@@ -149,6 +241,19 @@ async def test_pagination_second_page(
     assert data["total"] == 3
     assert len(data["items"]) == 1
     assert data["page"] == 2
+
+
+async def test_list_distribution_ordered_by_warehouse_and_product_name(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+):
+    """Rows are ordered by warehouse name and then product name."""
+    response = await client.get(BASE)
+
+    assert response.status_code == 200
+    items = response.json()["items"]
+    ordered_pairs = [(item["warehouse_name"], item["product_name"]) for item in items]
+    assert ordered_pairs == sorted(ordered_pairs)
 
 
 # ── Auth ───────────────────────────────────────────────────────────

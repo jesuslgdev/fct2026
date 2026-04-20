@@ -1,5 +1,7 @@
 import { UserRole } from '@domain/enums/user-role.enum';
 
+export type { PagedResult } from '@domain/models/paged-result.model';
+
 export interface User {
   id: number;
   firstName: string;
@@ -9,12 +11,6 @@ export interface User {
   departmentId: number | null;
   active: boolean;
   lastLoginAt?: string | null;
-}
-
-export interface ActivateUserPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
 }
 
 export interface CreateUserPayload {
@@ -40,9 +36,6 @@ export interface UserQueryParams {
   active?: boolean;
 }
 
-export interface PagedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
+export function isDepartmentRequiredForRole(role: UserRole | null | undefined): boolean {
+  return role === UserRole.Employee || role === UserRole.Manager;
 }

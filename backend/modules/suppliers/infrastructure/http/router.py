@@ -70,6 +70,7 @@ from modules.suppliers.domain.interfaces.use_cases.i_update_supplier_use_case im
     IUpdateSupplierUseCase,
 )
 from modules.suppliers.infrastructure.http.schemas import (
+    AddressDTO,
     AddSupplierProductRequest,
     CreateSupplierDTO,
     ImportErrorDTO,
@@ -82,6 +83,7 @@ from modules.suppliers.infrastructure.http.schemas import (
     UpdateSupplierDTO,
     UpdateSupplierProductPriceRequest,
 )
+from shared.domain.dtos.address import Address
 from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
@@ -117,9 +119,12 @@ def _to_supplier_detail_dto(
         tax_id=supplier.tax_id,
         city=supplier.city,
         is_active=supplier.is_active,
-        address=supplier.address,
-        province=supplier.province,
-        postal_code=supplier.postal_code,
+        address=AddressDTO(
+            street=supplier.street,
+            city=supplier.city,
+            province=supplier.province,
+            postal_code=supplier.postal_code,
+        ),
         phone=supplier.phone,
         email=supplier.email,
         products=[_to_supplier_product_dto(p) for p in products],
@@ -186,10 +191,12 @@ async def create_supplier(
     result = await use_case.execute(
         name=body.name,
         tax_id=body.tax_id,
-        address=body.address,
-        city=body.city,
-        province=body.province,
-        postal_code=body.postal_code,
+        address_data=Address(
+            street=body.address.street,
+            city=body.address.city,
+            province=body.address.province,
+            postal_code=body.address.postal_code,
+        ),
         phone=body.phone,
         email=body.email,
     )
@@ -242,10 +249,16 @@ async def update_supplier(
     result = await use_case.execute(
         supplier_id,
         body.name,
-        body.address,
-        body.city,
-        body.province,
-        body.postal_code,
+        (
+            Address(
+                street=body.address.street,
+                city=body.address.city,
+                province=body.address.province,
+                postal_code=body.address.postal_code,
+            )
+            if body.address is not None
+            else None
+        ),
         body.phone,
         body.email,
     )
@@ -268,15 +281,19 @@ async def set_supplier_active(
 
 
 @router.get("/{supplier_id}/products/template", tags=["Suppliers - Products"])
-def download_products_template(
+async def download_products_template(
     supplier_id: int,
+    product_ids: list[int] | None = Query(
+        default=None,
+        description="Product IDs to prefill in the template (repeat query param).",
+    ),
     _: UserSession = Depends(require_purchases_manager_or_admin),
     use_case: IDownloadSupplierProductTemplateUseCase = Depends(
         get_download_supplier_product_template_use_case
     ),
 ):
     """Download the Excel template for bulk supplier-product import."""
-    content = use_case.execute()
+    content = await use_case.execute(product_ids=product_ids)
     return StreamingResponse(
         BytesIO(content),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -31,6 +31,9 @@ class Purchase(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     status: Mapped[str] = mapped_column(String(20), default="Pending", nullable=False)
+    status_changed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=True)
     taxes: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=True)
     total: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=True)
@@ -43,5 +46,10 @@ class Purchase(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    cancelled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    cancelled_by_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     lines: Mapped[list[PurchaseLine]] = relationship("PurchaseLine", lazy="selectin")

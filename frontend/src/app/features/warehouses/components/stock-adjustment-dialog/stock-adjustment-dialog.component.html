@@ -1,0 +1,82 @@
+<ui-dialog
+  [(visible)]="store.adjustDialogVisible"
+  [header]="store.adjustMode() === 'initial' ? 'Registrar stock inicial' : 'Ajustar stock'"
+  confirmLabel="Confirmar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.adjustingStock()"
+  [confirmDisabled]="form.invalid || (store.adjustMode() === 'initial' && !store.selectedProduct())"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+  (closed)="onCancel()"
+>
+  <form [formGroup]="form" class="dialog-form">
+    @if (store.adjustDialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
+    @if (store.adjustMode() === 'existing') {
+      <div class="dialog-field">
+        <span class="dialog-field-label">Producto</span>
+        <span>{{ store.selectedProductLabel() }}</span>
+      </div>
+    } @else {
+      <div class="dialog-field">
+        <label class="dialog-field-label" for="stock-adjustment-product">Producto</label>
+        <p-select
+          inputId="stock-adjustment-product"
+          [options]="store.productOptions()"
+          optionLabel="label"
+          optionValue="productId"
+          placeholder="Selecciona un producto"
+          class="w-full"
+          appendTo="body"
+          [filter]="true"
+          filterBy="label"
+          filterPlaceholder="Buscar por nombre de producto"
+          [showClear]="true"
+          [loading]="store.productsLoading()"
+          [ngModel]="store.selectedProduct()?.productId ?? null"
+          [ngModelOptions]="{ standalone: true }"
+          (onFilter)="onProductFilter($event)"
+          (ngModelChange)="onProductChange($event)"
+        />
+        @if (!store.selectedProduct()) {
+          <span class="dialog-field-error">Selecciona un producto activo.</span>
+        }
+      </div>
+    }
+
+    <div class="dialog-field">
+      <label class="dialog-field-label" for="stock-adjustment-new-quantity">Nueva cantidad</label>
+      <p-inputnumber
+        inputId="stock-adjustment-new-quantity"
+        formControlName="newQuantity"
+        [min]="0"
+        [maxFractionDigits]="0"
+        [useGrouping]="false"
+        inputStyleClass="w-full"
+        styleClass="w-full"
+        placeholder="0"
+      />
+      @if (newQuantity.invalid && newQuantity.touched) {
+        <span class="dialog-field-error">La cantidad debe ser mayor o igual que 0.</span>
+      }
+    </div>
+
+    <div class="dialog-field">
+      <label class="dialog-field-label" for="stock-adjustment-reason">Motivo</label>
+      <textarea
+        id="stock-adjustment-reason"
+        pTextarea
+        formControlName="reason"
+        rows="4"
+        maxlength="300"
+        class="w-full"
+        placeholder="Motivo del ajuste"
+      ></textarea>
+      @if (reason.invalid && reason.touched) {
+        <span class="dialog-field-error">El motivo no puede superar 300 caracteres.</span>
+      }
+    </div>
+  </form>
+</ui-dialog>

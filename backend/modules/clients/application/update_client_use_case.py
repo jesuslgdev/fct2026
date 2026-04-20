@@ -8,6 +8,7 @@ from modules.clients.domain.interfaces.repositories.i_client_repository import (
 from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import (
     IUpdateClientUseCase,
 )
+from shared.domain.dtos.address import Address
 
 
 class UpdateClientUseCase(IUpdateClientUseCase):
@@ -34,10 +35,7 @@ class UpdateClientUseCase(IUpdateClientUseCase):
         self,
         client_id: int,
         name: str | None,
-        address: str | None,
-        city: str | None,
-        province: str | None,
-        postal_code: str | None,
+        address_data: Address | None,
         phone: str | None,
         email: str | None,
     ) -> Client:
@@ -46,10 +44,8 @@ class UpdateClientUseCase(IUpdateClientUseCase):
         Args:
             client_id: Primary key of the client to update.
             name: New name or company name, or ``None`` to leave it unchanged.
-            address: New address, or ``None`` to leave it unchanged.
-            city: New city, or ``None`` to leave it unchanged.
-            province: New province, or ``None`` to leave it unchanged.
-            postal_code: New postal code, or ``None`` to leave it unchanged.
+            address_data: New full address object, or ``None`` to keep the
+                current address unchanged.
             phone: New phone number, or ``None`` to leave it unchanged.
             email: New email address, or ``None`` to leave it unchanged.
 
@@ -59,18 +55,23 @@ class UpdateClientUseCase(IUpdateClientUseCase):
         Raises:
             ClientException: With code ``4101`` (``CLIENT_NOT_FOUND``) if no
                 client exists with that ``client_id``.
+            ClientException: With code ``4104``
+                (``CLIENT_EMAIL_ALREADY_EXISTS``) if another client is already
+                using the provided ``email``.
         """
         client = await self._repo.get_by_id(client_id)
         if client is None:
             raise ClientException(ClientExceptionInfo.CLIENT_NOT_FOUND)
 
+        if email is not None:
+            existing_email = await self._repo.get_by_email(email)
+            if existing_email is not None and existing_email.client_id != client_id:
+                raise ClientException(ClientExceptionInfo.CLIENT_EMAIL_ALREADY_EXISTS)
+
         return await self._repo.update(
             client_id=client_id,
             name=name,
-            address=address,
-            city=city,
-            province=province,
-            postal_code=postal_code,
+            address_data=address_data,
             phone=phone,
             email=email,
         )

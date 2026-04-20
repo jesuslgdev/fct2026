@@ -1,12 +1,18 @@
 import { SaleStatus } from '../enums/sale-status.enum';
 
+export type { PagedResult } from './paged-result.model';
+
 export interface Sale {
   id: number;
   saleNumber: string;
   clientId: number;
+  warehouseId: number;
   clientName: string | null;
   status: SaleStatus;
+  allowedTransitions: SaleStatus[];
+  deliveryAddress: string;
   saleDate: Date;
+  createdAt: Date;
   total: number;
 }
 
@@ -21,14 +27,20 @@ export interface SaleLine {
   lineTax: number;
 }
 
+export interface SaleStatusHistory {
+  fromStatus: SaleStatus | null;
+  toStatus: SaleStatus;
+  changedAt: Date;
+  changedByUserId: number;
+}
+
 export interface SaleDetail extends Sale {
-  deliveryAddress: string;
   userId: number;
   subtotal: number;
   taxes: number;
-  createdAt: Date;
   updatedAt: Date;
   lines: SaleLine[];
+  statusHistory: SaleStatusHistory[];
 }
 
 export interface CreateSaleLine {
@@ -38,6 +50,7 @@ export interface CreateSaleLine {
 
 export interface CreateSale {
   clientId: number;
+  warehouseId: number;
   lines: CreateSaleLine[];
 }
 
@@ -50,8 +63,8 @@ export type SaleSortField =
   | 'created_at';
 
 export interface SaleFilters {
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
   sortField?: SaleSortField;
   sortOrder?: 'asc' | 'desc';
   status?: SaleStatus;
