@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 import {
   SupplierProduct,
   AddSupplierProductRequest,
+  DownloadSupplierProductTemplateRequest,
   UpdateSupplierProductPriceRequest,
   ImportSupplierProductsRequest,
   ImportResult,
@@ -17,6 +18,6 @@ export abstract class SupplierProductRepository {
   abstract updateSupplierProductPrice(supplierId: number, productId: number, request: UpdateSupplierProductPriceRequest): Observable<SupplierProduct>;
   abstract removeProductFromSupplier(supplierId: number, productId: number): Observable<void>;
   abstract importSupplierProducts(supplierId: number, request: ImportSupplierProductsRequest): Observable<ImportResult>;
-  abstract downloadTemplate(supplierId: number): Observable<Blob>;
+  abstract downloadTemplate(supplierId: number, request?: DownloadSupplierProductTemplateRequest): Observable<Blob>;
   abstract getProductSuppliers(productId: number, params?: ProductSupplierQueryParams): Observable<PagedResult<ProductSupplier>>;
 }

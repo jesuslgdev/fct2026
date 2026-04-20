@@ -283,7 +283,7 @@ describe('Supplier Product Use Cases', () => {
 
       const result = await firstValueFrom(downloadTemplateUseCase.execute(supplierId));
 
-      expect(repo.downloadTemplate).toHaveBeenCalledWith(supplierId);
+      expect(repo.downloadTemplate).toHaveBeenCalledWith(supplierId, undefined);
       expect(result).toBe(mockBlob);
     });
 

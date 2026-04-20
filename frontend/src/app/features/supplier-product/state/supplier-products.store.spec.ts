@@ -12,7 +12,9 @@ import { PagedResult, SupplierProduct } from '@domain/models/supplier-product.mo
 import { SupplierProductDuplicateError } from '@domain/models/supplier-product-errors';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
+import { DownloadTemplateUseCase } from '@domain/usecases/supplier-product/download-template.usecase';
 import { GetSupplierProductsUseCase } from '@domain/usecases/supplier-product/get-supplier-products.usecase';
+import { ImportSupplierProductsUseCase } from '@domain/usecases/supplier-product/import-supplier-products.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
 import { UpdateSupplierProductPriceUseCase } from '@domain/usecases/supplier-product/update-supplier-product-price.usecase';
 
@@ -81,6 +83,16 @@ class MockGetProductsUseCase {
   execute = vi.fn().mockReturnValue(of({ data: [PRODUCT], total: 1, page: 1, pageSize: 100 }));
 }
 
+class MockImportSupplierProductsUseCase {
+  execute = vi.fn().mockReturnValue(of({ total: 1, created: 1, errors: 0, errorDetail: [] }));
+}
+
+class MockDownloadTemplateUseCase {
+  execute = vi.fn().mockReturnValue(of(new Blob(['test'], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })));
+}
+
 describe('SupplierProductsStore', () => {
   let store: SupplierProductsStore;
   let addProductToSupplierUseCase: MockAddProductToSupplierUseCase;
@@ -98,6 +110,8 @@ describe('SupplierProductsStore', () => {
         { provide: AddProductToSupplierUseCase, useValue: addProductToSupplierUseCase },
         { provide: UpdateSupplierProductPriceUseCase, useClass: MockUpdateSupplierProductPriceUseCase },
         { provide: RemoveProductFromSupplierUseCase, useClass: MockRemoveProductFromSupplierUseCase },
+        { provide: ImportSupplierProductsUseCase, useClass: MockImportSupplierProductsUseCase },
+        { provide: DownloadTemplateUseCase, useClass: MockDownloadTemplateUseCase },
         { provide: GetProductsUseCase, useClass: MockGetProductsUseCase },
       ],
     });

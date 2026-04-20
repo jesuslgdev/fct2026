@@ -10,6 +10,7 @@ import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { TableComponent } from '@shared/ui/table/table.component';
 import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
 import { SupplierProductsStore } from '@features/supplier-product/state/supplier-products.store';
+import { SupplierProductsImportDialogComponent } from '@features/supplier-product/components/supplier-products-import-dialog/supplier-products-import-dialog.component';
 import { ProviderFormDialogComponent } from '@features/suppliers/components/provider-form-dialog/provider-form-dialog.component';
 import { ProviderStatusBadgeComponent } from '@features/suppliers/components/provider-status-badge/provider-status-badge.component';
 import { Provider } from '@domain/models/provider.model';
@@ -28,6 +29,7 @@ import { Provider } from '@domain/models/provider.model';
     DialogComponent,
     ProviderFormDialogComponent,
     ProviderStatusBadgeComponent,
+    SupplierProductsImportDialogComponent,
     TableComponent,
   ],
   templateUrl: './supplier-detail.page.component.html',
@@ -85,22 +87,5 @@ export class SupplierDetailPageComponent implements OnInit {
 
   onAddProductPriceInput(event: Event): void {
     this.supplierProductsStore.setAddProductPriceDraft((event.target as HTMLInputElement).value);
-  }
-
-  onImportFileInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.supplierProductsStore.setImportFile(input.files?.[0] ?? null);
-  }
-
-  async downloadSupplierProductsTemplate(): Promise<void> {
-    const blob = await this.supplierProductsStore.downloadTemplate();
-    if (!blob) return;
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'supplier-products-template.xlsx';
-    link.click();
-    URL.revokeObjectURL(url);
   }
 }

@@ -5,6 +5,7 @@ import { UserPermission } from '@domain/enums/user-permission.enum';
 import { Product } from '@domain/models/product.model';
 import {
   AddSupplierProductRequest,
+  DownloadSupplierProductTemplateRequest,
   ImportResult,
   SupplierProduct,
   SupplierProductQueryParams,
@@ -60,14 +61,49 @@ export class SupplierProductsStore {
   readonly selectedImportFile = signal<File | null>(null);
   readonly importResult = signal<ImportResult | null>(null);
   readonly importLoading = signal(false);
+  readonly importDialogError = signal<string | null>(null);
+  readonly templateProducts = signal<Product[]>([]);
+  readonly templateProductsTotal = signal(0);
+  readonly templateProductsPage = signal(1);
+  readonly templateProductsPageSize = signal(10);
+  readonly templateProductsSearchQuery = signal('');
+  readonly templateProductsLoading = signal(false);
+  readonly templateDownloadLoading = signal(false);
+  readonly selectedTemplateProductIds = signal<ReadonlySet<number>>(new Set<number>());
 
   readonly canModify = computed(() =>
     this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager])
   );
   readonly supplierTotalPages = computed(() => Math.ceil(this.supplierTotal() / this.supplierPageSize()));
+  readonly associatedSupplierProductIds = computed(() =>
+    new Set(this.supplierProducts().map((item) => item.productId))
+  );
   readonly activeProductsForAdd = computed(() => {
-    const associated = new Set(this.supplierProducts().map((item) => item.productId));
+    const associated = this.associatedSupplierProductIds();
     return this.activeProducts().filter((product) => product.isActive && !associated.has(product.productId));
+  });
+  readonly visibleSelectableTemplateProducts = computed(() =>
+    this.templateProducts().filter((product) => !this.associatedSupplierProductIds().has(product.productId))
+  );
+  readonly selectedTemplateProductCount = computed(() => this.selectedTemplateProductIds().size);
+  readonly hasSelectableTemplateProductsOnPage = computed(() => this.visibleSelectableTemplateProducts().length > 0);
+  readonly allVisibleTemplateProductsSelected = computed(() => {
+    const visibleProducts = this.visibleSelectableTemplateProducts();
+    return visibleProducts.length > 0 && visibleProducts.every((product) =>
+      this.selectedTemplateProductIds().has(product.productId)
+    );
+  });
+  readonly someVisibleTemplateProductsSelected = computed(() => {
+    const visibleProducts = this.visibleSelectableTemplateProducts();
+    if (visibleProducts.length === 0) {
+      return false;
+    }
+
+    const hasAnySelected = visibleProducts.some((product) =>
+      this.selectedTemplateProductIds().has(product.productId)
+    );
+
+    return hasAnySelected && !this.allVisibleTemplateProductsSelected();
   });
   readonly importInvalidRows = computed(() => {
     const result = this.importResult();
@@ -85,6 +121,36 @@ export class SupplierProductsStore {
 
   private buildQueryParams(): SupplierProductQueryParams {
     return { page: this.supplierPage(), pageSize: this.supplierPageSize() };
+  }
+
+  private buildTemplateProductsQueryParams(): {
+    page: number;
+    pageSize: number;
+    search?: string;
+    active: boolean;
+  } {
+    const search = this.templateProductsSearchQuery().trim();
+
+    return {
+      page: this.templateProductsPage(),
+      pageSize: this.templateProductsPageSize(),
+      ...(search ? { search } : {}),
+      active: true,
+    };
+  }
+
+  private resetImportDialogState(): void {
+    this.selectedImportFile.set(null);
+    this.importResult.set(null);
+    this.importDialogError.set(null);
+    this.templateProducts.set([]);
+    this.templateProductsTotal.set(0);
+    this.templateProductsPage.set(1);
+    this.templateProductsPageSize.set(10);
+    this.templateProductsSearchQuery.set('');
+    this.templateProductsLoading.set(false);
+    this.templateDownloadLoading.set(false);
+    this.selectedTemplateProductIds.set(new Set<number>());
   }
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
@@ -179,6 +245,22 @@ export class SupplierProductsStore {
       this.setAddProductDialogError(this.resolveErrorMessage(err, 'Error al cargar productos activos.'));
     } finally {
       this.productsLoading.set(false);
+    }
+  }
+
+  async loadTemplateProducts(): Promise<void> {
+    this.templateProductsLoading.set(true);
+    this.importDialogError.set(null);
+    try {
+      const result = await firstValueFrom(this.getProductsUseCase.execute(this.buildTemplateProductsQueryParams()));
+      this.templateProducts.set(result.data.filter((product) => product.isActive));
+      this.templateProductsTotal.set(result.total);
+      this.templateProductsPage.set(result.page);
+      this.templateProductsPageSize.set(result.pageSize);
+    } catch (err) {
+      this.importDialogError.set(this.resolveErrorMessage(err, 'Error al cargar productos del catalogo.'));
+    } finally {
+      this.templateProductsLoading.set(false);
     }
   }
 
@@ -306,33 +388,90 @@ export class SupplierProductsStore {
   openImportDialog(): void {
     if (!this.ensureCanModify()) return;
     this.importDialogVisible.set(true);
-    this.selectedImportFile.set(null);
-    this.importResult.set(null);
+    this.resetImportDialogState();
+    void this.loadTemplateProducts();
   }
 
   closeImportDialog(): void {
     this.importDialogVisible.set(false);
-    this.selectedImportFile.set(null);
-    this.importResult.set(null);
+    this.resetImportDialogState();
   }
 
   setImportFile(file: File | null): void {
-    this.error.set(null);
+    this.importDialogError.set(null);
     this.importResult.set(null);
     this.selectedImportFile.set(file);
   }
 
+  onTemplateProductsSearch(query: string): void {
+    this.templateProductsSearchQuery.set(query.trim());
+    this.templateProductsPage.set(1);
+    void this.loadTemplateProducts();
+  }
+
+  onTemplateProductsPageChange(event: { first: number; rows: number }): void {
+    this.templateProductsPage.set(Math.floor(event.first / event.rows) + 1);
+    this.templateProductsPageSize.set(event.rows);
+    void this.loadTemplateProducts();
+  }
+
+  isProductAlreadyAssociated(productId: number): boolean {
+    return this.associatedSupplierProductIds().has(productId);
+  }
+
+  isTemplateProductSelected(productId: number): boolean {
+    return this.selectedTemplateProductIds().has(productId);
+  }
+
+  setTemplateProductSelected(productId: number, selected: boolean): void {
+    if (this.isProductAlreadyAssociated(productId)) {
+      return;
+    }
+
+    this.selectedTemplateProductIds.update((ids) => {
+      const next = new Set(ids);
+
+      if (selected) {
+        next.add(productId);
+      } else {
+        next.delete(productId);
+      }
+
+      return next;
+    });
+  }
+
+  toggleAllVisibleTemplateProducts(selected: boolean): void {
+    this.selectedTemplateProductIds.update((ids) => {
+      const next = new Set(ids);
+
+      for (const product of this.visibleSelectableTemplateProducts()) {
+        if (selected) {
+          next.add(product.productId);
+        } else {
+          next.delete(product.productId);
+        }
+      }
+
+      return next;
+    });
+  }
+
+  clearTemplateSelection(): void {
+    this.selectedTemplateProductIds.set(new Set<number>());
+  }
+
   async importSupplierProducts(): Promise<void> {
-    this.error.set(null);
-    if (!this.ensureCanModify()) return;
-    const supplierId = this.requireSupplierId();
+    this.importDialogError.set(null);
+    if (!this.ensureCanModify((message) => this.importDialogError.set(message))) return;
+    const supplierId = this.requireSupplierId((message) => this.importDialogError.set(message));
     const file = this.selectedImportFile();
     if (!supplierId || !file) {
-      this.error.set('Se requiere archivo Excel para importar.');
+      this.importDialogError.set('Se requiere archivo Excel para importar.');
       return;
     }
     if (!file.name.toLowerCase().endsWith('.xlsx')) {
-      this.error.set('El archivo debe ser Excel .xlsx.');
+      this.importDialogError.set('El archivo debe ser Excel .xlsx.');
       return;
     }
     this.importLoading.set(true);
@@ -341,22 +480,37 @@ export class SupplierProductsStore {
       this.importResult.set(result);
       if (result.errors === 0) {
         await this.fetchSupplierProducts(supplierId);
+        this.clearTemplateSelection();
+        await this.loadTemplateProducts();
       }
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Error al importar productos del proveedor.'));
+      this.importDialogError.set(this.resolveErrorMessage(err, 'Error al importar productos del proveedor.'));
     } finally {
       this.importLoading.set(false);
     }
   }
 
   async downloadTemplate(): Promise<Blob | null> {
-    const supplierId = this.requireSupplierId();
+    const supplierId = this.requireSupplierId((message) => this.importDialogError.set(message));
     if (!supplierId) return null;
+
+    const productIds = Array.from(this.selectedTemplateProductIds()).filter(
+      (productId) => !this.isProductAlreadyAssociated(productId)
+    );
+    const request: DownloadSupplierProductTemplateRequest | undefined = productIds.length > 0
+      ? { productIds }
+      : undefined;
+
+    this.templateDownloadLoading.set(true);
+    this.importDialogError.set(null);
+
     try {
-      return await firstValueFrom(this.downloadTemplateUseCase.execute(supplierId));
+      return await firstValueFrom(this.downloadTemplateUseCase.execute(supplierId, request));
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Error al descargar plantilla.'));
+      this.importDialogError.set(this.resolveErrorMessage(err, 'Error al descargar plantilla.'));
       return null;
+    } finally {
+      this.templateDownloadLoading.set(false);
     }
   }
 
