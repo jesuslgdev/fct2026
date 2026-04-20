@@ -54,6 +54,8 @@ class IPurchaseRepository(ABC):
         unit_price: Decimal,
         discount: Decimal,
         line_subtotal: Decimal,
+        vat_rate: Decimal,
+        line_tax: Decimal,
     ) -> PurchaseLine: ...
 
     @abstractmethod
@@ -64,6 +66,8 @@ class IPurchaseRepository(ABC):
         unit_price: Decimal,
         discount: Decimal,
         line_subtotal: Decimal,
+        vat_rate: Decimal,
+        line_tax: Decimal,
     ) -> PurchaseLine: ...
 
     @abstractmethod

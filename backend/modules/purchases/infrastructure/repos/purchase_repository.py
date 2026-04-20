@@ -173,6 +173,8 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         unit_price: Decimal,
         discount: Decimal,
         line_subtotal: Decimal,
+        vat_rate: Decimal,
+        line_tax: Decimal,
     ) -> PurchaseLine:
         line = PurchaseLine(
             purchase_id=purchase_id,
@@ -181,6 +183,8 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
             unit_price=unit_price,
             discount=discount,
             line_subtotal=line_subtotal,
+            vat_rate=vat_rate,
+            line_tax=line_tax,
         )
         self._db.add(line)
         await self._db.flush()
@@ -194,6 +198,8 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         unit_price: Decimal,
         discount: Decimal,
         line_subtotal: Decimal,
+        vat_rate: Decimal,
+        line_tax: Decimal,
     ) -> PurchaseLine:
         result = await self._db.execute(
             select(PurchaseLine).where(
@@ -205,6 +211,8 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         line.unit_price = unit_price
         line.discount = discount
         line.line_subtotal = line_subtotal
+        line.vat_rate = vat_rate
+        line.line_tax = line_tax
         await self._db.flush()
         await self._db.refresh(line)
         return line
