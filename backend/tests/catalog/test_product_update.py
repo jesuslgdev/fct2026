@@ -61,6 +61,27 @@ async def test_update_product_duplicate_code(
     assert response.json()["error_code"] == 5202
 
 
+async def test_update_product_duplicate_name(
+    admin_client: AsyncClient, sample_product: Product, db_session: AsyncSession
+):
+    duplicate_name_product = Product(
+        product_code="CODE-NAME-2",
+        name="Monitor",
+        category_id=sample_product.category_id,
+        price=10,
+        stock_min=0,
+    )
+    db_session.add(duplicate_name_product)
+    await db_session.flush()
+
+    payload = {"name": "monitor"}
+    response = await admin_client.put(
+        f"/api/v1/catalog/products/{sample_product.product_id}", json=payload
+    )
+    assert response.status_code == 409
+    assert response.json()["error_code"] == 5203
+
+
 async def test_update_product_vat_rate(
     purchases_manager_client: AsyncClient, sample_product: Product
 ):

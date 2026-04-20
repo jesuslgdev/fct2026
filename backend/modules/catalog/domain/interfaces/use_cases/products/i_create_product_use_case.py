@@ -8,7 +8,6 @@ class ICreateProductUseCase(ABC):
     @abstractmethod
     async def execute(
         self,
-        product_code: str,
         name: str,
         description: str | None,
         category_id: int,
