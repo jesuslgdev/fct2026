@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from modules.sales.domain.sale_status import VALID_TRANSITIONS, allowed_next
 
@@ -28,8 +28,13 @@ class ChangeSaleStatusRequest(BaseModel):
         description="Target status. Must be a valid transition from the current status."
     )
 
-    def valid_values(self) -> set[str]:
-        return {s for targets in VALID_TRANSITIONS.values() for s in targets}
+    @field_validator("new_status")
+    @classmethod
+    def must_be_reachable_status(cls, v: str) -> str:
+        valid = {s for targets in VALID_TRANSITIONS.values() for s in targets}
+        if v not in valid:
+            raise ValueError(f"Invalid status '{v}'. Must be one of: {sorted(valid)}")
+        return v
 
 
 class SaleLineResponse(BaseModel):
