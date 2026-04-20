@@ -67,8 +67,6 @@ export const appConfig: ApplicationConfig = {
     { provide: ProductRepository, useClass: HttpProductRepository },
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
     { provide: SupplierProductRepository, useClass: HttpSupplierProductRepository },
-    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
-    { provide: ProviderRepository, useClass: HttpProviderRepository },
     providePrimeNG({
       ripple: true,
       theme: {

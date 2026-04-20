@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     superadmin_email: str
     # Set to True locally to bypass Firebase auth (never set this on Render)
     disable_auth: bool = False
+    # Days before a purchase/sale is considered stale in dashboard alerts.
+    dashboard_stale_days: int = 7
+    # Number of recent purchase/sale rows returned by dashboard (clamped 5..10).
+    dashboard_recent_limit: int = 5
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
