@@ -25,7 +25,7 @@ async def test_get_sale_success(auth_client: AsyncClient):
     assert body["status"] == "Pending"
     assert body["client_id"] == 5
     assert body["user_id"] == 1
-    assert body["created_by_name"] == "Sales Employee"
+    assert body["creator_name"] == "Sales Employee"
     assert len(body["lines"]) == 1
 
 

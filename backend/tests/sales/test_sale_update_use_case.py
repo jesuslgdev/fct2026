@@ -14,7 +14,11 @@ async def test_update_sale_recalculates_totals_and_updates_stock():
     client_reader = AsyncMock()
     product_reader = AsyncMock()
     stock_reader = AsyncMock()
-    use_case = UpdateSaleUseCase(repo, client_reader, product_reader, stock_reader)
+    user_reader = AsyncMock()
+    user_reader.get_name_by_id.return_value = "Sales Employee"
+    use_case = UpdateSaleUseCase(
+        repo, client_reader, product_reader, stock_reader, user_reader
+    )
 
     existing_sale = make_sale(
         status="Pending",
@@ -110,7 +114,11 @@ async def test_update_sale_fails_when_status_is_not_pending():
     client_reader = AsyncMock()
     product_reader = AsyncMock()
     stock_reader = AsyncMock()
-    use_case = UpdateSaleUseCase(repo, client_reader, product_reader, stock_reader)
+    user_reader = AsyncMock()
+    user_reader.get_name_by_id.return_value = "Sales Employee"
+    use_case = UpdateSaleUseCase(
+        repo, client_reader, product_reader, stock_reader, user_reader
+    )
 
     repo.get_by_id.return_value = make_sale(status="Approved")
 

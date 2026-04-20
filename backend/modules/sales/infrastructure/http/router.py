@@ -100,12 +100,13 @@ async def list_sales(
                 client_id=sale.client_id,
                 warehouse_id=sale.warehouse_id,
                 client_name=client_name,
+                creator_name=creator_name,
                 status=sale.status,
                 allowed_transitions=allowed_next(sale.status),
                 sale_date=sale.sale_date,
                 total=sale.total,
             )
-            for sale, client_name in result.items
+            for sale, client_name, creator_name in result.items
         ],
         total=result.total,
         page=result.page,

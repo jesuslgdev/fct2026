@@ -469,7 +469,11 @@ async def get_activate_user_use_case(
 async def get_delete_user_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IDeleteUserUseCase:
-    return DeleteUserUseCase(UserRepository(db), PurchaseRepository(db))
+    return DeleteUserUseCase(
+        UserRepository(db),
+        PurchaseRepository(db),
+        SaleRepository(db),
+    )
 
 
 async def get_list_categories_use_case(
@@ -816,13 +820,18 @@ async def get_create_sale_use_case(
         product_reader=ProductRepository(db),
         warehouse_reader=WarehouseRepository(db),
         stock_reader=WarehouseStockRepository(db),
+        user_reader=UserRepository(db),
     )
 
 
 async def get_get_sale_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IGetSaleUseCase:
-    return GetSaleUseCase(SaleRepository(db), UserRepository(db))
+    return GetSaleUseCase(
+        repo=SaleRepository(db),
+        user_reader=UserRepository(db),
+        client_reader=ClientRepository(db),
+    )
 
 
 async def get_list_sales_use_case(
@@ -839,6 +848,7 @@ async def get_update_sale_use_case(
         client_reader=ClientRepository(db),
         product_reader=ProductRepository(db),
         stock_reader=WarehouseStockRepository(db),
+        user_reader=UserRepository(db),
     )
 
 

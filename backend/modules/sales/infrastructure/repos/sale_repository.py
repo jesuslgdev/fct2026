@@ -12,6 +12,8 @@ from modules.sales.domain.interfaces.repositories.i_sale_repository import (
     ISaleRepository,
 )
 from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.entities.user import User
+from shared.domain.interfaces.i_sale_reader import ISaleReader
 
 SORT_FIELDS = {
     "sale_number": Sale.sale_number,
@@ -23,9 +25,15 @@ SORT_FIELDS = {
 }
 
 
-class SaleRepository(ISaleRepository):
+class SaleRepository(ISaleRepository, ISaleReader):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
+
+    async def has_sales_for_user(self, user_id: int) -> bool:
+        result = await self._db.execute(
+            select(func.count()).select_from(Sale).where(Sale.user_id == user_id)
+        )
+        return result.scalar_one() > 0
 
     async def generate_sale_number(self) -> str:
         year = datetime.now().year
@@ -181,8 +189,13 @@ class SaleRepository(ISaleRepository):
         offset = (page - 1) * page_size
 
         data_stmt = (
-            select(Sale, Client.name.label("client_name"))
+            select(
+                Sale,
+                Client.name.label("client_name"),
+                func.concat(User.first_name, " ", User.last_name).label("creator_name"),
+            )
             .outerjoin(Client, Sale.client_id == Client.client_id)
+            .outerjoin(User, Sale.user_id == User.user_id)
             .where(*filters)
             .order_by(order_expr)
             .limit(page_size)

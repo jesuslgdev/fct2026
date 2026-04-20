@@ -14,6 +14,7 @@ from shared.domain.interfaces.i_product_reader import IProductReader
 from shared.domain.interfaces.i_stock_availability_reader import (
     IStockAvailabilityReader,
 )
+from shared.domain.interfaces.i_user_reader import IUserReader
 
 
 class UpdateSaleUseCase(IUpdateSaleUseCase):
@@ -23,11 +24,13 @@ class UpdateSaleUseCase(IUpdateSaleUseCase):
         client_reader: IClientReader,
         product_reader: IProductReader,
         stock_reader: IStockAvailabilityReader,
+        user_reader: IUserReader,
     ) -> None:
         self._sale_repo = sale_repo
         self._client_reader = client_reader
         self._product_reader = product_reader
         self._stock_reader = stock_reader
+        self._user_reader = user_reader
 
     async def execute(
         self,
@@ -99,7 +102,7 @@ class UpdateSaleUseCase(IUpdateSaleUseCase):
         taxes = sum((line["line_tax"] for line in processed_lines), Decimal("0"))
         total = subtotal + taxes
 
-        return await self._sale_repo.update(
+        updated_sale = await self._sale_repo.update(
             sale_id=sale_id,
             client_id=client_id,
             delivery_address=delivery_address.strip(),
@@ -108,3 +111,10 @@ class UpdateSaleUseCase(IUpdateSaleUseCase):
             total=total,
             lines=processed_lines,
         )
+
+        creator_name = await self._user_reader.get_name_by_id(updated_sale.user_id)
+        client_name = await self._client_reader.get_name_by_id(updated_sale.client_id)
+        setattr(updated_sale, "creator_name", creator_name)
+        setattr(updated_sale, "client_name", client_name)
+
+        return updated_sale
