@@ -11,6 +11,7 @@ from shared.infrastructure.database.base_model import Base
 
 if TYPE_CHECKING:
     from modules.sales.domain.entities.sale_line import SaleLine
+    from modules.sales.domain.entities.sale_status_history import SaleStatusHistory
 
 
 class Sale(Base):
@@ -20,6 +21,9 @@ class Sale(Base):
     sale_number: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     client_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("clients.client_id"), nullable=False
+    )
+    warehouse_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("warehouses.warehouse_id"), nullable=False
     )
     delivery_address: Mapped[str] = mapped_column(String(500), nullable=False)
     user_id: Mapped[int] = mapped_column(
@@ -43,3 +47,6 @@ class Sale(Base):
     )
 
     lines: Mapped[list[SaleLine]] = relationship("SaleLine", lazy="selectin")
+    status_history: Mapped[list[SaleStatusHistory]] = relationship(
+        "SaleStatusHistory", lazy="select", order_by="SaleStatusHistory.changed_at"
+    )

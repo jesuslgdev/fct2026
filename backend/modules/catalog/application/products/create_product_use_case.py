@@ -14,6 +14,8 @@ from modules.catalog.domain.interfaces.use_cases.products.i_create_product_use_c
 
 
 class CreateProductUseCase(ICreateProductUseCase):
+    PRODUCT_CODE_PREFIX = "PROD"
+
     def __init__(
         self, product_repo: IProductRepository, category_repo: ICategoryRepository
     ) -> None:
@@ -22,13 +24,11 @@ class CreateProductUseCase(ICreateProductUseCase):
 
     async def execute(
         self,
-        product_code: str,
         name: str,
         description: str | None,
         category_id: int,
         price: Decimal,
         vat_rate: Decimal,
-        stock_current: int,
         stock_min: int,
     ) -> Product:
         # 1. Validate category exists
@@ -36,12 +36,15 @@ class CreateProductUseCase(ICreateProductUseCase):
         if category is None:
             raise CatalogException(CatalogExceptionInfo.CATEGORY_NOT_FOUND)
 
-        # 2. Validate product code uniqueness
-        existing = await self._product_repo.get_by_code(product_code)
-        if existing:
-            raise CatalogException(CatalogExceptionInfo.PRODUCT_CODE_ALREADY_EXISTS)
+        # 2. Validate name uniqueness
+        existing_name = await self._product_repo.get_by_name(name)
+        if existing_name:
+            raise CatalogException(CatalogExceptionInfo.PRODUCT_NAME_ALREADY_EXISTS)
 
-        # 3. Persist via repository
+        # 3. Generate next product code with fixed prefix (PROD-XXX)
+        product_code = await self._generate_next_product_code(self.PRODUCT_CODE_PREFIX)
+
+        # 4. Persist via repository
         return await self._product_repo.create(
             product_code=product_code,
             name=name,
@@ -49,6 +52,14 @@ class CreateProductUseCase(ICreateProductUseCase):
             category_id=category_id,
             price=price,
             vat_rate=vat_rate,
-            stock_current=stock_current,
             stock_min=stock_min,
         )
+
+    async def _generate_next_product_code(self, prefix: str) -> str:
+        sequence = 1
+        while True:
+            candidate = f"{prefix}-{sequence:03d}"
+            existing = await self._product_repo.get_by_code(candidate)
+            if existing is None:
+                return candidate
+            sequence += 1

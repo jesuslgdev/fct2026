@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.clients.domain.entities.client import Client
 from modules.sales.domain.entities.sale import Sale
 from modules.sales.domain.entities.sale_line import SaleLine
+from modules.sales.domain.entities.sale_status_history import SaleStatusHistory
 from modules.sales.domain.interfaces.repositories.i_sale_repository import (
     ISaleRepository,
 )
@@ -44,6 +45,7 @@ class SaleRepository(ISaleRepository):
         self,
         sale_number: str,
         client_id: int,
+        warehouse_id: int,
         delivery_address: str,
         user_id: int,
         status: str,
@@ -55,6 +57,7 @@ class SaleRepository(ISaleRepository):
         sale = Sale(
             sale_number=sale_number,
             client_id=client_id,
+            warehouse_id=warehouse_id,
             delivery_address=delivery_address,
             user_id=user_id,
             status=status,
@@ -78,8 +81,18 @@ class SaleRepository(ISaleRepository):
             self._db.add(sale_line)
 
         await self._db.flush()
-        await self._db.refresh(sale, ["lines"])
+        await self._db.refresh(sale)
         return sale
+
+    async def save(self, sale: Sale) -> Sale:
+        self._db.add(sale)
+        await self._db.flush()
+        await self._db.refresh(sale)
+        return sale
+
+    async def add_status_history(self, history: SaleStatusHistory) -> None:
+        self._db.add(history)
+        await self._db.flush()
 
     async def get_by_id(self, sale_id: int) -> Sale | None:
         result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))

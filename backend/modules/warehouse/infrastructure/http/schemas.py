@@ -2,12 +2,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from shared.constants import POSTAL_CODE_PATTERN
+
 
 class AddressDTO(BaseModel):
     street: str = Field(..., min_length=1, max_length=255)
     city: str = Field(..., min_length=1, max_length=100)
     province: str = Field(..., min_length=1, max_length=100)
-    postal_code: str = Field(..., min_length=1, max_length=10)
+    postal_code: str = Field(..., pattern=POSTAL_CODE_PATTERN)
 
 
 class CreateWarehouseDTO(BaseModel):

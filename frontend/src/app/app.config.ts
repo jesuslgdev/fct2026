@@ -29,13 +29,15 @@ import { HttpUserRepository } from '@infrastructure/repositories/http/user.repos
 import { UserRepository } from '@domain/repositories/user.repository';
 import { SupplierProductRepository } from '@domain/repositories/supplier-product.repository';
 import { HttpSupplierProductRepository } from '@infrastructure/repositories/http/supplier-product.repository.http';
+import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
+import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
+import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
+import { HttpStockDistributionRepository } from '@infrastructure/repositories/http/stock-distribution.repository.http';
 import { HttpProductRepository } from '@infrastructure/repositories/http/product.repository.http';
 import { HttpProductCategoryRepository } from '@infrastructure/repositories/http/product-category.repository.http';
 import { AuthService } from '@core/services/auth.service';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
-import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
-import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -48,6 +50,13 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    { provide: CategoryRepository, useClass: HttpCategoryRepository },
+    { provide: ClientRepository, useClass: HttpClientRepository },
+    { provide: UserRepository, useClass: HttpUserRepository },
+    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
+    { provide: StockDistributionRepository, useClass: HttpStockDistributionRepository },
+    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
+    { provide: ProviderRepository, useClass: HttpProviderRepository },
     {
       provide: APP_INITIALIZER,
       useFactory: (authRepo: AuthRepository, authService: AuthService) => () =>
@@ -55,10 +64,6 @@ export const appConfig: ApplicationConfig = {
       deps: [AuthRepository, AuthService],
       multi: true,
     },
-    { provide: CategoryRepository, useClass: HttpCategoryRepository },
-    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
-    { provide: ClientRepository, useClass: HttpClientRepository },
-    { provide: UserRepository, useClass: HttpUserRepository },
     { provide: ProductRepository, useClass: HttpProductRepository },
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
     { provide: SupplierProductRepository, useClass: HttpSupplierProductRepository },

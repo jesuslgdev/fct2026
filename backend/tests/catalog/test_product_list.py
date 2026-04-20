@@ -17,7 +17,6 @@ async def setup_products(db_session: AsyncSession):
         name="Apple",
         category_id=cat.category_id,
         price=10,
-        stock_current=5,
         stock_min=1,
     )
     p2 = Product(
@@ -25,7 +24,6 @@ async def setup_products(db_session: AsyncSession):
         name="Banana",
         category_id=cat.category_id,
         price=5,
-        stock_current=5,
         stock_min=1,
     )
     db_session.add_all([p1, p2])
@@ -59,7 +57,6 @@ async def test_list_products_filter_by_category(
         name="Pizza",
         category_id=cat2.category_id,
         price=12,
-        stock_current=5,
         stock_min=1,
     )
     db_session.add(p3)
