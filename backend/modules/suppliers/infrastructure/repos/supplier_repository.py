@@ -235,6 +235,42 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
             for row in result.all()
         ]
 
+    async def get_product_by_supplier_detail(
+        self, supplier_id: int, product_id: int
+    ) -> SupplierProductDetail | None:
+        result = await self._db.execute(
+            select(
+                products_table.c.product_id,
+                products_table.c.name.label("product_name"),
+                products_table.c.product_code,
+                categories_table.c.name.label("category_name"),
+                SupplierProduct.supplier_price,
+            )
+            .select_from(SupplierProduct)
+            .join(
+                products_table,
+                SupplierProduct.product_id == products_table.c.product_id,
+            )
+            .outerjoin(
+                categories_table,
+                products_table.c.category_id == categories_table.c.category_id,
+            )
+            .where(
+                SupplierProduct.supplier_id == supplier_id,
+                SupplierProduct.product_id == product_id,
+            )
+        )
+        row = result.first()
+        if row is None:
+            return None
+        return SupplierProductDetail(
+            product_id=row.product_id,
+            product_name=row.product_name,
+            product_code=row.product_code,
+            category_name=row.category_name,
+            supplier_price=row.supplier_price,
+        )
+
     async def get_products_by_supplier_paginated(
         self, supplier_id: int, page: int, page_size: int
     ) -> PaginatedResult[SupplierProductDetail]:
