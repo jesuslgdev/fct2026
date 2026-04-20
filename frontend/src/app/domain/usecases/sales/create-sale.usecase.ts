@@ -21,19 +21,23 @@ export class CreateSaleUseCase {
   }
 
   private validate(data: CreateSale): void {
-    if (!data.clientId) {
+    if (!data.clientId || data.clientId <= 0) {
       throw new SaleValidationError({ field: 'clientId' }, 'Client ID is required.');
+    }
+
+    if (!data.warehouseId || data.warehouseId <= 0) {
+      throw new SaleValidationError({ field: 'warehouseId' }, 'Warehouse ID is required.');
     }
 
     if (!data.lines || data.lines.length === 0) {
       throw new SaleEmptyLinesError();
     }
 
-    const invalidLine = data.lines.find((line) => line.quantity <= 0);
+    const invalidLine = data.lines.find((line) => line.productId <= 0 || line.quantity <= 0);
     if (invalidLine) {
       throw new SaleValidationError(
         { field: 'lines', productId: invalidLine.productId },
-        'All quantities must be greater than 0.'
+        'All lines must have a valid product and quantity greater than 0.'
       );
     }
   }

@@ -1,5 +1,8 @@
 export enum SaleStatus {
   PENDING = 'Pending',
-  COMPLETED = 'Completed',
-  CANCELLED = 'Cancelled'
+  APPROVED = 'Approved',
+  IN_PROCESS = 'InProcess',
+  SHIPPED = 'Shipped',
+  DELIVERED = 'Delivered',
+  CANCELLED = 'Cancelled',
 }
