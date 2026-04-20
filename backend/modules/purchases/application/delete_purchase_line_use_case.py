@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.purchases.domain.exceptions import PurchaseException, PurchaseExceptionInfo
 from modules.purchases.domain.interfaces.repositories.i_purchase_repository import (
@@ -36,7 +34,7 @@ class DeletePurchaseLineUseCase(IDeletePurchaseLineUseCase):
 
         updated = await self._purchase_repo.get_by_id(purchase_id)
         subtotal = sum(line.line_subtotal for line in updated.lines)
-        taxes = subtotal * Decimal("0.21")
+        taxes = sum(line.line_tax for line in updated.lines)
         total = subtotal + taxes
 
         return await self._purchase_repo.update_totals(
