@@ -22,6 +22,8 @@ import {
   UserAlreadyInactiveError,
   UserApiError,
   UserDeletedError,
+  UserDepartmentNotFoundError,
+  UserDepartmentRequiredError,
   UserForbiddenError,
   UserNotFoundError,
   UserUnauthorizedError,
@@ -85,6 +87,14 @@ export class UsersStore {
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof UserAlreadyExistsError) {
       return 'Ya existe un usuario con este correo electronico.';
+    }
+
+    if (err instanceof UserDepartmentNotFoundError) {
+      return 'El departamento seleccionado ya no existe.';
+    }
+
+    if (err instanceof UserDepartmentRequiredError) {
+      return 'El departamento es obligatorio para gerentes y empleados.';
     }
 
     if (err instanceof UserAlreadyActiveError) {
@@ -220,10 +230,9 @@ export class UsersStore {
             }),
           )
         : this.createUserUseCase.execute(payload as CreateUserPayload).pipe(
-            tap((created) => {
-              this.users.update((list) => [...list, created]);
-              this.total.update((t) => t + 1);
+            tap(() => {
               this.closeDialog();
+              this.loadUsers();
             }),
           );
 

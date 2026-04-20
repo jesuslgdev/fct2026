@@ -281,15 +281,19 @@ async def set_supplier_active(
 
 
 @router.get("/{supplier_id}/products/template", tags=["Suppliers - Products"])
-def download_products_template(
+async def download_products_template(
     supplier_id: int,
+    product_ids: list[int] | None = Query(
+        default=None,
+        description="Product IDs to prefill in the template (repeat query param).",
+    ),
     _: UserSession = Depends(require_purchases_manager_or_admin),
     use_case: IDownloadSupplierProductTemplateUseCase = Depends(
         get_download_supplier_product_template_use_case
     ),
 ):
     """Download the Excel template for bulk supplier-product import."""
-    content = use_case.execute()
+    content = await use_case.execute(product_ids=product_ids)
     return StreamingResponse(
         BytesIO(content),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

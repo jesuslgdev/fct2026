@@ -43,7 +43,13 @@ class UpdateProductUseCase(IUpdateProductUseCase):
             if existing and existing.product_id != product_id:
                 raise CatalogException(CatalogExceptionInfo.PRODUCT_CODE_ALREADY_EXISTS)
 
-        # 3. Update via repo (repo handles not found)
+        # 3. Validate product name uniqueness if provided
+        if name is not None:
+            existing_name = await self._product_repo.get_by_name(name)
+            if existing_name and existing_name.product_id != product_id:
+                raise CatalogException(CatalogExceptionInfo.PRODUCT_NAME_ALREADY_EXISTS)
+
+        # 4. Update via repo (repo handles not found)
         return await self._product_repo.update(
             product_id=product_id,
             product_code=product_code,
