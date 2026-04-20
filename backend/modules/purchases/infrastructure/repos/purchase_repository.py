@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.purchases.domain.entities.purchase_line import PurchaseLine
@@ -96,9 +97,16 @@ class PurchaseRepository(IPurchaseRepository, IPurchaseReader):
         return PaginatedResult(items=items, total=total, page=page, page_size=page_size)
 
     async def get_by_id(self, purchase_id: int) -> Purchase | None:
-        result = await self._db.execute(
-            select(Purchase).where(Purchase.purchase_id == purchase_id)
+        stmt = (
+            select(Purchase)
+            .where(Purchase.purchase_id == purchase_id)
+            .options(
+                selectinload(Purchase.lines),
+                selectinload(Purchase.status_history),
+            )
+            .execution_options(populate_existing=True)
         )
+        result = await self._db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def generate_purchase_number(self) -> str:

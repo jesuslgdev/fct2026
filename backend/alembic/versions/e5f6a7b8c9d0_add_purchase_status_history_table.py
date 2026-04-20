@@ -31,9 +31,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("changed_by_user_id", sa.Integer(), nullable=False),
-        sa.PrimaryKeyConstraint(
-            "history_id", name=op.f("pk_purchase_status_history")
-        ),
+        sa.PrimaryKeyConstraint("history_id", name=op.f("pk_purchase_status_history")),
         sa.ForeignKeyConstraint(
             ["purchase_id"],
             ["purchases.purchase_id"],

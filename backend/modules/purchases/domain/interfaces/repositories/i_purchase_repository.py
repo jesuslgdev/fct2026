@@ -4,7 +4,9 @@ from decimal import Decimal
 
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.purchases.domain.entities.purchase_line import PurchaseLine
-from modules.purchases.domain.entities.purchase_status_history import PurchaseStatusHistory
+from modules.purchases.domain.entities.purchase_status_history import (
+    PurchaseStatusHistory,
+)
 from shared.domain.dtos.paginated_result import PaginatedResult
 
 
