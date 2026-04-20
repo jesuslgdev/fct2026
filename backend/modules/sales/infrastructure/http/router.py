@@ -8,6 +8,7 @@ from composition.dependencies import (
     get_create_sale_use_case,
     get_get_sale_use_case,
     get_list_sales_use_case,
+    get_update_sale_use_case,
 )
 from composition.security import require_sales_department_or_admin
 from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case import (
@@ -22,12 +23,16 @@ from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
 from modules.sales.domain.interfaces.use_cases.i_list_sales_use_case import (
     IListSalesUseCase,
 )
+from modules.sales.domain.interfaces.use_cases.i_update_sale_use_case import (
+    IUpdateSaleUseCase,
+)
 from modules.sales.domain.sale_status import allowed_next
 from modules.sales.infrastructure.http.schemas import (
     ChangeSaleStatusRequest,
     CreateSaleRequest,
     SaleDetailDTO,
     SaleDTO,
+    UpdateSaleRequest,
 )
 from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
@@ -95,12 +100,13 @@ async def list_sales(
                 client_id=sale.client_id,
                 warehouse_id=sale.warehouse_id,
                 client_name=client_name,
+                creator_name=creator_name,
                 status=sale.status,
                 allowed_transitions=allowed_next(sale.status),
                 sale_date=sale.sale_date,
                 total=sale.total,
             )
-            for sale, client_name in result.items
+            for sale, client_name, creator_name in result.items
         ],
         total=result.total,
         page=result.page,
@@ -116,6 +122,23 @@ async def get_sale(
 ):
     """Return the full detail of a single sale."""
     sale = await use_case.execute(sale_id)
+    return SaleDetailDTO.from_entity(sale)
+
+
+@router.put("/{sale_id}", response_model=SaleDetailDTO, tags=["Sales"])
+async def update_sale(
+    sale_id: int,
+    body: UpdateSaleRequest,
+    _: UserSession = Depends(require_sales_department_or_admin),
+    use_case: IUpdateSaleUseCase = Depends(get_update_sale_use_case),
+):
+    """Update an existing pending sale."""
+    sale = await use_case.execute(
+        sale_id=sale_id,
+        client_id=body.client_id,
+        delivery_address=body.delivery_address,
+        lines=[line.model_dump() for line in body.lines],
+    )
     return SaleDetailDTO.from_entity(sale)
 
 
