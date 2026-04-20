@@ -92,6 +92,11 @@ class ISupplierRepository(ABC):
     ) -> list[SupplierProductDetail]: ...
 
     @abstractmethod
+    async def get_product_by_supplier_detail(
+        self, supplier_id: int, product_id: int
+    ) -> SupplierProductDetail | None: ...
+
+    @abstractmethod
     async def get_products_by_supplier_paginated(
         self, supplier_id: int, page: int, page_size: int
     ) -> PaginatedResult[SupplierProductDetail]: ...

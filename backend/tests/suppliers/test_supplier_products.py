@@ -21,7 +21,6 @@ from modules.suppliers.domain.dtos.product_supplier_detail import (
 from modules.suppliers.domain.dtos.supplier_product_detail import (
     SupplierProductDetail,
 )
-from modules.suppliers.domain.entities.supplier_product import SupplierProduct
 from shared.domain.dtos.paginated_result import PaginatedResult
 from shared.domain.dtos.user_session import UserSession
 
@@ -69,21 +68,18 @@ async def auth_client():
     app.dependency_overrides.clear()
 
 
-def _make_supplier_product(s_id=1, p_id=1, price=10.5):
-    sp = MagicMock(spec=SupplierProduct)
-    sp.supplier_id = s_id
-    sp.product_id = p_id
-    sp.supplier_price = Decimal(str(price))
-    return sp
-
-
-def _make_supplier_product_detail(p_id=1):
+def _make_supplier_product_detail(
+    p_id=1,
+    product_name: str | None = None,
+    product_code: str | None = None,
+    supplier_price: Decimal = Decimal("10.50"),
+):
     return SupplierProductDetail(
         product_id=p_id,
-        product_name=f"Product {p_id}",
-        product_code=f"CODE-{p_id}",
+        product_name=product_name or f"Product {p_id}",
+        product_code=product_code or f"CODE-{p_id}",
         category_name="Cat",
-        supplier_price=Decimal("10.50"),
+        supplier_price=supplier_price,
     )
 
 
@@ -98,7 +94,14 @@ def _make_product_supplier_detail(s_id=1):
 
 async def test_add_product_to_supplier(auth_client: AsyncClient):
     mock = MagicMock()
-    mock.execute = AsyncMock(return_value=_make_supplier_product(1, 10, 50.0))
+    mock.execute = AsyncMock(
+        return_value=_make_supplier_product_detail(
+            10,
+            product_name="Product 10",
+            product_code="CODE-10",
+            supplier_price=Decimal("50.00"),
+        )
+    )
     app.dependency_overrides[get_add_product_to_supplier_use_case] = lambda: mock
 
     response = await auth_client.post(
@@ -109,7 +112,10 @@ async def test_add_product_to_supplier(auth_client: AsyncClient):
     assert response.status_code == 201
     body = response.json()
     assert body["product_id"] == 10
-    assert body["supplier_price"] == "50.0"
+    assert body["product_name"] == "Product 10"
+    assert body["product_code"] == "CODE-10"
+    assert body["category_name"] == "Cat"
+    assert body["supplier_price"] == "50.00"
     mock.execute.assert_called_once_with(1, 10, Decimal("50.0"))
 
 
@@ -132,7 +138,14 @@ async def test_list_supplier_products(auth_client: AsyncClient):
 
 async def test_update_supplier_product_price(auth_client: AsyncClient):
     mock = MagicMock()
-    mock.execute = AsyncMock(return_value=_make_supplier_product(1, 10, 75.0))
+    mock.execute = AsyncMock(
+        return_value=_make_supplier_product_detail(
+            10,
+            product_name="Product 10",
+            product_code="CODE-10",
+            supplier_price=Decimal("75.00"),
+        )
+    )
     app.dependency_overrides[get_update_supplier_product_price_use_case] = lambda: mock
 
     response = await auth_client.put(
@@ -141,7 +154,11 @@ async def test_update_supplier_product_price(auth_client: AsyncClient):
     )
 
     assert response.status_code == 200
-    assert response.json()["supplier_price"] == "75.0"
+    body = response.json()
+    assert body["product_name"] == "Product 10"
+    assert body["product_code"] == "CODE-10"
+    assert body["category_name"] == "Cat"
+    assert body["supplier_price"] == "75.00"
     mock.execute.assert_called_once_with(1, 10, Decimal("75.0"))
 
 
