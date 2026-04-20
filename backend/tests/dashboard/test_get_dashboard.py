@@ -16,6 +16,8 @@ from modules.clients.domain.entities.client import Client
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.sales.domain.entities.sale import Sale
 from modules.suppliers.domain.entities.supplier import Supplier
+from modules.warehouse.domain.entities.warehouse import Warehouse
+from modules.warehouse.domain.entities.warehouse_stock import WarehouseStock
 from shared.config import settings
 from shared.domain.dtos.address import Address
 from shared.domain.dtos.user_session import UserSession
@@ -151,22 +153,41 @@ async def seeded_dashboard_data(db_session: AsyncSession):
     db_session.add(category)
     await db_session.flush()
 
+    warehouse = Warehouse(
+        name="Main Warehouse",
+        address_data=Address("Warehouse 1", "Madrid", "Madrid", "28001"),
+    )
+    db_session.add(warehouse)
+    await db_session.flush()
+
+    products: list[tuple[Product, int]] = []
     for code, name, stock_current, stock_min in [
         ("LOW-001", "Low Product 1", 3, 10),
         ("LOW-002", "Low Product 2", 0, 5),
         ("OK-001", "Healthy Product", 20, 5),
     ]:
+        product = Product(
+            product_code=code,
+            name=name,
+            description="",
+            category_id=category.category_id,
+            price=Decimal("10.00"),
+            vat_rate=Decimal("0.21"),
+            stock_min=stock_min,
+            is_active=True,
+        )
+        db_session.add(product)
+        products.append((product, stock_current))
+
+    await db_session.flush()
+
+    for product, stock_current in products:
         db_session.add(
-            Product(
-                product_code=code,
-                name=name,
-                description="",
-                category_id=category.category_id,
-                price=Decimal("10.00"),
-                vat_rate=Decimal("0.21"),
-                stock_current=stock_current,
-                stock_min=stock_min,
-                is_active=True,
+            WarehouseStock(
+                warehouse_id=warehouse.warehouse_id,
+                product_id=product.product_id,
+                stock=stock_current,
+                reserved_stock=0,
             )
         )
 
@@ -191,7 +212,7 @@ async def seeded_dashboard_data(db_session: AsyncSession):
                 purchase_number=number,
                 supplier_id=suppliers[supplier_idx].supplier_id,
                 user_id=purchases_user.user_id,
-                warehouse_id=1,
+                warehouse_id=warehouse.warehouse_id,
                 purchase_date=purchase_date,
                 status=status,
                 status_changed_at=now - timedelta(days=stale_days),

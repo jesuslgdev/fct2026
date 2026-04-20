@@ -10,7 +10,6 @@ products_table = Table(
     Column("product_code", String),
     Column("name", String),
     Column("category_id", Integer),
-    Column("stock_current", Integer),
     Column("stock_min", Integer),
 )
 
@@ -59,4 +58,14 @@ sales_table = Table(
     Column("total", Numeric(10, 2)),
     Column("created_at", DateTime(timezone=True)),
     Column("status_changed_at", DateTime(timezone=True)),
+)
+
+warehouse_stock_table = Table(
+    "warehouse_stock",
+    READ_METADATA,
+    Column("warehouse_stock_id", Integer, primary_key=True),
+    Column("warehouse_id", Integer),
+    Column("product_id", Integer),
+    Column("stock", Integer),
+    Column("reserved_stock", Integer),
 )

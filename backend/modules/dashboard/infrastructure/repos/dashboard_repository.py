@@ -23,6 +23,7 @@ from shared.infrastructure.database.read_tables import (
     purchases_table,
     sales_table,
     suppliers_table,
+    warehouse_stock_table,
 )
 
 
@@ -183,16 +184,29 @@ class DashboardRepository(IDashboardRepository):
         return total if isinstance(total, Decimal) else Decimal(str(total))
 
     async def _low_stock_products(self) -> list[DashboardLowStockProduct]:
+        stock_total = func.coalesce(func.sum(warehouse_stock_table.c.stock), 0)
         result = await self._db.execute(
             select(
                 products_table.c.product_id,
                 products_table.c.product_code,
                 products_table.c.name.label("product_name"),
-                products_table.c.stock_current,
+                stock_total.label("stock_current"),
                 products_table.c.stock_min,
             )
-            .where(products_table.c.stock_current < products_table.c.stock_min)
-            .order_by(products_table.c.stock_current.asc(), products_table.c.name.asc())
+            .select_from(
+                products_table.outerjoin(
+                    warehouse_stock_table,
+                    warehouse_stock_table.c.product_id == products_table.c.product_id,
+                )
+            )
+            .group_by(
+                products_table.c.product_id,
+                products_table.c.product_code,
+                products_table.c.name,
+                products_table.c.stock_min,
+            )
+            .having(stock_total < products_table.c.stock_min)
+            .order_by(stock_total.asc(), products_table.c.name.asc())
         )
         return [
             DashboardLowStockProduct(
