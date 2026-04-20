@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from modules.sales.domain.entities.sale import Sale
+from modules.sales.domain.entities.sale_status_history import SaleStatusHistory
 from shared.domain.dtos.paginated_result import PaginatedResult
 
 
@@ -15,6 +16,7 @@ class ISaleRepository(ABC):
         self,
         sale_number: str,
         client_id: int,
+        warehouse_id: int,
         delivery_address: str,
         user_id: int,
         status: str,
@@ -40,3 +42,9 @@ class ISaleRepository(ABC):
         date_to: datetime | None,
         search: str | None = None,
     ) -> PaginatedResult: ...
+
+    @abstractmethod
+    async def save(self, sale: Sale) -> Sale: ...
+
+    @abstractmethod
+    async def add_status_history(self, history: SaleStatusHistory) -> None: ...

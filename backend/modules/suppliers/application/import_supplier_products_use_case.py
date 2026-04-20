@@ -18,6 +18,7 @@ from modules.suppliers.domain.interfaces.use_cases.i_import_supplier_products_us
 from shared.domain.interfaces.i_product_reader import IProductReader
 
 EXPECTED_HEADERS = ["Código Producto", "Precio Proveedor"]
+OPTIONAL_HEADER = "Nombre Producto"
 
 
 class ImportSupplierProductsUseCase(IImportSupplierProductsUseCase):
@@ -60,9 +61,14 @@ class ImportSupplierProductsUseCase(IImportSupplierProductsUseCase):
                 )
 
             headers = [str(h).strip() if h else "" for h in header_row]
-            header_prefix = headers[: len(EXPECTED_HEADERS)]
-            extra_headers = headers[len(EXPECTED_HEADERS) :]
-            if header_prefix != EXPECTED_HEADERS or any(h for h in extra_headers):
+            while headers and headers[-1] == "":
+                headers.pop()
+
+            valid_headers = headers in (
+                EXPECTED_HEADERS,
+                [*EXPECTED_HEADERS, OPTIONAL_HEADER],
+            )
+            if not valid_headers:
                 return ImportResult(
                     total=0,
                     created=0,

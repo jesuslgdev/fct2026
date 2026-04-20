@@ -1,4 +1,5 @@
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.warehouse import Warehouse
@@ -181,6 +182,33 @@ async def test_filter_by_search_and_warehouse(
     assert data["total"] == 1
     assert data["items"][0]["product_id"] == second_product.product_id
     assert data["items"][0]["warehouse_id"] == warehouse_a.warehouse_id
+
+
+async def test_zero_stock_excluded(
+    client: AsyncClient,
+    stock_distribution_seed: list[WarehouseStock],
+    db_session: AsyncSession,
+    second_product: Product,
+    warehouse_b: Warehouse,
+):
+    """Records with stock=0 are excluded from the response."""
+    zero_stock = WarehouseStock(
+        warehouse_id=warehouse_b.warehouse_id,
+        product_id=second_product.product_id,
+        stock=0,
+        reserved_stock=0,
+    )
+    db_session.add(zero_stock)
+    await db_session.flush()
+
+    response = await client.get(BASE)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] == 3
+    assert len(data["items"]) == 3
+    for item in data["items"]:
+        assert item["stock"] > 0
 
 
 # ── Pagination ─────────────────────────────────────────────────────
