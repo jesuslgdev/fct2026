@@ -3,9 +3,10 @@ from unittest.mock import AsyncMock, MagicMock
 from httpx import AsyncClient
 
 from composition.dependencies import get_get_sale_use_case
+from composition.security import require_sales_department_or_admin
 from main import app
 from modules.sales.domain.exceptions import SaleException, SaleExceptionInfo
-from tests.sales.conftest import make_sale, make_sale_line
+from tests.sales.conftest import _mock_sales_user, make_sale, make_sale_line
 
 
 async def test_get_sale_success(auth_client: AsyncClient):
@@ -13,8 +14,10 @@ async def test_get_sale_success(auth_client: AsyncClient):
     mock = MagicMock()
     mock.execute = AsyncMock(return_value=sale)
     app.dependency_overrides[get_get_sale_use_case] = lambda: mock
+    app.dependency_overrides[require_sales_department_or_admin] = _mock_sales_user
     response = await auth_client.get("/api/v1/sales/1")
     del app.dependency_overrides[get_get_sale_use_case]
+    del app.dependency_overrides[require_sales_department_or_admin]
     assert response.status_code == 200
     body = response.json()
     assert body["sale_id"] == 1
@@ -31,8 +34,10 @@ async def test_get_sale_delivery_address(auth_client: AsyncClient):
     mock = MagicMock()
     mock.execute = AsyncMock(return_value=sale)
     app.dependency_overrides[get_get_sale_use_case] = lambda: mock
+    app.dependency_overrides[require_sales_department_or_admin] = _mock_sales_user
     response = await auth_client.get("/api/v1/sales/1")
     del app.dependency_overrides[get_get_sale_use_case]
+    del app.dependency_overrides[require_sales_department_or_admin]
     assert response.status_code == 200
     assert (
         response.json()["delivery_address"] == "Gran Via 10, Barcelona, Cataluña, 08001"
@@ -44,8 +49,10 @@ async def test_get_sale_economic_summary(auth_client: AsyncClient):
     mock = MagicMock()
     mock.execute = AsyncMock(return_value=sale)
     app.dependency_overrides[get_get_sale_use_case] = lambda: mock
+    app.dependency_overrides[require_sales_department_or_admin] = _mock_sales_user
     response = await auth_client.get("/api/v1/sales/1")
     del app.dependency_overrides[get_get_sale_use_case]
+    del app.dependency_overrides[require_sales_department_or_admin]
     assert response.status_code == 200
     body = response.json()
     assert float(body["subtotal"]) == 100.00
@@ -67,8 +74,10 @@ async def test_get_sale_line_details(auth_client: AsyncClient):
     mock = MagicMock()
     mock.execute = AsyncMock(return_value=sale)
     app.dependency_overrides[get_get_sale_use_case] = lambda: mock
+    app.dependency_overrides[require_sales_department_or_admin] = _mock_sales_user
     response = await auth_client.get("/api/v1/sales/1")
     del app.dependency_overrides[get_get_sale_use_case]
+    del app.dependency_overrides[require_sales_department_or_admin]
     assert response.status_code == 200
     line_body = response.json()["lines"][0]
     assert line_body["quantity"] == 3
@@ -84,8 +93,10 @@ async def test_get_sale_not_found(auth_client: AsyncClient):
         side_effect=SaleException(SaleExceptionInfo.SALE_NOT_FOUND)
     )
     app.dependency_overrides[get_get_sale_use_case] = lambda: mock
+    app.dependency_overrides[require_sales_department_or_admin] = _mock_sales_user
     response = await auth_client.get("/api/v1/sales/999")
     del app.dependency_overrides[get_get_sale_use_case]
+    del app.dependency_overrides[require_sales_department_or_admin]
     assert response.status_code == 404
 
 

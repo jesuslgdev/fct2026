@@ -8,7 +8,7 @@ from composition.dependencies import get_update_sale_use_case
 from composition.security import require_sales_department_or_admin
 from main import app
 from modules.sales.domain.exceptions import SaleException, SaleExceptionInfo
-from tests.sales.conftest import make_sale, make_sale_line
+from tests.sales.conftest import _mock_sales_user, make_sale, make_sale_line
 
 VALID_UPDATE_BODY = {
     "client_id": 6,
@@ -38,8 +38,10 @@ async def test_update_sale_success_pending(auth_client: AsyncClient):
     mock = MagicMock()
     mock.execute = AsyncMock(return_value=sale)
     app.dependency_overrides[get_update_sale_use_case] = lambda: mock
+    app.dependency_overrides[require_sales_department_or_admin] = _mock_sales_user
     response = await auth_client.put("/api/v1/sales/1", json=VALID_UPDATE_BODY)
     del app.dependency_overrides[get_update_sale_use_case]
+    del app.dependency_overrides[require_sales_department_or_admin]
 
     assert response.status_code == 200
     body = response.json()
@@ -60,8 +62,10 @@ async def test_update_sale_not_pending_error(auth_client: AsyncClient):
         side_effect=SaleException(SaleExceptionInfo.SALE_NOT_PENDING)
     )
     app.dependency_overrides[get_update_sale_use_case] = lambda: mock
+    app.dependency_overrides[require_sales_department_or_admin] = _mock_sales_user
     response = await auth_client.put("/api/v1/sales/1", json=VALID_UPDATE_BODY)
     del app.dependency_overrides[get_update_sale_use_case]
+    del app.dependency_overrides[require_sales_department_or_admin]
 
     assert response.status_code == 400
     body = response.json()
@@ -73,10 +77,9 @@ async def test_update_sale_forbidden_for_non_sales(auth_client: AsyncClient):
     def override_forbidden():
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    previous_override = app.dependency_overrides[require_sales_department_or_admin]
     app.dependency_overrides[require_sales_department_or_admin] = override_forbidden
     response = await auth_client.put("/api/v1/sales/1", json=VALID_UPDATE_BODY)
-    app.dependency_overrides[require_sales_department_or_admin] = previous_override
+    del app.dependency_overrides[require_sales_department_or_admin]
     assert response.status_code == 403
 
 

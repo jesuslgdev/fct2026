@@ -23,10 +23,10 @@ from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
 from modules.sales.domain.interfaces.use_cases.i_list_sales_use_case import (
     IListSalesUseCase,
 )
-from modules.sales.domain.sale_status import allowed_next
 from modules.sales.domain.interfaces.use_cases.i_update_sale_use_case import (
     IUpdateSaleUseCase,
 )
+from modules.sales.domain.sale_status import allowed_next
 from modules.sales.infrastructure.http.schemas import (
     ChangeSaleStatusRequest,
     CreateSaleRequest,

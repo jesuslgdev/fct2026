@@ -23,8 +23,12 @@ async def test_update_sale_recalculates_totals_and_updates_stock():
     repo.get_by_id.return_value = existing_sale
     client_reader.get_by_id.return_value = MagicMock(is_active=True)
 
-    product_10 = MagicMock(is_active=True, price=Decimal("50.00"), vat_rate=Decimal("0.21"))
-    product_11 = MagicMock(is_active=True, price=Decimal("20.00"), vat_rate=Decimal("0.10"))
+    product_10 = MagicMock(
+        is_active=True, price=Decimal("50.00"), vat_rate=Decimal("0.21")
+    )
+    product_11 = MagicMock(
+        is_active=True, price=Decimal("20.00"), vat_rate=Decimal("0.10")
+    )
 
     async def get_product(product_id: int):
         return {10: product_10, 11: product_11}.get(product_id)
