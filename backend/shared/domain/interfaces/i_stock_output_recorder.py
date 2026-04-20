@@ -16,5 +16,4 @@ class IStockOutputRecorder(ABC):
         quantity: int,
         user_email: str,
         reason: str,
-        update_global: bool = True,
     ) -> None: ...
