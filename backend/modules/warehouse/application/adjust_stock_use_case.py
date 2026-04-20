@@ -17,14 +17,13 @@ from modules.warehouse.domain.interfaces.use_cases.i_adjust_stock_use_case impor
     IAdjustStockUseCase,
 )
 from shared.domain.interfaces.i_product_reader import IProductReader
-from shared.domain.interfaces.i_product_stock_updater import IProductStockUpdater
 
 
 class AdjustStockUseCase(IAdjustStockUseCase):
     """Adjust stock for a product in a specific warehouse.
 
-    Creates an auditable StockMovement record and updates the product's
-    global stock_current across all warehouses.
+    Creates an auditable StockMovement record. Product.stock_current is
+    computed automatically from warehouse_stock via a column_property.
     """
 
     def __init__(
@@ -33,13 +32,11 @@ class AdjustStockUseCase(IAdjustStockUseCase):
         stock_repo: IWarehouseStockRepository,
         movement_repo: IStockMovementRepository,
         product_reader: IProductReader,
-        stock_updater: IProductStockUpdater,
     ) -> None:
         self._warehouse_repo = warehouse_repo
         self._stock_repo = stock_repo
         self._movement_repo = movement_repo
         self._product_reader = product_reader
-        self._stock_updater = stock_updater
 
     async def execute(
         self,
@@ -83,9 +80,7 @@ class AdjustStockUseCase(IAdjustStockUseCase):
         )
         movement = await self._movement_repo.create(movement)
 
-        # 6. Recalculate global stock and update Product.stock_current
         global_stock = await self._stock_repo.get_global_stock(product_id)
-        await self._stock_updater.update_stock_current(product_id, global_stock)
 
         return AdjustStockResult(
             movement_id=movement.movement_id,

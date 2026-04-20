@@ -3,11 +3,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from composition.router_registry import register_routers
 from composition.security import get_current_user
 from shared.config import settings
+from shared.domain.dtos.user_session import UserSession
+from shared.domain.entities.user import User
 from shared.exceptions import AppException
 from shared.infrastructure.database.connection import AsyncSessionLocal, engine
 from shared.infrastructure.database.seed import seed
@@ -40,8 +42,33 @@ app.add_middleware(
 
 if settings.disable_auth:
 
-    async def _mock_user() -> dict:
-        return {"uid": "dev-user", "email": "dev@local.dev"}
+    async def _mock_user() -> UserSession:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(User).where(User.email == "admin@example.com")
+            )
+            user = result.scalar_one_or_none()
+
+        if user is not None:
+            return UserSession(
+                user_id=user.user_id,
+                email=user.email,
+                role=user.role,
+                department_id=user.department_id,
+                firebase_uid="dev-user",
+                name=f"{user.first_name} {user.last_name}".strip(),
+                last_login_at=user.last_login_at,
+            )
+
+        return UserSession(
+            user_id=1,
+            email="dev@local.dev",
+            role="Administrator",
+            department_id=None,
+            firebase_uid="dev-user",
+            name="Dev User",
+            last_login_at=None,
+        )
 
     app.dependency_overrides[get_current_user] = _mock_user
 

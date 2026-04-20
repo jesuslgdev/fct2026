@@ -7,7 +7,9 @@ import { HttpUserRepository } from './user.repository.http';
 import {
   UserAlreadyActiveError,
   UserDeletedError,
+  UserDepartmentRequiredError,
 } from '@domain/models/user-errors';
+import { UserRole } from '@domain/enums/user-role.enum';
 import { environment } from 'environments/environment';
 
 const BASE_URL = `${environment.apiUrl}/api/v1/admin/users`;
@@ -73,4 +75,22 @@ describe('HttpUserRepository', () => {
     await expect(promise).rejects.toBeInstanceOf(UserDeletedError);
   });
 
+  it('maps department required validation errors', async () => {
+    const promise = firstValueFrom(
+      repo.createUser({
+        firstName: 'Ana',
+        lastName: 'Garcia',
+        email: 'ana@example.com',
+        role: UserRole.Employee,
+        departmentId: null,
+      }),
+    );
+
+    controller.expectOne(BASE_URL).flush(
+      { message: 'Department is required for Manager and Employee roles', error_code: 1204 },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    await expect(promise).rejects.toBeInstanceOf(UserDepartmentRequiredError);
+  });
 });
