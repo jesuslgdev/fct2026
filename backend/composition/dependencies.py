@@ -216,9 +216,15 @@ from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case im
 from modules.purchases.infrastructure.repos.purchase_repository import (
     PurchaseRepository,
 )
+from modules.sales.application.advance_sale_status_use_case import (
+    AdvanceSaleStatusUseCase,
+)
 from modules.sales.application.create_sale_use_case import CreateSaleUseCase
 from modules.sales.application.get_sale_use_case import GetSaleUseCase
 from modules.sales.application.list_sales_use_case import ListSalesUseCase
+from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case import (
+    IAdvanceSaleStatusUseCase,
+)
 from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
     ICreateSaleUseCase,
 )
@@ -359,6 +365,9 @@ from modules.warehouse.infrastructure.repos.stock_entry_recorder import (
 )
 from modules.warehouse.infrastructure.repos.stock_movement_repository import (
     StockMovementRepository,
+)
+from modules.warehouse.infrastructure.repos.stock_output_recorder import (
+    StockOutputRecorder,
 )
 from modules.warehouse.infrastructure.repos.warehouse_repository import (
     WarehouseRepository,
@@ -797,3 +806,20 @@ async def get_list_sales_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IListSalesUseCase:
     return ListSalesUseCase(SaleRepository(db))
+
+
+async def get_advance_sale_status_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IAdvanceSaleStatusUseCase:
+    return AdvanceSaleStatusUseCase(
+        sale_repo=SaleRepository(db),
+        product_reader=ProductRepository(db),
+        stock_output_recorder=StockOutputRecorder(
+            stock_repo=WarehouseStockRepository(db),
+            movement_repo=StockMovementRepository(db),
+        ),
+        stock_entry_recorder=StockEntryRecorder(
+            stock_repo=WarehouseStockRepository(db),
+            movement_repo=StockMovementRepository(db),
+        ),
+    )
