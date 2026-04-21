@@ -28,6 +28,17 @@ import {
   PurchaseWarehouseOption,
 } from '@domain/models/purchase.model';
 
+interface PurchaseWarehouseAddressDto {
+  street: string;
+  city: string;
+  province: string;
+  postal_code: string;
+}
+
+export type PurchaseWarehouseDto = Omit<WarehouseDto, 'address'> & {
+  address: string | PurchaseWarehouseAddressDto | null;
+};
+
 const SORT_FIELD_TO_BACKEND: Record<PurchaseSortField, string> = {
   purchaseNumber: 'purchase_number',
   supplierName: 'supplier_name',
@@ -163,12 +174,32 @@ export class PurchaseMapper {
     };
   }
 
-  static fromWarehouseDto(dto: WarehouseDto): PurchaseWarehouseOption {
+  static fromWarehouseDto(dto: PurchaseWarehouseDto): PurchaseWarehouseOption {
     return {
       warehouseId: dto.warehouse_id,
       warehouseName: dto.name,
-      address: dto.address,
+      address: this.formatWarehouseAddress(dto.address),
     };
+  }
+
+  static formatWarehouseAddress(address: PurchaseWarehouseDto['address']): string {
+    if (typeof address === 'string') {
+      return address.trim();
+    }
+
+    if (!address) {
+      return '';
+    }
+
+    const street = address.street.trim();
+    const locality = [address.postal_code.trim(), address.city.trim()]
+      .filter((value) => value.length > 0)
+      .join(' ');
+    const province = address.province.trim();
+
+    return [street, locality, province]
+      .filter((value) => value.length > 0)
+      .join(', ');
   }
 
   static toSupplierProductOption(
