@@ -22,7 +22,9 @@ class CancelPurchaseUseCase(ICancelPurchaseUseCase):
         if purchase.status not in ("Pending", "Approved"):
             raise PurchaseException(PurchaseExceptionInfo.PURCHASE_NOT_CANCELLABLE)
         from_status = purchase.status
-        cancelled_purchase = await self._purchase_repo.cancel_purchase(purchase_id, user_id)
+        cancelled_purchase = await self._purchase_repo.cancel_purchase(
+            purchase_id, user_id
+        )
         history = PurchaseStatusHistory(
             purchase_id=cancelled_purchase.purchase_id,
             from_status=from_status,
