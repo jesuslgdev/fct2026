@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { SaleRepository } from '../../repositories/sale.repository';
-import { PagedResult, Sale, SaleFilters } from '../../models/sale.model';
+import { ListSalesFilters, PagedResult, Sale } from '../../models/sale.model';
 import { SaleValidationError } from '../../models/sale-errors';
 
 @Injectable({
@@ -10,7 +10,7 @@ import { SaleValidationError } from '../../models/sale-errors';
 export class ListSalesUseCase {
   private readonly saleRepository = inject(SaleRepository);
 
-  execute(filters: SaleFilters = {}): Observable<PagedResult<Sale>> {
+  execute(filters: ListSalesFilters = {}): Observable<PagedResult<Sale>> {
     try {
       const normalizedFilters = this.normalize(filters);
       this.validate(normalizedFilters);
@@ -20,20 +20,17 @@ export class ListSalesUseCase {
     }
   }
 
-  private normalize(filters: SaleFilters): SaleFilters {
-    const search = filters.search?.trim();
-
+  private normalize(filters: ListSalesFilters): ListSalesFilters {
     return {
       ...filters,
       page: filters.page ?? 1,
       pageSize: filters.pageSize ?? 20,
       sortField: filters.sortField ?? 'created_at',
       sortOrder: filters.sortOrder ?? 'desc',
-      search: search || undefined,
     };
   }
 
-  private validate(filters: SaleFilters): void {
+  private validate(filters: ListSalesFilters): void {
     if (!filters.page || filters.page < 1) {
       throw new SaleValidationError({ field: 'page' }, 'Page must be greater than or equal to 1.');
     }

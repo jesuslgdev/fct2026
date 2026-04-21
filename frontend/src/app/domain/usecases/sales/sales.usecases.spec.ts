@@ -4,10 +4,10 @@ import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 import { SaleRepository } from '../../repositories/sale.repository';
 import {
   CreateSale,
+  ListSalesFilters,
   PagedResult,
   Sale,
   SaleDetail,
-  SaleFilters,
 } from '../../models/sale.model';
 import { SaleStatus } from '../../enums/sale-status.enum';
 import { ListSalesUseCase } from './list-sales.usecase';
@@ -25,11 +25,12 @@ const UPDATED_AT = new Date('2026-04-01T10:02:00.000Z');
 const CHANGED_AT = new Date('2026-04-01T10:03:00.000Z');
 
 const SALE_MOCK: Sale = {
-  id: 1,
+  saleId: 1,
   saleNumber: 'VEN-2026-0001',
   clientId: 1,
   warehouseId: 2,
   clientName: 'Test Client',
+  creatorName: 'Sales User',
   status: SaleStatus.PENDING,
   allowedTransitions: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
   deliveryAddress: 'Test Address, Test City, Test Province, 12345',
@@ -51,6 +52,7 @@ const SALE_DETAIL_MOCK: SaleDetail = {
       productId: 1,
       quantity: 2,
       unitPrice: 40,
+      discount: 0,
       lineSubtotal: 80,
       vatRate: 0.21,
       lineTax: 16.8,
@@ -67,7 +69,7 @@ const SALE_DETAIL_MOCK: SaleDetail = {
 };
 
 class MockSaleRepository implements SaleRepository {
-  list = vi.fn<(filters: SaleFilters) => Observable<PagedResult<Sale>>>();
+  list = vi.fn<(filters: ListSalesFilters) => Observable<PagedResult<Sale>>>();
   getById = vi.fn<(id: number) => Observable<SaleDetail>>();
   create = vi.fn<(data: CreateSale) => Observable<SaleDetail>>();
 }
@@ -105,14 +107,13 @@ describe('Sales Use Cases', () => {
         pageSize: 20,
         sortField: 'created_at',
         sortOrder: 'desc',
-        search: undefined,
       });
       expect(result).toEqual(response);
     });
 
-    it('should preserve combinable filters and trim search', async () => {
+    it('should preserve combinable filters for the sales listing', async () => {
       const useCase = TestBed.inject(ListSalesUseCase);
-      const filters: SaleFilters = {
+      const filters: ListSalesFilters = {
         page: 2,
         pageSize: 20,
         sortField: 'client_name',
@@ -121,7 +122,6 @@ describe('Sales Use Cases', () => {
         clientId: 7,
         dateFrom: new Date('2026-01-01T00:00:00.000Z'),
         dateTo: new Date('2026-01-31T23:59:59.000Z'),
-        search: '  VEN-2026  ',
       };
       const response: PagedResult<Sale> = {
         data: [SALE_MOCK],
@@ -133,10 +133,7 @@ describe('Sales Use Cases', () => {
 
       await firstValueFrom(useCase.execute(filters));
 
-      expect(repo.list).toHaveBeenCalledWith({
-        ...filters,
-        search: 'VEN-2026',
-      });
+      expect(repo.list).toHaveBeenCalledWith(filters);
     });
 
     it('should reject invalid page', async () => {
