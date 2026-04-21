@@ -27,7 +27,6 @@ export interface Product {
 }
 
 export interface CreateProductPayload {
-  code: string;
   name: string;
   description: string;
   categoryId: number;

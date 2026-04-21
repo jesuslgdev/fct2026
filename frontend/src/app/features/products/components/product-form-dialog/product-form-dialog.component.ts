@@ -18,7 +18,6 @@ export class ProductFormDialogComponent {
   private readonly fb = inject(FormBuilder);
 
   readonly form = this.fb.group({
-    code: ['', [Validators.required, Validators.maxLength(32)]],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     description: ['', [Validators.required, Validators.maxLength(500)]],
     categoryId: [null as number | null, Validators.required],
@@ -34,7 +33,6 @@ export class ProductFormDialogComponent {
     return 'Detalle de producto';
   });
 
-  get code() { return this.form.controls.code; }
   get name() { return this.form.controls.name; }
   get description() { return this.form.controls.description; }
   get categoryId() { return this.form.controls.categoryId; }
@@ -48,7 +46,6 @@ export class ProductFormDialogComponent {
 
       if (mode === 'create') {
         this.form.reset({
-          code: '',
           name: '',
           description: '',
           categoryId: null,
@@ -56,13 +53,11 @@ export class ProductFormDialogComponent {
           minStock: 0,
         });
         this.form.enable({ emitEvent: false });
-        this.code.enable({ emitEvent: false });
         return;
       }
 
       if (product) {
         this.form.patchValue({
-          code: product.code,
           name: product.name,
           description: product.description,
           categoryId: product.categoryId,
@@ -71,12 +66,10 @@ export class ProductFormDialogComponent {
         });
       }
 
-      this.code.disable({ emitEvent: false });
       if (mode === 'view') {
         this.form.disable({ emitEvent: false });
       } else {
         this.form.enable({ emitEvent: false });
-        this.code.disable({ emitEvent: false });
       }
     });
   }
@@ -95,13 +88,7 @@ export class ProductFormDialogComponent {
     const value = this.form.getRawValue();
 
     if (this.isCreateMode()) {
-      await this.store.validateProductCode(value.code ?? '');
-      if (this.store.codeValidationError()) {
-        return;
-      }
-
       const payload: CreateProductPayload = {
-        code: value.code ?? '',
         name: value.name ?? '',
         description: value.description ?? '',
         categoryId: value.categoryId ?? 0,
