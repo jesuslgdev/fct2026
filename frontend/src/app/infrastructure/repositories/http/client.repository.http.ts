@@ -7,6 +7,7 @@ import {
   ClientApiError,
   ClientEmailAlreadyExistsError,
   ClientForbiddenError,
+  ClientInvalidPhoneError,
   ClientNotFoundError,
   ClientUnauthorizedError,
   ClientValidationError,
@@ -44,6 +45,9 @@ export class HttpClientRepository implements ClientRepository {
     switch (err.status) {
       case 400:
       case 422:
+        if (this.hasValidationErrorForField(err, 'phone')) {
+          return new ClientInvalidPhoneError();
+        }
         return new ClientValidationError(err.error, message ?? 'Validation failed.');
       case 401:
         return new ClientUnauthorizedError(message ?? 'Authentication required.');
@@ -82,6 +86,20 @@ export class HttpClientRepository implements ClientRepository {
       return typeof rawCode === 'number' ? rawCode : undefined;
     }
     return undefined;
+  }
+
+  private hasValidationErrorForField(err: HttpErrorResponse, field: string): boolean {
+    if (!err.error || typeof err.error !== 'object') return false;
+
+    const payload = err.error as Record<string, unknown>;
+    const detail = payload['detail'];
+    if (!Array.isArray(detail)) return false;
+
+    return detail.some((item) => {
+      if (!item || typeof item !== 'object') return false;
+      const loc = (item as Record<string, unknown>)['loc'];
+      return Array.isArray(loc) && loc.includes(field);
+    });
   }
 
   getClients(params: ClientQueryParams): Observable<PagedResult<Client>> {

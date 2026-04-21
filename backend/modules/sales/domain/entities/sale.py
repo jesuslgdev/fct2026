@@ -51,5 +51,5 @@ class Sale(Base):
 
     lines: Mapped[list[SaleLine]] = relationship("SaleLine", lazy="selectin")
     status_history: Mapped[list[SaleStatusHistory]] = relationship(
-        "SaleStatusHistory", lazy="select", order_by="SaleStatusHistory.changed_at"
+        "SaleStatusHistory", lazy="selectin", order_by="SaleStatusHistory.changed_at"
     )

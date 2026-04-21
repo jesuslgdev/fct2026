@@ -15,6 +15,9 @@ if TYPE_CHECKING:
 class SaleLineInput(BaseModel):
     product_id: int
     quantity: int = Field(gt=0)
+    discount: Decimal = Field(
+        default=Decimal("0"), ge=0, lt=1, description="Discount rate 0–0.9999"
+    )
 
 
 class CreateSaleRequest(BaseModel):
@@ -37,12 +40,19 @@ class ChangeSaleStatusRequest(BaseModel):
         return v
 
 
+class UpdateSaleRequest(BaseModel):
+    client_id: int
+    delivery_address: str = Field(min_length=1)
+    lines: list[SaleLineInput] = Field(min_length=1)
+
+
 class SaleLineResponse(BaseModel):
     sale_line_id: int
     sale_id: int
     product_id: int
     quantity: int
     unit_price: Decimal
+    discount: Decimal
     line_subtotal: Decimal
     vat_rate: Decimal
     line_tax: Decimal
@@ -61,9 +71,12 @@ class SaleDTO(BaseModel):
     client_id: int
     warehouse_id: int
     client_name: str | None
+    creator_name: str | None = None
     status: str
     allowed_transitions: list[str]
     sale_date: datetime
+    delivery_address: str
+    created_at: datetime
     total: Decimal
 
 
@@ -71,9 +84,11 @@ class SaleDetailDTO(BaseModel):
     sale_id: int
     sale_number: str
     client_id: int
+    client_name: str | None = None
     warehouse_id: int
     delivery_address: str
     user_id: int
+    creator_name: str | None = None
     sale_date: datetime
     status: str
     allowed_transitions: list[str]
@@ -102,9 +117,11 @@ class SaleDetailDTO(BaseModel):
             sale_id=sale.sale_id,
             sale_number=sale.sale_number,
             client_id=sale.client_id,
+            client_name=getattr(sale, "client_name", None),
             warehouse_id=sale.warehouse_id,
             delivery_address=sale.delivery_address,
             user_id=sale.user_id,
+            creator_name=getattr(sale, "creator_name", None),
             sale_date=sale.sale_date,
             status=sale.status,
             allowed_transitions=allowed_next(sale.status),
@@ -120,6 +137,7 @@ class SaleDetailDTO(BaseModel):
                     product_id=line.product_id,
                     quantity=line.quantity,
                     unit_price=line.unit_price,
+                    discount=line.discount,
                     line_subtotal=line.line_subtotal,
                     vat_rate=line.vat_rate,
                     line_tax=line.line_tax,
