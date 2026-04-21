@@ -43,8 +43,7 @@ import {
   SupplierProductsPageDto,
   SuppliersPageDto,
 } from '@infrastructure/dtos/purchase.dto';
-import { WarehouseDto } from '@infrastructure/dtos/warehouse.dto';
-import { PurchaseMapper } from '@infrastructure/mappers/purchase.mapper';
+import { PurchaseMapper, PurchaseWarehouseDto } from '@infrastructure/mappers/purchase.mapper';
 import { environment } from 'environments/environment';
 
 const PURCHASES_URL = `${environment.apiUrl}/api/v1/purchases`;
@@ -82,8 +81,16 @@ export class HttpPurchaseRepository implements PurchaseRepository {
             ),
           );
 
-          const warehouses$ = this.http.get<WarehouseDto[]>(WAREHOUSES_URL).pipe(
-            map((warehouses) => new Map(warehouses.map((warehouse) => [warehouse.warehouse_id, warehouse.address]))),
+          const warehouses$ = this.http.get<PurchaseWarehouseDto[]>(WAREHOUSES_URL).pipe(
+            map(
+              (warehouses) =>
+                new Map(
+                  warehouses.map((warehouse) => [
+                    warehouse.warehouse_id,
+                    PurchaseMapper.formatWarehouseAddress(warehouse.address),
+                  ]),
+                ),
+            ),
           );
 
           return forkJoin({ supplierRefs: supplierRefs$, warehouses: warehouses$ }).pipe(
@@ -212,7 +219,7 @@ export class HttpPurchaseRepository implements PurchaseRepository {
   getDeliveryWarehouses(): Observable<PurchaseWarehouseOption[]> {
     return this.withErrorMapping(() =>
       this.http
-        .get<WarehouseDto[]>(WAREHOUSES_URL)
+        .get<PurchaseWarehouseDto[]>(WAREHOUSES_URL)
         .pipe(map((warehouses) => warehouses.map((warehouse) => PurchaseMapper.fromWarehouseDto(warehouse)))),
     );
   }
@@ -292,8 +299,11 @@ export class HttpPurchaseRepository implements PurchaseRepository {
   }
 
   private resolveWarehouseAddress(warehouseId: number): Observable<string> {
-    return this.http.get<WarehouseDto[]>(WAREHOUSES_URL).pipe(
-      map((warehouses) => warehouses.find((warehouse) => warehouse.warehouse_id === warehouseId)?.address ?? ''),
+    return this.http.get<PurchaseWarehouseDto[]>(WAREHOUSES_URL).pipe(
+      map((warehouses) => {
+        const warehouse = warehouses.find((item) => item.warehouse_id === warehouseId);
+        return PurchaseMapper.formatWarehouseAddress(warehouse?.address ?? null);
+      }),
     );
   }
 

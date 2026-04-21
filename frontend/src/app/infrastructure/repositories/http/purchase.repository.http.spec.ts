@@ -101,7 +101,17 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      { warehouse_id: 2, name: 'Central', address: 'Main Street 1', total_stock: 0 },
+      {
+        warehouse_id: 2,
+        name: 'Central',
+        address: {
+          street: 'Main Street 1',
+          city: 'Madrid',
+          province: 'Madrid',
+          postal_code: '28001',
+        },
+        total_stock: 0,
+      },
     ]);
 
     const result = await promise;
@@ -115,7 +125,7 @@ describe('HttpPurchaseRepository', () => {
       supplierId: 10,
       supplierName: 'Supplier North',
       deliveryWarehouseId: 2,
-      deliveryAddress: 'Main Street 1',
+      deliveryAddress: 'Main Street 1, 28001 Madrid, Madrid',
       status: 'InProcess',
       createdAt: '2026-04-10T10:00:00.000Z',
       total: 121,
@@ -160,13 +170,23 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      { warehouse_id: 1, name: 'Main', address: 'Warehouse Ave 5', total_stock: 0 },
+      {
+        warehouse_id: 1,
+        name: 'Main',
+        address: {
+          street: 'Warehouse Ave 5',
+          city: 'Barcelona',
+          province: 'Barcelona',
+          postal_code: '08001',
+        },
+        total_stock: 0,
+      },
     ]);
 
     const result = await promise;
 
     expect(result.status).toBe('Shipped');
-    expect(result.deliveryAddress).toBe('Warehouse Ave 5');
+    expect(result.deliveryAddress).toBe('Warehouse Ave 5, 08001 Barcelona, Barcelona');
     expect(result.lines[0].vatRate).toBe(21);
     expect(result.lines[0].total).toBe(60.5);
   });
@@ -231,13 +251,23 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      { warehouse_id: 2, name: 'Central', address: 'Road 2', total_stock: 0 },
+      {
+        warehouse_id: 2,
+        name: 'Central',
+        address: {
+          street: 'Road 2',
+          city: 'Valencia',
+          province: 'Valencia',
+          postal_code: '46001',
+        },
+        total_stock: 0,
+      },
     ]);
 
     const result = await promise;
     expect(result.purchaseId).toBe(8);
     expect(result.supplierName).toBe('Supplier South');
-    expect(result.deliveryAddress).toBe('Road 2');
+    expect(result.deliveryAddress).toBe('Road 2, 46001 Valencia, Valencia');
   });
 
   it('updatePurchase replaces existing lines when payload includes lines', async () => {
@@ -270,7 +300,17 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      { warehouse_id: 3, name: 'North', address: 'North 3', total_stock: 0 },
+      {
+        warehouse_id: 3,
+        name: 'North',
+        address: {
+          street: 'North 3',
+          city: 'Sevilla',
+          province: 'Sevilla',
+          postal_code: '41001',
+        },
+        total_stock: 0,
+      },
     ]);
 
     const updateReq = controller.expectOne(`${PURCHASES_URL}/9`);
@@ -385,7 +425,17 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      { warehouse_id: 3, name: 'North', address: 'North 3', total_stock: 0 },
+      {
+        warehouse_id: 3,
+        name: 'North',
+        address: {
+          street: 'North 3',
+          city: 'Sevilla',
+          province: 'Sevilla',
+          postal_code: '41001',
+        },
+        total_stock: 0,
+      },
     ]);
 
     const result = await promise;
