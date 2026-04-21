@@ -86,6 +86,7 @@ class PurchaseDetailDTO(BaseModel):
     warehouse_name: str | None = None
     purchase_date: datetime
     status: str
+    allowed_transitions: list[str] = Field(default_factory=list)
     subtotal: Decimal
     taxes: Decimal
     total: Decimal

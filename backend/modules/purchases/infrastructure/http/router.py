@@ -54,6 +54,7 @@ from modules.purchases.domain.interfaces.use_cases.i_update_purchase_line_use_ca
 from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case import (
     IUpdatePurchaseUseCase,
 )
+from modules.purchases.domain.purchase_status import allowed_next
 from modules.purchases.infrastructure.http.schemas import (
     AddPurchaseLineRequest,
     AdvancePurchaseStatusRequest,
@@ -90,6 +91,7 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
         warehouse_id=purchase.warehouse_id,
         purchase_date=purchase.purchase_date,
         status=purchase.status,
+        allowed_transitions=allowed_next(purchase.status),
         subtotal=purchase.subtotal,
         taxes=purchase.taxes,
         total=purchase.total,
@@ -195,6 +197,7 @@ def _to_purchase_detail_dto(enriched: PurchaseEnriched) -> PurchaseDetailDTO:
         warehouse_name=enriched.warehouse_name,
         purchase_date=enriched.purchase.purchase_date,
         status=enriched.purchase.status,
+        allowed_transitions=allowed_next(enriched.purchase.status),
         subtotal=enriched.purchase.subtotal,
         taxes=enriched.purchase.taxes,
         total=enriched.purchase.total,
