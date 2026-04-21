@@ -75,8 +75,9 @@ class UpdateSaleUseCase(IUpdateSaleUseCase):
                 raise SaleException(SaleExceptionInfo.PRODUCT_NOT_ACTIVE)
 
             unit_price = Decimal(str(product.price))
+            discount = Decimal(str(line.get("discount", "0")))
             vat_rate = product.vat_rate
-            line_subtotal = quantity * unit_price
+            line_subtotal = quantity * unit_price * (1 - discount)
             line_tax = line_subtotal * vat_rate
             subtotal += line_subtotal
             requested_qty_by_product[product_id] += quantity
@@ -86,6 +87,7 @@ class UpdateSaleUseCase(IUpdateSaleUseCase):
                     "product_id": product_id,
                     "quantity": quantity,
                     "unit_price": unit_price,
+                    "discount": discount,
                     "vat_rate": vat_rate,
                     "line_subtotal": line_subtotal,
                     "line_tax": line_tax,

@@ -43,6 +43,7 @@ def make_sale_line(**kwargs) -> MagicMock:
         "product_id": 10,
         "quantity": 2,
         "unit_price": Decimal("50.00"),
+        "discount": Decimal("0.00"),
         "line_subtotal": Decimal("100.00"),
         "vat_rate": Decimal("0.21"),
         "line_tax": Decimal("21.00"),

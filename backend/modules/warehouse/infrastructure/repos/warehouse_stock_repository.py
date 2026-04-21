@@ -68,6 +68,16 @@ class WarehouseStockRepository(IWarehouseStockRepository, IStockAvailabilityRead
             return 0
         return record.available_stock
 
+    async def adjust_reserved_stock(
+        self, warehouse_id: int, product_id: int, delta: int
+    ) -> None:
+        record = await self.get_by_warehouse_and_product(warehouse_id, product_id)
+        if record is not None:
+            record.reserved_stock = max(
+                0, min(record.stock, record.reserved_stock + delta)
+            )
+            await self._db.flush()
+
     async def upsert_stock(
         self, warehouse_id: int, product_id: int, new_stock: int
     ) -> WarehouseStock:

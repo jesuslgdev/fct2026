@@ -53,7 +53,7 @@ class CreateSaleUseCase(ICreateSaleUseCase):
             raise SaleException(SaleExceptionInfo.WAREHOUSE_NOT_FOUND)
 
         delivery_address = (
-            f"{client.address}, {client.city}, {client.province}, {client.postal_code}"
+            f"{client.street}, {client.city}, {client.province}, {client.postal_code}"
         )
 
         if not lines:
@@ -76,8 +76,9 @@ class CreateSaleUseCase(ICreateSaleUseCase):
 
             quantity = line["quantity"]
             unit_price = Decimal(str(product.price))
+            discount = Decimal(str(line.get("discount", "0")))
             vat_rate = product.vat_rate
-            line_subtotal = quantity * unit_price
+            line_subtotal = quantity * unit_price * (1 - discount)
             line_tax = line_subtotal * vat_rate
             subtotal += line_subtotal
 
@@ -86,6 +87,7 @@ class CreateSaleUseCase(ICreateSaleUseCase):
                     "product_id": line["product_id"],
                     "quantity": quantity,
                     "unit_price": unit_price,
+                    "discount": discount,
                     "vat_rate": vat_rate,
                     "line_subtotal": line_subtotal,
                     "line_tax": line_tax,
