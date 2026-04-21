@@ -98,11 +98,15 @@ describe('SupplierProductsStore', () => {
   let addProductToSupplierUseCase: MockAddProductToSupplierUseCase;
   let getSupplierProductsUseCase: MockGetSupplierProductsUseCase;
   let importSupplierProductsUseCase: MockImportSupplierProductsUseCase;
+  let downloadTemplateUseCase: MockDownloadTemplateUseCase;
+  let getProductsUseCase: MockGetProductsUseCase;
 
   beforeEach(() => {
     addProductToSupplierUseCase = new MockAddProductToSupplierUseCase();
     getSupplierProductsUseCase = new MockGetSupplierProductsUseCase();
     importSupplierProductsUseCase = new MockImportSupplierProductsUseCase();
+    downloadTemplateUseCase = new MockDownloadTemplateUseCase();
+    getProductsUseCase = new MockGetProductsUseCase();
 
     TestBed.configureTestingModule({
       providers: [
@@ -113,8 +117,8 @@ describe('SupplierProductsStore', () => {
         { provide: UpdateSupplierProductPriceUseCase, useClass: MockUpdateSupplierProductPriceUseCase },
         { provide: RemoveProductFromSupplierUseCase, useClass: MockRemoveProductFromSupplierUseCase },
         { provide: ImportSupplierProductsUseCase, useValue: importSupplierProductsUseCase },
-        { provide: DownloadTemplateUseCase, useClass: MockDownloadTemplateUseCase },
-        { provide: GetProductsUseCase, useClass: MockGetProductsUseCase },
+        { provide: DownloadTemplateUseCase, useValue: downloadTemplateUseCase },
+        { provide: GetProductsUseCase, useValue: getProductsUseCase },
       ],
     });
 
@@ -230,5 +234,124 @@ describe('SupplierProductsStore', () => {
     expect(store.importResult()?.errorDetail).toEqual([
       { row: 2, reason: 'Unexpected import rule from API' },
     ]);
+  });
+
+  it('loads template products with the current page, search and active filter', async () => {
+    store.templateProductsPage.set(2);
+    store.templateProductsPageSize.set(20);
+    store.templateProductsSearchQuery.set('  cable  ');
+    getProductsUseCase.execute.mockReturnValueOnce(of({
+      data: [
+        PRODUCT,
+        { ...PRODUCT, productId: 2, code: 'PRD-002', isActive: false },
+      ],
+      total: 8,
+      page: 2,
+      pageSize: 20,
+    }));
+
+    await store.loadTemplateProducts();
+
+    expect(getProductsUseCase.execute).toHaveBeenCalledWith({
+      page: 2,
+      pageSize: 20,
+      search: 'cable',
+      active: true,
+    });
+    expect(store.templateProducts()).toEqual([PRODUCT]);
+    expect(store.templateProductsTotal()).toBe(8);
+  });
+
+  it('resets import dialog state when opening and closing the import dialog', () => {
+    store.importDialogError.set('Previous import error');
+    store.importResult.set({ total: 1, created: 0, errors: 1, errorDetail: [{ row: 2, reason: 'Error' }] });
+    store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
+    store.selectedTemplateProductIds.set(new Set([1, 2]));
+    store.templateProductsSearchQuery.set('query');
+
+    store.openImportDialog();
+
+    expect(store.importDialogVisible()).toBe(true);
+    expect(store.importDialogError()).toBeNull();
+    expect(store.importResult()).toBeNull();
+    expect(store.selectedImportFile()).toBeNull();
+    expect(store.selectedTemplateProductIds().size).toBe(0);
+    expect(store.templateProductsSearchQuery()).toBe('');
+
+    store.importDialogError.set('Another import error');
+    store.closeImportDialog();
+
+    expect(store.importDialogVisible()).toBe(false);
+    expect(store.importDialogError()).toBeNull();
+    expect(store.selectedTemplateProductIds().size).toBe(0);
+  });
+
+  it('does not select template products that are already associated', () => {
+    store.supplierProducts.set([SUPPLIER_PRODUCT]);
+
+    store.setTemplateProductSelected(1, true);
+    store.setTemplateProductSelected(2, true);
+
+    expect(store.selectedTemplateProductIds()).toEqual(new Set([2]));
+  });
+
+  it('toggles only visible selectable template products', () => {
+    store.supplierProducts.set([SUPPLIER_PRODUCT]);
+    store.templateProducts.set([
+      PRODUCT,
+      { ...PRODUCT, productId: 2, code: 'PRD-002', name: 'Otro' },
+      { ...PRODUCT, productId: 3, code: 'PRD-003', name: 'Tercero' },
+    ]);
+
+    store.toggleAllVisibleTemplateProducts(true);
+
+    expect(store.selectedTemplateProductIds()).toEqual(new Set([2, 3]));
+
+    store.toggleAllVisibleTemplateProducts(false);
+
+    expect(store.selectedTemplateProductIds().size).toBe(0);
+  });
+
+  it('downloads the template with only non-associated selected product ids', async () => {
+    const blob = new Blob(['xlsx'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    downloadTemplateUseCase.execute.mockReturnValueOnce(of(blob));
+    store.supplierProducts.set([SUPPLIER_PRODUCT]);
+    store.selectedTemplateProductIds.set(new Set([1, 2, 3]));
+
+    const result = await store.downloadTemplate();
+
+    expect(downloadTemplateUseCase.execute).toHaveBeenCalledWith(1, { productIds: [2, 3] });
+    expect(result).toBe(blob);
+    expect(store.templateDownloadLoading()).toBe(false);
+  });
+
+  it('refreshes supplier products and template products after a successful import', async () => {
+    importSupplierProductsUseCase.execute.mockReturnValueOnce(of({
+      total: 2,
+      created: 2,
+      errors: 0,
+      errorDetail: [],
+    }));
+    store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
+    store.selectedTemplateProductIds.set(new Set([2, 3]));
+
+    await store.importSupplierProducts();
+
+    expect(importSupplierProductsUseCase.execute).toHaveBeenCalledWith(1, {
+      file: expect.any(File),
+    });
+    expect(getSupplierProductsUseCase.execute).toHaveBeenCalledWith(1, { page: 1, pageSize: 10 });
+    expect(getProductsUseCase.execute).toHaveBeenCalledWith({ page: 1, pageSize: 10, active: true });
+    expect(store.selectedTemplateProductIds().size).toBe(0);
+    expect(store.importSucceeded()).toBe(true);
+  });
+
+  it('rejects non-xlsx files before trying to import', async () => {
+    store.selectedImportFile.set(new File(['data'], 'supplier-products.csv'));
+
+    await store.importSupplierProducts();
+
+    expect(importSupplierProductsUseCase.execute).not.toHaveBeenCalled();
+    expect(store.importDialogError()).toBe('El archivo debe ser Excel .xlsx.');
   });
 });
