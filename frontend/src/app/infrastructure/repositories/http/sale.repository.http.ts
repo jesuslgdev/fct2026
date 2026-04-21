@@ -13,9 +13,9 @@ import {
   SaleUnauthorizedError,
   SaleValidationError,
 } from '@domain/models/sale-errors';
-import { CreateSale, SaleDetail, SaleFilters, SalePagedResult } from '@domain/models/sale.model';
+import { CreateSale, ListSalesFilters, PagedResult, Sale, SaleDetail } from '@domain/models/sale.model';
 import { SaleRepository } from '@domain/repositories/sale.repository';
-import { SaleDetailDTO, SaleDTO, SalesPageDto } from '@infrastructure/dtos/sale.dto';
+import { SaleDetailDTO, SalesPageDto } from '@infrastructure/dtos/sale.dto';
 import { SaleMapper } from '@infrastructure/mappers/sale.mapper';
 import { environment } from 'environments/environment';
 import { Observable, catchError, map, throwError } from 'rxjs';
@@ -38,35 +38,31 @@ export class HttpSaleRepository implements SaleRepository {
 
   private withErrorMapping<T>(operation: () => Observable<T>): Observable<T> {
     return operation().pipe(
-      catchError((err) => throwError(() => this.mapHttpError(err))),
+      catchError((err) => throwError(() => this.mapHttpError(err)))
     );
   }
 
-  list(filters: SaleFilters): Observable<SalePagedResult> {
+  list(filters: ListSalesFilters): Observable<PagedResult<Sale>> {
     return this.withErrorMapping(() =>
-      this.http.get<SalesPageDto | SaleDTO[]>(BASE_URL, { params: this.toQueryParams(filters) }).pipe(
-        map((response) => SaleMapper.toPagedResult(response, filters)),
-      ),
+      this.http
+        .get<SalesPageDto>(BASE_URL, { params: this.toQueryParams(filters) })
+        .pipe(map((response) => SaleMapper.toPagedResult(response, filters)))
     );
   }
 
   getById(id: number): Observable<SaleDetail> {
     return this.withErrorMapping(() =>
-      this.http.get<SaleDetailDTO>(`${BASE_URL}/${id}`).pipe(
-        map((dto) => SaleMapper.toDetailDomain(dto)),
-      ),
+      this.http.get<SaleDetailDTO>(`${BASE_URL}/${id}`).pipe(map((dto) => SaleMapper.toDetailDomain(dto)))
     );
   }
 
   create(data: CreateSale): Observable<SaleDetail> {
     return this.withErrorMapping(() =>
-      this.http.post<SaleDetailDTO>(BASE_URL, SaleMapper.toRequest(data)).pipe(
-        map((dto) => SaleMapper.toDetailDomain(dto)),
-      ),
+      this.http.post<SaleDetailDTO>(BASE_URL, SaleMapper.toRequest(data)).pipe(map((dto) => SaleMapper.toDetailDomain(dto)))
     );
   }
 
-  private toQueryParams(filters: SaleFilters): HttpParams {
+  private toQueryParams(filters: ListSalesFilters): HttpParams {
     let params = new HttpParams()
       .set('page', String(filters.page))
       .set('page_size', String(filters.pageSize));
@@ -93,10 +89,6 @@ export class HttpSaleRepository implements SaleRepository {
 
     if (filters.dateTo) {
       params = params.set('date_to', filters.dateTo.toISOString());
-    }
-
-    if (filters.search && filters.search.trim()) {
-      params = params.set('search', filters.search.trim());
     }
 
     return params;
