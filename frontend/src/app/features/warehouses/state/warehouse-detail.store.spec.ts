@@ -154,7 +154,7 @@ describe('WarehouseDetailStore', () => {
     expect(store.stockItems()).toEqual([STOCK_ITEM]);
   });
 
-  it('filters visible stock items by available stock', () => {
+  it('keeps every stock item returned by the backend', () => {
     getStockDistributionUseCase.execute.mockReturnValueOnce(of({
       data: [STOCK_ITEM, ZERO_AVAILABLE_STOCK_ITEM],
       total: 2,
@@ -164,7 +164,8 @@ describe('WarehouseDetailStore', () => {
 
     store.init(1);
 
-    expect(store.availableStockItems()).toEqual([STOCK_ITEM]);
+    expect(store.stockItems()).toEqual([STOCK_ITEM, ZERO_AVAILABLE_STOCK_ITEM]);
+    expect(store.total()).toBe(2);
   });
 
   it('shows a handled error for an invalid warehouse id', () => {
@@ -251,24 +252,38 @@ describe('WarehouseDetailStore', () => {
     });
   });
 
-  it('adjusts existing stock and updates local state immediately', () => {
+  it('adjusts existing stock and refreshes warehouse and stock', () => {
     store.init(1);
     store.openAdjustExistingDialog(STOCK_ITEM);
-    adjustStockUseCase.execute.mockReturnValueOnce(of(ADJUST_RESULT));
+    getWarehouseByIdUseCase.execute.mockReturnValueOnce(of({
+      ...WAREHOUSE,
+      totalStock: 0,
+    }));
+    getStockDistributionUseCase.execute.mockReturnValueOnce(of({
+      data: [],
+      total: 0,
+      page: 1,
+      pageSize: 20,
+    }));
+    adjustStockUseCase.execute.mockReturnValueOnce(of({
+      ...ADJUST_RESULT,
+      newQuantity: 0,
+      difference: -50,
+    }));
 
-    store.confirmAdjustStock(80, 'Count');
+    store.confirmAdjustStock(0, 'Count');
 
     expect(adjustStockUseCase.execute).toHaveBeenCalledWith({
       warehouseId: 1,
       productId: 10,
-      newQuantity: 80,
+      newQuantity: 0,
       reason: 'Count',
     });
-    expect(store.stockItems()[0]).toMatchObject({
-      stock: 80,
-      availableStock: 70,
-    });
-    expect(store.warehouse()?.totalStock).toBe(80);
+    expect(getWarehouseByIdUseCase.execute).toHaveBeenCalledTimes(2);
+    expect(getStockDistributionUseCase.execute).toHaveBeenCalledTimes(2);
+    expect(store.stockItems()).toEqual([]);
+    expect(store.total()).toBe(0);
+    expect(store.warehouse()?.totalStock).toBe(0);
     expect(store.adjustDialogVisible()).toBe(false);
   });
 

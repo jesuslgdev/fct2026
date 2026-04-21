@@ -12,6 +12,8 @@ from modules.sales.domain.interfaces.repositories.i_sale_repository import (
     ISaleRepository,
 )
 from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.entities.user import User
+from shared.domain.interfaces.i_sale_reader import ISaleReader
 
 SORT_FIELDS = {
     "sale_number": Sale.sale_number,
@@ -23,9 +25,15 @@ SORT_FIELDS = {
 }
 
 
-class SaleRepository(ISaleRepository):
+class SaleRepository(ISaleRepository, ISaleReader):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
+
+    async def has_sales_for_user(self, user_id: int) -> bool:
+        result = await self._db.execute(
+            select(func.count()).select_from(Sale).where(Sale.user_id == user_id)
+        )
+        return result.scalar_one() > 0
 
     async def generate_sale_number(self) -> str:
         year = datetime.now().year
@@ -75,6 +83,7 @@ class SaleRepository(ISaleRepository):
                 product_id=line["product_id"],
                 quantity=line["quantity"],
                 unit_price=line["unit_price"],
+                discount=line.get("discount", Decimal("0")),
                 vat_rate=line["vat_rate"],
                 line_subtotal=line["line_subtotal"],
                 line_tax=line["line_tax"],
@@ -94,10 +103,55 @@ class SaleRepository(ISaleRepository):
     async def add_status_history(self, history: SaleStatusHistory) -> None:
         self._db.add(history)
         await self._db.flush()
+        await self._db.refresh(history)
 
     async def get_by_id(self, sale_id: int) -> Sale | None:
         result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
         return result.scalar_one_or_none()
+
+    async def update(
+        self,
+        sale_id: int,
+        client_id: int,
+        delivery_address: str,
+        subtotal: Decimal,
+        taxes: Decimal,
+        total: Decimal,
+        lines: list[dict],
+    ) -> Sale:
+        result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
+        sale = result.scalar_one()
+        sale.client_id = client_id
+        sale.delivery_address = delivery_address
+        sale.subtotal = subtotal
+        sale.taxes = taxes
+        sale.total = total
+
+        existing_lines_result = await self._db.execute(
+            select(SaleLine).where(SaleLine.sale_id == sale_id)
+        )
+        for existing_line in existing_lines_result.scalars().all():
+            await self._db.delete(existing_line)
+
+        await self._db.flush()
+
+        for line in lines:
+            sale_line = SaleLine(
+                sale_id=sale.sale_id,
+                product_id=line["product_id"],
+                quantity=line["quantity"],
+                unit_price=line["unit_price"],
+                discount=line.get("discount", Decimal("0")),
+                vat_rate=line["vat_rate"],
+                line_subtotal=line["line_subtotal"],
+                line_tax=line["line_tax"],
+            )
+            self._db.add(sale_line)
+
+        await self._db.flush()
+        await self._db.refresh(sale, ["lines"])
+        updated_sale = await self.get_by_id(sale_id)
+        return updated_sale if updated_sale is not None else sale
 
     async def get_all_paginated(
         self,
@@ -138,8 +192,13 @@ class SaleRepository(ISaleRepository):
         offset = (page - 1) * page_size
 
         data_stmt = (
-            select(Sale, Client.name.label("client_name"))
+            select(
+                Sale,
+                Client.name.label("client_name"),
+                func.concat(User.first_name, " ", User.last_name).label("creator_name"),
+            )
             .outerjoin(Client, Sale.client_id == Client.client_id)
+            .outerjoin(User, Sale.user_id == User.user_id)
             .where(*filters)
             .order_by(order_expr)
             .limit(page_size)

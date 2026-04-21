@@ -19,6 +19,8 @@ class SaleExceptionInfo(AppExceptionInfo):
     SALE_INVALID_TRANSITION = (8108, "Invalid sale status transition", 422)
     SALE_TERMINAL_STATE = (8109, "Sale is in a terminal state", 422)
     WAREHOUSE_NOT_FOUND = (8110, "Warehouse not found", 404)
+    SALE_NOT_PENDING = (8111, "Sale must be in Pending status to be edited", 400)
+    DELIVERY_ADDRESS_REQUIRED = (8112, "Delivery address is required", 422)
 
 
 class SaleException(AppException):
