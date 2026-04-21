@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from composition.dependencies import (
     get_advance_sale_status_use_case,
@@ -11,6 +11,7 @@ from composition.dependencies import (
     get_update_sale_use_case,
 )
 from composition.security import require_sales_department_or_admin
+from modules.sales.domain.exceptions import InsufficientStockForLineError
 from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case import (
     IAdvanceSaleStatusUseCase,
 )
@@ -40,6 +41,19 @@ from shared.infrastructure.http.paginated_response import PaginatedResponse
 router = APIRouter(prefix="/sales")
 
 
+def _stock_field_error(line_index: int) -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail=[
+            {
+                "loc": ["body", "lines", line_index, "quantity"],
+                "msg": "Insufficient stock for this product",
+                "type": "value_error",
+            }
+        ],
+    )
+
+
 @router.post("", response_model=SaleDetailDTO, status_code=201, tags=["Sales"])
 async def create_sale(
     body: CreateSaleRequest,
@@ -47,12 +61,15 @@ async def create_sale(
     use_case: ICreateSaleUseCase = Depends(get_create_sale_use_case),
 ):
     """Create a new sale in Pending status."""
-    sale = await use_case.execute(
-        client_id=body.client_id,
-        warehouse_id=body.warehouse_id,
-        user_id=current_user.user_id,
-        lines=[line.model_dump() for line in body.lines],
-    )
+    try:
+        sale = await use_case.execute(
+            client_id=body.client_id,
+            warehouse_id=body.warehouse_id,
+            user_id=current_user.user_id,
+            lines=[line.model_dump() for line in body.lines],
+        )
+    except InsufficientStockForLineError as exc:
+        raise _stock_field_error(exc.line_index)
     return SaleDetailDTO.from_entity(sale)
 
 
@@ -64,9 +81,10 @@ async def list_sales(
         "sale_number", "client_name", "status", "sale_date", "total", "created_at"
     ] = Query("created_at", description="Field to sort by"),
     sort_order: Literal["asc", "desc"] = Query("desc", description="Sort direction"),
-    status: str | None = Query(
-        None, description="Filter by sale status (e.g. Pending)"
-    ),
+    status: Literal[
+        "Pending", "Approved", "InProcess", "Shipped", "Delivered", "Cancelled"
+    ]
+    | None = Query(None, description="Filter by sale status"),
     client_id: int | None = Query(None, description="Filter by client ID"),
     date_from: datetime | None = Query(
         None, description="Filter sales from this date (e.g. 2024-01-01T00:00:00)"
@@ -81,6 +99,11 @@ async def list_sales(
     use_case: IListSalesUseCase = Depends(get_list_sales_use_case),
 ):
     """Return a paginated list of sales with optional filters."""
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(
+            status_code=422,
+            detail="date_from must be earlier than or equal to date_to",
+        )
     result = await use_case.execute(
         page=page,
         page_size=page_size,
@@ -134,13 +157,16 @@ async def update_sale(
     _: UserSession = Depends(require_sales_department_or_admin),
     use_case: IUpdateSaleUseCase = Depends(get_update_sale_use_case),
 ):
-    """Update an existing pending sale."""
-    sale = await use_case.execute(
-        sale_id=sale_id,
-        client_id=body.client_id,
-        delivery_address=body.delivery_address,
-        lines=[line.model_dump() for line in body.lines],
-    )
+    """Update an existing pending sale (replaces full line set)."""
+    try:
+        sale = await use_case.execute(
+            sale_id=sale_id,
+            client_id=body.client_id,
+            delivery_address=body.delivery_address,
+            lines=[line.model_dump() for line in body.lines],
+        )
+    except InsufficientStockForLineError as exc:
+        raise _stock_field_error(exc.line_index)
     return SaleDetailDTO.from_entity(sale)
 
 

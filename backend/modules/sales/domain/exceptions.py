@@ -21,7 +21,16 @@ class SaleExceptionInfo(AppExceptionInfo):
     WAREHOUSE_NOT_FOUND = (8110, "Warehouse not found", 404)
     SALE_NOT_PENDING = (8111, "Sale must be in Pending status to be edited", 400)
     DELIVERY_ADDRESS_REQUIRED = (8112, "Delivery address is required", 422)
+    INVALID_DISCOUNT = (8113, "Discount cannot make the line subtotal negative", 422)
+    SALE_LINE_NOT_FOUND = (8114, "Sale line not found", 404)
+    MINIMUM_ONE_LINE = (8115, "A sale must have at least one line", 422)
 
 
 class SaleException(AppException):
     pass
+
+
+class InsufficientStockForLineError(SaleException):
+    def __init__(self, line_index: int) -> None:
+        super().__init__(SaleExceptionInfo.INSUFFICIENT_STOCK)
+        self.line_index = line_index
