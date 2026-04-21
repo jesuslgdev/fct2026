@@ -227,6 +227,7 @@ from modules.sales.application.advance_sale_status_use_case import (
     AdvanceSaleStatusUseCase,
 )
 from modules.sales.application.create_sale_use_case import CreateSaleUseCase
+from modules.sales.application.delete_sale_use_case import DeleteSaleUseCase
 from modules.sales.application.get_sale_use_case import GetSaleUseCase
 from modules.sales.application.list_sales_use_case import ListSalesUseCase
 from modules.sales.application.update_sale_use_case import UpdateSaleUseCase
@@ -235,6 +236,9 @@ from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case im
 )
 from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
     ICreateSaleUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_delete_sale_use_case import (
+    IDeleteSaleUseCase,
 )
 from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
     IGetSaleUseCase,
@@ -871,3 +875,9 @@ async def get_advance_sale_status_use_case(
         user_reader=UserRepository(db),
         client_reader=ClientRepository(db),
     )
+
+
+async def get_delete_sale_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IDeleteSaleUseCase:
+    return DeleteSaleUseCase(SaleRepository(db))

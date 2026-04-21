@@ -60,3 +60,6 @@ class ISaleRepository(ABC):
 
     @abstractmethod
     async def add_status_history(self, history: SaleStatusHistory) -> None: ...
+
+    @abstractmethod
+    async def delete_sale(self, sale_id: int) -> None: ...

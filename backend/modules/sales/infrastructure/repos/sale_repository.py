@@ -105,6 +105,26 @@ class SaleRepository(ISaleRepository, ISaleReader):
         await self._db.flush()
         await self._db.refresh(history)
 
+    async def delete_sale(self, sale_id: int) -> None:
+        status_history_result = await self._db.execute(
+            select(SaleStatusHistory).where(SaleStatusHistory.sale_id == sale_id)
+        )
+        for history_item in status_history_result.scalars().all():
+            await self._db.delete(history_item)
+
+        sale_lines_result = await self._db.execute(
+            select(SaleLine).where(SaleLine.sale_id == sale_id)
+        )
+        for line in sale_lines_result.scalars().all():
+            await self._db.delete(line)
+
+        sale_result = await self._db.execute(
+            select(Sale).where(Sale.sale_id == sale_id)
+        )
+        sale = sale_result.scalar_one()
+        await self._db.delete(sale)
+        await self._db.flush()
+
     async def get_by_id(self, sale_id: int) -> Sale | None:
         result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
         return result.scalar_one_or_none()
