@@ -260,6 +260,23 @@ describe('Supplier Product Use Cases', () => {
       
       const invalidFileRequest = { file: null } as unknown as ImportSupplierProductsRequest;
       expect(() => importSupplierProductsUseCase.execute(1, invalidFileRequest)).toThrow(SupplierProductValidationError);
+
+      const invalidExtensionRequest: ImportSupplierProductsRequest = { file: new File([], 'test.jpg') };
+      expect(() => importSupplierProductsUseCase.execute(1, invalidExtensionRequest)).toThrow(SupplierProductValidationError);
+    });
+
+    it('should accept valid Excel extensions regardless of case', async () => {
+      const supplierId = 1;
+      const request: ImportSupplierProductsRequest = {
+        file: new File([''], 'PRODUCTS.XLSX')
+      };
+      const importResult: ImportResult = { total: 1, created: 1, errors: 0, errorDetail: [] };
+      repo.importSupplierProducts.mockReturnValue(of(importResult));
+
+      const result = await firstValueFrom(importSupplierProductsUseCase.execute(supplierId, request));
+
+      expect(repo.importSupplierProducts).toHaveBeenCalledWith(supplierId, request);
+      expect(result).toEqual(importResult);
     });
 
     it('should propagate repository errors', async () => {
