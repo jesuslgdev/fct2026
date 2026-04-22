@@ -1,3 +1,5 @@
+import { PaginatedResponse } from '@infrastructure/dtos/paginated-response.dto';
+
 export interface SaleLineDTO {
   sale_line_id: number;
   sale_id: number;
@@ -56,6 +58,8 @@ export interface SaleDetailDTO {
 export interface CreateSaleLineRequestDTO {
   product_id: number;
   quantity: number;
+  discount?: number;
+  discount_type?: 'percent' | 'amount';
 }
 
 export interface CreateSaleRequestDTO {
@@ -64,9 +68,20 @@ export interface CreateSaleRequestDTO {
   lines: CreateSaleLineRequestDTO[];
 }
 
-export interface SalesPageDto {
-  items: SaleDTO[];
-  total: number;
-  page: number;
-  page_size: number;
+export interface UpdateSaleRequestDTO {
+  client_id: number;
+  delivery_address: string;
+  lines: CreateSaleLineRequestDTO[];
 }
+
+export interface UpdateSaleLineRequestDTO {
+  quantity: number;
+  discount?: number;
+  discount_type?: 'percent' | 'amount';
+}
+
+export interface ChangeSaleStatusRequestDTO {
+  new_status: string;
+}
+
+export type SalesPageDto = PaginatedResponse<SaleDTO>;
