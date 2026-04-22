@@ -1,8 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { SaleRepository } from '../../repositories/sale.repository';
-import { CreateSale, SaleDetail } from '../../models/sale.model';
-import { SaleEmptyLinesError, SaleValidationError } from '../../models/sale-errors';
+import { CreateSale, SaleDetail } from '@domain/models/sale.model';
+import { SaleRepository } from '@domain/repositories/sale.repository';
+import {
+  validateClientId,
+  validateCreateSaleLines,
+  validateWarehouseId,
+} from './sale-validation';
 
 @Injectable({
   providedIn: 'root',
@@ -21,24 +25,8 @@ export class CreateSaleUseCase {
   }
 
   private validate(data: CreateSale): void {
-    if (!data.clientId || data.clientId <= 0) {
-      throw new SaleValidationError({ field: 'clientId' }, 'Client ID is required.');
-    }
-
-    if (!data.warehouseId || data.warehouseId <= 0) {
-      throw new SaleValidationError({ field: 'warehouseId' }, 'Warehouse ID is required.');
-    }
-
-    if (!data.lines || data.lines.length === 0) {
-      throw new SaleEmptyLinesError();
-    }
-
-    const invalidLine = data.lines.find((line) => line.productId <= 0 || line.quantity <= 0);
-    if (invalidLine) {
-      throw new SaleValidationError(
-        { field: 'lines', productId: invalidLine.productId },
-        'All lines must have a valid product and quantity greater than 0.'
-      );
-    }
+    validateClientId(data.clientId);
+    validateWarehouseId(data.warehouseId);
+    validateCreateSaleLines(data.lines);
   }
 }

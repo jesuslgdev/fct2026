@@ -20,7 +20,7 @@ export interface SaleSummary {
 export type Sale = SaleSummary;
 
 export interface SaleLine {
-  id: number;
+  saleLineId: number;
   saleId: number;
   productId: number;
   quantity: number;
@@ -50,12 +50,41 @@ export interface SaleDetail extends Sale {
 export interface CreateSaleLine {
   productId: number;
   quantity: number;
+  discount?: number;
+  discountType?: SaleDiscountType;
 }
+
+export type SaleDiscountType = 'percent' | 'amount';
+
+export type CreateSaleLineInput = CreateSaleLine;
 
 export interface CreateSale {
   clientId: number;
   warehouseId: number;
-  lines: CreateSaleLine[];
+  lines: CreateSaleLineInput[];
+}
+
+export interface UpdateSale {
+  clientId: number;
+  deliveryAddress: string;
+  lines: CreateSaleLineInput[];
+}
+
+export interface AddSaleLine {
+  productId: number;
+  quantity: number;
+  discount?: number;
+  discountType?: SaleDiscountType;
+}
+
+export interface UpdateSaleLine {
+  quantity: number;
+  discount?: number;
+  discountType?: SaleDiscountType;
+}
+
+export interface AdvanceSaleStatus {
+  newStatus: SaleStatus;
 }
 
 export type SaleSortField =
@@ -75,4 +104,5 @@ export interface ListSalesFilters {
   clientId?: number;
   dateFrom?: Date;
   dateTo?: Date;
+  search?: string;
 }
