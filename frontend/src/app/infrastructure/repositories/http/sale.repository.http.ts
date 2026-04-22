@@ -1,19 +1,37 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import {
+  AddSaleLine,
+  AdvanceSaleStatus,
+  CreateSale,
+  ListSalesFilters,
+  PagedResult,
+  Sale,
+  SaleDetail,
+  UpdateSale,
+  UpdateSaleLine,
+} from '@domain/models/sale.model';
 import {
   SaleApiError,
   SaleClientNotActiveError,
   SaleClientNotFoundError,
+  SaleDeliveryAddressRequiredError,
   SaleEmptyLinesError,
   SaleForbiddenError,
   SaleInsufficientStockError,
+  SaleInvalidDiscountError,
+  SaleInvalidStatusTransitionError,
+  SaleLineNotFoundError,
+  SaleMinimumOneLineError,
   SaleNotFoundError,
+  SaleNotPendingError,
   SaleProductNotActiveError,
   SaleProductNotFoundError,
+  SaleTerminalStateError,
   SaleUnauthorizedError,
   SaleValidationError,
+  SaleWarehouseNotFoundError,
 } from '@domain/models/sale-errors';
-import { CreateSale, ListSalesFilters, PagedResult, Sale, SaleDetail } from '@domain/models/sale.model';
 import { SaleRepository } from '@domain/repositories/sale.repository';
 import { SaleDetailDTO, SalesPageDto } from '@infrastructure/dtos/sale.dto';
 import { SaleMapper } from '@infrastructure/mappers/sale.mapper';
@@ -30,6 +48,14 @@ const SALE_ERROR_CODES = {
   PRODUCT_NOT_ACTIVE: 8105,
   INSUFFICIENT_STOCK: 8106,
   EMPTY_LINES: 8107,
+  INVALID_STATUS_TRANSITION: 8108,
+  TERMINAL_STATE: 8109,
+  WAREHOUSE_NOT_FOUND: 8110,
+  NOT_PENDING: 8111,
+  DELIVERY_ADDRESS_REQUIRED: 8112,
+  INVALID_DISCOUNT: 8113,
+  SALE_LINE_NOT_FOUND: 8114,
+  MINIMUM_ONE_LINE: 8115,
 } as const;
 
 @Injectable()
@@ -45,53 +71,80 @@ export class HttpSaleRepository implements SaleRepository {
   list(filters: ListSalesFilters): Observable<PagedResult<Sale>> {
     return this.withErrorMapping(() =>
       this.http
-        .get<SalesPageDto>(BASE_URL, { params: this.toQueryParams(filters) })
-        .pipe(map((response) => SaleMapper.toPagedResult(response, filters)))
+        .get<SalesPageDto>(BASE_URL, {
+          params: SaleMapper.toQueryParams(filters),
+        })
+        .pipe(map((response) => SaleMapper.fromPageDto(response)))
     );
   }
 
   getById(id: number): Observable<SaleDetail> {
     return this.withErrorMapping(() =>
-      this.http.get<SaleDetailDTO>(`${BASE_URL}/${id}`).pipe(map((dto) => SaleMapper.toDetailDomain(dto)))
+      this.http
+        .get<SaleDetailDTO>(`${BASE_URL}/${id}`)
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
     );
   }
 
   create(data: CreateSale): Observable<SaleDetail> {
     return this.withErrorMapping(() =>
-      this.http.post<SaleDetailDTO>(BASE_URL, SaleMapper.toRequest(data)).pipe(map((dto) => SaleMapper.toDetailDomain(dto)))
+      this.http
+        .post<SaleDetailDTO>(BASE_URL, SaleMapper.toCreateDto(data))
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
     );
   }
 
-  private toQueryParams(filters: ListSalesFilters): HttpParams {
-    let params = new HttpParams()
-      .set('page', String(filters.page))
-      .set('page_size', String(filters.pageSize));
+  update(saleId: number, data: UpdateSale): Observable<SaleDetail> {
+    return this.withErrorMapping(() =>
+      this.http
+        .put<SaleDetailDTO>(`${BASE_URL}/${saleId}`, SaleMapper.toUpdateDto(data))
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
+  }
 
-    if (filters.sortField) {
-      params = params.set('sort_field', filters.sortField);
-    }
+  addLine(saleId: number, data: AddSaleLine): Observable<SaleDetail> {
+    return this.withErrorMapping(() =>
+      this.http
+        .post<SaleDetailDTO>(
+          `${BASE_URL}/${saleId}/lines`,
+          SaleMapper.toAddLineDto(data)
+        )
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
+  }
 
-    if (filters.sortOrder) {
-      params = params.set('sort_order', filters.sortOrder);
-    }
+  updateLine(
+    saleId: number,
+    saleLineId: number,
+    data: UpdateSaleLine
+  ): Observable<SaleDetail> {
+    return this.withErrorMapping(() =>
+      this.http
+        .put<SaleDetailDTO>(
+          `${BASE_URL}/${saleId}/lines/${saleLineId}`,
+          SaleMapper.toUpdateLineDto(data)
+        )
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
+  }
 
-    if (filters.status) {
-      params = params.set('status', filters.status);
-    }
+  removeLine(saleId: number, saleLineId: number): Observable<SaleDetail> {
+    return this.withErrorMapping(() =>
+      this.http
+        .delete<SaleDetailDTO>(`${BASE_URL}/${saleId}/lines/${saleLineId}`)
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
+  }
 
-    if (filters.clientId !== undefined) {
-      params = params.set('client_id', String(filters.clientId));
-    }
-
-    if (filters.dateFrom) {
-      params = params.set('date_from', filters.dateFrom.toISOString());
-    }
-
-    if (filters.dateTo) {
-      params = params.set('date_to', filters.dateTo.toISOString());
-    }
-
-    return params;
+  advanceStatus(saleId: number, data: AdvanceSaleStatus): Observable<SaleDetail> {
+    return this.withErrorMapping(() =>
+      this.http
+        .patch<SaleDetailDTO>(
+          `${BASE_URL}/${saleId}/status`,
+          SaleMapper.toAdvanceStatusDto(data)
+        )
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
   }
 
   private mapHttpError(err: unknown): Error {
@@ -105,10 +158,7 @@ export class HttpSaleRepository implements SaleRepository {
     switch (err.status) {
       case 400:
       case 422:
-        if (errorCode === SALE_ERROR_CODES.EMPTY_LINES) {
-          return new SaleEmptyLinesError(message ?? 'At least one sale line is required.');
-        }
-        return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
+        return this.mapBusinessOrValidationError(errorCode, err, message);
       case 401:
         return new SaleUnauthorizedError(message ?? 'Authentication required.');
       case 403:
@@ -120,20 +170,62 @@ export class HttpSaleRepository implements SaleRepository {
         if (errorCode === SALE_ERROR_CODES.PRODUCT_NOT_FOUND) {
           return new SaleProductNotFoundError(message ?? 'One or more products were not found.');
         }
+        if (errorCode === SALE_ERROR_CODES.WAREHOUSE_NOT_FOUND) {
+          return new SaleWarehouseNotFoundError(message ?? 'Warehouse not found.');
+        }
+        if (errorCode === SALE_ERROR_CODES.SALE_LINE_NOT_FOUND) {
+          return new SaleLineNotFoundError(message ?? 'Sale line not found.');
+        }
         return new SaleNotFoundError(message ?? 'Sale not found.');
-      case 409:
-        if (errorCode === SALE_ERROR_CODES.CLIENT_NOT_ACTIVE) {
-          return new SaleClientNotActiveError(message ?? 'Client is not active and cannot receive sales.');
-        }
-        if (errorCode === SALE_ERROR_CODES.PRODUCT_NOT_ACTIVE) {
-          return new SaleProductNotActiveError(message ?? 'One or more products are inactive.');
-        }
-        if (errorCode === SALE_ERROR_CODES.INSUFFICIENT_STOCK) {
-          return new SaleInsufficientStockError(message ?? 'Insufficient stock for one or more products.');
-        }
-        return new SaleApiError(message ?? 'Sales request conflict.');
       default:
         return new SaleApiError(message ?? 'Unexpected sales API error.');
+    }
+  }
+
+  private mapBusinessOrValidationError(
+    errorCode: number | undefined,
+    err: HttpErrorResponse,
+    message: string | undefined
+  ): Error {
+    switch (errorCode) {
+      case SALE_ERROR_CODES.CLIENT_NOT_ACTIVE:
+        return new SaleClientNotActiveError(
+          message ?? 'Client is not active and cannot receive sales.'
+        );
+      case SALE_ERROR_CODES.PRODUCT_NOT_ACTIVE:
+        return new SaleProductNotActiveError(
+          message ?? 'One or more products are inactive.'
+        );
+      case SALE_ERROR_CODES.INSUFFICIENT_STOCK:
+        return new SaleInsufficientStockError(
+          message ?? 'Insufficient stock for one or more products.'
+        );
+      case SALE_ERROR_CODES.EMPTY_LINES:
+        return new SaleEmptyLinesError(message ?? 'At least one sale line is required.');
+      case SALE_ERROR_CODES.INVALID_STATUS_TRANSITION:
+        return new SaleInvalidStatusTransitionError(
+          message ?? 'Invalid sale status transition.'
+        );
+      case SALE_ERROR_CODES.TERMINAL_STATE:
+        return new SaleTerminalStateError(message ?? 'Sale is in a terminal state.');
+      case SALE_ERROR_CODES.NOT_PENDING:
+        return new SaleNotPendingError(
+          message ?? 'Sale must be in Pending status to be edited.'
+        );
+      case SALE_ERROR_CODES.DELIVERY_ADDRESS_REQUIRED:
+        return new SaleDeliveryAddressRequiredError(
+          message ?? 'Delivery address is required.'
+        );
+      case SALE_ERROR_CODES.INVALID_DISCOUNT:
+        return new SaleInvalidDiscountError(
+          message ?? 'Discount cannot make the line subtotal negative.'
+        );
+      case SALE_ERROR_CODES.MINIMUM_ONE_LINE:
+        return new SaleMinimumOneLineError(
+          message ?? 'A sale must have at least one line.'
+        );
+      default:
+        return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
     }
   }
 

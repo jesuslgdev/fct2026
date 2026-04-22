@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { SaleRepository } from '../../repositories/sale.repository';
-import { ListSalesFilters, PagedResult, Sale } from '../../models/sale.model';
-import { SaleValidationError } from '../../models/sale-errors';
+import { ListSalesFilters, PagedResult, Sale } from '@domain/models/sale.model';
+import { SaleValidationError } from '@domain/models/sale-errors';
+import { SaleRepository } from '@domain/repositories/sale.repository';
+import { normalizeSearch } from './sale-validation';
 
 @Injectable({
   providedIn: 'root',
@@ -27,6 +28,7 @@ export class ListSalesUseCase {
       pageSize: filters.pageSize ?? 20,
       sortField: filters.sortField ?? 'created_at',
       sortOrder: filters.sortOrder ?? 'desc',
+      search: normalizeSearch(filters.search),
     };
   }
 
