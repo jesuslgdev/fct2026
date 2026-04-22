@@ -1,5 +1,11 @@
 import { SaleStatus } from '@domain/enums/sale-status.enum';
-import { CreateSale } from '@domain/models/sale.model';
+import {
+  AddSaleLine,
+  AdvanceSaleStatus,
+  CreateSale,
+  UpdateSale,
+  UpdateSaleLine,
+} from '@domain/models/sale.model';
 import { SaleDetailDTO, SaleDTO } from '@infrastructure/dtos/sale.dto';
 import { SaleMapper } from '@infrastructure/mappers/sale.mapper';
 
@@ -59,9 +65,9 @@ describe('SaleMapper', () => {
     ],
   };
 
-  describe('toDomain', () => {
+  describe('fromDto()', () => {
     it('should map SaleDTO to Sale domain model correctly', () => {
-      const result = SaleMapper.toDomain(mockSaleDTO);
+      const result = SaleMapper.fromDto(mockSaleDTO);
 
       expect(result.saleId).toBe(mockSaleDTO.sale_id);
       expect(result.saleNumber).toBe(mockSaleDTO.sale_number);
@@ -79,14 +85,14 @@ describe('SaleMapper', () => {
 
     it('should handle numeric strings and numbers for total', () => {
       const dtoWithNumber = { ...mockSaleDTO, total: 121 };
-      const result = SaleMapper.toDomain(dtoWithNumber);
+      const result = SaleMapper.fromDto(dtoWithNumber);
       expect(result.total).toBe(121);
     });
   });
 
-  describe('toDetailDomain', () => {
+  describe('fromDetailDto()', () => {
     it('should map SaleDetailDTO to SaleDetail domain model correctly', () => {
-      const result = SaleMapper.toDetailDomain(mockSaleDetailDTO);
+      const result = SaleMapper.fromDetailDto(mockSaleDetailDTO);
 
       expect(result.saleId).toBe(mockSaleDetailDTO.sale_id);
       expect(result.saleNumber).toBe(mockSaleDetailDTO.sale_number);
@@ -101,7 +107,7 @@ describe('SaleMapper', () => {
       expect(result.total).toBe(121);
       expect(result.allowedTransitions).toEqual([SaleStatus.APPROVED, SaleStatus.CANCELLED]);
       expect(result.lines.length).toBe(1);
-      expect(result.lines[0].id).toBe(101);
+      expect(result.lines[0].saleLineId).toBe(101);
       expect(result.lines[0].unitPrice).toBe(50);
       expect(result.lines[0].discount).toBe(0);
       expect(result.statusHistory).toHaveLength(1);
@@ -109,21 +115,108 @@ describe('SaleMapper', () => {
     });
   });
 
-  describe('toRequest', () => {
+  describe('toCreateDto()', () => {
     it('should map CreateSale domain model to CreateSaleRequestDTO correctly', () => {
       const model: CreateSale = {
         clientId: 10,
         warehouseId: 3,
-        lines: [{ productId: 50, quantity: 2 }],
+        lines: [{ productId: 50, quantity: 2, discount: 10, discountType: 'percent' }],
       };
 
-      const result = SaleMapper.toRequest(model);
+      const result = SaleMapper.toCreateDto(model);
 
       expect(result.client_id).toBe(model.clientId);
       expect(result.warehouse_id).toBe(model.warehouseId);
       expect(result.lines.length).toBe(1);
       expect(result.lines[0].product_id).toBe(50);
       expect(result.lines[0].quantity).toBe(2);
+      expect(result.lines[0].discount).toBe(10);
+      expect(result.lines[0].discount_type).toBe('percent');
+    });
+
+    it('should omit optional discount fields when they are undefined', () => {
+      const model: CreateSale = {
+        clientId: 10,
+        warehouseId: 3,
+        lines: [{ productId: 50, quantity: 2 }],
+      };
+
+      const result = SaleMapper.toCreateDto(model);
+
+      expect(result.lines[0]).toEqual({
+        product_id: 50,
+        quantity: 2,
+      });
+    });
+  });
+
+  describe('toUpdateDto()', () => {
+    it('should map UpdateSale to UpdateSaleRequestDTO', () => {
+      const model: UpdateSale = {
+        clientId: 11,
+        deliveryAddress: 'Warehouse street 99',
+        lines: [{ productId: 60, quantity: 4, discount: 5, discountType: 'amount' }],
+      };
+
+      expect(SaleMapper.toUpdateDto(model)).toEqual({
+        client_id: 11,
+        delivery_address: 'Warehouse street 99',
+        lines: [
+          {
+            product_id: 60,
+            quantity: 4,
+            discount: 5,
+            discount_type: 'amount',
+          },
+        ],
+      });
+    });
+
+  });
+
+  describe('toAddLineDto()', () => {
+    it('should map AddSaleLine to SaleLineInputDTO', () => {
+      const model: AddSaleLine = {
+        productId: 80,
+        quantity: 7,
+        discount: 15,
+        discountType: 'percent',
+      };
+
+      expect(SaleMapper.toAddLineDto(model)).toEqual({
+        product_id: 80,
+        quantity: 7,
+        discount: 15,
+        discount_type: 'percent',
+      });
+    });
+  });
+
+  describe('toUpdateLineDto()', () => {
+    it('should map UpdateSaleLine to UpdateSaleLineRequestDTO', () => {
+      const model: UpdateSaleLine = {
+        quantity: 9,
+        discount: 12,
+        discountType: 'amount',
+      };
+
+      expect(SaleMapper.toUpdateLineDto(model)).toEqual({
+        quantity: 9,
+        discount: 12,
+        discount_type: 'amount',
+      });
+    });
+  });
+
+  describe('toAdvanceStatusDto()', () => {
+    it('should map AdvanceSaleStatus to ChangeSaleStatusRequestDTO', () => {
+      const model: AdvanceSaleStatus = {
+        newStatus: SaleStatus.APPROVED,
+      };
+
+      expect(SaleMapper.toAdvanceStatusDto(model)).toEqual({
+        new_status: SaleStatus.APPROVED,
+      });
     });
   });
 });

@@ -1,18 +1,40 @@
 import { Injectable } from '@angular/core';
+import { Observable, delay, of, throwError } from 'rxjs';
+
+import { SaleStatus } from '@domain/enums/sale-status.enum';
 import {
   SaleClientNotActiveError,
   SaleClientNotFoundError,
+  SaleDeliveryAddressRequiredError,
   SaleEmptyLinesError,
   SaleInsufficientStockError,
+  SaleInvalidDiscountError,
+  SaleInvalidStatusTransitionError,
+  SaleLineNotFoundError,
+  SaleMinimumOneLineError,
   SaleNotFoundError,
+  SaleNotPendingError,
   SaleProductNotActiveError,
   SaleProductNotFoundError,
+  SaleTerminalStateError,
   SaleValidationError,
+  SaleWarehouseNotFoundError,
 } from '@domain/models/sale-errors';
-import { SaleStatus } from '@domain/enums/sale-status.enum';
-import { CreateSale, ListSalesFilters, PagedResult, Sale, SaleDetail, SaleSortField } from '@domain/models/sale.model';
+import {
+  AddSaleLine,
+  AdvanceSaleStatus,
+  CreateSale,
+  CreateSaleLineInput,
+  ListSalesFilters,
+  PagedResult,
+  Sale,
+  SaleDetail,
+  SaleLine,
+  SaleSortField,
+  UpdateSale,
+  UpdateSaleLine,
+} from '@domain/models/sale.model';
 import { SaleRepository } from '@domain/repositories/sale.repository';
-import { Observable, delay, of, throwError } from 'rxjs';
 
 interface MockClient {
   id: number;
@@ -21,14 +43,28 @@ interface MockClient {
   deliveryAddress: string;
 }
 
+interface MockWarehouse {
+  id: number;
+}
+
 interface MockProduct {
   id: number;
-  name: string;
   isActive: boolean;
   unitPrice: number;
   vatRate: number;
   availableStock: number;
 }
+
+const LATENCY_MS = 20;
+
+const ALLOWED_TRANSITIONS: Record<SaleStatus, SaleStatus[]> = {
+  [SaleStatus.PENDING]: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
+  [SaleStatus.APPROVED]: [SaleStatus.IN_PROCESS, SaleStatus.CANCELLED],
+  [SaleStatus.IN_PROCESS]: [SaleStatus.SHIPPED, SaleStatus.CANCELLED],
+  [SaleStatus.SHIPPED]: [SaleStatus.DELIVERED],
+  [SaleStatus.DELIVERED]: [],
+  [SaleStatus.CANCELLED]: [],
+};
 
 const MOCK_CLIENTS: MockClient[] = [
   { id: 1, name: 'Acme Corp', isActive: true, deliveryAddress: 'Calle Mayor 1, Madrid' },
@@ -36,10 +72,12 @@ const MOCK_CLIENTS: MockClient[] = [
   { id: 3, name: 'Gamma Legacy', isActive: false, deliveryAddress: 'Avenida Sur 20, Sevilla' },
 ];
 
+const MOCK_WAREHOUSES: MockWarehouse[] = [{ id: 1 }, { id: 2 }];
+
 const MOCK_PRODUCTS: MockProduct[] = [
-  { id: 101, name: 'Producto A', isActive: true, unitPrice: 25, vatRate: 0.21, availableStock: 50 },
-  { id: 102, name: 'Producto B', isActive: true, unitPrice: 12.5, vatRate: 0.21, availableStock: 100 },
-  { id: 103, name: 'Producto C', isActive: false, unitPrice: 9.99, vatRate: 0.1, availableStock: 20 },
+  { id: 101, isActive: true, unitPrice: 25, vatRate: 0.21, availableStock: 50 },
+  { id: 102, isActive: true, unitPrice: 12.5, vatRate: 0.21, availableStock: 100 },
+  { id: 103, isActive: false, unitPrice: 9.99, vatRate: 0.1, availableStock: 20 },
 ];
 
 const INITIAL_SALES: SaleDetail[] = [
@@ -51,7 +89,7 @@ const INITIAL_SALES: SaleDetail[] = [
     clientName: 'Acme Corp',
     creatorName: 'Sales User',
     status: SaleStatus.PENDING,
-    allowedTransitions: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
+    allowedTransitions: [...ALLOWED_TRANSITIONS[SaleStatus.PENDING]],
     deliveryAddress: 'Calle Mayor 1, Madrid',
     saleDate: new Date('2026-04-01T10:00:00.000Z'),
     createdAt: new Date('2026-04-01T10:00:00.000Z'),
@@ -62,7 +100,7 @@ const INITIAL_SALES: SaleDetail[] = [
     updatedAt: new Date('2026-04-01T10:00:00.000Z'),
     lines: [
       {
-        id: 1,
+        saleLineId: 1,
         saleId: 1,
         productId: 101,
         quantity: 2,
@@ -90,7 +128,7 @@ const INITIAL_SALES: SaleDetail[] = [
     clientName: 'Beta Retail',
     creatorName: 'Sales Manager',
     status: SaleStatus.APPROVED,
-    allowedTransitions: [SaleStatus.IN_PROCESS, SaleStatus.CANCELLED],
+    allowedTransitions: [...ALLOWED_TRANSITIONS[SaleStatus.APPROVED]],
     deliveryAddress: 'Gran Via 55, Barcelona',
     saleDate: new Date('2026-04-05T15:00:00.000Z'),
     createdAt: new Date('2026-04-05T15:00:00.000Z'),
@@ -101,7 +139,7 @@ const INITIAL_SALES: SaleDetail[] = [
     updatedAt: new Date('2026-04-06T09:00:00.000Z'),
     lines: [
       {
-        id: 2,
+        saleLineId: 2,
         saleId: 2,
         productId: 102,
         quantity: 3,
@@ -132,9 +170,11 @@ const INITIAL_SALES: SaleDetail[] = [
 @Injectable()
 export class MockSaleRepository implements SaleRepository {
   private sales: SaleDetail[] = INITIAL_SALES.map((sale) => this.cloneDetail(sale));
-  private productStock = new Map<number, number>(MOCK_PRODUCTS.map((p) => [p.id, p.availableStock]));
+  private readonly productStock = new Map<number, number>(
+    MOCK_PRODUCTS.map((product) => [product.id, product.availableStock])
+  );
   private nextSaleId = INITIAL_SALES.length + 1;
-  private nextLineId = INITIAL_SALES.flatMap((s) => s.lines).length + 1;
+  private nextLineId = INITIAL_SALES.flatMap((sale) => sale.lines).length + 1;
 
   list(filters: ListSalesFilters): Observable<PagedResult<Sale>> {
     const page = filters.page ?? 1;
@@ -149,27 +189,33 @@ export class MockSaleRepository implements SaleRepository {
       filtered = filtered.filter((sale) => sale.clientId === filters.clientId);
     }
 
-    if (filters.dateFrom !== undefined) {
-      const dateFrom = filters.dateFrom;
-      filtered = filtered.filter((sale) => sale.saleDate >= dateFrom);
+    if (filters.dateFrom) {
+      filtered = filtered.filter((sale) => sale.saleDate >= filters.dateFrom!);
     }
 
-    if (filters.dateTo !== undefined) {
-      const dateTo = filters.dateTo;
-      filtered = filtered.filter((sale) => sale.saleDate <= dateTo);
+    if (filters.dateTo) {
+      filtered = filtered.filter((sale) => sale.saleDate <= filters.dateTo!);
+    }
+
+    if (filters.search) {
+      const search = filters.search.trim().toLowerCase();
+      filtered = filtered.filter(
+        (sale) =>
+          sale.saleNumber.toLowerCase().includes(search) ||
+          (sale.clientName ?? '').toLowerCase().includes(search)
+      );
     }
 
     const sorted = this.sortSales(filtered, filters.sortField, filters.sortOrder);
     const total = sorted.length;
     const start = (page - 1) * pageSize;
-    const data = sorted.slice(start, start + pageSize).map((sale) => this.toSaleSummary(sale));
 
     return of({
-      data,
+      data: sorted.slice(start, start + pageSize).map((sale) => this.toSaleSummary(sale)),
       total,
       page,
       pageSize,
-    }).pipe(delay(250));
+    }).pipe(delay(LATENCY_MS));
   }
 
   getById(id: number): Observable<SaleDetail> {
@@ -177,115 +223,31 @@ export class MockSaleRepository implements SaleRepository {
     if (!sale) {
       return throwError(() => new SaleNotFoundError(`Sale with id ${id} was not found.`));
     }
-    return of(this.cloneDetail(sale)).pipe(delay(180));
+
+    return of(this.cloneDetail(sale)).pipe(delay(LATENCY_MS));
   }
 
   create(data: CreateSale): Observable<SaleDetail> {
-    if (data.clientId <= 0) {
-      return throwError(() => new SaleValidationError({ clientId: data.clientId }, 'Client is required.'));
-    }
-
-    if (data.warehouseId <= 0) {
-      return throwError(() =>
-        new SaleValidationError({ warehouseId: data.warehouseId }, 'Warehouse is required.')
-      );
-    }
-
-    if (!data.lines.length) {
-      return throwError(() => new SaleEmptyLinesError());
-    }
-
-    const client = MOCK_CLIENTS.find((item) => item.id === data.clientId);
-    if (!client) {
-      return throwError(() => new SaleClientNotFoundError());
-    }
-
-    if (!client.isActive) {
-      return throwError(() => new SaleClientNotActiveError());
-    }
+    const client = this.requireClient(data.clientId);
+    this.requireWarehouse(data.warehouseId);
+    this.validateLinesForCreateOrUpdate(data.lines);
 
     const now = new Date();
-    const saleId = this.nextSaleId;
-
-    interface LineDraft {
-      productId: number;
-      quantity: number;
-      unitPrice: number;
-      vatRate: number;
-    }
-
-    const drafts: LineDraft[] = [];
-    for (const line of data.lines) {
-      if (line.quantity <= 0) {
-        return throwError(() => new SaleValidationError({ quantity: line.quantity }, 'Line quantity must be greater than zero.'));
-      }
-
-      const product = MOCK_PRODUCTS.find((item) => item.id === line.productId);
-      if (!product) {
-        return throwError(() => new SaleProductNotFoundError());
-      }
-
-      if (!product.isActive) {
-        return throwError(() => new SaleProductNotActiveError());
-      }
-
-      const currentStock = this.productStock.get(product.id) ?? 0;
-      if (line.quantity > currentStock) {
-        return throwError(() => new SaleInsufficientStockError(
-          `Insufficient stock for product ${product.id}. Requested ${line.quantity}, available ${currentStock}.`,
-        ));
-      }
-
-      drafts.push({
-        productId: product.id,
-        quantity: line.quantity,
-        unitPrice: product.unitPrice,
-        vatRate: product.vatRate,
-      });
-    }
-
-    const lines = drafts.map((draft) => {
-      const lineSubtotal = this.round2(draft.quantity * draft.unitPrice);
-      const lineTax = this.round2(lineSubtotal * draft.vatRate);
-
-      const currentStock = this.productStock.get(draft.productId) ?? 0;
-      this.productStock.set(draft.productId, currentStock - draft.quantity);
-
-      return {
-        id: this.nextLineId++,
-        saleId,
-        productId: draft.productId,
-        quantity: draft.quantity,
-        unitPrice: draft.unitPrice,
-        discount: 0,
-        lineSubtotal,
-        vatRate: draft.vatRate,
-        lineTax,
-      };
-    });
-
-    const subtotal = this.round2(lines.reduce((acc, line) => acc + line.lineSubtotal, 0));
-    const taxes = this.round2(lines.reduce((acc, line) => acc + line.lineTax, 0));
-    const total = this.round2(subtotal + taxes);
-
-    const created: SaleDetail = {
+    const saleId = this.nextSaleId++;
+    const lines = data.lines.map((line) => this.buildLineDraft(saleId, line));
+    const created = this.buildSaleDetail({
       saleId,
-      saleNumber: `SALE-${String(saleId).padStart(4, '0')}`,
       clientId: client.id,
-      warehouseId: data.warehouseId,
       clientName: client.name,
+      warehouseId: data.warehouseId,
+      deliveryAddress: client.deliveryAddress,
+      userId: 1,
       creatorName: 'Sales User',
       status: SaleStatus.PENDING,
-      allowedTransitions: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
-      saleDate: now,
-      deliveryAddress: client.deliveryAddress,
-      createdAt: now,
-      total,
-      userId: 1,
-      subtotal,
-      taxes,
-      updatedAt: now,
       lines,
+      createdAt: now,
+      updatedAt: now,
+      saleDate: now,
       statusHistory: [
         {
           fromStatus: null,
@@ -294,23 +256,365 @@ export class MockSaleRepository implements SaleRepository {
           changedByUserId: 1,
         },
       ],
-    };
+    });
 
-    this.nextSaleId += 1;
     this.sales = [created, ...this.sales];
+    return of(this.cloneDetail(created)).pipe(delay(LATENCY_MS));
+  }
 
-    return of(this.cloneDetail(created)).pipe(delay(220));
+  update(saleId: number, data: UpdateSale): Observable<SaleDetail> {
+    const sale = this.requireSale(saleId);
+    this.requirePendingSale(sale);
+    this.requireClient(data.clientId);
+    if (!data.deliveryAddress.trim()) {
+      return throwError(() => new SaleDeliveryAddressRequiredError());
+    }
+
+    this.validateLinesForCreateOrUpdate(data.lines);
+    this.restoreLineStock(sale.lines);
+
+    const lines = data.lines.map((line) => this.buildLineDraft(sale.saleId, line));
+    const updated = this.recalculateSale({
+      ...sale,
+      clientId: data.clientId,
+      clientName: this.requireClient(data.clientId).name,
+      deliveryAddress: data.deliveryAddress.trim(),
+      lines,
+      updatedAt: new Date(),
+    });
+
+    this.replaceSale(updated);
+    return of(this.cloneDetail(updated)).pipe(delay(LATENCY_MS));
+  }
+
+  addLine(saleId: number, data: AddSaleLine): Observable<SaleDetail> {
+    const sale = this.requireSale(saleId);
+    this.requirePendingSale(sale);
+
+    const line = this.buildLineDraft(sale.saleId, data);
+    const updated = this.recalculateSale({
+      ...sale,
+      lines: [...sale.lines, line],
+      updatedAt: new Date(),
+    });
+
+    this.replaceSale(updated);
+    return of(this.cloneDetail(updated)).pipe(delay(LATENCY_MS));
+  }
+
+  updateLine(saleId: number, saleLineId: number, data: UpdateSaleLine): Observable<SaleDetail> {
+    const sale = this.requireSale(saleId);
+    this.requirePendingSale(sale);
+
+    const existingLine = sale.lines.find((line) => line.saleLineId === saleLineId);
+    if (!existingLine) {
+      return throwError(() => new SaleLineNotFoundError());
+    }
+
+    this.validateDiscount(data.discount, data.discountType);
+    this.restoreLineStock([existingLine]);
+
+    const updatedLine = this.buildLineFromExisting(existingLine, data);
+    const updated = this.recalculateSale({
+      ...sale,
+      lines: sale.lines.map((line) =>
+        line.saleLineId === saleLineId ? updatedLine : line
+      ),
+      updatedAt: new Date(),
+    });
+
+    this.replaceSale(updated);
+    return of(this.cloneDetail(updated)).pipe(delay(LATENCY_MS));
+  }
+
+  removeLine(saleId: number, saleLineId: number): Observable<SaleDetail> {
+    const sale = this.requireSale(saleId);
+    this.requirePendingSale(sale);
+
+    const line = sale.lines.find((item) => item.saleLineId === saleLineId);
+    if (!line) {
+      return throwError(() => new SaleLineNotFoundError());
+    }
+
+    if (sale.lines.length === 1) {
+      return throwError(() => new SaleMinimumOneLineError());
+    }
+
+    this.restoreLineStock([line]);
+    const updated = this.recalculateSale({
+      ...sale,
+      lines: sale.lines.filter((item) => item.saleLineId !== saleLineId),
+      updatedAt: new Date(),
+    });
+
+    this.replaceSale(updated);
+    return of(this.cloneDetail(updated)).pipe(delay(LATENCY_MS));
+  }
+
+  advanceStatus(saleId: number, data: AdvanceSaleStatus): Observable<SaleDetail> {
+    const sale = this.requireSale(saleId);
+    const allowed = ALLOWED_TRANSITIONS[sale.status];
+
+    if (!allowed.length) {
+      return throwError(() => new SaleTerminalStateError());
+    }
+
+    if (!allowed.includes(data.newStatus)) {
+      return throwError(() => new SaleInvalidStatusTransitionError());
+    }
+
+    const changedAt = new Date();
+    const updated = this.recalculateSale({
+      ...sale,
+      status: data.newStatus,
+      updatedAt: changedAt,
+      statusHistory: [
+        ...sale.statusHistory,
+        {
+          fromStatus: sale.status,
+          toStatus: data.newStatus,
+          changedAt,
+          changedByUserId: sale.userId,
+        },
+      ],
+    });
+
+    this.replaceSale(updated);
+    return of(this.cloneDetail(updated)).pipe(delay(LATENCY_MS));
+  }
+
+  private validateLinesForCreateOrUpdate(lines: CreateSaleLineInput[]): void {
+    if (!lines.length) {
+      throw new SaleEmptyLinesError();
+    }
+
+    lines.forEach((line) => {
+      if (line.productId <= 0 || line.quantity <= 0) {
+        throw new SaleValidationError({ line }, 'All lines must be valid.');
+      }
+      this.validateDiscount(line.discount, line.discountType);
+    });
+  }
+
+  private validateDiscount(
+    discount: number | undefined,
+    discountType: 'percent' | 'amount' | undefined
+  ): void {
+    if (discount === undefined) {
+      return;
+    }
+
+    if (discount < 0) {
+      throw new SaleInvalidDiscountError('Discount must be greater than or equal to 0.');
+    }
+
+    if (discountType === 'percent' && discount >= 100) {
+      throw new SaleInvalidDiscountError('Percentage discount must be less than 100.');
+    }
+  }
+
+  private buildLineDraft(
+    saleId: number,
+    line: Pick<CreateSaleLineInput, 'productId' | 'quantity' | 'discount' | 'discountType'>
+  ): SaleLine {
+    const product = this.requireProduct(line.productId);
+    const currentStock = this.productStock.get(product.id) ?? 0;
+
+    if (line.quantity > currentStock) {
+      throw new SaleInsufficientStockError(
+        `Insufficient stock for product ${product.id}. Requested ${line.quantity}, available ${currentStock}.`
+      );
+    }
+
+    this.productStock.set(product.id, currentStock - line.quantity);
+
+    return this.computeLine({
+      saleLineId: this.nextLineId++,
+      saleId,
+      productId: product.id,
+      quantity: line.quantity,
+      unitPrice: product.unitPrice,
+      discount: line.discount ?? 0,
+      discountType: line.discountType ?? 'percent',
+      vatRate: product.vatRate,
+    });
+  }
+
+  private buildLineFromExisting(
+    existingLine: SaleLine,
+    data: UpdateSaleLine
+  ): SaleLine {
+    const product = this.requireProduct(existingLine.productId);
+    const currentStock = this.productStock.get(product.id) ?? 0;
+
+    if (data.quantity > currentStock) {
+      throw new SaleInsufficientStockError(
+        `Insufficient stock for product ${product.id}. Requested ${data.quantity}, available ${currentStock}.`
+      );
+    }
+
+    this.productStock.set(product.id, currentStock - data.quantity);
+
+    return this.computeLine({
+      saleLineId: existingLine.saleLineId,
+      saleId: existingLine.saleId,
+      productId: existingLine.productId,
+      quantity: data.quantity,
+      unitPrice: existingLine.unitPrice,
+      discount: data.discount ?? 0,
+      discountType: data.discountType ?? 'percent',
+      vatRate: existingLine.vatRate,
+    });
+  }
+
+  private computeLine(input: {
+    saleLineId: number;
+    saleId: number;
+    productId: number;
+    quantity: number;
+    unitPrice: number;
+    discount: number;
+    discountType: 'percent' | 'amount';
+    vatRate: number;
+  }): SaleLine {
+    const grossSubtotal = input.quantity * input.unitPrice;
+    const discountValue =
+      input.discountType === 'percent'
+        ? grossSubtotal * (input.discount / 100)
+        : input.discount;
+
+    if (discountValue > grossSubtotal) {
+      throw new SaleInvalidDiscountError();
+    }
+
+    const lineSubtotal = this.round2(grossSubtotal - discountValue);
+    const lineTax = this.round2(lineSubtotal * input.vatRate);
+
+    return {
+      saleLineId: input.saleLineId,
+      saleId: input.saleId,
+      productId: input.productId,
+      quantity: input.quantity,
+      unitPrice: input.unitPrice,
+      discount: input.discount,
+      lineSubtotal,
+      vatRate: input.vatRate,
+      lineTax,
+    };
+  }
+
+  private buildSaleDetail(input: {
+    saleId: number;
+    clientId: number;
+    clientName: string;
+    warehouseId: number;
+    deliveryAddress: string;
+    userId: number;
+    creatorName: string;
+    status: SaleStatus;
+    lines: SaleLine[];
+    createdAt: Date;
+    updatedAt: Date;
+    saleDate: Date;
+    statusHistory: SaleDetail['statusHistory'];
+  }): SaleDetail {
+    return this.recalculateSale({
+      saleId: input.saleId,
+      saleNumber: `SALE-${String(input.saleId).padStart(4, '0')}`,
+      clientId: input.clientId,
+      warehouseId: input.warehouseId,
+      clientName: input.clientName,
+      creatorName: input.creatorName,
+      status: input.status,
+      allowedTransitions: [...ALLOWED_TRANSITIONS[input.status]],
+      deliveryAddress: input.deliveryAddress,
+      saleDate: input.saleDate,
+      createdAt: input.createdAt,
+      total: 0,
+      userId: input.userId,
+      subtotal: 0,
+      taxes: 0,
+      updatedAt: input.updatedAt,
+      lines: input.lines,
+      statusHistory: input.statusHistory,
+    });
+  }
+
+  private recalculateSale(sale: SaleDetail): SaleDetail {
+    const subtotal = this.round2(
+      sale.lines.reduce((acc, line) => acc + line.lineSubtotal, 0)
+    );
+    const taxes = this.round2(sale.lines.reduce((acc, line) => acc + line.lineTax, 0));
+
+    return {
+      ...sale,
+      allowedTransitions: [...ALLOWED_TRANSITIONS[sale.status]],
+      subtotal,
+      taxes,
+      total: this.round2(subtotal + taxes),
+    };
+  }
+
+  private requireSale(saleId: number): SaleDetail {
+    const sale = this.sales.find((item) => item.saleId === saleId);
+    if (!sale) {
+      throw new SaleNotFoundError();
+    }
+    return this.cloneDetail(sale);
+  }
+
+  private requireClient(clientId: number): MockClient {
+    const client = MOCK_CLIENTS.find((item) => item.id === clientId);
+    if (!client) {
+      throw new SaleClientNotFoundError();
+    }
+    if (!client.isActive) {
+      throw new SaleClientNotActiveError();
+    }
+    return client;
+  }
+
+  private requireWarehouse(warehouseId: number): void {
+    if (!MOCK_WAREHOUSES.some((warehouse) => warehouse.id === warehouseId)) {
+      throw new SaleWarehouseNotFoundError();
+    }
+  }
+
+  private requireProduct(productId: number): MockProduct {
+    const product = MOCK_PRODUCTS.find((item) => item.id === productId);
+    if (!product) {
+      throw new SaleProductNotFoundError();
+    }
+    if (!product.isActive) {
+      throw new SaleProductNotActiveError();
+    }
+    return product;
+  }
+
+  private requirePendingSale(sale: SaleDetail): void {
+    if (sale.status !== SaleStatus.PENDING) {
+      throw new SaleNotPendingError();
+    }
+  }
+
+  private restoreLineStock(lines: SaleLine[]): void {
+    lines.forEach((line) => {
+      const currentStock = this.productStock.get(line.productId) ?? 0;
+      this.productStock.set(line.productId, currentStock + line.quantity);
+    });
+  }
+
+  private replaceSale(updated: SaleDetail): void {
+    this.sales = this.sales.map((sale) =>
+      sale.saleId === updated.saleId ? this.cloneDetail(updated) : sale
+    );
   }
 
   private sortSales(
     sales: SaleDetail[],
     sortField: SaleSortField | undefined,
-    sortOrder: 'asc' | 'desc' | undefined,
+    sortOrder: 'asc' | 'desc' | undefined
   ): SaleDetail[] {
-    if (!sortField) {
-      return [...sales].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    }
-
     const direction = sortOrder === 'asc' ? 1 : -1;
     const sorted = [...sales].sort((a, b) => {
       switch (sortField) {
@@ -322,20 +626,15 @@ export class MockSaleRepository implements SaleRepository {
           return a.status.localeCompare(b.status);
         case 'sale_date':
           return a.saleDate.getTime() - b.saleDate.getTime();
-        case 'created_at':
-          return a.createdAt.getTime() - b.createdAt.getTime();
         case 'total':
           return a.total - b.total;
+        case 'created_at':
         default:
-          return 0;
+          return a.createdAt.getTime() - b.createdAt.getTime();
       }
     });
 
-    if (direction === 1) {
-      return sorted;
-    }
-
-    return sorted.reverse();
+    return direction === 1 ? sorted : sorted.reverse();
   }
 
   private toSaleSummary(sale: SaleDetail): Sale {

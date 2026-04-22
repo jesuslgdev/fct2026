@@ -2,21 +2,21 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { SaleDetail } from '@domain/models/sale.model';
 import { SaleRepository } from '@domain/repositories/sale.repository';
-import { validateSaleId } from './sale-validation';
+import { validateSaleId, validateSaleLineId } from './sale-validation';
 
 @Injectable({
   providedIn: 'root',
 })
-export class GetSaleUseCase {
+export class RemoveSaleLineUseCase {
   private readonly saleRepository = inject(SaleRepository);
 
-  execute(id: number): Observable<SaleDetail> {
+  execute(saleId: number, saleLineId: number): Observable<SaleDetail> {
     try {
-      validateSaleId(id);
+      validateSaleId(saleId);
+      validateSaleLineId(saleLineId);
+      return this.saleRepository.removeLine(saleId, saleLineId);
     } catch (error) {
       return throwError(() => error);
     }
-
-    return this.saleRepository.getById(id);
   }
 }

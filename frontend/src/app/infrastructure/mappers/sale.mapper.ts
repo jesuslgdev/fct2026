@@ -1,16 +1,32 @@
 import { SaleStatus } from '@domain/enums/sale-status.enum';
-import { CreateSale, ListSalesFilters, PagedResult, Sale, SaleDetail, SaleLine } from '@domain/models/sale.model';
 import {
+  AddSaleLine,
+  AdvanceSaleStatus,
+  CreateSale,
+  CreateSaleLineInput,
+  ListSalesFilters,
+  Sale,
+  SaleDetail,
+  SaleLine,
+  SaleStatusHistory,
+  UpdateSale,
+  UpdateSaleLine,
+} from '@domain/models/sale.model';
+import {
+  ChangeSaleStatusRequestDTO,
+  CreateSaleLineRequestDTO,
   CreateSaleRequestDTO,
   SaleDetailDTO,
   SaleDTO,
   SaleLineDTO,
   SaleStatusHistoryDTO,
   SalesPageDto,
+  UpdateSaleLineRequestDTO,
+  UpdateSaleRequestDTO,
 } from '@infrastructure/dtos/sale.dto';
 
 export class SaleMapper {
-  static toDomain(dto: SaleDTO): Sale {
+  static fromDto(dto: SaleDTO): Sale {
     return {
       saleId: dto.sale_id,
       saleNumber: dto.sale_number,
@@ -27,7 +43,7 @@ export class SaleMapper {
     };
   }
 
-  static toDetailDomain(dto: SaleDetailDTO): SaleDetail {
+  static fromDetailDto(dto: SaleDetailDTO): SaleDetail {
     return {
       saleId: dto.sale_id,
       saleNumber: dto.sale_number,
@@ -45,14 +61,105 @@ export class SaleMapper {
       taxes: Number(dto.taxes),
       createdAt: new Date(dto.created_at),
       updatedAt: new Date(dto.updated_at),
-      lines: dto.lines.map((line) => this.toLineDomain(line)),
-      statusHistory: dto.status_history.map((history) => this.toStatusHistoryDomain(history)),
+      lines: dto.lines.map((line) => this.fromLineDto(line)),
+      statusHistory: dto.status_history.map((history) => this.fromStatusHistoryDto(history)),
     };
   }
 
-  private static toLineDomain(dto: SaleLineDTO): SaleLine {
+  static fromPageDto(dto: SalesPageDto) {
     return {
-      id: dto.sale_line_id,
+      data: dto.items.map((item) => this.fromDto(item)),
+      total: dto.total,
+      page: dto.page,
+      pageSize: dto.page_size,
+    };
+  }
+
+  static toQueryParams(
+    filters: ListSalesFilters,
+  ): Record<string, string | number> {
+    const query: Record<string, string | number> = {};
+
+    if (filters.page !== undefined) {
+      query['page'] = filters.page;
+    }
+
+    if (filters.pageSize !== undefined) {
+      query['page_size'] = filters.pageSize;
+    }
+
+    if (filters.sortField) {
+      query['sort_field'] = filters.sortField;
+    }
+
+    if (filters.sortOrder) {
+      query['sort_order'] = filters.sortOrder;
+    }
+
+    if (filters.status) {
+      query['status'] = filters.status;
+    }
+
+    if (filters.clientId !== undefined) {
+      query['client_id'] = filters.clientId;
+    }
+
+    if (filters.dateFrom) {
+      query['date_from'] = filters.dateFrom.toISOString();
+    }
+
+    if (filters.dateTo) {
+      query['date_to'] = filters.dateTo.toISOString();
+    }
+
+    if (filters.search) {
+      query['search'] = filters.search;
+    }
+
+    return query;
+  }
+
+  static toCreateDto(model: CreateSale): CreateSaleRequestDTO {
+    return {
+      client_id: model.clientId,
+      warehouse_id: model.warehouseId,
+      lines: model.lines.map((line) => this.toSaleLineDto(line)),
+    };
+  }
+
+  static toUpdateDto(model: UpdateSale): UpdateSaleRequestDTO {
+    return {
+      client_id: model.clientId,
+      delivery_address: model.deliveryAddress,
+      lines: model.lines.map((line) => this.toSaleLineDto(line)),
+    };
+  }
+
+  static toAddLineDto(model: AddSaleLine): CreateSaleLineRequestDTO {
+    return this.toSaleLineDto(model);
+  }
+
+  static toUpdateLineDto(model: UpdateSaleLine): UpdateSaleLineRequestDTO {
+    return {
+      quantity: model.quantity,
+      ...(model.discount !== undefined ? { discount: model.discount } : {}),
+      ...(model.discountType !== undefined
+        ? { discount_type: model.discountType }
+        : {}),
+    };
+  }
+
+  static toAdvanceStatusDto(
+    model: AdvanceSaleStatus,
+  ): ChangeSaleStatusRequestDTO {
+    return {
+      new_status: model.newStatus,
+    };
+  }
+
+  private static fromLineDto(dto: SaleLineDTO): SaleLine {
+    return {
+      saleLineId: dto.sale_line_id,
       saleId: dto.sale_id,
       productId: dto.product_id,
       quantity: dto.quantity,
@@ -64,7 +171,7 @@ export class SaleMapper {
     };
   }
 
-  private static toStatusHistoryDomain(dto: SaleStatusHistoryDTO) {
+  private static fromStatusHistoryDto(dto: SaleStatusHistoryDTO): SaleStatusHistory {
     return {
       fromStatus: dto.from_status as SaleStatus | null,
       toStatus: dto.to_status as SaleStatus,
@@ -73,23 +180,19 @@ export class SaleMapper {
     };
   }
 
-  static toRequest(model: CreateSale): CreateSaleRequestDTO {
+  private static toSaleLineDto(
+    line: Pick<
+      CreateSaleLineInput,
+      'productId' | 'quantity' | 'discount' | 'discountType'
+    >,
+  ): CreateSaleLineRequestDTO {
     return {
-      client_id: model.clientId,
-      warehouse_id: model.warehouseId,
-      lines: model.lines.map((line) => ({
-        product_id: line.productId,
-        quantity: line.quantity,
-      })),
-    };
-  }
-
-  static toPagedResult(response: SalesPageDto, _filters?: ListSalesFilters): PagedResult<Sale> {
-    return {
-      data: response.items.map((dto) => this.toDomain(dto)),
-      total: response.total,
-      page: response.page,
-      pageSize: response.page_size,
+      product_id: line.productId,
+      quantity: line.quantity,
+      ...(line.discount !== undefined ? { discount: line.discount } : {}),
+      ...(line.discountType !== undefined
+        ? { discount_type: line.discountType }
+        : {}),
     };
   }
 }
