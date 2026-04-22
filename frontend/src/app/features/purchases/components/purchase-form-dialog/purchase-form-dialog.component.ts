@@ -23,6 +23,7 @@ interface SelectOption<T = number | null> {
 
 interface PurchaseLineDraft {
   productId: number | null;
+  productName: string | null;
   quantity: number | null;
   unitPrice: number | null;
   vatRate: number | null;
@@ -311,6 +312,7 @@ export class PurchaseFormDialogComponent {
       ...lines,
       {
         productId,
+        productName: selectedProduct.productName,
         quantity: 1,
         unitPrice: this.toNullableNumber(selectedProduct.unitPrice),
         vatRate: this.toNullableNumber(selectedProduct.vatRate),
@@ -350,6 +352,7 @@ export class PurchaseFormDialogComponent {
 
     this.updateLine(index, {
       productId,
+      productName: selectedProduct?.productName ?? null,
       unitPrice: this.toNullableNumber(selectedProduct?.unitPrice),
       vatRate: this.toNullableNumber(selectedProduct?.vatRate),
       quantity: this.lines()[index]?.quantity ?? 1,
@@ -452,6 +455,14 @@ export class PurchaseFormDialogComponent {
     return this.resolveProductOption(productId, this.supplierId())?.productName ?? `Producto #${productId}`;
   }
 
+  getLineProductLabel(line: PurchaseLineDraft): string {
+    if (line.productName && line.productName.trim().length > 0) {
+      return line.productName;
+    }
+
+    return this.getProductLabel(line.productId);
+  }
+
   statusLabel(status: PurchaseStatus): string {
     switch (status) {
       case 'Pending':
@@ -501,6 +512,7 @@ export class PurchaseFormDialogComponent {
     this.lines.set(
       purchase.lines.map((line) => ({
         productId: line.productId,
+        productName: line.productName,
         quantity: this.toNullableNumber(line.quantity),
         unitPrice: this.toNullableNumber(line.unitPrice),
         vatRate: this.toNullableNumber(line.vatRate),
@@ -515,6 +527,7 @@ export class PurchaseFormDialogComponent {
   private createEmptyLine(): PurchaseLineDraft {
     return {
       productId: null,
+      productName: null,
       quantity: 1,
       unitPrice: null,
       vatRate: null,
