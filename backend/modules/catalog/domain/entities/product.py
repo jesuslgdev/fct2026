@@ -1,7 +1,16 @@
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, func, select
+from sqlalchemy import (
+    Boolean,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    func,
+    select,
+)
 from sqlalchemy import column as sa_col
 from sqlalchemy import table as sa_table
 from sqlalchemy.orm import Mapped, column_property, mapped_column, relationship
@@ -50,6 +59,10 @@ class Product(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     category: Mapped["Category"] = relationship(back_populates="products")  # type: ignore
+
+    __table_args__ = (
+        Index("ix_products_name_lower_trim", func.lower(func.trim(name)), unique=True),
+    )
 
 
 # Assigned after class definition so Product.product_id is a fully resolved

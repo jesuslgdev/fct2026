@@ -5,7 +5,12 @@ from httpx import AsyncClient
 from composition.dependencies import get_get_purchase_use_case
 from main import app
 from modules.purchases.domain.exceptions import PurchaseException, PurchaseExceptionInfo
-from tests.purchases.conftest import make_enriched, make_purchase, make_purchase_line
+from tests.purchases.conftest import (
+    make_enriched,
+    make_purchase,
+    make_purchase_line,
+    make_purchase_status_history,
+)
 
 
 async def test_get_purchase_success(auth_client: AsyncClient):
@@ -152,6 +157,31 @@ async def test_get_purchase_line_reduced_vat(auth_client: AsyncClient):
     assert float(line_body["line_tax"]) == 10.00
     assert float(body["taxes"]) == 10.00
     assert float(body["total"]) == 110.00
+
+
+async def test_get_purchase_includes_status_history(auth_client: AsyncClient):
+    purchase = make_purchase(
+        status="Approved",
+        status_history=[
+            make_purchase_status_history(
+                from_status="Pending",
+                to_status="Approved",
+                changed_by_user_id=9,
+            )
+        ],
+    )
+    enriched = make_enriched(purchase=purchase)
+    mock = MagicMock()
+    mock.execute = AsyncMock(return_value=enriched)
+    app.dependency_overrides[get_get_purchase_use_case] = lambda: mock
+    response = await auth_client.get("/api/v1/purchases/1")
+    del app.dependency_overrides[get_get_purchase_use_case]
+    assert response.status_code == 200
+    history = response.json()["status_history"]
+    assert len(history) == 1
+    assert history[0]["from_status"] == "Pending"
+    assert history[0]["to_status"] == "Approved"
+    assert history[0]["changed_by_user_id"] == 9
 
 
 async def test_get_purchase_not_found(auth_client: AsyncClient):

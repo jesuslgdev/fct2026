@@ -68,6 +68,13 @@ class SupplierPriceDTO(BaseModel):
     supplier_price: Decimal
 
 
+class PurchaseStatusHistoryDTO(BaseModel):
+    from_status: str | None
+    to_status: str
+    changed_at: datetime
+    changed_by_user_id: int
+
+
 class PurchaseDetailDTO(BaseModel):
     purchase_id: int
     purchase_number: str
@@ -87,3 +94,4 @@ class PurchaseDetailDTO(BaseModel):
     created_at: datetime
     updated_at: datetime
     lines: list[PurchaseLineDTO]
+    status_history: list[PurchaseStatusHistoryDTO] = Field(default_factory=list)

@@ -68,6 +68,16 @@ class WarehouseStockRepository(IWarehouseStockRepository, IStockAvailabilityRead
             return 0
         return record.available_stock
 
+    async def adjust_reserved_stock(
+        self, warehouse_id: int, product_id: int, delta: int
+    ) -> None:
+        record = await self.get_by_warehouse_and_product(warehouse_id, product_id)
+        if record is not None:
+            record.reserved_stock = max(
+                0, min(record.stock, record.reserved_stock + delta)
+            )
+            await self._db.flush()
+
     async def upsert_stock(
         self, warehouse_id: int, product_id: int, new_stock: int
     ) -> WarehouseStock:
@@ -119,6 +129,9 @@ class WarehouseStockRepository(IWarehouseStockRepository, IStockAvailabilityRead
 
         if search is not None:
             query = query.where(products_table.c.name.ilike(f"%{search}%"))
+
+        # Filter out products with zero stock
+        query = query.where(WarehouseStock.stock > 0)
 
         count_query = select(func.count()).select_from(query.subquery())
         total = (await self._db.execute(count_query)).scalar_one()

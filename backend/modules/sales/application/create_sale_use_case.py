@@ -8,11 +8,13 @@ from modules.sales.domain.interfaces.repositories.i_sale_repository import (
 from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
     ICreateSaleUseCase,
 )
+from modules.sales.domain.sale_status import PENDING
 from shared.domain.interfaces.i_client_reader import IClientReader
 from shared.domain.interfaces.i_product_reader import IProductReader
 from shared.domain.interfaces.i_stock_availability_reader import (
     IStockAvailabilityReader,
 )
+from shared.domain.interfaces.i_user_reader import IUserReader
 from shared.domain.interfaces.i_warehouse_reader import IWarehouseReader
 
 
@@ -24,12 +26,14 @@ class CreateSaleUseCase(ICreateSaleUseCase):
         product_reader: IProductReader,
         warehouse_reader: IWarehouseReader,
         stock_reader: IStockAvailabilityReader,
+        user_reader: IUserReader,
     ) -> None:
         self._sale_repo = sale_repo
         self._client_reader = client_reader
         self._product_reader = product_reader
         self._warehouse_reader = warehouse_reader
         self._stock_reader = stock_reader
+        self._user_reader = user_reader
 
     async def execute(
         self,
@@ -49,7 +53,7 @@ class CreateSaleUseCase(ICreateSaleUseCase):
             raise SaleException(SaleExceptionInfo.WAREHOUSE_NOT_FOUND)
 
         delivery_address = (
-            f"{client.address}, {client.city}, {client.province}, {client.postal_code}"
+            f"{client.street}, {client.city}, {client.province}, {client.postal_code}"
         )
 
         if not lines:
@@ -72,8 +76,9 @@ class CreateSaleUseCase(ICreateSaleUseCase):
 
             quantity = line["quantity"]
             unit_price = Decimal(str(product.price))
+            discount = Decimal(str(line.get("discount", "0")))
             vat_rate = product.vat_rate
-            line_subtotal = quantity * unit_price
+            line_subtotal = quantity * unit_price * (1 - discount)
             line_tax = line_subtotal * vat_rate
             subtotal += line_subtotal
 
@@ -82,6 +87,7 @@ class CreateSaleUseCase(ICreateSaleUseCase):
                     "product_id": line["product_id"],
                     "quantity": quantity,
                     "unit_price": unit_price,
+                    "discount": discount,
                     "vat_rate": vat_rate,
                     "line_subtotal": line_subtotal,
                     "line_tax": line_tax,
@@ -93,15 +99,22 @@ class CreateSaleUseCase(ICreateSaleUseCase):
 
         sale_number = await self._sale_repo.generate_sale_number()
 
-        return await self._sale_repo.create(
+        sale = await self._sale_repo.create(
             sale_number=sale_number,
             client_id=client_id,
             warehouse_id=warehouse_id,
             delivery_address=delivery_address,
             user_id=user_id,
-            status="Pending",
+            status=PENDING,
             subtotal=subtotal,
             taxes=taxes,
             total=total,
             lines=processed_lines,
         )
+
+        creator_name = await self._user_reader.get_name_by_id(user_id)
+        client_name = await self._client_reader.get_name_by_id(client_id)
+        setattr(sale, "creator_name", creator_name)
+        setattr(sale, "client_name", client_name)
+
+        return sale

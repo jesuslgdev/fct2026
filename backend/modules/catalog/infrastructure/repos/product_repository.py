@@ -80,6 +80,14 @@ class ProductRepository(IProductRepository, IProductReader):
         result = await self._db.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_by_name(self, name: str) -> Product | None:
+        normalized_name = name.strip()
+        query = select(Product).where(
+            func.lower(func.trim(Product.name)) == normalized_name.lower()
+        )
+        result = await self._db.execute(query)
+        return result.scalar_one_or_none()
+
     async def create(
         self,
         product_code: str,
