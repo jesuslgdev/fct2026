@@ -121,14 +121,14 @@
         <span class="dialog-field-label">Teléfono</span>
         <ui-input
           formControlName="phone"
-          placeholder="Ej: +34 600 000 001"
+          placeholder="Ej: 600000001"
           [disabled]="isViewMode()"
           [state]="!isViewMode() && phone.invalid && phone.touched ? 'error' : 'default'"
         />
         @if (!isViewMode() && phone.invalid && phone.touched) {
           <span class="dialog-field-error">
             @if (phone.hasError('required')) { El teléfono es obligatorio. }
-            @else { Formato de teléfono inválido. }
+            @else { El teléfono debe contener exactamente 9 dígitos. }
           </span>
         }
       </div>

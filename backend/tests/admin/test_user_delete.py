@@ -91,6 +91,61 @@ async def test_delete_user_anonymizes_when_has_purchases(
     assert user.email == f"deleted_{user.user_id}@deleted.com"
 
 
+async def test_delete_user_blocks_when_has_sales(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    from modules.clients.domain.entities.client import Client
+    from modules.sales.domain.entities.sale import Sale
+    from modules.warehouse.domain.entities.warehouse import Warehouse
+
+    user = User(
+        first_name="Seller",
+        last_name="User",
+        email="seller@example.com",
+        role="Employee",
+        is_active=True,
+    )
+    db_session.add(user)
+
+    client = Client(
+        name="Test Client",
+        tax_id="TAX123",
+        email="client@test.com",
+        phone="123",
+        street="Street",
+        city="City",
+        province="Province",
+        postal_code="12345",
+    )
+    db_session.add(client)
+
+    warehouse = Warehouse(
+        name="Test Warehouse",
+        address_data=Address(
+            street="Street", city="City", province="Prov", postal_code="123"
+        ),
+    )
+    db_session.add(warehouse)
+    await db_session.flush()
+
+    sale = Sale(
+        sale_number="VEN-TEST-001",
+        client_id=client.client_id,
+        warehouse_id=warehouse.warehouse_id,
+        delivery_address="Test Address",
+        user_id=user.user_id,
+        subtotal=100.0,
+        taxes=21.0,
+        total=121.0,
+    )
+    db_session.add(sale)
+    await db_session.flush()
+
+    response = await admin_client.delete(f"/api/v1/admin/users/{user.user_id}")
+    assert response.status_code == 409
+    assert response.json()["error_code"] == 1205  # USER_HAS_REFERENCES
+
+
 async def test_delete_user_already_deleted(
     admin_client: AsyncClient, db_session: AsyncSession
 ):
