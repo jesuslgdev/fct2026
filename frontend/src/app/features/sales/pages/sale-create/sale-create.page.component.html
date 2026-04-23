@@ -1,0 +1,332 @@
+<section class="page">
+  <div class="page-header flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-style-title">Nueva venta</h1>
+      <p class="text-sm text-surface-600">
+        Registra una venta seleccionando cliente, almacen y lineas de producto.
+      </p>
+    </div>
+
+    <div class="flex gap-2">
+      <ui-button
+        label="Volver a ventas"
+        variant="outline"
+        (clicked)="onBack()"
+      />
+      <ui-button
+        label="Guardar venta"
+        icon="pi pi-save"
+        [loading]="store.submitting()"
+        [disabled]="!store.canSubmit()"
+        (clicked)="onSave()"
+      />
+    </div>
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (store.successMessage(); as successMessage) {
+    <p class="text-sm font-medium text-success" role="status">{{ successMessage }}</p>
+  }
+
+  <ui-card header="Cabecera de venta">
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="flex flex-col gap-2">
+        <label for="sale-client" class="text-sm font-medium text-surface-700">Cliente</label>
+        <p-select
+          inputId="sale-client"
+          [options]="store.clients()"
+          optionLabel="name"
+          optionValue="clientId"
+          placeholder="Selecciona un cliente activo"
+          class="w-full"
+          appendTo="body"
+          [loading]="store.loading()"
+          [ngModel]="store.selectedClientId()"
+          (ngModelChange)="onClientChange($event)"
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="sale-warehouse" class="text-sm font-medium text-surface-700">Almacen de salida</label>
+        <p-select
+          inputId="sale-warehouse"
+          [options]="store.warehouses()"
+          optionLabel="name"
+          optionValue="warehouseId"
+          placeholder="Selecciona un almacen"
+          class="w-full"
+          appendTo="body"
+          [loading]="store.loading()"
+          [ngModel]="store.selectedWarehouseId()"
+          (ngModelChange)="onWarehouseChange($event)"
+        />
+      </div>
+
+      <div class="md:col-span-2 flex flex-col gap-2">
+        <label for="sale-address" class="text-sm font-medium text-surface-700">Direccion de entrega</label>
+        <input
+          id="sale-address"
+          pInputText
+          class="w-full"
+          [value]="store.deliveryAddress() || 'Se genera automaticamente desde el cliente seleccionado'"
+          readonly
+        />
+      </div>
+    </div>
+  </ui-card>
+
+  <ui-card header="Lineas de venta">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-surface-600">
+        @if (store.canEditLines()) {
+          Anade al menos una linea con un producto activo y stock suficiente en el almacen seleccionado.
+        } @else {
+          Selecciona primero el cliente y el almacen para poder anadir y editar lineas de venta.
+        }
+      </p>
+
+      <ui-button
+        label="Anadir linea"
+        icon="pi pi-plus"
+        [disabled]="!store.canEditLines()"
+        (clicked)="onAddLine()"
+      />
+    </div>
+
+    <ui-table
+      [value]="store.lines()"
+      [loading]="store.loadingProducts()"
+      [editingRowKeys]="editingRowKeys()"
+      tableClass="ui-table-base ui-table-compact ui-table-bordered"
+      dataKey="lineId"
+      editMode="row"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Producto</th>
+          <th class="text-center">Stock</th>
+          <th class="text-center">Cant.</th>
+          <th class="text-center">Desc.</th>
+          <th class="text-center">Tipo</th>
+          <th class="text-right">Subtotal</th>
+          <th class="text-right">IVA</th>
+          <th class="text-right">Total</th>
+          <th class="text-right">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-line let-editing="editing">
+        <tr [pEditableRow]="line" [pEditableRowDisabled]="!store.canEditLines()">
+          <td class="min-w-56">
+            <p-cellEditor>
+              <ng-template #input>
+                <p-select
+                  [options]="store.availableProducts()"
+                  optionLabel="name"
+                  optionValue="productId"
+                  placeholder="Selecciona un producto"
+                  class="w-full"
+                  appendTo="body"
+                  [ngModel]="getLineDraft(line.lineId)?.productId ?? line.productId"
+                  (ngModelChange)="onDraftProductChange(line.lineId, $event)"
+                />
+              </ng-template>
+              <ng-template #output>
+                <span class="text-sm text-surface-700">
+                  {{ store.getLineView(line.lineId)?.productName || 'Selecciona un producto' }}
+                </span>
+              </ng-template>
+            </p-cellEditor>
+          </td>
+
+          <td class="min-w-28 text-center">
+            @if (editing && store.getLineStockPreview(line.lineId)?.stockLoading) {
+              <span class="text-sm text-surface-500">Consultando stock...</span>
+            } @else if (editing && store.getLineStockPreview(line.lineId)?.stockError; as stockPreviewError) {
+              <span class="text-sm text-danger">{{ stockPreviewError }}</span>
+            } @else if (editing && store.getLineStockPreview(line.lineId); as stockPreview) {
+              @if (stockPreview.availableStock !== null) {
+                <span class="text-sm font-medium">{{ stockPreview.availableStock }}</span>
+              } @else {
+                <span class="text-sm text-surface-500">Sin datos de stock</span>
+              }
+            } @else if (line.stockLoading) {
+              <span class="text-sm text-surface-500">Consultando stock...</span>
+            } @else if (line.availableStock !== null) {
+              <span class="text-sm font-medium">{{ line.availableStock }}</span>
+            } @else {
+              <span class="text-sm text-surface-500">Sin datos de stock</span>
+            }
+          </td>
+
+          <td class="min-w-20 text-center">
+            <p-cellEditor>
+              <ng-template #input>
+                <input
+                  pInputText
+                  type="text"
+                  inputmode="numeric"
+                  class="w-20 text-center"
+                  [ngModel]="getLineDraft(line.lineId)?.quantity ?? (line.quantity + '')"
+                  (ngModelChange)="onDraftQuantityChange(line.lineId, $event)"
+                />
+              </ng-template>
+              <ng-template #output>
+                <span class="inline-block min-w-12 text-center">{{ line.quantity }}</span>
+              </ng-template>
+            </p-cellEditor>
+          </td>
+
+          <td class="min-w-24 text-center">
+            <p-cellEditor>
+              <ng-template #input>
+                <input
+                  pInputText
+                  type="text"
+                  inputmode="decimal"
+                  class="w-24 text-center"
+                  [ngModel]="getLineDraft(line.lineId)?.discount ?? (line.discount + '')"
+                  (ngModelChange)="onDraftDiscountChange(line.lineId, $event)"
+                />
+              </ng-template>
+              <ng-template #output>
+                <span class="inline-block min-w-16 text-center">
+                  @if (line.discountType === 'percent') {
+                    {{ line.discount }}
+                  } @else {
+                    {{ line.discount | number: '1.0-2' }}
+                  }
+                </span>
+              </ng-template>
+            </p-cellEditor>
+          </td>
+
+          <td class="min-w-20 text-center">
+            <p-cellEditor>
+              <ng-template #input>
+                <p-select
+                  [options]="discountTypeOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  class="w-20"
+                  appendTo="body"
+                  [ngModel]="getLineDraft(line.lineId)?.discountType ?? line.discountType"
+                  (ngModelChange)="onDraftDiscountTypeChange(line.lineId, $event)"
+                />
+              </ng-template>
+              <ng-template #output>
+                <span class="inline-block min-w-10 text-center">
+                  @if (line.discountType === 'percent') {
+                    %
+                  } @else {
+                    €
+                  }
+                </span>
+              </ng-template>
+            </p-cellEditor>
+          </td>
+
+          <td class="whitespace-nowrap text-right">
+            {{ store.getLineView(line.lineId)?.lineSubtotal ?? 0 | currency: 'EUR':'symbol':'1.2-2' }}
+          </td>
+          <td class="whitespace-nowrap text-right">
+            {{ store.getLineView(line.lineId)?.lineTax ?? 0 | currency: 'EUR':'symbol':'1.2-2' }}
+          </td>
+          <td class="whitespace-nowrap text-right font-medium">
+            {{ store.getLineView(line.lineId)?.lineTotal ?? 0 | currency: 'EUR':'symbol':'1.2-2' }}
+          </td>
+
+          <td class="whitespace-nowrap text-right">
+            <div class="table-actions flex items-center justify-end">
+              @if (!editing) {
+                <button
+                  type="button"
+                  pInitEditableRow
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-md text-surface-700 transition hover:bg-surface-100 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Editar linea"
+                  [disabled]="!store.canEditLines()"
+                  (click)="onStartLineEdit(line)"
+                >
+                  <i class="pi pi-pencil"></i>
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  pSaveEditableRow
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-md text-success transition hover:bg-surface-100 hover:text-success"
+                  aria-label="Guardar linea"
+                  (click)="onSaveLineEdit(line.lineId)"
+                >
+                  <i class="pi pi-check"></i>
+                </button>
+                <button
+                  type="button"
+                  pCancelEditableRow
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-md text-surface-700 transition hover:bg-surface-100 hover:text-surface-900"
+                  aria-label="Cancelar edicion de linea"
+                  (click)="onCancelLineEdit(line.lineId)"
+                >
+                  <i class="pi pi-times"></i>
+                </button>
+              }
+
+              <ui-button
+                icon="pi pi-trash"
+                ariaLabel="Eliminar linea"
+                variant="destructive"
+                size="sm"
+                (clicked)="onRemoveLine(line.lineId)"
+              />
+            </div>
+          </td>
+        </tr>
+
+        @if (store.getLineView(line.lineId)?.productCode || line.validationError) {
+          <tr>
+            <td colspan="9" class="pt-0">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                @if (store.getLineView(line.lineId)?.productCode; as productCode) {
+                  <span class="text-xs text-surface-500">Codigo: {{ productCode }}</span>
+                } @else {
+                  <span></span>
+                }
+
+                @if (line.validationError) {
+                  <span class="text-sm text-danger">{{ line.validationError }}</span>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="9" class="empty-state">
+            No hay lineas anadidas todavia.
+          </td>
+        </tr>
+      </ng-template>
+    </ui-table>
+  </ui-card>
+
+  <ui-card header="Resumen economico">
+    <div class="grid gap-3 text-sm md:ml-auto md:max-w-sm">
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-surface-600">Subtotal</span>
+        <span class="font-medium">{{ store.subtotal() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+      </div>
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-surface-600">IVA</span>
+        <span class="font-medium">{{ store.taxes() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+      </div>
+      <div class="flex items-center justify-between gap-3 border-t border-surface-200 pt-3 text-base">
+        <span class="font-semibold">Total</span>
+        <span class="font-semibold">{{ store.total() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+      </div>
+    </div>
+  </ui-card>
+</section>
