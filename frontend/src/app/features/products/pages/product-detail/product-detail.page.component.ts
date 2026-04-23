@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import type { TablePageEvent } from 'primeng/table';
 import { ProductsStore } from '@features/products/state/products.store';
+import { ProductSuppliersStore } from '@features/supplier-product/state/product-suppliers.store';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CardComponent } from '@shared/ui/card/card.component';
+import { TableComponent } from '@shared/ui/table/table.component';
 import { ProductStatusBadgeComponent } from '@features/products/components/product-status-badge/product-status-badge.component';
 import { ProductFormDialogComponent } from '@features/products/components/product-form-dialog/product-form-dialog.component';
 
@@ -11,11 +14,12 @@ import { ProductFormDialogComponent } from '@features/products/components/produc
   selector: 'app-product-detail-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [ProductsStore],
+  providers: [ProductsStore, ProductSuppliersStore],
   imports: [
     CurrencyPipe,
     ButtonComponent,
     CardComponent,
+    TableComponent,
     ProductStatusBadgeComponent,
     ProductFormDialogComponent,
   ],
@@ -23,6 +27,7 @@ import { ProductFormDialogComponent } from '@features/products/components/produc
 })
 export class ProductDetailPageComponent implements OnInit {
   readonly store = inject(ProductsStore);
+  readonly supplierStore = inject(ProductSuppliersStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly activeDetailView = signal<'warehouses' | 'suppliers'>('warehouses');
@@ -30,11 +35,12 @@ export class ProductDetailPageComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!Number.isFinite(id) || id <= 0) {
-      this.store.error.set('Identificador de producto invalido.');
+      this.store.detailError.set('Identificador de producto invalido.');
       return;
     }
 
     this.store.loadProductDetail(id);
+    void this.supplierStore.loadProductSuppliers(id);
   }
 
   setDetailView(view: 'warehouses' | 'suppliers'): void {
@@ -52,5 +58,15 @@ export class ProductDetailPageComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/products']);
+  }
+
+  onProductSuppliersPageChange(event: TablePageEvent): void {
+    const first = event.first ?? 0;
+    const rows = event.rows ?? this.supplierStore.productPageSize();
+    this.supplierStore.onProductPageChange({ first, rows });
+  }
+
+  onSupplierPriceInput(event: Event): void {
+    this.supplierStore.setPriceDraft((event.target as HTMLInputElement).value);
   }
 }
