@@ -11,7 +11,7 @@ class MockProductsStore {
   readonly error = signal<string | null>(null);
   readonly canEdit = signal(true);
 
-  readonly loadProductById = vi.fn();
+  readonly loadProductDetail = vi.fn();
   readonly openEditDialog = vi.fn();
 }
 
@@ -21,6 +21,7 @@ class MockProductSuppliersStore {
   readonly loadProductSuppliers = vi.fn();
   readonly onProductPageChange = vi.fn();
   readonly setPriceDraft = vi.fn();
+  readonly setAddSupplierPriceDraft = vi.fn();
 }
 
 describe('ProductDetailPageComponent', () => {
@@ -60,7 +61,7 @@ describe('ProductDetailPageComponent', () => {
 
     fixture.detectChanges();
 
-    expect(productsStore.loadProductById).toHaveBeenCalledWith(12);
+    expect(productsStore.loadProductDetail).toHaveBeenCalledWith(12);
     expect(productSuppliersStore.loadProductSuppliers).toHaveBeenCalledWith(12);
   });
 
@@ -82,5 +83,16 @@ describe('ProductDetailPageComponent', () => {
     component.onSupplierPriceInput({ target: input } as unknown as Event);
 
     expect(productSuppliersStore.setPriceDraft).toHaveBeenCalledWith('24.50');
+  });
+
+  it('actualiza borrador de precio del modal de alta', () => {
+    const fixture = TestBed.createComponent(ProductDetailPageComponent);
+    const component = fixture.componentInstance;
+    const input = document.createElement('input');
+    input.value = '31.20';
+
+    component.onAddSupplierPriceInput({ target: input } as unknown as Event);
+
+    expect(productSuppliersStore.setAddSupplierPriceDraft).toHaveBeenCalledWith('31.20');
   });
 });

@@ -179,6 +179,35 @@ describe('ProductSuppliersStore', () => {
     expect(store.productSuppliers()).toEqual([PRODUCT_SUPPLIER_A, PRODUCT_SUPPLIER_B]);
   });
 
+  it('agrega proveedor seleccionado desde el modal', async () => {
+    store.productId.set(1);
+    store.setSelectedSupplierId('2');
+    store.setAddSupplierPriceDraft('90.50');
+    addProductToSupplierUseCase.execute.mockReturnValue(of(undefined));
+    getProductSuppliersUseCase.execute.mockReturnValue(
+      of({ data: [PRODUCT_SUPPLIER_A, PRODUCT_SUPPLIER_B], total: 2, page: 1, pageSize: 10 }),
+    );
+
+    await store.addSelectedSupplierToProduct();
+
+    expect(addProductToSupplierUseCase.execute).toHaveBeenCalledWith(2, {
+      productId: 1,
+      supplierPrice: 90.5,
+    });
+    expect(store.addSupplierDialogVisible()).toBe(false);
+  });
+
+  it('bloquea proveedor seleccionado con id no numerico', async () => {
+    store.productId.set(1);
+    store.setSelectedSupplierId('abc');
+    store.setAddSupplierPriceDraft('90');
+
+    await store.addSelectedSupplierToProduct();
+
+    expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
+    expect(store.error()).toBe('Proveedor seleccionado invalido.');
+  });
+
   it('actualiza precio y recarga lista', async () => {
     const payload: UpdateSupplierProductPriceRequest = { supplierPrice: 120 };
 
