@@ -10,17 +10,15 @@ import { SalesPageComponent } from './sales.page.component';
 
 interface MockSalesStore {
   sales: WritableSignal<Sale[]>;
-  salesView: WritableSignal<
-    Array<{
-      saleId: number;
-      saleNumber: string;
-      clientName: string;
-      status: SaleStatus;
-      deliveryAddress: string;
-      createdAt: Date;
-      total: number;
-    }>
-  >;
+  salesView: WritableSignal<{
+    saleId: number;
+    saleNumber: string;
+    clientName: string;
+    status: SaleStatus;
+    deliveryAddress: string;
+    createdAt: Date;
+    total: number;
+  }[]>;
   clients: WritableSignal<Client[]>;
   total: WritableSignal<number>;
   page: WritableSignal<number>;
