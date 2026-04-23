@@ -1,11 +1,16 @@
 export type { PagedResult } from '@domain/models/paged-result.model';
 
 export interface SupplierProduct {
-  productId: number;
+  id?: string;
+  productId: number | string;
+  supplierId?: number | string;
   productCode?: string;
   productName?: string;
   categoryName?: string;
-  supplierPrice: number;
+  supplierPrice?: number;
+  specificPrice?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // Request DTOs (I - Interface Segregation)

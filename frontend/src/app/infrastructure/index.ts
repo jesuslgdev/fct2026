@@ -1,9 +1,10 @@
-// DTOs
-export * from './dtos/provider.dto';
+﻿// DTOs
+export * from './dtos/supplier.dto';
 
 // Mappers
-export * from './mappers/provider.mapper';
+export * from './mappers/supplier.mapper';
 
 // Repositories
-export * from './repositories/mock/provider.repository.mock';
-export * from './repositories/http/provider.repository.http';
+export * from './repositories/mock/supplier.repository.mock';
+export * from './repositories/http/supplier.repository.http';
+

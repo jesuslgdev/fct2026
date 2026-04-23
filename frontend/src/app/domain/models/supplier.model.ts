@@ -1,7 +1,7 @@
-import { ProviderStatus } from '../enums/provider-status.enum';
-import { ProviderProduct } from './provider-product.model';
+﻿import { SupplierStatus } from '../enums/supplier-status.enum';
+import { SupplierProduct } from './supplier-product.model';
 
-export interface Provider {
+export interface Supplier {
   id: string;
   name: string;
   taxId: string;
@@ -12,13 +12,13 @@ export interface Provider {
   province?: string;
   postalCode?: string;
   isActive: boolean;
-  status: ProviderStatus;
+  status: SupplierStatus;
   createdAt: Date;
   updatedAt: Date;
-  products?: ProviderProduct[];
+  products?: SupplierProduct[];
 }
 
-export interface CreateProviderRequest {
+export interface CreateSupplierRequest {
   name: string;
   taxId: string;
   email: string;
@@ -29,7 +29,7 @@ export interface CreateProviderRequest {
   postalCode?: string;
 }
 
-export interface UpdateProviderRequest {
+export interface UpdateSupplierRequest {
   name?: string;
   taxId?: string;
   email?: string;
@@ -41,19 +41,20 @@ export interface UpdateProviderRequest {
   isActive?: boolean;
 }
 
-export interface ProviderImportError {
+export interface SupplierImportError {
   row: number;
   reason: string;
 }
 
-export interface ProviderImportExecutionResult {
+export interface SupplierImportExecutionResult {
   success: boolean;
   importedCount: number;
   message: string;
-  errors?: ProviderImportError[];
+  errors?: SupplierImportError[];
 }
 
-export interface ProviderImportTemplate {
+export interface SupplierImportTemplate {
   filename: string;
   data: ArrayBuffer;
 }
+
