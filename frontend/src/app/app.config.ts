@@ -1,4 +1,8 @@
-import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  APP_INITIALIZER,
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -23,6 +27,8 @@ import { HttpProviderRepository } from '@infrastructure/repositories/http/provid
 import { ProviderRepository } from '@domain/repositories/provider.repository';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
+import { SupplierProductRepository } from '@domain/repositories/supplier-product.repository';
+import { HttpSupplierProductRepository } from '@infrastructure/repositories/http/supplier-product.repository.http';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
 import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
@@ -41,11 +47,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
     provideAnimations(),
-    provideHttpClient(
-      withInterceptors([
-        authInterceptor,
-      ])
-    ),
+    provideHttpClient(withInterceptors([authInterceptor])),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
     { provide: CategoryRepository, useClass: HttpCategoryRepository },
@@ -57,13 +59,14 @@ export const appConfig: ApplicationConfig = {
     { provide: ProviderRepository, useClass: HttpProviderRepository },
     {
       provide: APP_INITIALIZER,
-      useFactory: (authRepo: AuthRepository, authService: AuthService) =>
-        () => authRepo.restoreSession().then((session) => authService.setSession(session)),
+      useFactory: (authRepo: AuthRepository, authService: AuthService) => () =>
+        authRepo.restoreSession().then((session) => authService.setSession(session)),
       deps: [AuthRepository, AuthService],
       multi: true,
     },
     { provide: ProductRepository, useClass: HttpProductRepository },
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
+    { provide: SupplierProductRepository, useClass: HttpSupplierProductRepository },
     providePrimeNG({
       ripple: true,
       theme: {
