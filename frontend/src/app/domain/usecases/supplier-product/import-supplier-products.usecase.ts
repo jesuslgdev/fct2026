@@ -7,6 +7,10 @@ import { SupplierProductValidationError } from '@domain/models/supplier-product-
 @Injectable({ providedIn: 'root' })
 export class ImportSupplierProductsUseCase {
   private static readonly ALLOWED_FILE_EXTENSIONS = ['.xls', '.xlsx'];
+  private static readonly ALLOWED_FILE_MIME_TYPES = [
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ];
 
   private readonly supplierProductRepository = inject(SupplierProductRepository);
 
@@ -31,6 +35,19 @@ export class ImportSupplierProductsUseCase {
 
   private isExcelFile(file: File): boolean {
     const fileName = file.name.trim().toLowerCase();
-    return ImportSupplierProductsUseCase.ALLOWED_FILE_EXTENSIONS.some((extension) => fileName.endsWith(extension));
+    const fileType = file.type.trim().toLowerCase();
+    const hasValidExtension = ImportSupplierProductsUseCase.ALLOWED_FILE_EXTENSIONS.some((extension) =>
+      fileName.endsWith(extension),
+    );
+
+    if (!hasValidExtension) {
+      return false;
+    }
+
+    if (!fileType) {
+      return true;
+    }
+
+    return ImportSupplierProductsUseCase.ALLOWED_FILE_MIME_TYPES.includes(fileType);
   }
 }
