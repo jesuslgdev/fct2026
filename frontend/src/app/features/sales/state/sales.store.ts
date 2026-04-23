@@ -127,7 +127,7 @@ export class SalesStore {
       );
 
       this.clients.set(result.data);
-    } catch (err) {
+    } catch {
       this.clientsError.set('No se pudieron cargar los clientes para el filtro.');
     } finally {
       this.clientsLoading.set(false);

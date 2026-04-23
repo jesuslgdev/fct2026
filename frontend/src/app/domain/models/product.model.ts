@@ -20,6 +20,7 @@ export interface Product {
   categoryId: number;
   categoryName: string;
   price: number;
+  vatRate: number;
   stock: number;
   minStock: number;
   isActive: boolean;
