@@ -52,6 +52,14 @@ const ACTIVE_PROVIDER_C: Provider = {
   email: 'c@example.com',
 };
 
+const ACTIVE_PROVIDER_D: Provider = {
+  ...ACTIVE_PROVIDER_A,
+  id: '4',
+  name: 'Proveedor D',
+  taxId: 'B22222222',
+  email: 'd@example.com',
+};
+
 class MockAuthService {
   readonly permissions = signal<UserPermission[]>([UserPermission.PurchasesManager]);
   readonly user = signal({
@@ -217,23 +225,35 @@ describe('ProductSuppliersStore', () => {
     expect(store.error()).toBe('El precio del proveedor debe tener maximo 2 decimales.');
   });
 
-  it('carga proveedores activos y excluye asociados', async () => {
+  it('carga todos los proveedores activos paginados y excluye asociados', async () => {
     store.productSuppliers.set([PRODUCT_SUPPLIER_A]);
-    getProvidersUseCase.execute.mockResolvedValue({
-      data: [ACTIVE_PROVIDER_A, ACTIVE_PROVIDER_C],
-      total: 2,
-    });
+    getProvidersUseCase.execute
+      .mockResolvedValueOnce({
+        data: [ACTIVE_PROVIDER_A, ACTIVE_PROVIDER_C],
+        total: 3,
+      })
+      .mockResolvedValueOnce({
+        data: [ACTIVE_PROVIDER_D],
+        total: 3,
+      });
 
     await store.loadActiveSuppliersForAdd();
 
-    expect(getProvidersUseCase.execute).toHaveBeenCalledWith({
+    expect(getProvidersUseCase.execute).toHaveBeenNthCalledWith(1, {
       page: 1,
       rows: 100,
       first: 0,
       status: ProviderStatus.ACTIVE,
       isActive: true,
     });
-    expect(store.activeSuppliersForAdd()).toEqual([ACTIVE_PROVIDER_C]);
+    expect(getProvidersUseCase.execute).toHaveBeenNthCalledWith(2, {
+      page: 2,
+      rows: 100,
+      first: 100,
+      status: ProviderStatus.ACTIVE,
+      isActive: true,
+    });
+    expect(store.activeSuppliersForAdd()).toEqual([ACTIVE_PROVIDER_C, ACTIVE_PROVIDER_D]);
   });
 
   it('elimina proveedor y recarga lista', async () => {

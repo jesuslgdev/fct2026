@@ -26,6 +26,8 @@ import {
 
 @Injectable()
 export class ProductSuppliersStore {
+  private static readonly PROVIDERS_PAGE_SIZE = 100;
+
   private readonly authService = inject(AuthService);
   private readonly getProductSuppliersUseCase = inject(GetProductSuppliersUseCase);
   private readonly addProductToSupplierUseCase = inject(AddProductToSupplierUseCase);
@@ -175,18 +177,33 @@ export class ProductSuppliersStore {
     }
   }
 
+  private async fetchAllActiveSuppliers(): Promise<Provider[]> {
+    const suppliers: Provider[] = [];
+    let page = 1;
+    let total = 0;
+
+    do {
+      const result = await this.getProvidersUseCase.execute({
+        page,
+        rows: ProductSuppliersStore.PROVIDERS_PAGE_SIZE,
+        first: (page - 1) * ProductSuppliersStore.PROVIDERS_PAGE_SIZE,
+        status: ProviderStatus.ACTIVE,
+        isActive: true,
+      });
+
+      suppliers.push(...result.data);
+      total = result.total;
+      page += 1;
+    } while (suppliers.length < total && total > 0);
+
+    return suppliers.filter((supplier) => supplier.isActive);
+  }
+
   async loadActiveSuppliersForAdd(): Promise<void> {
     this.suppliersLoading.set(true);
 
     try {
-      const result = await this.getProvidersUseCase.execute({
-        page: 1,
-        rows: 100,
-        first: 0,
-        status: ProviderStatus.ACTIVE,
-        isActive: true,
-      });
-      this.activeSuppliers.set(result.data.filter((supplier) => supplier.isActive));
+      this.activeSuppliers.set(await this.fetchAllActiveSuppliers());
     } catch (err) {
       this.error.set(this.resolveErrorMessage(err, 'Error al cargar proveedores activos.'));
     } finally {
