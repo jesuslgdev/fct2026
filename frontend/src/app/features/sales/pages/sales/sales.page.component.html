@@ -1,6 +1,13 @@
 <section class="page">
-  <div class="page-header">
+  <div class="page-header flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-style-title">Ventas</h1>
+    @if (isAdmin()) {
+      <ui-button
+        label="Nueva venta"
+        icon="pi pi-plus"
+        (clicked)="onCreateSale()"
+      />
+    }
   </div>
 
   @if (store.error(); as errorMessage) {
@@ -86,7 +93,7 @@
       <tr>
         <td>{{ sale.saleNumber }}</td>
         <td>{{ sale.clientName }}</td>
-        <td>{{ sale.status }}</td>
+        <td>{{ getStatusLabel(sale.status) }}</td>
         <td>{{ sale.deliveryAddress }}</td>
         <td>{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
         <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>

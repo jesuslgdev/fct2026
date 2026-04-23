@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { vi, type Mock } from 'vitest';
+import { AuthService } from '@core/services/auth.service';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client } from '@domain/models/client.model';
 import { Sale } from '@domain/models/sale.model';
@@ -69,8 +71,13 @@ describe('SalesPageComponent', () => {
   let fixture: ComponentFixture<SalesPageComponent>;
   let component: SalesPageComponent;
   let store: MockSalesStore;
+  let router: { navigate: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
+    router = {
+      navigate: vi.fn().mockResolvedValue(true),
+    };
+
     store = {
       sales: signal<Sale[]>([SALE_A]),
       salesView: signal([
@@ -109,6 +116,18 @@ describe('SalesPageComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [SalesPageComponent],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: {
+            isAdmin: signal(true),
+          },
+        },
+        {
+          provide: Router,
+          useValue: router,
+        },
+      ],
     })
       .overrideComponent(SalesPageComponent, {
         set: {
@@ -191,6 +210,18 @@ describe('SalesPageComponent', () => {
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
   });
 
+  it('muestra la acción de nueva venta para administradores', () => {
+    const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
+
+    expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
+  });
+
+  it('navega a la página de alta de venta', () => {
+    component.onCreateSale();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
+  });
+
   it('renders the filtered empty message when provided by the store', () => {
     store.salesView.set([]);
     store.emptyMessage.set('No se encontraron ventas con los filtros aplicados');
@@ -213,12 +244,17 @@ describe('SalesPageComponent', () => {
     expect(emptyState.nativeElement.textContent).toContain('No hay ventas registradas.');
   });
 
+  it('traduce el estado para la interfaz', () => {
+    expect(component.getStatusLabel(SaleStatus.PENDING)).toBe('Pendiente');
+    expect(component.getStatusLabel(SaleStatus.APPROVED)).toBe('Aprobada');
+  });
+
   it('renders the sales row with the fields required by the listing', () => {
     const cells = fixture.debugElement.queryAll(By.css('tbody tr td'));
 
     expect(cells[0].nativeElement.textContent.trim()).toBe('VEN-2026-0001');
     expect(cells[1].nativeElement.textContent.trim()).toBe('Cliente A');
-    expect(cells[2].nativeElement.textContent.trim()).toBe('Pending');
+    expect(cells[2].nativeElement.textContent.trim()).toBe('Pendiente');
     expect(cells[3].nativeElement.textContent.trim()).toBe('Calle Mayor 1, Madrid');
     expect(cells[5].nativeElement.textContent.trim()).toContain('€');
   });
