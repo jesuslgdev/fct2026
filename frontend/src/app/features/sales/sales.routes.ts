@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from '@core/guards/admin.guard';
+import { salesDepartmentGuard } from '@core/guards/sales-department.guard';
 
 export const SALES_ROUTES: Routes = [
   {
@@ -17,6 +17,6 @@ export const SALES_ROUTES: Routes = [
         (m) => m.SaleCreatePageComponent,
       ),
     title: 'Nueva venta',
-    canActivate: [adminGuard],
+    canActivate: [salesDepartmentGuard],
   },
 ];

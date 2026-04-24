@@ -1,7 +1,7 @@
 <section class="page">
   <div class="page-header flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-style-title">Ventas</h1>
-    @if (isAdmin()) {
+    @if (canCreateSale()) {
       <ui-button
         label="Nueva venta"
         icon="pi pi-plus"

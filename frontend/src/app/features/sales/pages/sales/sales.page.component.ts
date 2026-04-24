@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,6 +6,7 @@ import type { TablePageEvent } from 'primeng/table';
 import { DatePicker } from 'primeng/datepicker';
 import { Select } from 'primeng/select';
 import { AuthService } from '@core/services/auth.service';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { TableComponent } from '@shared/ui/table/table.component';
@@ -34,7 +35,14 @@ interface StatusOption {
 })
 export class SalesPageComponent implements OnInit {
   readonly store = inject(SalesStore);
-  readonly isAdmin = inject(AuthService).isAdmin;
+  private readonly authService = inject(AuthService);
+  readonly canCreateSale = computed(() =>
+    this.authService.hasPermission([
+      UserPermission.Admin,
+      UserPermission.SalesManager,
+      UserPermission.SalesDepartment,
+    ]),
+  );
   private readonly router = inject(Router);
 
   readonly statusOptions: StatusOption[] = [
