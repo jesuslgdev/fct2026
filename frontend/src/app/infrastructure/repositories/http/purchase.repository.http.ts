@@ -81,26 +81,14 @@ export class HttpPurchaseRepository implements PurchaseRepository {
             ),
           );
 
-<<<<<<< Updated upstream
           const warehouses$ = this.http.get<PurchaseWarehouseDto[]>(WAREHOUSES_URL).pipe(
-            map(
-              (warehouses) =>
-                new Map(
-                  warehouses.map((warehouse) => [
-                    warehouse.warehouse_id,
-                    PurchaseMapper.formatWarehouseAddress(warehouse.address),
-                  ]),
-                ),
-=======
-          const warehouses$ = this.http.get<WarehouseDto[]>(WAREHOUSES_URL).pipe(
             map((warehouses) =>
               new Map(
                 warehouses.map((warehouse) => [
                   warehouse.warehouse_id,
-                  PurchaseMapper.toDisplayAddress(warehouse.address),
+                  PurchaseMapper.formatWarehouseAddress(warehouse.address),
                 ]),
               ),
->>>>>>> Stashed changes
             ),
           );
 
@@ -310,17 +298,10 @@ export class HttpPurchaseRepository implements PurchaseRepository {
   }
 
   private resolveWarehouseAddress(warehouseId: number): Observable<string> {
-<<<<<<< Updated upstream
     return this.http.get<PurchaseWarehouseDto[]>(WAREHOUSES_URL).pipe(
       map((warehouses) => {
         const warehouse = warehouses.find((item) => item.warehouse_id === warehouseId);
         return PurchaseMapper.formatWarehouseAddress(warehouse?.address ?? null);
-=======
-    return this.http.get<WarehouseDto[]>(WAREHOUSES_URL).pipe(
-      map((warehouses) => {
-        const address = warehouses.find((warehouse) => warehouse.warehouse_id === warehouseId)?.address;
-        return PurchaseMapper.toDisplayAddress(address);
->>>>>>> Stashed changes
       }),
     );
   }

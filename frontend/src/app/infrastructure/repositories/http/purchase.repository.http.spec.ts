@@ -108,21 +108,7 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-<<<<<<< Updated upstream
-      {
-        warehouse_id: 2,
-        name: 'Central',
-        address: {
-          street: 'Main Street 1',
-          city: 'Madrid',
-          province: 'Madrid',
-          postal_code: '28001',
-        },
-        total_stock: 0,
-      },
-=======
       { warehouse_id: 2, name: 'Central', address: structuredWarehouseAddress, total_stock: 0 },
->>>>>>> Stashed changes
     ]);
 
     const result = await promise;
@@ -136,11 +122,7 @@ describe('HttpPurchaseRepository', () => {
       supplierId: 10,
       supplierName: 'Supplier North',
       deliveryWarehouseId: 2,
-<<<<<<< Updated upstream
-      deliveryAddress: 'Main Street 1, 28001 Madrid, Madrid',
-=======
       deliveryAddress: 'Main Street 1, 28001 Madrid, Comunidad de Madrid',
->>>>>>> Stashed changes
       status: 'InProcess',
       createdAt: '2026-04-10T10:00:00.000Z',
       total: 121,
@@ -190,15 +172,9 @@ describe('HttpPurchaseRepository', () => {
         name: 'Main',
         address: {
           street: 'Warehouse Ave 5',
-<<<<<<< Updated upstream
-          city: 'Barcelona',
-          province: 'Barcelona',
-          postal_code: '08001',
-=======
           city: 'Valencia',
           province: 'Comunidad Valenciana',
           postal_code: '46001',
->>>>>>> Stashed changes
         },
         total_stock: 0,
       },
@@ -207,11 +183,7 @@ describe('HttpPurchaseRepository', () => {
     const result = await promise;
 
     expect(result.status).toBe('Shipped');
-<<<<<<< Updated upstream
-    expect(result.deliveryAddress).toBe('Warehouse Ave 5, 08001 Barcelona, Barcelona');
-=======
     expect(result.deliveryAddress).toBe('Warehouse Ave 5, 46001 Valencia, Comunidad Valenciana');
->>>>>>> Stashed changes
     expect(result.lines[0].vatRate).toBe(21);
     expect(result.lines[0].total).toBe(60.5);
   });
@@ -317,7 +289,7 @@ describe('HttpPurchaseRepository', () => {
     const result = await promise;
     expect(result.purchaseId).toBe(8);
     expect(result.supplierName).toBe('Supplier South');
-    expect(result.deliveryAddress).toBe('Road 2, 46001 Valencia, Valencia');
+    expect(result.deliveryAddress).toBe('Road 2, 46001 Valencia');
   });
 
   it('updatePurchase replaces existing lines when payload includes lines', async () => {
