@@ -36,6 +36,13 @@ describe('HttpPurchaseRepository', () => {
     controller.verify();
   });
 
+  const structuredWarehouseAddress = {
+    street: 'Main Street 1',
+    city: 'Madrid',
+    province: 'Comunidad de Madrid',
+    postal_code: '28001',
+  };
+
   it('getPurchases maps query params and enriches supplierId and deliveryAddress', async () => {
     const promise = firstValueFrom(
       repo.getPurchases({
@@ -101,6 +108,7 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
+<<<<<<< Updated upstream
       {
         warehouse_id: 2,
         name: 'Central',
@@ -112,6 +120,9 @@ describe('HttpPurchaseRepository', () => {
         },
         total_stock: 0,
       },
+=======
+      { warehouse_id: 2, name: 'Central', address: structuredWarehouseAddress, total_stock: 0 },
+>>>>>>> Stashed changes
     ]);
 
     const result = await promise;
@@ -125,7 +136,11 @@ describe('HttpPurchaseRepository', () => {
       supplierId: 10,
       supplierName: 'Supplier North',
       deliveryWarehouseId: 2,
+<<<<<<< Updated upstream
       deliveryAddress: 'Main Street 1, 28001 Madrid, Madrid',
+=======
+      deliveryAddress: 'Main Street 1, 28001 Madrid, Comunidad de Madrid',
+>>>>>>> Stashed changes
       status: 'InProcess',
       createdAt: '2026-04-10T10:00:00.000Z',
       total: 121,
@@ -175,9 +190,15 @@ describe('HttpPurchaseRepository', () => {
         name: 'Main',
         address: {
           street: 'Warehouse Ave 5',
+<<<<<<< Updated upstream
           city: 'Barcelona',
           province: 'Barcelona',
           postal_code: '08001',
+=======
+          city: 'Valencia',
+          province: 'Comunidad Valenciana',
+          postal_code: '46001',
+>>>>>>> Stashed changes
         },
         total_stock: 0,
       },
@@ -186,9 +207,38 @@ describe('HttpPurchaseRepository', () => {
     const result = await promise;
 
     expect(result.status).toBe('Shipped');
+<<<<<<< Updated upstream
     expect(result.deliveryAddress).toBe('Warehouse Ave 5, 08001 Barcelona, Barcelona');
+=======
+    expect(result.deliveryAddress).toBe('Warehouse Ave 5, 46001 Valencia, Comunidad Valenciana');
+>>>>>>> Stashed changes
     expect(result.lines[0].vatRate).toBe(21);
     expect(result.lines[0].total).toBe(60.5);
+  });
+
+  it('getDeliveryWarehouses maps structured warehouse address to display string', async () => {
+    const promise = firstValueFrom(repo.getDeliveryWarehouses());
+
+    const req = controller.expectOne(WAREHOUSES_URL);
+    expect(req.request.method).toBe('GET');
+    req.flush([
+      {
+        warehouse_id: 2,
+        name: 'Central',
+        address: structuredWarehouseAddress,
+        total_stock: 0,
+      },
+    ]);
+
+    const result = await promise;
+
+    expect(result).toEqual([
+      {
+        warehouseId: 2,
+        warehouseName: 'Central',
+        address: 'Main Street 1, 28001 Madrid, Comunidad de Madrid',
+      },
+    ]);
   });
 
   it('createPurchase sends backend payload and then fetches enriched detail', async () => {

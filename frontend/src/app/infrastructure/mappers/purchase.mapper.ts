@@ -178,15 +178,24 @@ export class PurchaseMapper {
     return {
       warehouseId: dto.warehouse_id,
       warehouseName: dto.name,
+<<<<<<< Updated upstream
       address: this.formatWarehouseAddress(dto.address),
     };
   }
 
   static formatWarehouseAddress(address: PurchaseWarehouseDto['address']): string {
+=======
+      address: this.toDisplayAddress(dto.address),
+    };
+  }
+
+  static toDisplayAddress(address: unknown): string {
+>>>>>>> Stashed changes
     if (typeof address === 'string') {
       return address.trim();
     }
 
+<<<<<<< Updated upstream
     if (!address) {
       return '';
     }
@@ -199,6 +208,24 @@ export class PurchaseMapper {
 
     return [street, locality, province]
       .filter((value) => value.length > 0)
+=======
+    if (!address || typeof address !== 'object') {
+      return '';
+    }
+
+    const payload = address as Record<string, unknown>;
+    const street = this.toAddressPart(payload['street']);
+    const city = this.toAddressPart(payload['city']);
+    const postalCode = this.toAddressPart(payload['postal_code']);
+    const province = this.toAddressPart(payload['province']);
+
+    const cityWithPostalCode = [postalCode, city].filter((part) => part.length > 0).join(' ');
+    const normalizedProvince =
+      province.length > 0 && province.toLowerCase() === city.toLowerCase() ? '' : province;
+
+    return [street, cityWithPostalCode, normalizedProvince]
+      .filter((part) => part.length > 0)
+>>>>>>> Stashed changes
       .join(', ');
   }
 
@@ -318,5 +345,9 @@ export class PurchaseMapper {
     }
 
     return parsedValue;
+  }
+
+  private static toAddressPart(value: unknown): string {
+    return typeof value === 'string' ? value.trim() : '';
   }
 }
