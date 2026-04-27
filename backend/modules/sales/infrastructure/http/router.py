@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from composition.dependencies import (
     get_add_sale_line_use_case,
     get_advance_sale_status_use_case,
     get_create_sale_use_case,
+    get_delete_sale_use_case,
     get_get_sale_use_case,
     get_list_sales_use_case,
     get_remove_sale_line_use_case,
@@ -23,6 +24,9 @@ from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case im
 )
 from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
     ICreateSaleUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_delete_sale_use_case import (
+    IDeleteSaleUseCase,
 )
 from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
     IGetSaleUseCase,
@@ -260,3 +264,14 @@ async def change_sale_status(
         actor=current_user,
     )
     return SaleDetailDTO.from_entity(sale)
+
+
+@router.delete("/{sale_id}", status_code=204, tags=["Sales"])
+async def delete_sale(
+    sale_id: int,
+    _: UserSession = Depends(require_sales_department_or_admin),
+    use_case: IDeleteSaleUseCase = Depends(get_delete_sale_use_case),
+):
+    """Physically delete a sale. Only allowed when status is Pending."""
+    await use_case.execute(sale_id=sale_id)
+    return Response(status_code=204)
