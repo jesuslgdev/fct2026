@@ -248,12 +248,12 @@ describe('SaleCreatePageComponent', () => {
     expect(store.onDraftProductChange).toHaveBeenCalledWith(LINE_A.lineId, PRODUCT_A.productId);
   });
 
-  it('vuelve al detalle cuando esta en modo edicion', () => {
+  it('vuelve al listado de ventas cuando esta en modo edicion', () => {
     store.isEditMode.set(true);
     store.editingSaleId.set(42);
 
     component.onBack();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/sales', 42]);
+    expect(router.navigate).toHaveBeenCalledWith(['/sales']);
   });
 });

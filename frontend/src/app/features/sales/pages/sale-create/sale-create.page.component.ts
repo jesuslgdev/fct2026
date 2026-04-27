@@ -131,12 +131,6 @@ export class SaleCreatePageComponent implements OnInit {
   }
 
   onBack(): void {
-    const saleId = this.store.editingSaleId();
-    if (this.store.isEditMode() && saleId) {
-      void this.router.navigate(['/sales', saleId]);
-      return;
-    }
-
     void this.router.navigate(['/sales']);
   }
 
