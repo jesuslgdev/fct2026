@@ -4,7 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, call
 import pytest
 
 from modules.sales.application.update_sale_use_case import UpdateSaleUseCase
-from modules.sales.domain.exceptions import SaleException, SaleExceptionInfo
+from modules.sales.domain.exceptions import (
+    InsufficientStockForLineError,
+    SaleException,
+    SaleExceptionInfo,
+)
 from tests.sales.conftest import make_sale, make_sale_line
 
 
@@ -134,3 +138,77 @@ async def test_update_sale_fails_when_status_is_not_pending():
 
     assert exc_info.value.info == SaleExceptionInfo.SALE_NOT_PENDING
     repo.update.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_update_sale_normalises_percent_discount():
+    repo = AsyncMock()
+    client_reader = AsyncMock()
+    product_reader = AsyncMock()
+    stock_reader = AsyncMock()
+    user_reader = AsyncMock()
+    user_reader.get_name_by_id.return_value = "Sales Employee"
+    use_case = UpdateSaleUseCase(
+        repo, client_reader, product_reader, stock_reader, user_reader
+    )
+
+    repo.get_by_id.return_value = make_sale(status="Pending", lines=[])
+    client_reader.get_by_id.return_value = MagicMock(is_active=True)
+    product = MagicMock(
+        is_active=True, price=Decimal("100.00"), vat_rate=Decimal("0.21")
+    )
+    product_reader.get_by_id.return_value = product
+    stock_reader.get_available_stock = AsyncMock(return_value=10)
+    updated_sale = make_sale()
+    repo.update.return_value = updated_sale
+
+    await use_case.execute(
+        sale_id=1,
+        client_id=5,
+        delivery_address="Some Address 1",
+        lines=[
+            {
+                "product_id": 10,
+                "quantity": 2,
+                "discount": Decimal("10"),
+                "discount_type": "percent",
+            }
+        ],
+    )
+
+    line_passed = repo.update.call_args.kwargs["lines"][0]
+    assert line_passed["discount"] == Decimal("0.1")
+    assert line_passed["line_subtotal"] == Decimal("180.00")
+
+
+@pytest.mark.asyncio
+async def test_update_sale_insufficient_stock_raises_with_line_index():
+    repo = AsyncMock()
+    client_reader = AsyncMock()
+    product_reader = AsyncMock()
+    stock_reader = AsyncMock()
+    user_reader = AsyncMock()
+    use_case = UpdateSaleUseCase(
+        repo, client_reader, product_reader, stock_reader, user_reader
+    )
+
+    repo.get_by_id.return_value = make_sale(status="Pending", lines=[])
+    client_reader.get_by_id.return_value = MagicMock(is_active=True)
+    product = MagicMock(
+        is_active=True, price=Decimal("50.00"), vat_rate=Decimal("0.21")
+    )
+    product_reader.get_by_id.return_value = product
+    stock_reader.get_available_stock = AsyncMock(return_value=1)
+
+    with pytest.raises(InsufficientStockForLineError) as exc_info:
+        await use_case.execute(
+            sale_id=1,
+            client_id=5,
+            delivery_address="Some Address 1",
+            lines=[
+                {"product_id": 10, "quantity": 1},
+                {"product_id": 11, "quantity": 5},
+            ],
+        )
+
+    assert exc_info.value.line_index in (0, 1)

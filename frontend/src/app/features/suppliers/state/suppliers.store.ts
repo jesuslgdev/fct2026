@@ -1,57 +1,58 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+﻿import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
-import { Provider, CreateProviderRequest, UpdateProviderRequest } from '@domain/models/provider.model';
-import { ProviderProduct } from '@domain/models/provider-product.model';
+import { Supplier, CreateSupplierRequest, UpdateSupplierRequest } from '@domain/models/supplier.model';
+import { SupplierProduct } from '@domain/models/supplier-product.model';
 import { PageEvent } from '@domain/models/page-event.model';
-import { ProviderStatus } from '@domain/enums/provider-status.enum';
+import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 import { UserRole } from '@domain/enums/user-role.enum';
-import { GetProvidersUseCase } from '@domain/usecases/supplier/get-providers.usecase';
-import { GetProviderByIdUseCase } from '@domain/usecases/supplier/get-provider-by-id.usecase';
-import { CreateProviderUseCase } from '@domain/usecases/supplier/create-provider.usecase';
-import { UpdateProviderUseCase } from '@domain/usecases/supplier/update-provider.usecase';
-import { ActivateProviderUseCase } from '@domain/usecases/supplier/activate-provider.usecase';
-import { DeactivateProviderUseCase } from '@domain/usecases/supplier/deactivate-provider.usecase';
-import { GetProviderProductsUseCase } from '@domain/usecases/supplier/get-provider-products.usecase';
+import { GetSuppliersUseCase } from '@domain/usecases/supplier/get-suppliers.usecase';
+import { GetSupplierByIdUseCase } from '@domain/usecases/supplier/get-supplier-by-id.usecase';
+import { CreateSupplierUseCase } from '@domain/usecases/supplier/create-supplier.usecase';
+import { UpdateSupplierUseCase } from '@domain/usecases/supplier/update-supplier.usecase';
+import { ActivateSupplierUseCase } from '@domain/usecases/supplier/activate-supplier.usecase';
+import { DeactivateSupplierUseCase } from '@domain/usecases/supplier/deactivate-supplier.usecase';
+import { GetSupplierProductsUseCase } from '@domain/usecases/supplier/get-supplier-products.usecase';
 
 export type DialogMode = 'create' | 'edit';
 
 @Injectable()
 export class SuppliersStore {
-  // ── Injection ──────────────────────────────────────────────────────────
+  // Injection
   private readonly authService = inject(AuthService);
 
   // Use cases are injected with inject() - NEVER use new
-  private readonly getProvidersUseCase = inject(GetProvidersUseCase);
-  private readonly getProviderByIdUseCase = inject(GetProviderByIdUseCase);
-  private readonly createProviderUseCase = inject(CreateProviderUseCase);
-  private readonly updateProviderUseCase = inject(UpdateProviderUseCase);
-  private readonly activateProviderUseCase = inject(ActivateProviderUseCase);
-  private readonly deactivateProviderUseCase = inject(DeactivateProviderUseCase);
-  private readonly getProviderProductsUseCase = inject(GetProviderProductsUseCase);
+  private readonly getSuppliersUseCase = inject(GetSuppliersUseCase);
+  private readonly getSupplierByIdUseCase = inject(GetSupplierByIdUseCase);
+  private readonly createSupplierUseCase = inject(CreateSupplierUseCase);
+  private readonly updateSupplierUseCase = inject(UpdateSupplierUseCase);
+  private readonly activateSupplierUseCase = inject(ActivateSupplierUseCase);
+  private readonly deactivateSupplierUseCase = inject(DeactivateSupplierUseCase);
+  private readonly getSupplierProductsUseCase = inject(GetSupplierProductsUseCase);
 
-  // ── State (signals) ────────────────────────────────────────────────────
-  readonly providers = signal<Provider[]>([]);
+  // State (signals)
+  readonly suppliers = signal<Supplier[]>([]);
   readonly total = signal(0);
   readonly page = signal(1);
   readonly pageSize = signal(20);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly providerProducts = signal<ProviderProduct[]>([]);
+  readonly formError = signal<string | null>(null);
+  readonly supplierProducts = signal<SupplierProduct[]>([]);
 
   // Filters
   readonly searchQuery = signal('');
-  readonly statusFilter = signal<ProviderStatus | null>(null);
+  readonly statusFilter = signal<SupplierStatus | null>(null);
 
   // Dialog state
-  readonly selectedProvider = signal<Provider | null>(null);
+  readonly selectedSupplier = signal<Supplier | null>(null);
   readonly dialogVisible = signal(false);
   readonly dialogMode = signal<DialogMode>('create');
   readonly confirmDialogVisible = signal(false);
-  readonly providerToToggle = signal<Provider | null>(null);
+  readonly supplierToToggle = signal<Supplier | null>(null);
   readonly productsDialogVisible = signal(false);
-  readonly selectedProviderForProducts = signal<Provider | null>(null);
+  readonly selectedSupplierForProducts = signal<Supplier | null>(null);
 
-  // ── Computed ───────────────────────────────────────────────────────────
+  // Computed
   readonly canEdit = computed(() => {
     const userRole = this.authService.user()?.role;
     return userRole === UserRole.Administrator || userRole === UserRole.Manager;
@@ -60,17 +61,17 @@ export class SuppliersStore {
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
 
   // Enriched view with products
-  readonly providersView = computed(() =>
-    this.providers().map((provider) => ({
-      ...provider,
-      productCount: this.providerProducts().filter((p) => p.providerId === provider.id).length,
+  readonly suppliersView = computed(() =>
+    this.suppliers().map((supplier) => ({
+      ...supplier,
+      productCount: this.supplierProducts().filter((p) => p.supplierId === supplier.id).length,
     })),
   );
 
   // Table data comes already filtered from backend when lazy mode is enabled.
-  readonly filteredProviders = computed(() => this.providers());
+  readonly filteredSuppliers = computed(() => this.suppliers());
 
-  private buildProvidersPageEvent(pageEvent?: PageEvent): PageEvent {
+  private buildSuppliersPageEvent(pageEvent?: PageEvent): PageEvent {
     const rows = pageEvent?.rows ?? this.pageSize();
     const page = pageEvent?.page ?? this.page();
     const first = pageEvent?.first ?? Math.max((page - 1) * rows, 0);
@@ -86,13 +87,13 @@ export class SuppliersStore {
       ...(status
         ? {
             status,
-            isActive: status === ProviderStatus.ACTIVE,
+            isActive: status === SupplierStatus.ACTIVE,
           }
         : {}),
     };
   }
 
-  // ── Error mapping (Domain → UI messages) ───────────────────────────────────
+  // Error mapping (Domain -> UI messages)
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof Error) {
       // For generic backend errors
@@ -106,21 +107,21 @@ export class SuppliersStore {
         return 'You do not have permissions to perform this action.';
       }
       if (err.message.includes('not found')) {
-        return 'The selected provider no longer exists.';
+        return 'The selected supplier no longer exists.';
       }
       return err.message || fallback;
     }
     return fallback;
   }
 
-  // ── Data loading actions ─────────────────────────────────────────────
-  async loadProviders(pageEvent?: PageEvent): Promise<void> {
+  // Data loading actions
+  async loadSuppliers(pageEvent?: PageEvent): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const request = this.buildProvidersPageEvent(pageEvent);
-      const result = await this.getProvidersUseCase.execute(request);
-      this.providers.set(result.data);
+      const request = this.buildSuppliersPageEvent(pageEvent);
+      const result = await this.getSuppliersUseCase.execute(request);
+      this.suppliers.set(result.data);
       this.total.set(result.total);
 
       // Update pagination if comes from event
@@ -131,45 +132,47 @@ export class SuppliersStore {
         this.pageSize.set(request.rows);
       }
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load providers.'));
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load suppliers.'));
     } finally {
       this.loading.set(false);
     }
   }
 
-  async loadProviderById(id: string): Promise<Provider | null> {
+  async loadSupplierById(id: string): Promise<Supplier | null> {
     try {
-      const provider = await this.getProviderByIdUseCase.execute(id);
-      return provider;
+      const supplier = await this.getSupplierByIdUseCase.execute(id);
+      return supplier;
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load provider.'));
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load supplier.'));
       return null;
     }
   }
 
-  async loadProviderProducts(providerId: string): Promise<void> {
+  async loadSupplierProducts(supplierId: string): Promise<void> {
     try {
-      const result = await this.getProviderProductsUseCase.execute(providerId);
-      this.providerProducts.set(result);
+      const result = await this.getSupplierProductsUseCase.execute(supplierId);
+      this.supplierProducts.set(result);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to load provider products.'));
+      this.error.set(this.resolveErrorMessage(err, 'Failed to load supplier products.'));
     }
   }
 
-  // ── Dialog actions ───────────────────────────────────────────────────
+  // Dialog actions
   openCreateDialog(): void {
-    this.selectedProvider.set(null);
+    this.formError.set(null);
+    this.selectedSupplier.set(null);
     this.dialogMode.set('create');
     this.dialogVisible.set(true);
   }
 
-  async openEditDialog(provider: Provider): Promise<void> {
+  async openEditDialog(supplier: Supplier): Promise<void> {
     // Load complete details from backend before opening dialog
     this.loading.set(true);
+    this.formError.set(null);
     try {
-      const fullProvider = await this.loadProviderById(provider.id);
-      if (fullProvider) {
-        this.selectedProvider.set(fullProvider);
+      const fullSupplier = await this.loadSupplierById(supplier.id);
+      if (fullSupplier) {
+        this.selectedSupplier.set(fullSupplier);
         this.dialogMode.set('edit');
         this.dialogVisible.set(true);
       }
@@ -180,99 +183,100 @@ export class SuppliersStore {
 
   closeDialog(): void {
     this.dialogVisible.set(false);
-    this.selectedProvider.set(null);
+    this.selectedSupplier.set(null);
+    this.formError.set(null);
   }
 
-  openProductsDialog(provider: Provider): void {
-    this.selectedProviderForProducts.set(provider);
+  openProductsDialog(supplier: Supplier): void {
+    this.selectedSupplierForProducts.set(supplier);
     this.productsDialogVisible.set(true);
-    this.loadProviderProducts(provider.id);
+    this.loadSupplierProducts(supplier.id);
   }
 
   closeProductsDialog(): void {
     this.productsDialogVisible.set(false);
-    this.selectedProviderForProducts.set(null);
-    this.providerProducts.set([]);
+    this.selectedSupplierForProducts.set(null);
+    this.supplierProducts.set([]);
   }
 
-  requestToggleStatus(provider: Provider): void {
-    this.providerToToggle.set(provider);
+  requestToggleStatus(supplier: Supplier): void {
+    this.supplierToToggle.set(supplier);
     this.confirmDialogVisible.set(true);
   }
 
   cancelToggleStatus(): void {
-    this.providerToToggle.set(null);
+    this.supplierToToggle.set(null);
     this.confirmDialogVisible.set(false);
   }
 
-  // ── CRUD actions ───────────────────────────────────────────────────────
-  async saveProvider(payload: CreateProviderRequest | UpdateProviderRequest): Promise<void> {
+  // CRUD actions
+  async saveSupplier(payload: CreateSupplierRequest | UpdateSupplierRequest): Promise<void> {
     this.loading.set(true);
-    this.error.set(null);
+    this.formError.set(null);
     try {
-      if (this.dialogMode() === 'edit' && this.selectedProvider()) {
+      if (this.dialogMode() === 'edit' && this.selectedSupplier()) {
         // Update: replace in local array
-        const updated = await this.updateProviderUseCase.execute(
-          this.selectedProvider()!.id,
-          payload as UpdateProviderRequest,
+        const updated = await this.updateSupplierUseCase.execute(
+          this.selectedSupplier()!.id,
+          payload as UpdateSupplierRequest,
         );
-        this.providers.update((list) => list.map((p) => (p.id === updated.id ? updated : p)));
+        this.suppliers.update((list) => list.map((p) => (p.id === updated.id ? updated : p)));
       } else {
         // Create: add to end of local array (like in users.store.ts)
-        const created = await this.createProviderUseCase.execute(payload as CreateProviderRequest);
-        this.providers.update((list) => [...list, created]);
+        const created = await this.createSupplierUseCase.execute(payload as CreateSupplierRequest);
+        this.suppliers.update((list) => [...list, created]);
         this.total.update((t) => t + 1);
       }
       this.closeDialog();
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to save provider.'));
+      this.formError.set(this.resolveErrorMessage(err, 'Failed to save supplier.'));
     } finally {
       this.loading.set(false);
     }
   }
 
   async confirmToggleStatus(): Promise<void> {
-    const provider = this.providerToToggle();
-    if (!provider) return;
+    const supplier = this.supplierToToggle();
+    if (!supplier) return;
 
     this.loading.set(true);
     this.error.set(null);
     try {
-      if (provider.isActive) {
-        await this.deactivateProviderUseCase.execute(provider.id);
+      if (supplier.isActive) {
+        await this.deactivateSupplierUseCase.execute(supplier.id);
       } else {
-        await this.activateProviderUseCase.execute(provider.id);
+        await this.activateSupplierUseCase.execute(supplier.id);
       }
 
       // Optimistic local update (like in users.store.ts)
-      this.providers.update((list) =>
+      this.suppliers.update((list) =>
         list.map((p) =>
-          p.id === provider.id
-            ? { ...p, isActive: !p.isActive, status: p.isActive ? ProviderStatus.INACTIVE : ProviderStatus.ACTIVE }
+          p.id === supplier.id
+            ? { ...p, isActive: !p.isActive, status: p.isActive ? SupplierStatus.INACTIVE : SupplierStatus.ACTIVE }
             : p,
         ),
       );
 
       this.confirmDialogVisible.set(false);
-      this.providerToToggle.set(null);
+      this.supplierToToggle.set(null);
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Failed to update provider status.'));
+      this.error.set(this.resolveErrorMessage(err, 'Failed to update supplier status.'));
     } finally {
       this.loading.set(false);
     }
   }
 
-  // ── Filters and pagination ───────────────────────────────────────────────────
+  // Filters and pagination
   onSearch(query: string): void {
     this.searchQuery.set(query);
     this.page.set(1); // Reset to first page
-    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
+    this.loadSuppliers({ page: 1, rows: this.pageSize(), first: 0 });
   }
 
-  onStatusFilterChange(status: ProviderStatus | null): void {
+  onStatusFilterChange(status: SupplierStatus | null): void {
     this.statusFilter.set(status);
     this.page.set(1);
-    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
+    this.loadSuppliers({ page: 1, rows: this.pageSize(), first: 0 });
   }
 
   onPageChange(event: PageEvent): void {
@@ -288,10 +292,10 @@ export class SuppliersStore {
     this.pageSize.set(rows);
     
     // Load server data using normalized pagination values.
-    this.loadProviders({ ...event, page, first, rows });
+    this.loadSuppliers({ ...event, page, first, rows });
   }
 
-  // ── Utilities ───────────────────────────────────────────────────────────
+  // Utilities
   clearError(): void {
     this.error.set(null);
   }
@@ -300,6 +304,7 @@ export class SuppliersStore {
     this.searchQuery.set('');
     this.statusFilter.set(null);
     this.page.set(1);
-    this.loadProviders({ page: 1, rows: this.pageSize(), first: 0 });
+    this.loadSuppliers({ page: 1, rows: this.pageSize(), first: 0 });
   }
 }
+

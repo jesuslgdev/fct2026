@@ -29,6 +29,7 @@ async def test_get_purchase_success(auth_client: AsyncClient):
     assert body["user_id"] == 3
     assert body["warehouse_id"] == 2
     assert len(body["lines"]) == 1
+    assert body["allowed_transitions"] == ["Approved", "Cancelled"]
 
 
 async def test_get_purchase_has_supplier_name(auth_client: AsyncClient):

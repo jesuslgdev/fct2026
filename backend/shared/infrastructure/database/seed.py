@@ -7,22 +7,21 @@ from shared.domain.entities.user import User
 
 
 async def seed(session: AsyncSession) -> None:
-    """Insert the super-admin user if it does not already exist."""
+    """Ensure the super-admin user exists."""
     result = await session.execute(
         select(User).where(User.email == settings.superadmin_email)
     )
-    if result.scalar_one_or_none() is not None:
-        return
+    if result.scalar_one_or_none() is None:
+        session.add(
+            User(
+                first_name="Admin",
+                last_name="System",
+                email=settings.superadmin_email,
+                role="Administrator",
+                is_active=True,
+            )
+        )
 
-    # TODO: department_id omitted — assign once the admin module creates departments.
-    admin = User(
-        first_name="Admin",
-        last_name="System",
-        email=settings.superadmin_email,
-        role="Administrator",
-        is_active=True,
-    )
-    session.add(admin)
     try:
         await session.commit()
     except IntegrityError:
