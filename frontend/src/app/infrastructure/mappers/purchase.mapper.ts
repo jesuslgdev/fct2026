@@ -1,4 +1,5 @@
 import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
+import { getPurchaseStatusTransitionEffect } from '@domain/models/purchase-rules';
 import {
   AddPurchaseLineRequestDto,
   AdvancePurchaseStatusRequestDto,
@@ -7,6 +8,7 @@ import {
   PurchaseDetailDto,
   PurchaseLineDto,
   PurchaseListItemDto,
+  PurchaseStatusHistoryDto,
   PurchasesPageDto,
   SupplierDto,
   SupplierProductDto,
@@ -250,14 +252,14 @@ export class PurchaseMapper {
     }
   }
 
-  static toBackendStatus(status: PurchaseStatus): BackendPurchaseStatus {
+  static toBackendStatus(status: PurchaseStatus): Exclude<BackendPurchaseStatus, 'In Process'> {
     switch (status) {
       case 'Pending':
         return 'Pending';
       case 'Approved':
         return 'Approved';
       case 'InProcess':
-        return 'In Process';
+        return 'InProcess';
       case 'Shipped':
         return 'Sent';
       case 'Received':
@@ -294,6 +296,14 @@ export class PurchaseMapper {
   }
 
   private static toStatusHistory(dto: PurchaseDetailDto): PurchaseStatusAuditEntry[] {
+    const backendHistory = dto.status_history ?? [];
+
+    if (backendHistory.length > 0) {
+      return backendHistory
+        .map((entry) => this.fromStatusHistoryDto(entry, dto))
+        .sort((left, right) => Date.parse(left.changedAt) - Date.parse(right.changedAt));
+    }
+
     return [
       {
         fromStatus: null,
@@ -304,6 +314,23 @@ export class PurchaseMapper {
         effect: 'none',
       },
     ];
+  }
+
+  private static fromStatusHistoryDto(
+    dto: PurchaseStatusHistoryDto,
+    purchaseDetail: PurchaseDetailDto,
+  ): PurchaseStatusAuditEntry {
+    const fromStatus = dto.from_status ? this.toDomainStatus(dto.from_status) : null;
+    const toStatus = this.toDomainStatus(dto.to_status);
+
+    return {
+      fromStatus,
+      toStatus,
+      changedAt: dto.changed_at,
+      changedByUserId: dto.changed_by_user_id,
+      changedByName: this.resolveHistoryActorName(dto.changed_by_user_id, purchaseDetail),
+      effect: fromStatus ? getPurchaseStatusTransitionEffect(fromStatus, toStatus) : 'none',
+    };
   }
 
   private static toNumber(value: number | string | null | undefined): number {
@@ -325,5 +352,16 @@ export class PurchaseMapper {
 
   private static toAddressPart(value: unknown): string {
     return typeof value === 'string' ? value.trim() : '';
+  }
+
+  private static resolveHistoryActorName(
+    changedByUserId: number,
+    purchaseDetail: PurchaseDetailDto,
+  ): string {
+    if (changedByUserId === purchaseDetail.user_id && purchaseDetail.user_name?.trim()) {
+      return purchaseDetail.user_name.trim();
+    }
+
+    return `Usuario #${changedByUserId}`;
   }
 }

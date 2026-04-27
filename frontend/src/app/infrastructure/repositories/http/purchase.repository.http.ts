@@ -37,6 +37,7 @@ import {
 } from '@domain/models/purchase.model';
 import { PurchaseRepository } from '@domain/repositories/purchase.repository';
 import {
+  AdvancePurchaseStatusRequestDto,
   CatalogProductDto,
   PurchaseDetailDto,
   PurchasesPageDto,
@@ -53,11 +54,37 @@ const CATALOG_PRODUCTS_URL = `${environment.apiUrl}/api/v1/catalog/products`;
 
 const PURCHASE_ERROR_CODES = {
   NOT_FOUND: 7101,
+  SUPPLIER_NOT_ACTIVE: 7102,
+  PRODUCT_NOT_FOUND: 7103,
+  PRODUCT_NOT_ACTIVE: 7104,
+  PRODUCT_NOT_LINKED: 7105,
+  NO_LINES: 7106,
+  INVALID_DISCOUNT: 7107,
   NOT_PENDING: 7108,
+  LINE_NOT_FOUND: 7109,
+  SUPPLIER_NOT_FOUND: 7110,
   NOT_CANCELLABLE: 7111,
   NOT_DELETABLE: 7112,
   INVALID_TRANSITION: 7113,
 } as const;
+
+const PURCHASE_BUSINESS_RULE_ERROR_CODES = new Set<number>([
+  PURCHASE_ERROR_CODES.SUPPLIER_NOT_ACTIVE,
+  PURCHASE_ERROR_CODES.PRODUCT_NOT_ACTIVE,
+  PURCHASE_ERROR_CODES.PRODUCT_NOT_LINKED,
+  PURCHASE_ERROR_CODES.NO_LINES,
+  PURCHASE_ERROR_CODES.INVALID_DISCOUNT,
+  PURCHASE_ERROR_CODES.NOT_PENDING,
+  PURCHASE_ERROR_CODES.NOT_CANCELLABLE,
+  PURCHASE_ERROR_CODES.NOT_DELETABLE,
+]);
+
+const PURCHASE_NOT_FOUND_ERROR_CODES = new Set<number>([
+  PURCHASE_ERROR_CODES.NOT_FOUND,
+  PURCHASE_ERROR_CODES.PRODUCT_NOT_FOUND,
+  PURCHASE_ERROR_CODES.LINE_NOT_FOUND,
+  PURCHASE_ERROR_CODES.SUPPLIER_NOT_FOUND,
+]);
 
 @Injectable()
 export class HttpPurchaseRepository implements PurchaseRepository {
@@ -190,11 +217,7 @@ export class HttpPurchaseRepository implements PurchaseRepository {
     payload: ChangePurchaseStatusPayload,
   ): Observable<PurchaseDetail> {
     return this.withErrorMapping(() =>
-      this.http
-        .patch<PurchaseDetailDto>(
-          `${PURCHASES_URL}/${purchaseId}/status`,
-          PurchaseMapper.toAdvanceStatusDto(payload.toStatus),
-        )
+      this.patchPurchaseStatus(purchaseId, payload)
         .pipe(switchMap(() => this.getPurchaseById(purchaseId))),
     );
   }
@@ -297,6 +320,30 @@ export class HttpPurchaseRepository implements PurchaseRepository {
     return removeLines$.pipe(switchMap(() => addLines$));
   }
 
+  private patchPurchaseStatus(
+    purchaseId: number,
+    payload: ChangePurchaseStatusPayload,
+  ): Observable<PurchaseDetailDto> {
+    const statusUrl = `${PURCHASES_URL}/${purchaseId}/status`;
+    const requestPayload = PurchaseMapper.toAdvanceStatusDto(payload.toStatus);
+
+    if (payload.toStatus !== 'InProcess') {
+      return this.http.patch<PurchaseDetailDto>(statusUrl, requestPayload);
+    }
+
+    const legacyPayload: AdvancePurchaseStatusRequestDto = { status: 'In Process' };
+
+    return this.http.patch<PurchaseDetailDto>(statusUrl, requestPayload).pipe(
+      catchError((err) => {
+        if (!this.shouldRetryWithLegacyInProcessStatus(err)) {
+          return throwError(() => err);
+        }
+
+        return this.http.patch<PurchaseDetailDto>(statusUrl, legacyPayload);
+      }),
+    );
+  }
+
   private resolveWarehouseAddress(warehouseId: number): Observable<string> {
     return this.http.get<PurchaseWarehouseDto[]>(WAREHOUSES_URL).pipe(
       map((warehouses) => {
@@ -315,42 +362,61 @@ export class HttpPurchaseRepository implements PurchaseRepository {
       return err instanceof Error ? err : new PurchaseApiError();
     }
 
+    if (err.status === 0) {
+      return new PurchaseApiError('Unable to reach purchases service. Please verify your connection and try again.');
+    }
+
     const message = this.extractErrorMessage(err);
     const errorCode = this.extractErrorCode(err);
 
     switch (err.status) {
       case 400:
+        return this.mapKnownDomainError(errorCode, err.error, message);
+      case 409:
+        if (errorCode === undefined) {
+          return new PurchaseBusinessRuleError(message ?? 'Purchase operation conflict.');
+        }
+
+        return this.mapKnownDomainError(errorCode, err.error, message);
       case 422:
-        if (errorCode === PURCHASE_ERROR_CODES.INVALID_TRANSITION) {
-          return new PurchaseInvalidStatusTransitionError(
-            'Pending',
-            'Pending',
-            message ?? 'This status transition is not allowed.',
-          );
-        }
-
-        if (
-          errorCode === PURCHASE_ERROR_CODES.NOT_PENDING ||
-          errorCode === PURCHASE_ERROR_CODES.NOT_CANCELLABLE ||
-          errorCode === PURCHASE_ERROR_CODES.NOT_DELETABLE
-        ) {
-          return new PurchaseBusinessRuleError(message ?? 'Purchase business rule violated.');
-        }
-
-        return new PurchaseValidationError(err.error, message ?? 'Purchase validation failed.');
+        return this.mapKnownDomainError(errorCode, err.error, message);
       case 401:
         return new PurchaseUnauthorizedError(message ?? 'Authentication required.');
       case 403:
         return new PurchaseForbiddenError(message ?? 'Insufficient permissions to manage purchases.');
       case 404:
-        if (errorCode === PURCHASE_ERROR_CODES.NOT_FOUND) {
-          return new PurchaseNotFoundError(message ?? 'Purchase not found.');
+        if (errorCode !== undefined && PURCHASE_NOT_FOUND_ERROR_CODES.has(errorCode)) {
+          return new PurchaseNotFoundError(message ?? 'Purchase resource not found.');
         }
 
         return new PurchaseNotFoundError(message ?? 'Purchase resource not found.');
       default:
         return new PurchaseApiError(message ?? 'Unexpected purchases API error.');
     }
+  }
+
+  private mapKnownDomainError(
+    errorCode: number | undefined,
+    errorPayload: unknown,
+    message: string | undefined,
+  ): Error {
+    if (errorCode === PURCHASE_ERROR_CODES.INVALID_TRANSITION) {
+      return new PurchaseInvalidStatusTransitionError(
+        'Pending',
+        'Pending',
+        message ?? 'This status transition is not allowed.',
+      );
+    }
+
+    if (errorCode !== undefined && PURCHASE_BUSINESS_RULE_ERROR_CODES.has(errorCode)) {
+      return new PurchaseBusinessRuleError(message ?? 'Purchase business rule violated.');
+    }
+
+    if (errorCode !== undefined && PURCHASE_NOT_FOUND_ERROR_CODES.has(errorCode)) {
+      return new PurchaseNotFoundError(message ?? 'Purchase resource not found.');
+    }
+
+    return new PurchaseValidationError(errorPayload, message ?? 'Purchase validation failed.');
   }
 
   private extractErrorCode(err: HttpErrorResponse): number | undefined {
@@ -361,7 +427,16 @@ export class HttpPurchaseRepository implements PurchaseRepository {
     const payload = err.error as Record<string, unknown>;
     const rawCode = payload['error_code'];
 
-    return typeof rawCode === 'number' ? rawCode : undefined;
+    if (typeof rawCode === 'number') {
+      return rawCode;
+    }
+
+    if (typeof rawCode === 'string') {
+      const parsedCode = Number.parseInt(rawCode, 10);
+      return Number.isFinite(parsedCode) ? parsedCode : undefined;
+    }
+
+    return undefined;
   }
 
   private extractErrorMessage(err: HttpErrorResponse): string | undefined {
@@ -381,8 +456,66 @@ export class HttpPurchaseRepository implements PurchaseRepository {
       if (typeof rawDetail === 'string' && rawDetail.trim()) {
         return rawDetail;
       }
+
+      if (Array.isArray(rawDetail)) {
+        const validationMessage = this.formatValidationDetails(rawDetail);
+        if (validationMessage) {
+          return validationMessage;
+        }
+      }
     }
 
     return undefined;
+  }
+
+  private formatValidationDetails(details: unknown[]): string | undefined {
+    const messages = details
+      .map((detail) => this.formatValidationEntry(detail))
+      .filter((message): message is string => Boolean(message));
+
+    if (messages.length === 0) {
+      return undefined;
+    }
+
+    return messages.join(' | ');
+  }
+
+  private formatValidationEntry(detail: unknown): string | undefined {
+    if (!detail || typeof detail !== 'object') {
+      return undefined;
+    }
+
+    const payload = detail as Record<string, unknown>;
+    const rawLocation = payload['loc'];
+    const rawMessage = payload['msg'];
+
+    if (typeof rawMessage !== 'string' || !rawMessage.trim()) {
+      return undefined;
+    }
+
+    if (!Array.isArray(rawLocation) || rawLocation.length === 0) {
+      return rawMessage.trim();
+    }
+
+    const location = rawLocation
+      .map((part) => (typeof part === 'string' || typeof part === 'number' ? String(part) : ''))
+      .filter((part) => part.length > 0)
+      .join('.');
+
+    if (!location) {
+      return rawMessage.trim();
+    }
+
+    return `${location}: ${rawMessage.trim()}`;
+  }
+
+  private shouldRetryWithLegacyInProcessStatus(err: unknown): boolean {
+    if (!(err instanceof HttpErrorResponse) || err.status !== 422) {
+      return false;
+    }
+
+    const message = this.extractErrorMessage(err)?.toLowerCase() ?? '';
+
+    return message.includes('in process') && message.includes('status');
   }
 }

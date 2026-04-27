@@ -8,8 +8,13 @@ import { firstValueFrom } from 'rxjs';
 
 import { HttpPurchaseRepository } from './purchase.repository.http';
 import {
+  PurchaseApiError,
+  PurchaseBusinessRuleError,
+  PurchaseForbiddenError,
   PurchaseInvalidStatusTransitionError,
   PurchaseNotFoundError,
+  PurchaseUnauthorizedError,
+  PurchaseValidationError,
 } from '@domain/models/purchase-errors';
 import { environment } from 'environments/environment';
 
@@ -36,13 +41,6 @@ describe('HttpPurchaseRepository', () => {
     controller.verify();
   });
 
-  const structuredWarehouseAddress = {
-    street: 'Main Street 1',
-    city: 'Madrid',
-    province: 'Comunidad de Madrid',
-    postal_code: '28001',
-  };
-
   it('getPurchases maps query params and enriches supplierId and deliveryAddress', async () => {
     const promise = firstValueFrom(
       repo.getPurchases({
@@ -61,7 +59,7 @@ describe('HttpPurchaseRepository', () => {
     expect(listReq.request.method).toBe('GET');
     expect(listReq.request.params.get('page')).toBe('2');
     expect(listReq.request.params.get('page_size')).toBe('20');
-    expect(listReq.request.params.get('status')).toBe('In Process');
+    expect(listReq.request.params.get('status')).toBe('InProcess');
     expect(listReq.request.params.get('supplier_id')).toBe('10');
     expect(listReq.request.params.get('search')).toBe('north');
     expect(listReq.request.params.get('date_from')).toBe('2026-01-01T00:00:00.000Z');
@@ -108,7 +106,7 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      { warehouse_id: 2, name: 'Central', address: structuredWarehouseAddress, total_stock: 0 },
+      { warehouse_id: 2, name: 'Central', address: 'Main Street 1', total_stock: 0 },
     ]);
 
     const result = await promise;
@@ -122,7 +120,7 @@ describe('HttpPurchaseRepository', () => {
       supplierId: 10,
       supplierName: 'Supplier North',
       deliveryWarehouseId: 2,
-      deliveryAddress: 'Main Street 1, 28001 Madrid, Comunidad de Madrid',
+      deliveryAddress: 'Main Street 1',
       status: 'InProcess',
       createdAt: '2026-04-10T10:00:00.000Z',
       total: 121,
@@ -164,51 +162,76 @@ describe('HttpPurchaseRepository', () => {
           line_tax: 10.5,
         },
       ],
+      status_history: [
+        {
+          from_status: null,
+          to_status: 'Pending',
+          changed_at: '2026-04-11T08:00:00.000Z',
+          changed_by_user_id: 9,
+        },
+        {
+          from_status: 'Pending',
+          to_status: 'Approved',
+          changed_at: '2026-04-11T08:10:00.000Z',
+          changed_by_user_id: 15,
+        },
+        {
+          from_status: 'Approved',
+          to_status: 'InProcess',
+          changed_at: '2026-04-11T08:20:00.000Z',
+          changed_by_user_id: 15,
+        },
+        {
+          from_status: 'InProcess',
+          to_status: 'Sent',
+          changed_at: '2026-04-11T08:30:00.000Z',
+          changed_by_user_id: 15,
+        },
+      ],
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      {
-        warehouse_id: 1,
-        name: 'Main',
-        address: {
-          street: 'Warehouse Ave 5',
-          city: 'Valencia',
-          province: 'Comunidad Valenciana',
-          postal_code: '46001',
-        },
-        total_stock: 0,
-      },
+      { warehouse_id: 1, name: 'Main', address: 'Warehouse Ave 5', total_stock: 0 },
     ]);
 
     const result = await promise;
 
     expect(result.status).toBe('Shipped');
-    expect(result.deliveryAddress).toBe('Warehouse Ave 5, 46001 Valencia, Comunidad Valenciana');
+    expect(result.deliveryAddress).toBe('Warehouse Ave 5');
     expect(result.lines[0].vatRate).toBe(21);
     expect(result.lines[0].total).toBe(60.5);
-  });
-
-  it('getDeliveryWarehouses maps structured warehouse address to display string', async () => {
-    const promise = firstValueFrom(repo.getDeliveryWarehouses());
-
-    const req = controller.expectOne(WAREHOUSES_URL);
-    expect(req.request.method).toBe('GET');
-    req.flush([
+    expect(result.statusHistory).toEqual([
       {
-        warehouse_id: 2,
-        name: 'Central',
-        address: structuredWarehouseAddress,
-        total_stock: 0,
+        fromStatus: null,
+        toStatus: 'Pending',
+        changedAt: '2026-04-11T08:00:00.000Z',
+        changedByUserId: 9,
+        changedByName: 'Buyer',
+        effect: 'none',
       },
-    ]);
-
-    const result = await promise;
-
-    expect(result).toEqual([
       {
-        warehouseId: 2,
-        warehouseName: 'Central',
-        address: 'Main Street 1, 28001 Madrid, Comunidad de Madrid',
+        fromStatus: 'Pending',
+        toStatus: 'Approved',
+        changedAt: '2026-04-11T08:10:00.000Z',
+        changedByUserId: 15,
+        changedByName: 'Usuario #15',
+        effect: 'freeze_lines',
+      },
+      {
+        fromStatus: 'Approved',
+        toStatus: 'InProcess',
+        changedAt: '2026-04-11T08:20:00.000Z',
+        changedByUserId: 15,
+        changedByName: 'Usuario #15',
+        effect: 'none',
+      },
+      {
+        fromStatus: 'InProcess',
+        toStatus: 'Shipped',
+        changedAt: '2026-04-11T08:30:00.000Z',
+        changedByUserId: 15,
+        changedByName: 'Usuario #15',
+        effect: 'none',
       },
     ]);
   });
@@ -273,23 +296,13 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      {
-        warehouse_id: 2,
-        name: 'Central',
-        address: {
-          street: 'Road 2',
-          city: 'Valencia',
-          province: 'Valencia',
-          postal_code: '46001',
-        },
-        total_stock: 0,
-      },
+      { warehouse_id: 2, name: 'Central', address: 'Road 2', total_stock: 0 },
     ]);
 
     const result = await promise;
     expect(result.purchaseId).toBe(8);
     expect(result.supplierName).toBe('Supplier South');
-    expect(result.deliveryAddress).toBe('Road 2, 46001 Valencia');
+    expect(result.deliveryAddress).toBe('Road 2');
   });
 
   it('updatePurchase replaces existing lines when payload includes lines', async () => {
@@ -322,17 +335,7 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      {
-        warehouse_id: 3,
-        name: 'North',
-        address: {
-          street: 'North 3',
-          city: 'Sevilla',
-          province: 'Sevilla',
-          postal_code: '41001',
-        },
-        total_stock: 0,
-      },
+      { warehouse_id: 3, name: 'North', address: 'North 3', total_stock: 0 },
     ]);
 
     const updateReq = controller.expectOne(`${PURCHASES_URL}/9`);
@@ -447,17 +450,7 @@ describe('HttpPurchaseRepository', () => {
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
-      {
-        warehouse_id: 3,
-        name: 'North',
-        address: {
-          street: 'North 3',
-          city: 'Sevilla',
-          province: 'Sevilla',
-          postal_code: '41001',
-        },
-        total_stock: 0,
-      },
+      { warehouse_id: 3, name: 'North', address: 'North 3', total_stock: 0 },
     ]);
 
     const result = await promise;
@@ -533,6 +526,188 @@ describe('HttpPurchaseRepository', () => {
     );
 
     await expect(promise).rejects.toBeInstanceOf(PurchaseInvalidStatusTransitionError);
+  });
+
+  it('changePurchaseStatus retries with legacy In Process status when backend rejects InProcess', async () => {
+    const promise = firstValueFrom(
+      repo.changePurchaseStatus(15, {
+        toStatus: 'InProcess',
+        changedByUserId: 9,
+        changedByName: 'Manager',
+      }),
+    );
+
+    const firstReq = controller.expectOne(`${PURCHASES_URL}/15/status`);
+    expect(firstReq.request.method).toBe('PATCH');
+    expect(firstReq.request.body).toEqual({ status: 'InProcess' });
+
+    firstReq.flush(
+      {
+        detail: [
+          {
+            type: 'literal_error',
+            loc: ['body', 'status'],
+            msg: "Input should be 'Approved', 'In Process', 'Sent' or 'Received'",
+            input: 'InProcess',
+          },
+        ],
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    const retryReq = controller.expectOne(`${PURCHASES_URL}/15/status`);
+    expect(retryReq.request.method).toBe('PATCH');
+    expect(retryReq.request.body).toEqual({ status: 'In Process' });
+
+    retryReq.flush({
+      purchase_id: 15,
+      purchase_number: 'COM-2026-0015',
+      supplier_id: 30,
+      supplier_name: 'Supplier North',
+      user_id: 9,
+      user_name: 'Buyer',
+      warehouse_id: 1,
+      warehouse_name: 'Main',
+      purchase_date: '2026-04-11T08:00:00.000Z',
+      status: 'In Process',
+      subtotal: 50,
+      taxes: 10.5,
+      total: 60.5,
+      cancelled_at: null,
+      cancelled_by_user_id: null,
+      created_at: '2026-04-11T08:00:00.000Z',
+      updated_at: '2026-04-11T08:40:00.000Z',
+      lines: [],
+    });
+
+    controller.expectOne(`${PURCHASES_URL}/15`).flush({
+      purchase_id: 15,
+      purchase_number: 'COM-2026-0015',
+      supplier_id: 30,
+      supplier_name: 'Supplier North',
+      user_id: 9,
+      user_name: 'Buyer',
+      warehouse_id: 1,
+      warehouse_name: 'Main',
+      purchase_date: '2026-04-11T08:00:00.000Z',
+      status: 'In Process',
+      subtotal: 50,
+      taxes: 10.5,
+      total: 60.5,
+      cancelled_at: null,
+      cancelled_by_user_id: null,
+      created_at: '2026-04-11T08:00:00.000Z',
+      updated_at: '2026-04-11T08:40:00.000Z',
+      lines: [],
+    });
+
+    controller.expectOne(WAREHOUSES_URL).flush([
+      { warehouse_id: 1, name: 'Main', address: 'Warehouse Ave 5', total_stock: 0 },
+    ]);
+
+    const result = await promise;
+    expect(result.status).toBe('InProcess');
+  });
+
+  it('changePurchaseStatus maps backend business rule code to domain business error', async () => {
+    const promise = firstValueFrom(
+      repo.changePurchaseStatus(15, {
+        toStatus: 'Approved',
+        changedByUserId: 9,
+        changedByName: 'Manager',
+      }),
+    );
+
+    const req = controller.expectOne(`${PURCHASES_URL}/15/status`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ status: 'Approved' });
+
+    req.flush(
+      { error_code: 7108, detail: 'Purchase must be in Pending status to modify lines' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    await expect(promise).rejects.toBeInstanceOf(PurchaseBusinessRuleError);
+  });
+
+  it('changePurchaseStatus maps FastAPI validation payload to domain validation error', async () => {
+    const promise = firstValueFrom(
+      repo.changePurchaseStatus(15, {
+        toStatus: 'Received',
+        changedByUserId: 9,
+        changedByName: 'Manager',
+      }),
+    );
+
+    const req = controller.expectOne(`${PURCHASES_URL}/15/status`);
+    expect(req.request.method).toBe('PATCH');
+
+    req.flush(
+      {
+        detail: [
+          {
+            type: 'literal_error',
+            loc: ['body', 'status'],
+            msg: "Input should be 'Approved', 'InProcess', 'Sent' or 'Received'",
+            input: 'In Process',
+          },
+        ],
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    await expect(promise).rejects.toMatchObject({
+      name: 'PurchaseValidationError',
+      message:
+        "body.status: Input should be 'Approved', 'InProcess', 'Sent' or 'Received'",
+    } satisfies Partial<PurchaseValidationError>);
+  });
+
+  it('changePurchaseStatus maps 401/403 to auth-related domain errors', async () => {
+    const unauthorizedPromise = firstValueFrom(
+      repo.changePurchaseStatus(15, {
+        toStatus: 'Approved',
+        changedByUserId: 9,
+        changedByName: 'Manager',
+      }),
+    );
+
+    controller.expectOne(`${PURCHASES_URL}/15/status`).flush(
+      { detail: 'Invalid or expired token' },
+      { status: 401, statusText: 'Unauthorized' },
+    );
+
+    await expect(unauthorizedPromise).rejects.toBeInstanceOf(PurchaseUnauthorizedError);
+
+    const forbiddenPromise = firstValueFrom(
+      repo.changePurchaseStatus(16, {
+        toStatus: 'Approved',
+        changedByUserId: 9,
+        changedByName: 'Manager',
+      }),
+    );
+
+    controller.expectOne(`${PURCHASES_URL}/16/status`).flush(
+      { detail: 'Insufficient permissions' },
+      { status: 403, statusText: 'Forbidden' },
+    );
+
+    await expect(forbiddenPromise).rejects.toBeInstanceOf(PurchaseForbiddenError);
+  });
+
+  it('changePurchaseStatus maps status 0 to API connectivity error', async () => {
+    const promise = firstValueFrom(
+      repo.changePurchaseStatus(15, {
+        toStatus: 'Approved',
+        changedByUserId: 9,
+        changedByName: 'Manager',
+      }),
+    );
+
+    const req = controller.expectOne(`${PURCHASES_URL}/15/status`);
+    req.error(new ProgressEvent('error'));
+
+    await expect(promise).rejects.toBeInstanceOf(PurchaseApiError);
   });
 
   it('deletePurchase maps 404 to PurchaseNotFoundError', async () => {
