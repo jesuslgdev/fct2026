@@ -223,6 +223,7 @@ from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case im
 from modules.purchases.infrastructure.repos.purchase_repository import (
     PurchaseRepository,
 )
+from modules.sales.application.add_sale_line_use_case import AddSaleLineUseCase
 from modules.sales.application.advance_sale_status_use_case import (
     AdvanceSaleStatusUseCase,
 )
@@ -230,7 +231,12 @@ from modules.sales.application.create_sale_use_case import CreateSaleUseCase
 from modules.sales.application.delete_sale_use_case import DeleteSaleUseCase
 from modules.sales.application.get_sale_use_case import GetSaleUseCase
 from modules.sales.application.list_sales_use_case import ListSalesUseCase
+from modules.sales.application.remove_sale_line_use_case import RemoveSaleLineUseCase
+from modules.sales.application.update_sale_line_use_case import UpdateSaleLineUseCase
 from modules.sales.application.update_sale_use_case import UpdateSaleUseCase
+from modules.sales.domain.interfaces.use_cases.i_add_sale_line_use_case import (
+    IAddSaleLineUseCase,
+)
 from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case import (
     IAdvanceSaleStatusUseCase,
 )
@@ -245,6 +251,12 @@ from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
 )
 from modules.sales.domain.interfaces.use_cases.i_list_sales_use_case import (
     IListSalesUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_remove_sale_line_use_case import (
+    IRemoveSaleLineUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_update_sale_line_use_case import (
+    IUpdateSaleLineUseCase,
 )
 from modules.sales.domain.interfaces.use_cases.i_update_sale_use_case import (
     IUpdateSaleUseCase,
@@ -855,6 +867,39 @@ async def get_update_sale_use_case(
         client_reader=ClientRepository(db),
         product_reader=ProductRepository(db),
         stock_reader=WarehouseStockRepository(db),
+        user_reader=UserRepository(db),
+    )
+
+
+async def get_add_sale_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IAddSaleLineUseCase:
+    return AddSaleLineUseCase(
+        sale_repo=SaleRepository(db),
+        product_reader=ProductRepository(db),
+        stock_reader=WarehouseStockRepository(db),
+        client_reader=ClientRepository(db),
+        user_reader=UserRepository(db),
+    )
+
+
+async def get_update_sale_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IUpdateSaleLineUseCase:
+    return UpdateSaleLineUseCase(
+        sale_repo=SaleRepository(db),
+        stock_reader=WarehouseStockRepository(db),
+        client_reader=ClientRepository(db),
+        user_reader=UserRepository(db),
+    )
+
+
+async def get_remove_sale_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IRemoveSaleLineUseCase:
+    return RemoveSaleLineUseCase(
+        sale_repo=SaleRepository(db),
+        client_reader=ClientRepository(db),
         user_reader=UserRepository(db),
     )
 

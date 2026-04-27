@@ -1,8 +1,13 @@
 from collections import defaultdict
 from decimal import Decimal
 
+from modules.sales.application._discount import normalize_discount_to_rate
 from modules.sales.domain.entities.sale import Sale
-from modules.sales.domain.exceptions import SaleException, SaleExceptionInfo
+from modules.sales.domain.exceptions import (
+    InsufficientStockForLineError,
+    SaleException,
+    SaleExceptionInfo,
+)
 from modules.sales.domain.interfaces.repositories.i_sale_repository import (
     ISaleRepository,
 )
@@ -75,9 +80,14 @@ class UpdateSaleUseCase(IUpdateSaleUseCase):
                 raise SaleException(SaleExceptionInfo.PRODUCT_NOT_ACTIVE)
 
             unit_price = Decimal(str(product.price))
-            discount = Decimal(str(line.get("discount", "0")))
+            discount_rate = normalize_discount_to_rate(
+                Decimal(str(line.get("discount", "0"))),
+                line.get("discount_type", "percent"),
+                unit_price,
+                quantity,
+            )
             vat_rate = product.vat_rate
-            line_subtotal = quantity * unit_price * (1 - discount)
+            line_subtotal = quantity * unit_price * (1 - discount_rate)
             line_tax = line_subtotal * vat_rate
             subtotal += line_subtotal
             requested_qty_by_product[product_id] += quantity
@@ -87,19 +97,22 @@ class UpdateSaleUseCase(IUpdateSaleUseCase):
                     "product_id": product_id,
                     "quantity": quantity,
                     "unit_price": unit_price,
-                    "discount": discount,
+                    "discount": discount_rate,
                     "vat_rate": vat_rate,
                     "line_subtotal": line_subtotal,
                     "line_tax": line_tax,
                 }
             )
 
-        for product_id, quantity in requested_qty_by_product.items():
+        for product_id, total_qty in requested_qty_by_product.items():
             available = await self._stock_reader.get_available_stock(
                 sale.warehouse_id, product_id
             )
-            if available < quantity:
-                raise SaleException(SaleExceptionInfo.INSUFFICIENT_STOCK)
+            if available < total_qty:
+                first_index = next(
+                    i for i, ln in enumerate(lines) if ln["product_id"] == product_id
+                )
+                raise InsufficientStockForLineError(first_index)
 
         taxes = sum((line["line_tax"] for line in processed_lines), Decimal("0"))
         total = subtotal + taxes
