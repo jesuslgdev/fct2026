@@ -233,6 +233,62 @@ describe('SaleCreateStore', () => {
     expect(store.total()).toBeCloseTo(21.78);
   });
 
+  it('previsualiza subtotal, IVA y total mientras se edita una linea sin guardar', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftQuantityChange(lineId, '3');
+    store.onDraftDiscountChange(lineId, '5');
+    store.onDraftDiscountTypeChange(lineId, 'amount');
+
+    const line = store.getLineView(lineId);
+
+    expect(line?.lineSubtotal).toBe(25);
+    expect(line?.lineTax).toBeCloseTo(5.25);
+    expect(store.subtotal()).toBe(25);
+    expect(store.taxes()).toBeCloseTo(5.25);
+    expect(store.total()).toBeCloseTo(30.25);
+    expect(store.lines()[0].quantity).toBe(1);
+    expect(store.lines()[0].discount).toBe(0);
+  });
+
+  it('revierte la previsualizacion al cancelar la edicion de una linea', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 2,
+      discount: 10,
+      discountType: 'percent',
+    });
+
+    const totalAntesDeEditar = store.total();
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftDiscountChange(lineId, '0');
+    store.onDraftQuantityChange(lineId, '4');
+
+    expect(store.total()).not.toBe(totalAntesDeEditar);
+
+    store.cancelLineEdit(lineId);
+
+    expect(store.total()).toBeCloseTo(totalAntesDeEditar);
+    expect(store.getLineDraft(lineId)).toBeUndefined();
+  });
+
   it('marca la linea como invalida cuando la cantidad supera el stock disponible', async () => {
     await store.initialize();
 
@@ -278,6 +334,25 @@ describe('SaleCreateStore', () => {
       ],
     });
     expect(router.navigate).toHaveBeenCalledWith(['/sales']);
+  });
+
+  it('deshabilita el envio mientras hay una linea en edicion', async () => {
+    await store.initialize();
+    await store.onClientChange(1);
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftQuantityChange(lineId, '2');
+
+    expect(store.canSubmit()).toBe(false);
   });
 
   it('mapea el error de stock insuficiente a un mensaje en espanol', async () => {

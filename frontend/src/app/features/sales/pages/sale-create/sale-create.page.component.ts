@@ -16,13 +16,6 @@ interface DiscountTypeOption {
   value: 'percent' | 'amount';
 }
 
-interface SaleLineEditDraft {
-  productId: number | null;
-  quantity: string;
-  discount: string;
-  discountType: SaleDiscountType;
-}
-
 @Component({
   selector: 'app-sale-create-page',
   standalone: true,
@@ -45,7 +38,6 @@ export class SaleCreatePageComponent implements OnInit {
   readonly store = inject(SaleCreateStore);
   private readonly router = inject(Router);
   readonly editingRowKeys = signal<Record<string, boolean>>({});
-  private readonly lineDrafts = signal<Record<number, SaleLineEditDraft>>({});
 
   readonly discountTypeOptions: DiscountTypeOption[] = [
     { label: '%', value: 'percent' },
@@ -56,8 +48,8 @@ export class SaleCreatePageComponent implements OnInit {
     void this.store.initialize();
   }
 
-  getLineDraft(lineId: number): SaleLineEditDraft | undefined {
-    return this.lineDrafts()[lineId];
+  getLineDraft(lineId: number) {
+    return this.store.getLineDraft(lineId);
   }
 
   onAddLine(): void {
@@ -69,9 +61,8 @@ export class SaleCreatePageComponent implements OnInit {
   }
 
   onRemoveLine(lineId: number): void {
-    this.clearLineDraft(lineId);
     this.setLineEditing(lineId, false);
-    this.store.clearLineStockPreview(lineId);
+    this.store.cancelLineEdit(lineId);
     this.store.removeLine(lineId);
   }
 
@@ -90,58 +81,34 @@ export class SaleCreatePageComponent implements OnInit {
       return;
     }
 
-    this.lineDrafts.update((drafts) => ({
-      ...drafts,
-      [line.lineId]: {
-        productId: line.productId,
-        quantity: String(line.quantity),
-        discount: String(line.discount),
-        discountType: line.discountType,
-      },
-    }));
+    this.store.startLineEdit(line);
     this.setLineEditing(line.lineId, true);
   }
 
   onCancelLineEdit(lineId: number): void {
-    this.clearLineDraft(lineId);
     this.setLineEditing(lineId, false);
-    this.store.clearLineStockPreview(lineId);
+    this.store.cancelLineEdit(lineId);
   }
 
   onDraftProductChange(lineId: number, productId: number | null): void {
-    this.updateLineDraft(lineId, { productId });
-    void this.store.previewLineStock(lineId, productId);
+    this.store.onDraftProductChange(lineId, productId);
   }
 
   onDraftQuantityChange(lineId: number, quantity: string | number | null): void {
-    this.updateLineDraft(lineId, { quantity: this.stringifyDraftValue(quantity) });
+    this.store.onDraftQuantityChange(lineId, quantity);
   }
 
   onDraftDiscountChange(lineId: number, discount: string | number | null): void {
-    this.updateLineDraft(lineId, { discount: this.stringifyDraftValue(discount) });
+    this.store.onDraftDiscountChange(lineId, discount);
   }
 
   onDraftDiscountTypeChange(lineId: number, discountType: SaleDiscountType): void {
-    this.updateLineDraft(lineId, { discountType });
+    this.store.onDraftDiscountTypeChange(lineId, discountType);
   }
 
   async onSaveLineEdit(lineId: number): Promise<void> {
-    const draft = this.getLineDraft(lineId);
-    if (!draft) {
-      this.setLineEditing(lineId, false);
-      return;
-    }
-
-    await this.store.commitLineEdit(lineId, {
-      productId: draft.productId,
-      quantity: this.parseDraftNumber(draft.quantity),
-      discount: this.parseDraftNumber(draft.discount),
-      discountType: draft.discountType,
-    });
-
-    this.clearLineDraft(lineId);
+    await this.store.saveLineEdit(lineId);
     this.setLineEditing(lineId, false);
-    this.store.clearLineStockPreview(lineId);
   }
 
   onSave(): void {
@@ -153,34 +120,9 @@ export class SaleCreatePageComponent implements OnInit {
   }
 
   private resetLineEditingState(): void {
-    this.lineDrafts.set({});
     this.editingRowKeys.set({});
+    this.store.clearAllLineDrafts();
     this.store.clearAllLineStockPreviews();
-  }
-
-  private updateLineDraft(lineId: number, changes: Partial<SaleLineEditDraft>): void {
-    this.lineDrafts.update((drafts) => {
-      const currentDraft = drafts[lineId];
-      if (!currentDraft) {
-        return drafts;
-      }
-
-      return {
-        ...drafts,
-        [lineId]: {
-          ...currentDraft,
-          ...changes,
-        },
-      };
-    });
-  }
-
-  private clearLineDraft(lineId: number): void {
-    this.lineDrafts.update((drafts) => {
-      const nextDrafts = { ...drafts };
-      delete nextDrafts[lineId];
-      return nextDrafts;
-    });
   }
 
   private setLineEditing(lineId: number, isEditing: boolean): void {
@@ -196,23 +138,5 @@ export class SaleCreatePageComponent implements OnInit {
       delete nextKeys[String(lineId)];
       return nextKeys;
     });
-  }
-
-  private stringifyDraftValue(value: string | number | null): string {
-    if (value === null || value === undefined) {
-      return '';
-    }
-
-    return String(value);
-  }
-
-  private parseDraftNumber(rawValue: string): number | null {
-    const trimmedValue = rawValue.trim();
-    if (!trimmedValue) {
-      return null;
-    }
-
-    const parsedValue = Number(trimmedValue);
-    return Number.isNaN(parsedValue) ? null : parsedValue;
   }
 }

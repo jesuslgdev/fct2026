@@ -9,6 +9,7 @@ import { SaleDiscountType } from '@domain/models/sale.model';
 import { Warehouse } from '@domain/models/warehouse.model';
 import {
   SaleCreateLineDraft,
+  SaleCreateLineEditDraft,
   SaleCreateLineView,
   SaleCreateStore,
 } from '@features/sales/state/sale-create.store';
@@ -31,6 +32,7 @@ interface MockSaleCreateStore {
   canSubmit: Mock<() => boolean>;
   deliveryAddress: Mock<() => string>;
   availableProducts: Mock<() => Product[]>;
+  getLineDraft: Mock<(lineId: number) => SaleCreateLineEditDraft | undefined>;
   getLineView: Mock<(lineId: number) => SaleCreateLineView | undefined>;
   subtotal: Mock<() => number>;
   taxes: Mock<() => number>;
@@ -38,22 +40,21 @@ interface MockSaleCreateStore {
   initialize: Mock<() => Promise<void>>;
   addLine: Mock<() => void>;
   removeLine: Mock<(lineId: number) => void>;
+  startLineEdit: Mock<(line: SaleCreateLineDraft) => void>;
+  cancelLineEdit: Mock<(lineId: number) => void>;
+  clearAllLineDrafts: Mock<() => void>;
   onClientChange: Mock<(clientId: number | null) => Promise<void>>;
   onWarehouseChange: Mock<(warehouseId: number | null) => Promise<void>>;
-  previewLineStock: Mock<(lineId: number, productId: number | null) => Promise<void>>;
+  onDraftProductChange: Mock<(lineId: number, productId: number | null) => void>;
+  onDraftQuantityChange: Mock<(lineId: number, quantity: string | number | null) => void>;
+  onDraftDiscountChange: Mock<(lineId: number, discount: string | number | null) => void>;
+  onDraftDiscountTypeChange: Mock<(lineId: number, discountType: SaleDiscountType) => void>;
   getLineStockPreview: Mock<
     (lineId: number) => { availableStock: number | null; stockLoading: boolean; stockError: string | null } | undefined
   >;
   clearLineStockPreview: Mock<(lineId: number) => void>;
   clearAllLineStockPreviews: Mock<() => void>;
-  commitLineEdit: Mock<
-    (lineId: number, changes: {
-      productId: number | null;
-      quantity: number | null;
-      discount: number | null;
-      discountType: SaleDiscountType;
-    }) => Promise<void>
-  >;
+  saveLineEdit: Mock<(lineId: number) => Promise<void>>;
   submit: Mock<() => Promise<void>>;
 }
 
@@ -132,6 +133,7 @@ describe('SaleCreatePageComponent', () => {
       canSubmit: vi.fn(() => false),
       deliveryAddress: vi.fn(() => ''),
       availableProducts: vi.fn(() => [PRODUCT_A]),
+      getLineDraft: vi.fn(() => undefined),
       getLineView: vi.fn((lineId: number) => {
         const line = store.lines().find((item) => item.lineId === lineId);
         return line ? buildLineView(line) : undefined;
@@ -142,13 +144,19 @@ describe('SaleCreatePageComponent', () => {
       initialize: vi.fn().mockResolvedValue(undefined),
       addLine: vi.fn(),
       removeLine: vi.fn(),
+      startLineEdit: vi.fn(),
+      cancelLineEdit: vi.fn(),
+      clearAllLineDrafts: vi.fn(),
       onClientChange: vi.fn().mockResolvedValue(undefined),
       onWarehouseChange: vi.fn().mockResolvedValue(undefined),
-      previewLineStock: vi.fn().mockResolvedValue(undefined),
+      onDraftProductChange: vi.fn(),
+      onDraftQuantityChange: vi.fn(),
+      onDraftDiscountChange: vi.fn(),
+      onDraftDiscountTypeChange: vi.fn(),
       getLineStockPreview: vi.fn(() => undefined),
       clearLineStockPreview: vi.fn(),
       clearAllLineStockPreviews: vi.fn(),
-      commitLineEdit: vi.fn().mockResolvedValue(undefined),
+      saveLineEdit: vi.fn().mockResolvedValue(undefined),
       submit: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -178,6 +186,15 @@ describe('SaleCreatePageComponent', () => {
     expect(headers.some((header) => header.nativeElement.textContent.trim() === 'Acciones')).toBe(true);
   });
 
+  it('muestra una columna dedicada al codigo de producto', () => {
+    const headers = fixture.debugElement.queryAll(By.css('th'));
+    const headerTexts = headers.map((header) => header.nativeElement.textContent.trim());
+
+    expect(headerTexts).toContain('Codigo');
+    expect(headerTexts).toContain('Producto');
+    expect(headerTexts.indexOf('Codigo')).toBeLessThan(headerTexts.indexOf('Producto'));
+  });
+
   it('deshabilita el boton de anadir linea hasta seleccionar cliente y almacen', () => {
     const addLineButton = fixture.debugElement.queryAll(By.css('ui-button'))[2].componentInstance;
     expect(addLineButton.disabled()).toBe(true);
@@ -192,7 +209,7 @@ describe('SaleCreatePageComponent', () => {
     component.onStartLineEdit(LINE_A);
 
     expect(component.getLineDraft(LINE_A.lineId)).toBeUndefined();
-    expect(store.commitLineEdit).not.toHaveBeenCalled();
+    expect(store.startLineEdit).not.toHaveBeenCalled();
   });
 
   it('muestra un mensaje guia cuando aun no se puede operar con lineas', () => {
@@ -208,6 +225,6 @@ describe('SaleCreatePageComponent', () => {
 
     component.onDraftProductChange(LINE_A.lineId, PRODUCT_A.productId);
 
-    expect(store.previewLineStock).toHaveBeenCalledWith(LINE_A.lineId, PRODUCT_A.productId);
+    expect(store.onDraftProductChange).toHaveBeenCalledWith(LINE_A.lineId, PRODUCT_A.productId);
   });
 });
