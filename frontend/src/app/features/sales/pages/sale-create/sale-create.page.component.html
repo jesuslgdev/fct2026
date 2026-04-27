@@ -1,20 +1,30 @@
 <section class="page">
   <div class="page-header flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h1 class="text-style-title">Nueva venta</h1>
+      <h1 class="text-style-title">
+        @if (store.isEditMode()) {
+          Editar venta
+        } @else {
+          Nueva venta
+        }
+      </h1>
       <p class="text-sm text-surface-600">
-        Registra una venta seleccionando cliente, almacen y lineas de producto.
+        @if (store.isEditMode()) {
+          Corrige cliente, direccion de entrega y lineas antes de aprobar la venta.
+        } @else {
+          Registra una venta seleccionando cliente, almacen y lineas de producto.
+        }
       </p>
     </div>
 
     <div class="flex gap-2">
       <ui-button
-        label="Volver a ventas"
+        [label]="store.isEditMode() ? 'Volver al detalle' : 'Volver a ventas'"
         variant="outline"
         (clicked)="onBack()"
       />
       <ui-button
-        label="Guardar venta"
+        [label]="store.isEditMode() ? 'Guardar cambios' : 'Guardar venta'"
         icon="pi pi-save"
         [loading]="store.submitting()"
         [disabled]="!store.canSubmit()"
@@ -60,6 +70,7 @@
           class="w-full"
           appendTo="body"
           [loading]="store.loading()"
+          [disabled]="store.isEditMode()"
           [ngModel]="store.selectedWarehouseId()"
           (ngModelChange)="onWarehouseChange($event)"
         />
@@ -71,8 +82,10 @@
           id="sale-address"
           pInputText
           class="w-full"
-          [value]="store.deliveryAddress() || 'Se genera automaticamente desde el cliente seleccionado'"
-          readonly
+          [ngModel]="store.deliveryAddress() || ''"
+          [placeholder]="store.isEditMode() ? 'Indica la direccion de entrega' : 'Se genera automaticamente desde el cliente seleccionado'"
+          [readonly]="!store.isEditMode()"
+          (ngModelChange)="onDeliveryAddressChange($event)"
         />
       </div>
     </div>

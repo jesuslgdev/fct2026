@@ -86,6 +86,7 @@
         <th>Dirección de entrega</th>
         <th>Fecha de creación</th>
         <th>Total</th>
+        <th class="text-right">Acciones</th>
       </tr>
     </ng-template>
 
@@ -97,12 +98,25 @@
         <td>{{ sale.deliveryAddress }}</td>
         <td>{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
         <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>
+        <td class="text-right">
+          <div class="table-actions flex items-center justify-end">
+            @if (canEditSale(sale.status)) {
+              <ui-button
+                icon="pi pi-pencil"
+                ariaLabel="Editar venta"
+                variant="ghost"
+                size="sm"
+                (clicked)="onEditSale(sale.saleId)"
+              />
+            }
+          </div>
+        </td>
       </tr>
     </ng-template>
 
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6" class="empty-state">
+        <td colspan="7" class="empty-state">
           {{ store.emptyMessage() ?? 'No hay ventas registradas.' }}
         </td>
       </tr>

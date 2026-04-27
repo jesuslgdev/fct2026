@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { vi, type Mock } from 'vitest';
 import { Client } from '@domain/models/client.model';
 import { Product } from '@domain/models/product.model';
@@ -22,6 +22,9 @@ interface MockSaleCreateStore {
   lines: WritableSignal<SaleCreateLineDraft[]>;
   selectedClientId: WritableSignal<number | null>;
   selectedWarehouseId: WritableSignal<number | null>;
+  isEditMode: WritableSignal<boolean>;
+  editingSaleId: WritableSignal<number | null>;
+  editingSaleNumber: WritableSignal<string | null>;
   loading: WritableSignal<boolean>;
   loadingProducts: WritableSignal<boolean>;
   loadingClientDetail: WritableSignal<boolean>;
@@ -38,6 +41,7 @@ interface MockSaleCreateStore {
   taxes: Mock<() => number>;
   total: Mock<() => number>;
   initialize: Mock<() => Promise<void>>;
+  initializeForEdit: Mock<(saleId: number) => Promise<void>>;
   addLine: Mock<() => void>;
   removeLine: Mock<(lineId: number) => void>;
   startLineEdit: Mock<(line: SaleCreateLineDraft) => void>;
@@ -54,6 +58,7 @@ interface MockSaleCreateStore {
   >;
   clearLineStockPreview: Mock<(lineId: number) => void>;
   clearAllLineStockPreviews: Mock<() => void>;
+  onDeliveryAddressChange: Mock<(address: string) => void>;
   saveLineEdit: Mock<(lineId: number) => Promise<void>>;
   submit: Mock<() => Promise<void>>;
 }
@@ -123,6 +128,9 @@ describe('SaleCreatePageComponent', () => {
       lines: signal<SaleCreateLineDraft[]>([LINE_A]),
       selectedClientId: signal<number | null>(null),
       selectedWarehouseId: signal<number | null>(null),
+      isEditMode: signal(false),
+      editingSaleId: signal<number | null>(null),
+      editingSaleNumber: signal<string | null>(null),
       loading: signal(false),
       loadingProducts: signal(false),
       loadingClientDetail: signal(false),
@@ -142,6 +150,7 @@ describe('SaleCreatePageComponent', () => {
       taxes: vi.fn(() => buildLineView(store.lines()[0]).lineTax),
       total: vi.fn(() => buildLineView(store.lines()[0]).lineTotal),
       initialize: vi.fn().mockResolvedValue(undefined),
+      initializeForEdit: vi.fn().mockResolvedValue(undefined),
       addLine: vi.fn(),
       removeLine: vi.fn(),
       startLineEdit: vi.fn(),
@@ -156,6 +165,7 @@ describe('SaleCreatePageComponent', () => {
       getLineStockPreview: vi.fn(() => undefined),
       clearLineStockPreview: vi.fn(),
       clearAllLineStockPreviews: vi.fn(),
+      onDeliveryAddressChange: vi.fn(),
       saveLineEdit: vi.fn().mockResolvedValue(undefined),
       submit: vi.fn().mockResolvedValue(undefined),
     };
@@ -166,6 +176,16 @@ describe('SaleCreatePageComponent', () => {
         {
           provide: Router,
           useValue: router,
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: {
+                get: vi.fn().mockReturnValue(null),
+              },
+            },
+          },
         },
       ],
     })
@@ -226,5 +246,14 @@ describe('SaleCreatePageComponent', () => {
     component.onDraftProductChange(LINE_A.lineId, PRODUCT_A.productId);
 
     expect(store.onDraftProductChange).toHaveBeenCalledWith(LINE_A.lineId, PRODUCT_A.productId);
+  });
+
+  it('vuelve al detalle cuando esta en modo edicion', () => {
+    store.isEditMode.set(true);
+    store.editingSaleId.set(42);
+
+    component.onBack();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 42]);
   });
 });

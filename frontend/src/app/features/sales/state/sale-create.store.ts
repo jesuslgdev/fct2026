@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
+import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client, ClientDetail, ClientQueryParams } from '@domain/models/client.model';
 import { Product, ProductQueryParams, ProductStockByWarehouse } from '@domain/models/product.model';
 import {
@@ -15,13 +16,15 @@ import {
   SaleUnauthorizedError,
   SaleValidationError,
 } from '@domain/models/sale-errors';
-import { CreateSale, SaleDiscountType } from '@domain/models/sale.model';
+import { CreateSale, SaleDetail, SaleDiscountType, UpdateSale } from '@domain/models/sale.model';
 import { Warehouse } from '@domain/models/warehouse.model';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
 import { GetProductStockByWarehousesUseCase } from '@domain/usecases/product/get-product-stock-by-warehouses.usecase';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { CreateSaleUseCase } from '@domain/usecases/sales/create-sale.usecase';
+import { GetSaleUseCase } from '@domain/usecases/sales/get-sale.usecase';
+import { UpdateSaleUseCase } from '@domain/usecases/sales/update-sale.usecase';
 import { GetWarehousesUseCase } from '@domain/usecases/warehouse/get-warehouses.usecase';
 
 export interface SaleCreateLineDraft {
@@ -78,6 +81,8 @@ export class SaleCreateStore {
   private readonly getProductsUseCase = inject(GetProductsUseCase);
   private readonly getProductStockByWarehousesUseCase = inject(GetProductStockByWarehousesUseCase);
   private readonly createSaleUseCase = inject(CreateSaleUseCase);
+  private readonly getSaleUseCase = inject(GetSaleUseCase);
+  private readonly updateSaleUseCase = inject(UpdateSaleUseCase);
 
   private lineSequence = 1;
 
@@ -91,6 +96,11 @@ export class SaleCreateStore {
   readonly selectedClientId = signal<number | null>(null);
   readonly selectedWarehouseId = signal<number | null>(null);
   readonly selectedClientDetail = signal<ClientDetail | null>(null);
+  readonly isEditMode = signal(false);
+  readonly editingSaleId = signal<number | null>(null);
+  readonly editingSaleNumber = signal<string | null>(null);
+  readonly editingSaleStatus = signal<SaleStatus | null>(null);
+  readonly deliveryAddressOverride = signal('');
 
   readonly loading = signal(false);
   readonly loadingProducts = signal(false);
@@ -104,6 +114,10 @@ export class SaleCreateStore {
   );
 
   readonly deliveryAddress = computed(() => {
+    if (this.isEditMode()) {
+      return this.deliveryAddressOverride().trim();
+    }
+
     const client = this.selectedClientDetail();
     if (!client) {
       return '';
@@ -143,6 +157,10 @@ export class SaleCreateStore {
       return false;
     }
 
+    if (this.isEditMode() && this.editingSaleStatus() !== SaleStatus.PENDING) {
+      return false;
+    }
+
     if (!this.selectedClientId() || !this.selectedWarehouseId() || !this.deliveryAddress()) {
       return false;
     }
@@ -162,6 +180,11 @@ export class SaleCreateStore {
   );
 
   async initialize(): Promise<void> {
+    this.resetFormState();
+    this.isEditMode.set(false);
+    this.editingSaleId.set(null);
+    this.editingSaleNumber.set(null);
+    this.editingSaleStatus.set(null);
     this.error.set(null);
     this.successMessage.set(null);
     this.ensureAtLeastOneLine();
@@ -177,6 +200,39 @@ export class SaleCreateStore {
       this.clients.set(clients);
       this.warehouses.set(warehouses);
       this.products.set(products);
+    } catch (err) {
+      this.error.set(this.resolveLoadError(err));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async initializeForEdit(saleId: number): Promise<void> {
+    this.resetFormState();
+    this.isEditMode.set(true);
+    this.editingSaleId.set(saleId);
+    this.error.set(null);
+    this.successMessage.set(null);
+    this.loading.set(true);
+
+    try {
+      const [clients, warehouses, products, sale] = await Promise.all([
+        this.loadAllActiveClients(),
+        firstValueFrom(this.getWarehousesUseCase.execute()),
+        this.loadAllActiveProducts(),
+        firstValueFrom(this.getSaleUseCase.execute(saleId)),
+      ]);
+
+      this.clients.set(clients);
+      this.warehouses.set(warehouses);
+      this.products.set(products);
+      this.hydrateFromSale(sale);
+
+      if (sale.status !== SaleStatus.PENDING) {
+        this.error.set('Solo se pueden editar ventas en estado pendiente.');
+      }
+
+      await this.refreshAllLineStocks();
     } catch (err) {
       this.error.set(this.resolveLoadError(err));
     } finally {
@@ -226,6 +282,9 @@ export class SaleCreateStore {
     this.selectedClientId.set(clientId);
     this.selectedClientDetail.set(null);
     this.error.set(null);
+    if (this.isEditMode() && !clientId) {
+      this.deliveryAddressOverride.set('');
+    }
 
     if (!clientId) {
       return;
@@ -236,6 +295,9 @@ export class SaleCreateStore {
     try {
       const client = await firstValueFrom(this.getClientByIdUseCase.execute(clientId));
       this.selectedClientDetail.set(client);
+      if (this.isEditMode()) {
+        this.deliveryAddressOverride.set(this.formatClientDeliveryAddress(client));
+      }
     } catch (err) {
       this.error.set(this.resolveLoadError(err));
     } finally {
@@ -281,6 +343,14 @@ export class SaleCreateStore {
       discount: line.discount,
       discountType: line.discountType,
     });
+  }
+
+  onDeliveryAddressChange(address: string): void {
+    if (!this.isEditMode()) {
+      return;
+    }
+
+    this.deliveryAddressOverride.set(address);
   }
 
   onDraftProductChange(lineId: number, productId: number | null): void {
@@ -461,22 +531,45 @@ export class SaleCreateStore {
     this.error.set(null);
     this.successMessage.set(null);
 
-    const payload = this.buildPayload();
-    if (!payload) {
+    const payload = this.isEditMode() ? this.buildUpdatePayload() : this.buildPayload();
+    const saleId = this.editingSaleId();
+    if (!payload || (this.isEditMode() && !saleId)) {
       return;
     }
 
     this.submitting.set(true);
 
     try {
-      await firstValueFrom(this.createSaleUseCase.execute(payload));
-      this.successMessage.set('La venta se ha creado correctamente.');
-      await this.router.navigate(['/sales']);
+      if (this.isEditMode()) {
+        const updatedSale = await firstValueFrom(
+          this.updateSaleUseCase.execute(saleId as number, payload as UpdateSale),
+        );
+        this.successMessage.set('La venta se ha actualizado correctamente.');
+        await this.router.navigate(['/sales', updatedSale.saleId]);
+      } else {
+        await firstValueFrom(this.createSaleUseCase.execute(payload as CreateSale));
+        this.successMessage.set('La venta se ha creado correctamente.');
+        await this.router.navigate(['/sales']);
+      }
     } catch (err) {
       this.error.set(this.resolveSubmitError(err));
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  private resetFormState(): void {
+    this.lineSequence = 1;
+    this.clients.set([]);
+    this.warehouses.set([]);
+    this.products.set([]);
+    this.lines.set([]);
+    this.lineDrafts.set({});
+    this.lineStockPreviews.set({});
+    this.selectedClientId.set(null);
+    this.selectedWarehouseId.set(null);
+    this.selectedClientDetail.set(null);
+    this.deliveryAddressOverride.set('');
   }
 
   private async refreshAllLineStocks(): Promise<void> {
@@ -707,6 +800,71 @@ export class SaleCreateStore {
     return rawValue == null || Number.isNaN(rawValue) ? 0 : rawValue;
   }
 
+  private buildUpdatePayload(): UpdateSale | null {
+    if (!this.selectedClientId()) {
+      this.error.set('Selecciona un cliente antes de guardar.');
+      return null;
+    }
+
+    if (!this.deliveryAddress()) {
+      this.error.set('Indica una direccion de entrega antes de guardar.');
+      return null;
+    }
+
+    if (!this.lines().length) {
+      this.error.set('Anade al menos una linea antes de guardar.');
+      return null;
+    }
+
+    const linesAreValid = this.validateAllLines();
+    if (!linesAreValid) {
+      this.error.set('Revisa los datos de las lineas antes de guardar la venta.');
+      return null;
+    }
+
+    const payloadLines = this.lines()
+      .filter((line) => line.productId !== null)
+      .map((line) => ({
+        productId: line.productId as number,
+        quantity: line.quantity,
+        ...(line.discount > 0 ? { discount: line.discount, discountType: line.discountType } : {}),
+      }));
+
+    if (!payloadLines.length) {
+      this.error.set('Anade al menos una linea valida antes de guardar.');
+      return null;
+    }
+
+    return {
+      clientId: this.selectedClientId() as number,
+      deliveryAddress: this.deliveryAddress(),
+      lines: payloadLines,
+    };
+  }
+
+  private hydrateFromSale(sale: SaleDetail): void {
+    this.editingSaleId.set(sale.saleId);
+    this.editingSaleNumber.set(sale.saleNumber);
+    this.editingSaleStatus.set(sale.status);
+    this.selectedClientId.set(sale.clientId);
+    this.selectedWarehouseId.set(sale.warehouseId);
+    this.deliveryAddressOverride.set(sale.deliveryAddress);
+    this.lines.set(
+      sale.lines.map((line) => ({
+        lineId: this.lineSequence++,
+        productId: line.productId,
+        quantity: line.quantity,
+        discount: line.discount * 100,
+        discountType: 'percent',
+        availableStock: null,
+        stockLoading: false,
+        stockError: null,
+        validationError: null,
+      })),
+    );
+    this.ensureAtLeastOneLine();
+  }
+
   private parseDraftNumber(rawValue: string): number | null {
     const trimmedValue = rawValue.trim();
     if (!trimmedValue) {
@@ -723,6 +881,12 @@ export class SaleCreateStore {
     }
 
     return String(value);
+  }
+
+  private formatClientDeliveryAddress(client: ClientDetail): string {
+    return [client.address, client.city, client.province, client.postalCode]
+      .filter((part) => part.trim().length > 0)
+      .join(', ');
   }
 
   private findProduct(productId: number | null): Product | undefined {

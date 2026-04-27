@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -36,6 +36,7 @@ interface DiscountTypeOption {
 })
 export class SaleCreatePageComponent implements OnInit {
   readonly store = inject(SaleCreateStore);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly editingRowKeys = signal<Record<string, boolean>>({});
 
@@ -45,6 +46,12 @@ export class SaleCreatePageComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    const saleId = Number(this.route.snapshot.paramMap.get('id'));
+    if (Number.isInteger(saleId) && saleId > 0) {
+      void this.store.initializeForEdit(saleId);
+      return;
+    }
+
     void this.store.initialize();
   }
 
@@ -72,8 +79,16 @@ export class SaleCreatePageComponent implements OnInit {
   }
 
   onWarehouseChange(warehouseId: number | null): void {
+    if (this.store.isEditMode()) {
+      return;
+    }
+
     this.resetLineEditingState();
     void this.store.onWarehouseChange(warehouseId);
+  }
+
+  onDeliveryAddressChange(address: string): void {
+    this.store.onDeliveryAddressChange(address);
   }
 
   onStartLineEdit(line: SaleCreateLineDraft): void {
@@ -116,6 +131,12 @@ export class SaleCreatePageComponent implements OnInit {
   }
 
   onBack(): void {
+    const saleId = this.store.editingSaleId();
+    if (this.store.isEditMode() && saleId) {
+      void this.router.navigate(['/sales', saleId]);
+      return;
+    }
+
     void this.router.navigate(['/sales']);
   }
 
