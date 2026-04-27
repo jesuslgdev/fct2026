@@ -353,9 +353,15 @@ from modules.warehouse.application.delete_warehouse_use_case import (
 from modules.warehouse.application.get_product_stock_overview_use_case import (
     GetProductStockOverviewUseCase,
 )
+from modules.warehouse.application.get_stock_movement_use_case import (
+    GetStockMovementUseCase,
+)
 from modules.warehouse.application.get_warehouse_use_case import GetWarehouseUseCase
 from modules.warehouse.application.list_stock_distribution_use_case import (
     ListStockDistributionUseCase,
+)
+from modules.warehouse.application.list_stock_movements_use_case import (
+    ListStockMovementsUseCase,
 )
 from modules.warehouse.application.list_warehouses_use_case import (
     ListWarehousesUseCase,
@@ -375,11 +381,17 @@ from modules.warehouse.domain.interfaces.use_cases.i_delete_warehouse_use_case i
 from modules.warehouse.domain.interfaces.use_cases.i_get_product_stock_overview_use_case import (
     IGetProductStockOverviewUseCase,
 )
+from modules.warehouse.domain.interfaces.use_cases.i_get_stock_movement_use_case import (
+    IGetStockMovementUseCase,
+)
 from modules.warehouse.domain.interfaces.use_cases.i_get_warehouse_use_case import (
     IGetWarehouseUseCase,
 )
 from modules.warehouse.domain.interfaces.use_cases.i_list_stock_distribution_use_case import (
     IListStockDistributionUseCase,
+)
+from modules.warehouse.domain.interfaces.use_cases.i_list_stock_movements_use_case import (
+    IListStockMovementsUseCase,
 )
 from modules.warehouse.domain.interfaces.use_cases.i_list_warehouses_use_case import (
     IListWarehousesUseCase,
@@ -825,6 +837,18 @@ async def get_adjust_stock_use_case(
         movement_repo=StockMovementRepository(db),
         product_reader=ProductRepository(db),
     )
+
+
+async def get_list_stock_movements_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListStockMovementsUseCase:
+    return ListStockMovementsUseCase(StockMovementRepository(db))
+
+
+async def get_get_stock_movement_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetStockMovementUseCase:
+    return GetStockMovementUseCase(StockMovementRepository(db))
 
 
 # ── Sales ──────────────────────────────────────────────────────────
