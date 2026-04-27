@@ -9,14 +9,21 @@ from modules.purchases.domain.interfaces.repositories.i_purchase_repository impo
 from modules.purchases.domain.interfaces.use_cases.i_advance_purchase_status_use_case import (
     IAdvancePurchaseStatusUseCase,
 )
+from modules.purchases.domain.purchase_status import (
+    APPROVED,
+    IN_PROCESS,
+    PENDING,
+    RECEIVED,
+    SENT,
+)
 from shared.domain.dtos.user_session import UserSession
 from shared.domain.interfaces.i_stock_entry_recorder import IStockEntryRecorder
 
 VALID_TRANSITIONS: dict[str, set[str]] = {
-    "Pending": {"Approved"},
-    "Approved": {"In Process"},
-    "In Process": {"Sent"},
-    "Sent": {"Received"},
+    PENDING: {APPROVED},
+    APPROVED: {IN_PROCESS},
+    IN_PROCESS: {SENT},
+    SENT: {RECEIVED},
 }
 
 
