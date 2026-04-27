@@ -4,6 +4,7 @@ export type BackendPurchaseStatus =
   | 'Pending'
   | 'Approved'
   | 'In Process'
+  | 'InProcess'
   | 'Sent'
   | 'Received'
   | 'Cancelled';
@@ -33,6 +34,13 @@ export interface PurchaseLineDto {
   line_tax: number | string;
 }
 
+export interface PurchaseStatusHistoryDto {
+  from_status: BackendPurchaseStatus | string | null;
+  to_status: BackendPurchaseStatus | string;
+  changed_at: string;
+  changed_by_user_id: number;
+}
+
 export interface PurchaseDetailDto {
   purchase_id: number;
   purchase_number: string;
@@ -49,9 +57,11 @@ export interface PurchaseDetailDto {
   total: number | string;
   cancelled_at: string | null;
   cancelled_by_user_id: number | null;
+  allowed_transitions?: string[];
   created_at: string;
   updated_at: string | null;
   lines: PurchaseLineDto[];
+  status_history?: PurchaseStatusHistoryDto[];
 }
 
 export interface CreatePurchaseLineRequestDto {
@@ -80,7 +90,7 @@ export interface AddPurchaseLineRequestDto {
 }
 
 export interface AdvancePurchaseStatusRequestDto {
-  status: 'Approved' | 'In Process' | 'Sent' | 'Received';
+  status: 'Approved' | 'InProcess' | 'In Process' | 'Sent' | 'Received';
 }
 
 export interface SupplierDto {
