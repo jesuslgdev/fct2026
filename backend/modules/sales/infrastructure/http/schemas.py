@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from modules.sales.domain.sale_status import VALID_TRANSITIONS, allowed_next
 
@@ -15,9 +15,14 @@ if TYPE_CHECKING:
 class SaleLineInput(BaseModel):
     product_id: int
     quantity: int = Field(gt=0)
-    discount: Decimal = Field(
-        default=Decimal("0"), ge=0, lt=1, description="Discount rate 0–0.9999"
-    )
+    discount: Decimal = Field(default=Decimal("0"), ge=0)
+    discount_type: Literal["percent", "amount"] = "percent"
+
+    @model_validator(mode="after")
+    def validate_percent_range(self) -> SaleLineInput:
+        if self.discount_type == "percent" and self.discount >= 100:
+            raise ValueError("Percentage discount must be less than 100")
+        return self
 
 
 class CreateSaleRequest(BaseModel):
@@ -44,6 +49,18 @@ class UpdateSaleRequest(BaseModel):
     client_id: int
     delivery_address: str = Field(min_length=1)
     lines: list[SaleLineInput] = Field(min_length=1)
+
+
+class UpdateSaleLineRequest(BaseModel):
+    quantity: int = Field(gt=0)
+    discount: Decimal = Field(default=Decimal("0"), ge=0)
+    discount_type: Literal["percent", "amount"] = "percent"
+
+    @model_validator(mode="after")
+    def validate_percent_range(self) -> UpdateSaleLineRequest:
+        if self.discount_type == "percent" and self.discount >= 100:
+            raise ValueError("Percentage discount must be less than 100")
+        return self
 
 
 class SaleLineResponse(BaseModel):

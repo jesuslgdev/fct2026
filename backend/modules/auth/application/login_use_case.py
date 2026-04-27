@@ -12,14 +12,22 @@ from shared.infrastructure.security.firebase_auth_provider import verify_firebas
 
 def _compute_permissions(role: str, department_name: str | None) -> list[str]:
     if role == "Administrator":
-        return ["admin", "purchases_manager", "sales_manager", "purchases_department"]
+        return [
+            "admin",
+            "purchases_manager",
+            "sales_manager",
+            "purchases_department",
+            "sales_department",
+        ]
     perms: list[str] = []
     if role == "Manager" and department_name == "Purchases":
         perms += ["purchases_manager", "purchases_department"]
     elif role == "Manager" and department_name == "Sales":
-        perms += ["sales_manager"]
+        perms += ["sales_manager", "sales_department"]
     elif department_name == "Purchases":
         perms += ["purchases_department"]
+    elif department_name == "Sales":
+        perms += ["sales_department"]
     return perms
 
 

@@ -105,6 +105,26 @@ class SaleRepository(ISaleRepository, ISaleReader):
         await self._db.flush()
         await self._db.refresh(history)
 
+    async def delete_sale(self, sale_id: int) -> None:
+        status_history_result = await self._db.execute(
+            select(SaleStatusHistory).where(SaleStatusHistory.sale_id == sale_id)
+        )
+        for history_item in status_history_result.scalars().all():
+            await self._db.delete(history_item)
+
+        sale_lines_result = await self._db.execute(
+            select(SaleLine).where(SaleLine.sale_id == sale_id)
+        )
+        for line in sale_lines_result.scalars().all():
+            await self._db.delete(line)
+
+        sale_result = await self._db.execute(
+            select(Sale).where(Sale.sale_id == sale_id)
+        )
+        sale = sale_result.scalar_one()
+        await self._db.delete(sale)
+        await self._db.flush()
+
     async def get_by_id(self, sale_id: int) -> Sale | None:
         result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
         return result.scalar_one_or_none()
@@ -152,6 +172,78 @@ class SaleRepository(ISaleRepository, ISaleReader):
         await self._db.refresh(sale, ["lines"])
         updated_sale = await self.get_by_id(sale_id)
         return updated_sale if updated_sale is not None else sale
+
+    async def get_line_by_id(self, sale_line_id: int) -> SaleLine | None:
+        result = await self._db.execute(
+            select(SaleLine).where(SaleLine.sale_line_id == sale_line_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def add_line(
+        self,
+        sale_id: int,
+        product_id: int,
+        quantity: int,
+        unit_price: Decimal,
+        discount: Decimal,
+        vat_rate: Decimal,
+        line_subtotal: Decimal,
+        line_tax: Decimal,
+    ) -> None:
+        line = SaleLine(
+            sale_id=sale_id,
+            product_id=product_id,
+            quantity=quantity,
+            unit_price=unit_price,
+            discount=discount,
+            vat_rate=vat_rate,
+            line_subtotal=line_subtotal,
+            line_tax=line_tax,
+        )
+        self._db.add(line)
+        await self._db.flush()
+
+    async def update_line(
+        self,
+        sale_line_id: int,
+        quantity: int,
+        discount: Decimal,
+        line_subtotal: Decimal,
+        line_tax: Decimal,
+    ) -> None:
+        result = await self._db.execute(
+            select(SaleLine).where(SaleLine.sale_line_id == sale_line_id)
+        )
+        line = result.scalar_one()
+        line.quantity = quantity
+        line.discount = discount
+        line.line_subtotal = line_subtotal
+        line.line_tax = line_tax
+        await self._db.flush()
+
+    async def delete_line(self, sale_line_id: int) -> None:
+        result = await self._db.execute(
+            select(SaleLine).where(SaleLine.sale_line_id == sale_line_id)
+        )
+        line = result.scalar_one()
+        await self._db.delete(line)
+        await self._db.flush()
+
+    async def update_totals(
+        self,
+        sale_id: int,
+        subtotal: Decimal,
+        taxes: Decimal,
+        total: Decimal,
+    ) -> Sale:
+        result = await self._db.execute(select(Sale).where(Sale.sale_id == sale_id))
+        sale = result.scalar_one()
+        sale.subtotal = subtotal
+        sale.taxes = taxes
+        sale.total = total
+        await self._db.flush()
+        updated = await self.get_by_id(sale_id)
+        return updated  # type: ignore[return-value]
 
     async def get_all_paginated(
         self,
