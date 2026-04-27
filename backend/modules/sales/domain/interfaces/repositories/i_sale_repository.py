@@ -64,8 +64,8 @@ class ISaleRepository(ABC):
 
     @abstractmethod
     async def delete_sale(self, sale_id: int) -> None: ...
-      
-    @abstractmethod  
+
+    @abstractmethod
     async def get_line_by_id(self, sale_line_id: int) -> SaleLine | None: ...
 
     @abstractmethod
