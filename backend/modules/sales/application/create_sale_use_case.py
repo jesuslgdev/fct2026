@@ -1,7 +1,13 @@
+from collections import defaultdict
 from decimal import Decimal
 
+from modules.sales.application._discount import normalize_discount_to_rate
 from modules.sales.domain.entities.sale import Sale
-from modules.sales.domain.exceptions import SaleException, SaleExceptionInfo
+from modules.sales.domain.exceptions import (
+    InsufficientStockForLineError,
+    SaleException,
+    SaleExceptionInfo,
+)
 from modules.sales.domain.interfaces.repositories.i_sale_repository import (
     ISaleRepository,
 )
@@ -59,26 +65,45 @@ class CreateSaleUseCase(ICreateSaleUseCase):
         if not lines:
             raise SaleException(SaleExceptionInfo.EMPTY_SALE_LINES)
 
+        products_by_id: dict[int, object] = {}
+        requested_qty_by_product: dict[int, int] = defaultdict(int)
+
+        for line in lines:
+            product_id = line["product_id"]
+            if product_id not in products_by_id:
+                product = await self._product_reader.get_by_id(product_id)
+                if product is None:
+                    raise SaleException(SaleExceptionInfo.PRODUCT_NOT_FOUND)
+                if not product.is_active:
+                    raise SaleException(SaleExceptionInfo.PRODUCT_NOT_ACTIVE)
+                products_by_id[product_id] = product
+            requested_qty_by_product[product_id] += line["quantity"]
+
+        for product_id, total_qty in requested_qty_by_product.items():
+            available = await self._stock_reader.get_available_stock(
+                warehouse_id, product_id
+            )
+            if available < total_qty:
+                first_index = next(
+                    i for i, ln in enumerate(lines) if ln["product_id"] == product_id
+                )
+                raise InsufficientStockForLineError(first_index)
+
         processed_lines: list[dict] = []
         subtotal = Decimal("0")
 
         for line in lines:
-            product = await self._product_reader.get_by_id(line["product_id"])
-            if product is None:
-                raise SaleException(SaleExceptionInfo.PRODUCT_NOT_FOUND)
-            if not product.is_active:
-                raise SaleException(SaleExceptionInfo.PRODUCT_NOT_ACTIVE)
-            available = await self._stock_reader.get_available_stock(
-                warehouse_id, line["product_id"]
-            )
-            if available < line["quantity"]:
-                raise SaleException(SaleExceptionInfo.INSUFFICIENT_STOCK)
-
+            product = products_by_id[line["product_id"]]
             quantity = line["quantity"]
             unit_price = Decimal(str(product.price))
-            discount = Decimal(str(line.get("discount", "0")))
+            discount_rate = normalize_discount_to_rate(
+                Decimal(str(line.get("discount", "0"))),
+                line.get("discount_type", "percent"),
+                unit_price,
+                quantity,
+            )
             vat_rate = product.vat_rate
-            line_subtotal = quantity * unit_price * (1 - discount)
+            line_subtotal = quantity * unit_price * (1 - discount_rate)
             line_tax = line_subtotal * vat_rate
             subtotal += line_subtotal
 
@@ -87,7 +112,7 @@ class CreateSaleUseCase(ICreateSaleUseCase):
                     "product_id": line["product_id"],
                     "quantity": quantity,
                     "unit_price": unit_price,
-                    "discount": discount,
+                    "discount": discount_rate,
                     "vat_rate": vat_rate,
                     "line_subtotal": line_subtotal,
                     "line_tax": line_tax,
