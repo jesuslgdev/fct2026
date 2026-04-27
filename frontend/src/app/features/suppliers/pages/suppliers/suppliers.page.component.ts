@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -16,13 +16,13 @@ import { InputComponent } from '@shared/ui/input/input.component';
 import { CardComponent } from '@shared/ui/card/card.component';
 import { BadgeComponent } from '@shared/ui/badge/badge.component';
 import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
-import { ProviderFormDialogComponent } from '@features/suppliers/components/provider-form-dialog/provider-form-dialog.component';
+import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
 import { ImportDialogComponent } from '@features/suppliers/components/import-dialog/import-dialog.component';
-import { ProviderStatus } from '@domain/enums/provider-status.enum';
-import { Provider } from '@domain/models/provider.model';
+import { SupplierStatus } from '@domain/enums/supplier-status.enum';
+import { Supplier } from '@domain/models/supplier.model';
 
 // Types for filter selects
-interface StatusOption { label: string; value: ProviderStatus | null; }
+interface StatusOption { label: string; value: SupplierStatus | null; }
 
 @Component({
   selector: 'app-suppliers-page',
@@ -38,7 +38,7 @@ interface StatusOption { label: string; value: ProviderStatus | null; }
     DialogComponent,
     CardComponent,
     BadgeComponent,
-    ProviderFormDialogComponent,
+    SupplierFormDialogComponent,
     ImportDialogComponent,
   ],
   templateUrl: './suppliers.page.component.html',
@@ -49,35 +49,35 @@ export class SuppliersPageComponent implements OnInit {
   readonly importDialog = viewChild(ImportDialogComponent);
 
   // Force CD when suppliers list changes.
-  private readonly providersEffect = effect(() => {
-    this.store.filteredProviders();
+  private readonly suppliersEffect = effect(() => {
+    this.store.filteredSuppliers();
     this.cdr.markForCheck();
   });
 
   // Properties for details dialog
   detailsDialogVisible = false;
-  selectedProviderForDetails: Provider | null = null;
+  selectedSupplierForDetails: Supplier | null = null;
 
   // Filter options (with "all" represented as null)
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos los estados', value: null },
-    { label: 'Activo', value: ProviderStatus.ACTIVE },
-    { label: 'Inactivo', value: ProviderStatus.INACTIVE },
+    { label: 'Activo', value: SupplierStatus.ACTIVE },
+    { label: 'Inactivo', value: SupplierStatus.INACTIVE },
   ];
 
   ngOnInit(): void {
-    this.store.loadProviders();
+    this.store.loadSuppliers();
   }
 
-  trackById(_: number, provider: Provider): number {
-    return parseInt(provider.id);
+  trackById(_: number, supplier: Supplier): number {
+    return parseInt(supplier.id);
   }
 
-  // Open provider details dialog
-  async openDetailsDialog(provider: Provider): Promise<void> {
-    const fullProvider = await this.store.loadProviderById(provider.id);
-    if (fullProvider) {
-      this.selectedProviderForDetails = fullProvider;
+  // Open supplier details dialog
+  async openDetailsDialog(supplier: Supplier): Promise<void> {
+    const fullSupplier = await this.store.loadSupplierById(supplier.id);
+    if (fullSupplier) {
+      this.selectedSupplierForDetails = fullSupplier;
       this.detailsDialogVisible = true;
     }
   }
@@ -85,21 +85,21 @@ export class SuppliersPageComponent implements OnInit {
   // Close details dialog
   closeDetailsDialog(): void {
     this.detailsDialogVisible = false;
-    this.selectedProviderForDetails = null;
+    this.selectedSupplierForDetails = null;
   }
 
   // Status label mapping (enum -> UI text)
-  getStatusLabel(status: Provider['status']): string {
+  getStatusLabel(status: Supplier['status']): string {
     switch (status) {
-      case ProviderStatus.ACTIVE: return 'Activo';
-      case ProviderStatus.INACTIVE: return 'Inactivo';
+      case SupplierStatus.ACTIVE: return 'Activo';
+      case SupplierStatus.INACTIVE: return 'Inactivo';
       default: return status;
     }
   }
 
   // Helper for badge variant by status
-  getStatusBadgeVariant(status: Provider['status']): 'success' | 'danger' {
-    return status === ProviderStatus.ACTIVE ? 'success' : 'danger';
+  getStatusBadgeVariant(status: Supplier['status']): 'success' | 'danger' {
+    return status === SupplierStatus.ACTIVE ? 'success' : 'danger';
   }
 
   // Import actions
@@ -108,7 +108,12 @@ export class SuppliersPageComponent implements OnInit {
   }
 
   onImportCompleted(): void {
-    // Reload providers after import to refresh table and pagination.
-    this.store.loadProviders();
+    // After import, force first page so newly imported suppliers are visible immediately.
+    this.store.loadSuppliers({
+      page: 1,
+      rows: this.store.pageSize(),
+      first: 0,
+    });
   }
 }
+
