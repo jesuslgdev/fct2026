@@ -28,4 +28,12 @@ export const SALES_ROUTES: Routes = [
     title: 'Editar venta',
     canActivate: [salesDepartmentGuard],
   },
+  {
+    path: ':id',
+    loadComponent: () =>
+      import('./pages/sale-detail/sale-detail.page.component').then(
+        (m) => m.SaleDetailPageComponent,
+      ),
+    title: 'Detalle de venta',
+  },
 ];
