@@ -80,6 +80,12 @@ class SupplierRepository(ISupplierRepository, ISupplierReader):
         )
         return result.scalar_one_or_none()
 
+    async def get_by_email(self, email: str) -> Supplier | None:
+        result = await self._db.execute(
+            select(Supplier).where(Supplier.email == email)
+        )
+        return result.scalar_one_or_none()
+
     async def update(
         self,
         supplier_id: int,
