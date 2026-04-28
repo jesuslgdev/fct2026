@@ -19,9 +19,7 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.create_unique_constraint(
-        op.f("uq_suppliers_email"), "suppliers", ["email"]
-    )
+    op.create_unique_constraint(op.f("uq_suppliers_email"), "suppliers", ["email"])
 
 
 def downgrade() -> None:

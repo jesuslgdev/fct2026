@@ -13,7 +13,11 @@ class SupplierExceptionInfo(AppExceptionInfo):
     SUPPLIER_NOT_FOUND = (3101, "Supplier not found", 404)
     SUPPLIER_ALREADY_EXISTS = (3102, "Supplier with this tax ID already exists", 409)
     SUPPLIER_INVALID_TAX_ID = (3103, "Invalid tax ID format", 422)
-    SUPPLIER_EMAIL_ALREADY_EXISTS = (3104, "Supplier with this email already exists", 409)
+    SUPPLIER_EMAIL_ALREADY_EXISTS = (
+        3104,
+        "Supplier with this email already exists",
+        409,
+    )
 
     # Supplier-Products (32xx)
     ASSOCIATION_NOT_FOUND = (3201, "Supplier-product association not found", 404)

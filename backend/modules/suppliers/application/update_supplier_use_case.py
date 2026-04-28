@@ -28,6 +28,8 @@ class UpdateSupplierUseCase(IUpdateSupplierUseCase):
         if email is not None and email != supplier.email:
             existing = await self._repo.get_by_email(email)
             if existing is not None:
-                raise SupplierException(SupplierExceptionInfo.SUPPLIER_EMAIL_ALREADY_EXISTS)
+                raise SupplierException(
+                    SupplierExceptionInfo.SUPPLIER_EMAIL_ALREADY_EXISTS
+                )
 
         return await self._repo.update(supplier_id, name, address_data, phone, email)
