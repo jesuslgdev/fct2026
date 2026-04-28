@@ -91,6 +91,10 @@ export class SalesPageComponent implements OnInit {
     void this.router.navigate(['/sales/new']);
   }
 
+  onViewSale(saleId: number): void {
+    void this.router.navigate(['/sales', saleId]);
+  }
+
   onEditSale(saleId: number): void {
     void this.router.navigate(['/sales', saleId, 'edit']);
   }

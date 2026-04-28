@@ -230,10 +230,32 @@ describe('SalesPageComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
   });
 
+  it('navega al detalle de una venta', () => {
+    component.onViewSale(1);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
+  });
+
   it('navega a la edicion de una venta', () => {
     component.onEditSale(1);
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 1, 'edit']);
+  });
+
+  it('navega al detalle al hacer click en la fila', () => {
+    const row = fixture.debugElement.query(By.css('tbody tr'));
+
+    row.triggerEventHandler('click');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
+  });
+
+  it('renderiza la accion de detalle como boton icon-only', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Ver detalle de venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-eye');
+    expect(actionButton.attributes['variant']).toBe('ghost');
   });
 
   it('renderiza la accion de editar como boton icon-only para ventas pendientes con permisos', () => {
