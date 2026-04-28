@@ -35,20 +35,13 @@ interface MockSaleDetailStore {
   products: WritableSignal<Product[]>;
   loading: WritableSignal<boolean>;
   loadingCatalogs: WritableSignal<boolean>;
-  cancelling: WritableSignal<boolean>;
-  deleting: WritableSignal<boolean>;
   error: WritableSignal<string | null>;
   successMessage: WritableSignal<string | null>;
   lineViews: WritableSignal<SaleDetailLineView[]>;
   subtotal: WritableSignal<number>;
   taxes: WritableSignal<number>;
   total: WritableSignal<number>;
-  canCancel: WritableSignal<boolean>;
-  canDelete: WritableSignal<boolean>;
-  cancellationInfo: WritableSignal<{ changedAt: Date; changedByUserId: number } | null>;
   load: Mock<(saleId: number) => Promise<void>>;
-  cancelSale: Mock<() => Promise<void>>;
-  deleteSale: Mock<() => Promise<void>>;
   getStatusLabel: Mock<(status: SaleStatus) => string>;
 }
 
@@ -60,7 +53,7 @@ const SALE_DETAIL: SaleDetail = {
   clientName: 'Cliente A',
   creatorName: 'Sales Employee',
   status: SaleStatus.PENDING,
-  allowedTransitions: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
+  allowedTransitions: [SaleStatus.APPROVED],
   deliveryAddress: 'Calle Mayor 1',
   saleDate: new Date('2026-04-01T10:00:00.000Z'),
   createdAt: new Date('2026-04-01T10:01:00.000Z'),
@@ -102,20 +95,13 @@ describe('SaleDetailPageComponent', () => {
       products: signal([]),
       loading: signal(false),
       loadingCatalogs: signal(false),
-      cancelling: signal(false),
-      deleting: signal(false),
       error: signal(null),
       successMessage: signal(null),
       lineViews: signal([LINE_VIEW]),
       subtotal: signal(100),
       taxes: signal(21),
       total: signal(121),
-      canCancel: signal(true),
-      canDelete: signal(true),
-      cancellationInfo: signal(null),
       load: vi.fn().mockResolvedValue(undefined),
-      cancelSale: vi.fn().mockResolvedValue(undefined),
-      deleteSale: vi.fn().mockResolvedValue(undefined),
       getStatusLabel: vi.fn((status: SaleStatus) =>
         status === SaleStatus.PENDING ? 'Pendiente' : status,
       ),
@@ -170,13 +156,6 @@ describe('SaleDetailPageComponent', () => {
     expect(buttons.some((button) => button.nativeElement.textContent.includes('Editar'))).toBe(false);
   });
 
-  it('renders cancel and delete actions when the sale allows them', () => {
-    const text = fixture.nativeElement.textContent as string;
-
-    expect(text).toContain('Cancelar venta');
-    expect(text).toContain('Eliminar venta');
-  });
-
   it('renders the status badge', () => {
     const badge = fixture.debugElement.query(By.css('ui-badge'));
 
@@ -188,40 +167,5 @@ describe('SaleDetailPageComponent', () => {
     fixture.componentInstance.onBack();
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales']);
-  });
-
-  it('opens the cancel dialog and delegates the action to the store', () => {
-    fixture.componentInstance.onRequestCancelSale();
-
-    expect(fixture.componentInstance.cancelDialogVisible()).toBe(true);
-
-    fixture.componentInstance.onConfirmCancelSale();
-
-    expect(fixture.componentInstance.cancelDialogVisible()).toBe(false);
-    expect(store.cancelSale).toHaveBeenCalledOnce();
-  });
-
-  it('opens the delete dialog and delegates the action to the store', () => {
-    fixture.componentInstance.onRequestDeleteSale();
-
-    expect(fixture.componentInstance.deleteDialogVisible()).toBe(true);
-
-    fixture.componentInstance.onConfirmDeleteSale();
-
-    expect(fixture.componentInstance.deleteDialogVisible()).toBe(false);
-    expect(store.deleteSale).toHaveBeenCalledOnce();
-  });
-
-  it('renders cancellation metadata when the sale is cancelled', () => {
-    store.cancellationInfo.set({
-      changedAt: new Date('2026-04-01T10:04:00.000Z'),
-      changedByUserId: 7,
-    });
-    fixture.detectChanges();
-
-    const text = fixture.nativeElement.textContent as string;
-
-    expect(text).toContain('Cancelacion');
-    expect(text).toContain('Usuario #7');
   });
 });

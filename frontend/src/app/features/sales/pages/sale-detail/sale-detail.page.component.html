@@ -40,26 +40,7 @@
               [variant]="getStatusBadgeVariant(sale.status)"
               [icon]="getStatusBadgeIcon(sale.status)"
             />
-            @if (store.canCancel()) {
-              <ui-button
-                label="Cancelar venta"
-                icon="pi pi-ban"
-                variant="outline"
-                [loading]="store.cancelling()"
-                [disabled]="store.deleting()"
-                (clicked)="onRequestCancelSale()"
-              />
-            }
-            @if (store.canDelete()) {
-              <ui-button
-                label="Eliminar venta"
-                icon="pi pi-trash"
-                variant="destructive"
-                [loading]="store.deleting()"
-                [disabled]="store.cancelling()"
-                (clicked)="onRequestDeleteSale()"
-              />
-            }
+
           </div>
         </div>
 
@@ -90,55 +71,9 @@
               {{ store.total() | currency: 'EUR':'symbol':'1.2-2' }}
             </p>
           </div>
-
-          @if (store.cancellationInfo(); as cancellationInfo) {
-            <div class="rounded-md border border-surface-200 bg-surface-0 p-4 md:col-span-3">
-              <span class="dialog-field-label">Cancelacion</span>
-              <p class="mt-2 font-medium text-surface-900">
-                {{ cancellationInfo.changedAt | date: 'dd/MM/yyyy HH:mm' }}
-              </p>
-              <p class="mt-1 text-sm text-surface-600">
-                {{ getCancelledByLabel(cancellationInfo.changedByUserId) }}
-              </p>
-            </div>
-          }
         </div>
       </div>
     </ui-card>
-
-    <ui-dialog
-      header="Cancelar venta"
-      variant="warning"
-      size="sm"
-      [(visible)]="cancelDialogVisible"
-      confirmLabel="Confirmar cancelacion"
-      cancelLabel="Volver"
-      [confirmLoading]="store.cancelling()"
-      [confirmDisabled]="store.cancelling() || store.deleting()"
-      [closeOnConfirm]="false"
-      (confirmed)="onConfirmCancelSale()"
-    >
-      <p class="text-sm leading-6 text-surface-700">
-        La venta quedara cancelada y no se podra volver a editar.
-      </p>
-    </ui-dialog>
-
-    <ui-dialog
-      header="Eliminar venta"
-      variant="danger"
-      size="sm"
-      [(visible)]="deleteDialogVisible"
-      confirmLabel="Confirmar eliminacion"
-      cancelLabel="Volver"
-      [confirmLoading]="store.deleting()"
-      [confirmDisabled]="store.deleting() || store.cancelling()"
-      [closeOnConfirm]="false"
-      (confirmed)="onConfirmDeleteSale()"
-    >
-      <p class="text-sm leading-6 text-surface-700">
-        La venta pendiente se eliminara de forma permanente.
-      </p>
-    </ui-dialog>
 
     <p-tabs value="detail">
       <p-tablist>

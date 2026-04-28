@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
@@ -9,7 +9,6 @@ import {
   BadgeVariant,
   ButtonComponent,
   CardComponent,
-  DialogComponent,
   TableComponent,
 } from '@shared/ui';
 
@@ -25,7 +24,6 @@ import {
     BadgeComponent,
     ButtonComponent,
     CardComponent,
-    DialogComponent,
     TableComponent,
     Tabs,
     TabList,
@@ -37,8 +35,6 @@ import {
 })
 export class SaleDetailPageComponent implements OnInit {
   readonly store = inject(SaleDetailStore);
-  readonly cancelDialogVisible = signal(false);
-  readonly deleteDialogVisible = signal(false);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -49,24 +45,6 @@ export class SaleDetailPageComponent implements OnInit {
 
   onBack(): void {
     void this.router.navigate(['/sales']);
-  }
-
-  onRequestCancelSale(): void {
-    this.cancelDialogVisible.set(true);
-  }
-
-  onRequestDeleteSale(): void {
-    this.deleteDialogVisible.set(true);
-  }
-
-  onConfirmCancelSale(): void {
-    this.cancelDialogVisible.set(false);
-    void this.store.cancelSale();
-  }
-
-  onConfirmDeleteSale(): void {
-    this.deleteDialogVisible.set(false);
-    void this.store.deleteSale();
   }
 
   getStatusBadgeVariant(status: SaleStatus): BadgeVariant {
@@ -96,9 +74,5 @@ export class SaleDetailPageComponent implements OnInit {
       default:
         return 'pi pi-check';
     }
-  }
-
-  getCancelledByLabel(userId: number): string {
-    return `Usuario #${userId}`;
   }
 }
