@@ -83,15 +83,15 @@
         <th>Nº Venta</th>
         <th>Cliente</th>
         <th>Estado</th>
-        <th>Direccion de entrega</th>
-        <th>Fecha de creacion</th>
+        <th>Dirección de entrega</th>
+        <th>Fecha de creación</th>
         <th>Total</th>
         <th class="text-right">Acciones</th>
       </tr>
     </ng-template>
 
     <ng-template #body let-sale>
-      <tr class="cursor-pointer" (click)="onViewSale(sale.saleId)">
+      <tr>
         <td>{{ sale.saleNumber }}</td>
         <td>{{ sale.clientName }}</td>
         <td>{{ getStatusLabel(sale.status) }}</td>
@@ -100,20 +100,13 @@
         <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>
         <td class="text-right">
           <div class="table-actions flex items-center justify-end">
-            <ui-button
-              icon="pi pi-eye"
-              ariaLabel="Ver detalle de venta"
-              variant="ghost"
-              size="sm"
-              (clicked)="onViewSale(sale.saleId); $event.stopPropagation()"
-            />
             @if (canEditSale(sale.status)) {
               <ui-button
                 icon="pi pi-pencil"
                 ariaLabel="Editar venta"
                 variant="ghost"
                 size="sm"
-                (clicked)="onEditSale(sale.saleId); $event.stopPropagation()"
+                (clicked)="onEditSale(sale.saleId)"
               />
             }
           </div>
