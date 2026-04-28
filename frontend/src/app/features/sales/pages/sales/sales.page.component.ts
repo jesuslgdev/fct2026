@@ -8,6 +8,7 @@ import { Select } from 'primeng/select';
 import { AuthService } from '@core/services/auth.service';
 import { UserPermission } from '@domain/enums/user-permission.enum';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
+import { BadgeComponent, BadgeVariant } from '@shared/ui';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { TableComponent } from '@shared/ui/table/table.component';
@@ -29,6 +30,7 @@ interface StatusOption {
     FormsModule,
     DatePicker,
     Select,
+    BadgeComponent,
     ButtonComponent,
     DialogComponent,
     TableComponent,
@@ -143,6 +145,35 @@ export class SalesPageComponent implements OnInit {
 
   canEditSale(status: SaleStatus): boolean {
     return status === SaleStatus.PENDING && this.canCreateSale();
+  }
+
+  getStatusBadgeVariant(status: SaleStatus): BadgeVariant {
+    switch (status) {
+      case SaleStatus.PENDING:
+        return 'warning';
+      case SaleStatus.CANCELLED:
+        return 'danger';
+      case SaleStatus.APPROVED:
+      case SaleStatus.IN_PROCESS:
+      case SaleStatus.SHIPPED:
+      case SaleStatus.DELIVERED:
+        return 'success';
+      default:
+        return 'secondary';
+    }
+  }
+
+  getStatusBadgeIcon(status: SaleStatus): string {
+    switch (status) {
+      case SaleStatus.PENDING:
+        return 'pi pi-clock';
+      case SaleStatus.CANCELLED:
+        return 'pi pi-times-circle';
+      case SaleStatus.DELIVERED:
+        return 'pi pi-check-circle';
+      default:
+        return 'pi pi-check';
+    }
   }
 
   getAvailableTransitions(saleId: number): StatusOption[] {

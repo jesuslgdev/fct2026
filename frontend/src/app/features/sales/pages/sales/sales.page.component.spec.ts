@@ -9,6 +9,7 @@ import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client } from '@domain/models/client.model';
 import { Sale } from '@domain/models/sale.model';
 import { SalesStore } from '@features/sales/state/sales.store';
+import { BadgeComponent } from '@shared/ui';
 import { SalesPageComponent } from './sales.page.component';
 
 interface MockSalesStore {
@@ -236,13 +237,13 @@ describe('SalesPageComponent', () => {
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
   });
 
-  it('muestra la acción de nueva venta para administradores', () => {
+  it('muestra la accion de nueva venta para administradores', () => {
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
 
     expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
   });
 
-  it('navega a la página de alta de venta', () => {
+  it('navega a la pagina de alta de venta', () => {
     component.onCreateSale();
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
@@ -379,12 +380,23 @@ describe('SalesPageComponent', () => {
     expect(component.getStatusLabel(SaleStatus.APPROVED)).toBe('Aprobada');
   });
 
+  it('asigna la variante e icono correctos al badge de estado', () => {
+    expect(component.getStatusBadgeVariant(SaleStatus.PENDING)).toBe('warning');
+    expect(component.getStatusBadgeIcon(SaleStatus.PENDING)).toBe('pi pi-clock');
+    expect(component.getStatusBadgeVariant(SaleStatus.CANCELLED)).toBe('danger');
+    expect(component.getStatusBadgeIcon(SaleStatus.DELIVERED)).toBe('pi pi-check-circle');
+  });
+
   it('renders the sales row with the fields required by the listing', () => {
     const cells = fixture.debugElement.queryAll(By.css('tbody tr td'));
+    const badge = fixture.debugElement.query(By.directive(BadgeComponent));
 
     expect(cells[0].nativeElement.textContent.trim()).toBe('VEN-2026-0001');
     expect(cells[1].nativeElement.textContent.trim()).toBe('Cliente A');
-    expect(cells[2].nativeElement.textContent.trim()).toBe('Pendiente');
+    expect(cells[2].nativeElement.textContent.trim()).toContain('Pendiente');
+    expect(badge).toBeTruthy();
+    expect((badge.componentInstance as BadgeComponent).icon()).toBe('pi pi-clock');
+    expect((badge.componentInstance as BadgeComponent).variant()).toBe('warning');
     expect(cells[3].nativeElement.textContent.trim()).toBe('Calle Mayor 1, Madrid');
     expect(cells[5].nativeElement.textContent.trim()).toContain('€');
   });
