@@ -27,7 +27,10 @@ interface MockSalesStore {
   page: WritableSignal<number>;
   pageSize: WritableSignal<number>;
   loading: WritableSignal<boolean>;
+  cancellingSaleId: WritableSignal<number | null>;
+  deletingSaleId: WritableSignal<number | null>;
   error: WritableSignal<string | null>;
+  successMessage: WritableSignal<string | null>;
   clientsLoading: WritableSignal<boolean>;
   clientsError: WritableSignal<string | null>;
   statusFilter: WritableSignal<SaleStatus | null>;
@@ -43,6 +46,12 @@ interface MockSalesStore {
   onDateToFilterChange: Mock<(dateTo: Date | null) => void>;
   clearFilters: Mock<() => void>;
   onPageChange: Mock<(event: { first: number; rows: number }) => void>;
+  canChangeStatus: Mock<(saleId: number) => boolean>;
+  canDeleteSale: Mock<(saleId: number) => boolean>;
+  isChangingStatusSale: Mock<(saleId: number) => boolean>;
+  isDeletingSale: Mock<(saleId: number) => boolean>;
+  changeSaleStatus: Mock<(saleId: number, status: SaleStatus) => Promise<void>>;
+  deleteSale: Mock<(saleId: number) => Promise<void>>;
 }
 
 const CLIENT_A: Client = {
@@ -97,7 +106,10 @@ describe('SalesPageComponent', () => {
       page: signal(1),
       pageSize: signal(20),
       loading: signal(false),
+      cancellingSaleId: signal<number | null>(null),
+      deletingSaleId: signal<number | null>(null),
       error: signal<string | null>(null),
+      successMessage: signal<string | null>(null),
       clientsLoading: signal(false),
       clientsError: signal<string | null>(null),
       statusFilter: signal<SaleStatus | null>(null),
@@ -113,6 +125,12 @@ describe('SalesPageComponent', () => {
       onDateToFilterChange: vi.fn(),
       clearFilters: vi.fn(),
       onPageChange: vi.fn(),
+      canChangeStatus: vi.fn((saleId: number) => saleId === 1),
+      canDeleteSale: vi.fn((saleId: number) => saleId === 1),
+      isChangingStatusSale: vi.fn(() => false),
+      isDeletingSale: vi.fn(() => false),
+      changeSaleStatus: vi.fn().mockResolvedValue(undefined),
+      deleteSale: vi.fn().mockResolvedValue(undefined),
     };
 
     await TestBed.configureTestingModule({
@@ -266,6 +284,20 @@ describe('SalesPageComponent', () => {
     expect(actionButton.attributes['variant']).toBe('ghost');
   });
 
+  it('renderiza la accion de cambio de estado como boton icon-only cuando aplica', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Cambiar estado de venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-sync');
+  });
+
+  it('renderiza la accion de eliminar como boton icon-only cuando aplica', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Eliminar venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-trash');
+  });
+
   it('oculta la accion de editar cuando la venta no esta pendiente', () => {
     store.salesView.set([
       {
@@ -283,6 +315,41 @@ describe('SalesPageComponent', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
 
     expect(actionButton).toBeNull();
+  });
+
+  it('abre el dialogo de cambio de estado y delega en el store', () => {
+    component.onRequestChangeStatus(1);
+
+    expect(component.changeStatusDialogVisible()).toBe(true);
+    expect(component.selectedSaleId()).toBe(1);
+    expect(component.getCurrentSaleStatusLabel()).toBe('Pendiente');
+
+    component.onTransitionSelectionChange(SaleStatus.CANCELLED);
+    expect(component.getSelectedTransitionImpact()).toContain('quedara cancelada');
+
+    component.onConfirmChangeStatus();
+
+    expect(component.changeStatusDialogVisible()).toBe(false);
+    expect(store.changeSaleStatus).toHaveBeenCalledWith(1, SaleStatus.CANCELLED);
+  });
+
+  it('abre el dialogo de eliminacion y delega en el store', () => {
+    component.onRequestDeleteSale(1);
+
+    expect(component.deleteDialogVisible()).toBe(true);
+    expect(component.selectedSaleId()).toBe(1);
+
+    component.onConfirmDeleteSale();
+
+    expect(component.deleteDialogVisible()).toBe(false);
+    expect(store.deleteSale).toHaveBeenCalledWith(1);
+  });
+
+  it('builds the available transitions from the selected sale', () => {
+    expect(component.getAvailableTransitions(1)).toEqual([
+      { label: 'Aprobar', value: SaleStatus.APPROVED },
+      { label: 'Cancelar', value: SaleStatus.CANCELLED },
+    ]);
   });
 
   it('renders the filtered empty message when provided by the store', () => {

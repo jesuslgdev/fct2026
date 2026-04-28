@@ -1,10 +1,18 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
-import { SaleApiError, SaleForbiddenError, SaleUnauthorizedError, SaleValidationError } from '@domain/models/sale-errors';
+import {
+  SaleApiError,
+  SaleForbiddenError,
+  SaleNotDeletableError,
+  SaleUnauthorizedError,
+  SaleValidationError,
+} from '@domain/models/sale-errors';
 import { ListSalesFilters, Sale, SaleSortField } from '@domain/models/sale.model';
 import { Client } from '@domain/models/client.model';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
+import { AdvanceSaleStatusUseCase } from '@domain/usecases/sales/advance-sale-status.usecase';
+import { DeleteSaleUseCase } from '@domain/usecases/sales/delete-sale.usecase';
 import { ListSalesUseCase } from '@domain/usecases/sales/list-sales.usecase';
 
 export interface SaleListItemView {
@@ -12,6 +20,7 @@ export interface SaleListItemView {
   saleNumber: string;
   clientName: string;
   status: SaleStatus;
+  allowedTransitions: SaleStatus[];
   deliveryAddress: string;
   createdAt: Date;
   total: number;
@@ -21,13 +30,18 @@ export interface SaleListItemView {
 export class SalesStore {
   private readonly listSalesUseCase = inject(ListSalesUseCase);
   private readonly getClientsUseCase = inject(GetClientsUseCase);
+  private readonly advanceSaleStatusUseCase = inject(AdvanceSaleStatusUseCase);
+  private readonly deleteSaleUseCase = inject(DeleteSaleUseCase);
 
   readonly sales = signal<Sale[]>([]);
   readonly total = signal(0);
   readonly page = signal(1);
   readonly pageSize = signal(20);
   readonly loading = signal(false);
+  readonly changingStatusSaleId = signal<number | null>(null);
+  readonly deletingSaleId = signal<number | null>(null);
   readonly error = signal<string | null>(null);
+  readonly successMessage = signal<string | null>(null);
 
   readonly statusFilter = signal<SaleStatus | null>(null);
   readonly clientFilter = signal<number | null>(null);
@@ -56,6 +70,7 @@ export class SalesStore {
       saleNumber: sale.saleNumber,
       clientName: sale.clientName ?? '-',
       status: sale.status,
+      allowedTransitions: sale.allowedTransitions,
       deliveryAddress: sale.deliveryAddress,
       createdAt: sale.createdAt,
       total: sale.total,
@@ -91,6 +106,7 @@ export class SalesStore {
   async loadSales(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    this.successMessage.set(null);
 
     try {
       const filters: ListSalesFilters = {
@@ -171,5 +187,102 @@ export class SalesStore {
     this.page.set(Math.floor(event.first / event.rows) + 1);
     this.pageSize.set(event.rows);
     void this.loadSales();
+  }
+
+  canChangeStatus(saleId: number): boolean {
+    const sale = this.findSale(saleId);
+    return (sale?.allowedTransitions.length ?? 0) > 0;
+  }
+
+  canDeleteSale(saleId: number): boolean {
+    const sale = this.findSale(saleId);
+    return sale?.status === SaleStatus.PENDING;
+  }
+
+  isChangingStatusSale(saleId: number): boolean {
+    return this.changingStatusSaleId() === saleId;
+  }
+
+  isDeletingSale(saleId: number): boolean {
+    return this.deletingSaleId() === saleId;
+  }
+
+  async changeSaleStatus(saleId: number, newStatus: SaleStatus): Promise<void> {
+    const sale = this.findSale(saleId);
+    if (!sale || this.isChangingStatusSale(saleId)) {
+      return;
+    }
+
+    this.changingStatusSaleId.set(saleId);
+    this.error.set(null);
+    this.successMessage.set(null);
+
+    try {
+      await firstValueFrom(
+        this.advanceSaleStatusUseCase.execute(saleId, { newStatus }),
+      );
+      this.successMessage.set(this.resolveStatusSuccessMessage(newStatus));
+      await this.loadSalesKeepingFeedback();
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'No se pudo cambiar el estado de la venta.'));
+    } finally {
+      this.changingStatusSaleId.set(null);
+    }
+  }
+
+  async deleteSale(saleId: number): Promise<void> {
+    const sale = this.findSale(saleId);
+    if (!sale || this.isDeletingSale(saleId)) {
+      return;
+    }
+
+    this.deletingSaleId.set(saleId);
+    this.error.set(null);
+    this.successMessage.set(null);
+
+    try {
+      await firstValueFrom(this.deleteSaleUseCase.execute(sale));
+      this.successMessage.set('La venta se ha eliminado correctamente.');
+      await this.loadSalesKeepingFeedback();
+    } catch (err) {
+      this.error.set(this.resolveActionError(err, 'No se pudo eliminar la venta.'));
+    } finally {
+      this.deletingSaleId.set(null);
+    }
+  }
+
+  private findSale(saleId: number): Sale | undefined {
+    return this.sales().find((sale) => sale.saleId === saleId);
+  }
+
+  private async loadSalesKeepingFeedback(): Promise<void> {
+    const previousSuccessMessage = this.successMessage();
+    await this.loadSales();
+    this.successMessage.set(previousSuccessMessage);
+  }
+
+  private resolveActionError(err: unknown, fallback: string): string {
+    if (err instanceof SaleNotDeletableError) {
+      return 'Solo se pueden eliminar ventas pendientes.';
+    }
+
+    return this.resolveErrorMessage(err, fallback);
+  }
+
+  private resolveStatusSuccessMessage(newStatus: SaleStatus): string {
+    switch (newStatus) {
+      case SaleStatus.APPROVED:
+        return 'La venta se ha aprobado correctamente.';
+      case SaleStatus.IN_PROCESS:
+        return 'La venta ha pasado a en proceso.';
+      case SaleStatus.SHIPPED:
+        return 'La venta se ha marcado como enviada.';
+      case SaleStatus.DELIVERED:
+        return 'La venta se ha marcado como entregada.';
+      case SaleStatus.CANCELLED:
+        return 'La venta se ha cancelado correctamente.';
+      default:
+        return 'El estado de la venta se ha actualizado correctamente.';
+    }
   }
 }

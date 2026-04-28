@@ -3,9 +3,16 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { Client, PagedResult } from '@domain/models/client.model';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
-import { SaleApiError, SaleForbiddenError, SaleValidationError } from '@domain/models/sale-errors';
+import {
+  SaleApiError,
+  SaleForbiddenError,
+  SaleNotDeletableError,
+  SaleValidationError,
+} from '@domain/models/sale-errors';
 import { Sale } from '@domain/models/sale.model';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
+import { AdvanceSaleStatusUseCase } from '@domain/usecases/sales/advance-sale-status.usecase';
+import { DeleteSaleUseCase } from '@domain/usecases/sales/delete-sale.usecase';
 import { ListSalesUseCase } from '@domain/usecases/sales/list-sales.usecase';
 import { SalesStore } from '@features/sales/state/sales.store';
 
@@ -77,20 +84,41 @@ class MockGetClientsUseCase {
   );
 }
 
+class MockAdvanceSaleStatusUseCase {
+  execute = vi.fn().mockReturnValue(of({
+    ...SALE_A,
+    status: SaleStatus.CANCELLED,
+    allowedTransitions: [],
+  }));
+}
+
+class MockDeleteSaleUseCase {
+  execute = vi.fn().mockReturnValue(of(void 0));
+}
+
 describe('SalesStore', () => {
   let store: SalesStore;
   let listSalesUseCase: MockListSalesUseCase;
   let getClientsUseCase: MockGetClientsUseCase;
+  let advanceSaleStatusUseCase: MockAdvanceSaleStatusUseCase;
+  let deleteSaleUseCase: MockDeleteSaleUseCase;
 
   beforeEach(() => {
     listSalesUseCase = new MockListSalesUseCase();
     getClientsUseCase = new MockGetClientsUseCase();
+    advanceSaleStatusUseCase = new MockAdvanceSaleStatusUseCase();
+    deleteSaleUseCase = new MockDeleteSaleUseCase();
 
     TestBed.configureTestingModule({
       providers: [
         SalesStore,
         { provide: ListSalesUseCase, useValue: listSalesUseCase as unknown as ListSalesUseCase },
         { provide: GetClientsUseCase, useValue: getClientsUseCase as unknown as GetClientsUseCase },
+        {
+          provide: AdvanceSaleStatusUseCase,
+          useValue: advanceSaleStatusUseCase as unknown as AdvanceSaleStatusUseCase,
+        },
+        { provide: DeleteSaleUseCase, useValue: deleteSaleUseCase as unknown as DeleteSaleUseCase },
       ],
     });
 
@@ -209,6 +237,7 @@ describe('SalesStore', () => {
         saleNumber: 'VEN-2026-0001',
         clientName: 'Cliente A',
         status: SaleStatus.PENDING,
+        allowedTransitions: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
         deliveryAddress: 'Calle Mayor 1, Madrid',
         createdAt: SALE_A.createdAt,
         total: 100,
@@ -218,6 +247,7 @@ describe('SalesStore', () => {
         saleNumber: 'VEN-2026-0002',
         clientName: '-',
         status: SaleStatus.APPROVED,
+        allowedTransitions: [SaleStatus.IN_PROCESS, SaleStatus.CANCELLED],
         deliveryAddress: 'Gran Via 2, Barcelona',
         createdAt: SALE_B.createdAt,
         total: 250,
@@ -329,5 +359,70 @@ describe('SalesStore', () => {
     store.pageSize.set(20);
 
     expect(store.totalPages()).toBe(3);
+  });
+
+  it('computes change-status and delete availability from the loaded sale', () => {
+    store.sales.set([SALE_A, SALE_B]);
+
+    expect(store.canChangeStatus(1)).toBe(true);
+    expect(store.canDeleteSale(1)).toBe(true);
+    expect(store.canChangeStatus(2)).toBe(true);
+    expect(store.canDeleteSale(2)).toBe(false);
+  });
+
+  it('changes sale status and refreshes the listing', async () => {
+    store.sales.set([SALE_A]);
+    const loadSpy = vi.spyOn(store, 'loadSales').mockResolvedValue();
+
+    await store.changeSaleStatus(1, SaleStatus.CANCELLED);
+
+    expect(advanceSaleStatusUseCase.execute).toHaveBeenCalledWith(1, {
+      newStatus: SaleStatus.CANCELLED,
+    });
+    expect(store.successMessage()).toBe('La venta se ha cancelado correctamente.');
+    expect(loadSpy).toHaveBeenCalledOnce();
+  });
+
+  it('maps status-specific success messages', async () => {
+    store.sales.set([SALE_A]);
+    const loadSpy = vi.spyOn(store, 'loadSales').mockResolvedValue();
+
+    await store.changeSaleStatus(1, SaleStatus.APPROVED);
+
+    expect(store.successMessage()).toBe('La venta se ha aprobado correctamente.');
+    expect(loadSpy).toHaveBeenCalledOnce();
+  });
+
+  it('deletes a sale and refreshes the listing', async () => {
+    store.sales.set([SALE_A]);
+    const loadSpy = vi.spyOn(store, 'loadSales').mockResolvedValue();
+
+    await store.deleteSale(1);
+
+    expect(deleteSaleUseCase.execute).toHaveBeenCalledWith(SALE_A);
+    expect(store.successMessage()).toBe('La venta se ha eliminado correctamente.');
+    expect(loadSpy).toHaveBeenCalledOnce();
+  });
+
+  it('maps change-status action errors to a friendly message', async () => {
+    store.sales.set([SALE_A]);
+    advanceSaleStatusUseCase.execute.mockReturnValueOnce(
+      throwError(() => new SaleValidationError({}, 'Invalid sale status transition.')),
+    );
+
+    await store.changeSaleStatus(1, SaleStatus.CANCELLED);
+
+    expect(store.error()).toBe('Invalid sale status transition.');
+  });
+
+  it('maps delete action errors to a friendly message', async () => {
+    store.sales.set([SALE_A]);
+    deleteSaleUseCase.execute.mockReturnValueOnce(
+      throwError(() => new SaleNotDeletableError()),
+    );
+
+    await store.deleteSale(1);
+
+    expect(store.error()).toBe('Solo se pueden eliminar ventas pendientes.');
   });
 });
