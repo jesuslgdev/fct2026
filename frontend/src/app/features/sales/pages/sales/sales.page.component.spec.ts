@@ -383,6 +383,10 @@ describe('SalesPageComponent', () => {
   it('asigna la variante e icono correctos al badge de estado', () => {
     expect(component.getStatusBadgeVariant(SaleStatus.PENDING)).toBe('warning');
     expect(component.getStatusBadgeIcon(SaleStatus.PENDING)).toBe('pi pi-clock');
+    expect(component.getStatusBadgeVariant(SaleStatus.APPROVED)).toBe('info');
+    expect(component.getStatusBadgeVariant(SaleStatus.IN_PROCESS)).toBe('contrast');
+    expect(component.getStatusBadgeVariant(SaleStatus.SHIPPED)).toBe('secondary');
+    expect(component.getStatusBadgeVariant(SaleStatus.DELIVERED)).toBe('success');
     expect(component.getStatusBadgeVariant(SaleStatus.CANCELLED)).toBe('danger');
     expect(component.getStatusBadgeIcon(SaleStatus.DELIVERED)).toBe('pi pi-check-circle');
   });

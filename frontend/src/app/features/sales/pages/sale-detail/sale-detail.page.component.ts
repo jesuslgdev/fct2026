@@ -51,13 +51,16 @@ export class SaleDetailPageComponent implements OnInit {
     switch (status) {
       case SaleStatus.PENDING:
         return 'warning';
-      case SaleStatus.CANCELLED:
-        return 'danger';
       case SaleStatus.APPROVED:
+        return 'info';
       case SaleStatus.IN_PROCESS:
+        return 'contrast';
       case SaleStatus.SHIPPED:
+        return 'secondary';
       case SaleStatus.DELIVERED:
         return 'success';
+      case SaleStatus.CANCELLED:
+        return 'danger';
       default:
         return 'secondary';
     }
