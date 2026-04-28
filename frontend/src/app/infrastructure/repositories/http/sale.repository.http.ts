@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { SaleStatus } from '@domain/enums/sale-status.enum';
 import {
   AddSaleLine,
   AdvanceSaleStatus,
@@ -23,6 +24,7 @@ import {
   SaleInvalidStatusTransitionError,
   SaleLineNotFoundError,
   SaleMinimumOneLineError,
+  SaleNotDeletableError,
   SaleNotFoundError,
   SaleNotPendingError,
   SaleProductNotActiveError,
@@ -53,6 +55,7 @@ const SALE_ERROR_CODES = {
   WAREHOUSE_NOT_FOUND: 8110,
   NOT_PENDING: 8111,
   DELIVERY_ADDRESS_REQUIRED: 8112,
+  NOT_DELETABLE: 8113,
   INVALID_DISCOUNT: 8113,
   SALE_LINE_NOT_FOUND: 8114,
   MINIMUM_ONE_LINE: 8115,
@@ -99,6 +102,23 @@ export class HttpSaleRepository implements SaleRepository {
       this.http
         .put<SaleDetailDTO>(`${BASE_URL}/${saleId}`, SaleMapper.toUpdateDto(data))
         .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
+  }
+
+  cancel(saleId: number): Observable<SaleDetail> {
+    return this.withErrorMapping(() =>
+      this.http
+        .patch<SaleDetailDTO>(
+          `${BASE_URL}/${saleId}/status`,
+          SaleMapper.toAdvanceStatusDto({ newStatus: SaleStatus.CANCELLED })
+        )
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
+  }
+
+  delete(saleId: number): Observable<void> {
+    return this.withErrorMapping(() =>
+      this.http.delete<void>(`${BASE_URL}/${saleId}`).pipe(map(() => undefined))
     );
   }
 
@@ -217,16 +237,27 @@ export class HttpSaleRepository implements SaleRepository {
           message ?? 'Delivery address is required.'
         );
       case SALE_ERROR_CODES.INVALID_DISCOUNT:
-        return new SaleInvalidDiscountError(
-          message ?? 'Discount cannot make the line subtotal negative.'
-        );
+        if (err.status === 400) {
+          return new SaleNotDeletableError(
+            message ?? 'Only pending sales can be deleted.'
+          );
+        }
+
+        if (err.status === 422) {
+          return new SaleInvalidDiscountError(
+            message ?? 'Discount cannot make the line subtotal negative.'
+          );
+        }
+        return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
       case SALE_ERROR_CODES.MINIMUM_ONE_LINE:
         return new SaleMinimumOneLineError(
           message ?? 'A sale must have at least one line.'
         );
       default:
-        return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
+        break;
     }
+
+    return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
   }
 
   private extractErrorCode(err: HttpErrorResponse): number | undefined {

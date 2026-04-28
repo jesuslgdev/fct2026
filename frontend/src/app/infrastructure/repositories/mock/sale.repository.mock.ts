@@ -12,6 +12,7 @@ import {
   SaleInvalidStatusTransitionError,
   SaleLineNotFoundError,
   SaleMinimumOneLineError,
+  SaleNotDeletableError,
   SaleNotFoundError,
   SaleNotPendingError,
   SaleProductNotActiveError,
@@ -285,6 +286,21 @@ export class MockSaleRepository implements SaleRepository {
 
     this.replaceSale(updated);
     return of(this.cloneDetail(updated)).pipe(delay(LATENCY_MS));
+  }
+
+  cancel(saleId: number): Observable<SaleDetail> {
+    return this.advanceStatus(saleId, { newStatus: SaleStatus.CANCELLED });
+  }
+
+  delete(saleId: number): Observable<void> {
+    const sale = this.requireSale(saleId);
+    if (sale.status !== SaleStatus.PENDING) {
+      return throwError(() => new SaleNotDeletableError());
+    }
+
+    this.restoreLineStock(sale.lines);
+    this.sales = this.sales.filter((item) => item.saleId !== saleId);
+    return of(void 0).pipe(delay(LATENCY_MS));
   }
 
   addLine(saleId: number, data: AddSaleLine): Observable<SaleDetail> {

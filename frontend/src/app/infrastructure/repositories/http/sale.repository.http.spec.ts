@@ -19,6 +19,7 @@ import {
   SaleInvalidStatusTransitionError,
   SaleLineNotFoundError,
   SaleMinimumOneLineError,
+  SaleNotDeletableError,
   SaleNotFoundError,
   SaleNotPendingError,
   SaleProductNotActiveError,
@@ -418,6 +419,46 @@ describe('HttpSaleRepository', () => {
       req.flush(SALE_DETAIL_DTO);
 
       await expect(promise).resolves.toMatchObject({ saleId: 1 });
+    });
+  });
+
+  describe('cancel()', () => {
+    it('should PATCH cancelled status and map the response on 200', async () => {
+      const promise = firstValueFrom(repo.cancel(1));
+      const req = controller.expectOne(`${BASE_URL}/1/status`);
+
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ new_status: SaleStatus.CANCELLED });
+      req.flush({
+        ...SALE_DETAIL_DTO,
+        status: 'Cancelled',
+        allowed_transitions: [],
+      });
+
+      await expect(promise).resolves.toMatchObject({ status: SaleStatus.CANCELLED });
+    });
+  });
+
+  describe('delete()', () => {
+    it('should DELETE the sale and complete on 204', async () => {
+      const promise = firstValueFrom(repo.delete(1));
+      const req = controller.expectOne(`${BASE_URL}/1`);
+
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+
+      await expect(promise).resolves.toBeUndefined();
+    });
+
+    it('should map not-deletable business errors', async () => {
+      const promise = firstValueFrom(repo.delete(1));
+
+      controller.expectOne(`${BASE_URL}/1`).flush(
+        { error_code: 8113 },
+        { status: 400, statusText: 'Bad Request' },
+      );
+
+      await expect(promise).rejects.toBeInstanceOf(SaleNotDeletableError);
     });
   });
 });
