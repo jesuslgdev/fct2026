@@ -33,6 +33,10 @@ class CreateSupplierUseCase(ICreateSupplierUseCase):
         if existing is not None:
             raise SupplierException(SupplierExceptionInfo.SUPPLIER_ALREADY_EXISTS)
 
+        existing_email = await self._repo.get_by_email(email)
+        if existing_email is not None:
+            raise SupplierException(SupplierExceptionInfo.SUPPLIER_EMAIL_ALREADY_EXISTS)
+
         return await self._repo.create(
             name=name,
             tax_id=normalized_tax_id,
