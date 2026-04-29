@@ -127,18 +127,18 @@ describe('SalesStore', () => {
   it('loads sales with combinable filters', async () => {
     const dateFrom = new Date('2026-04-01T00:00:00.000Z');
     const dateTo = new Date('2026-04-30T23:59:59.000Z');
-    listSalesUseCase.execute.mockReturnValueOnce(
+    listSalesUseCase.execute.mockReturnValue(
       of({ data: [SALE_A], total: 1, page: 1, pageSize: 20 }),
     );
 
-    store.statusFilter.set(SaleStatus.APPROVED);
-    store.clientFilter.set(7);
-    store.dateFromFilter.set(dateFrom);
-    store.dateToFilter.set(dateTo);
+    await store.onStatusFilterChange(SaleStatus.APPROVED);
+    await store.onClientFilterChange(7);
+    await store.onDateFromFilterChange(dateFrom);
+    await store.onDateToFilterChange(dateTo);
 
     await store.loadSales();
 
-    expect(listSalesUseCase.execute).toHaveBeenCalledWith({
+    expect(listSalesUseCase.execute).toHaveBeenLastCalledWith({
       page: 1,
       pageSize: 20,
       sortField: 'created_at',
@@ -179,13 +179,11 @@ describe('SalesStore', () => {
   });
 
   it('exposes the filtered empty message when there are no results', async () => {
-    listSalesUseCase.execute.mockReturnValueOnce(
+    listSalesUseCase.execute.mockReturnValue(
       of({ data: [], total: 0, page: 1, pageSize: 20 }),
     );
 
-    store.statusFilter.set(SaleStatus.PENDING);
-
-    await store.loadSales();
+    await store.onStatusFilterChange(SaleStatus.PENDING);
 
     expect(store.emptyMessage()).toBe('No se encontraron ventas con los filtros aplicados');
   });
@@ -201,28 +199,32 @@ describe('SalesStore', () => {
   });
 
   it('maps sales view with the fields required by the listing', () => {
-    store.sales.set([SALE_A, SALE_B]);
+    listSalesUseCase.execute.mockReturnValueOnce(
+      of({ data: [SALE_A, SALE_B], total: 2, page: 1, pageSize: 20 }),
+    );
 
-    expect(store.salesView()).toEqual([
-      {
-        saleId: 1,
-        saleNumber: 'VEN-2026-0001',
-        clientName: 'Cliente A',
-        status: SaleStatus.PENDING,
-        deliveryAddress: 'Calle Mayor 1, Madrid',
-        createdAt: SALE_A.createdAt,
-        total: 100,
-      },
-      {
-        saleId: 2,
-        saleNumber: 'VEN-2026-0002',
-        clientName: '-',
-        status: SaleStatus.APPROVED,
-        deliveryAddress: 'Gran Via 2, Barcelona',
-        createdAt: SALE_B.createdAt,
-        total: 250,
-      },
-    ]);
+    return store.loadSales().then(() => {
+      expect(store.salesView()).toEqual([
+        {
+          saleId: 1,
+          saleNumber: 'VEN-2026-0001',
+          clientName: 'Cliente A',
+          status: SaleStatus.PENDING,
+          deliveryAddress: 'Calle Mayor 1, Madrid',
+          createdAt: SALE_A.createdAt,
+          total: 100,
+        },
+        {
+          saleId: 2,
+          saleNumber: 'VEN-2026-0002',
+          clientName: '-',
+          status: SaleStatus.APPROVED,
+          deliveryAddress: 'Gran Via 2, Barcelona',
+          createdAt: SALE_B.createdAt,
+          total: 250,
+        },
+      ]);
+    });
   });
 
   it('loads clients for the client filter', async () => {
@@ -241,6 +243,28 @@ describe('SalesStore', () => {
     expect(store.clientsError()).toBeNull();
   });
 
+  it('loads all client pages for the client filter', async () => {
+    getClientsUseCase.execute
+      .mockReturnValueOnce(
+        of({ data: [CLIENT_A], total: 2, page: 1, pageSize: 100 }),
+      )
+      .mockReturnValueOnce(
+        of({ data: [CLIENT_B], total: 2, page: 2, pageSize: 100 }),
+      );
+
+    await store.loadClientsForFilter();
+
+    expect(getClientsUseCase.execute).toHaveBeenNthCalledWith(1, {
+      page: 1,
+      pageSize: 100,
+    });
+    expect(getClientsUseCase.execute).toHaveBeenNthCalledWith(2, {
+      page: 2,
+      pageSize: 100,
+    });
+    expect(store.clients()).toEqual([CLIENT_A, CLIENT_B]);
+  });
+
   it('sets error when loading clients for filter fails', async () => {
     getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new Error('boom')));
 
@@ -252,7 +276,8 @@ describe('SalesStore', () => {
 
   it('status filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
-    store.page.set(5);
+    store.onPageChange({ first: 80, rows: 20 });
+    spy.mockClear();
 
     store.onStatusFilterChange(SaleStatus.APPROVED);
 
@@ -263,7 +288,8 @@ describe('SalesStore', () => {
 
   it('client filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
-    store.page.set(4);
+    store.onPageChange({ first: 60, rows: 20 });
+    spy.mockClear();
 
     store.onClientFilterChange(2);
 
@@ -275,7 +301,8 @@ describe('SalesStore', () => {
   it('date from filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
     const dateFrom = new Date('2026-04-01T00:00:00.000Z');
-    store.page.set(3);
+    store.onPageChange({ first: 40, rows: 20 });
+    spy.mockClear();
 
     store.onDateFromFilterChange(dateFrom);
 
@@ -287,7 +314,8 @@ describe('SalesStore', () => {
   it('date to filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
     const dateTo = new Date('2026-04-30T23:59:59.000Z');
-    store.page.set(3);
+    store.onPageChange({ first: 40, rows: 20 });
+    spy.mockClear();
 
     store.onDateToFilterChange(dateTo);
 
@@ -298,11 +326,12 @@ describe('SalesStore', () => {
 
   it('clear filters resets all filters and reloads first page', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
-    store.page.set(3);
-    store.statusFilter.set(SaleStatus.PENDING);
-    store.clientFilter.set(2);
-    store.dateFromFilter.set(new Date('2026-04-01T00:00:00.000Z'));
-    store.dateToFilter.set(new Date('2026-04-30T23:59:59.000Z'));
+    store.onPageChange({ first: 40, rows: 20 });
+    store.onStatusFilterChange(SaleStatus.PENDING);
+    store.onClientFilterChange(2);
+    store.onDateFromFilterChange(new Date('2026-04-01T00:00:00.000Z'));
+    store.onDateToFilterChange(new Date('2026-04-30T23:59:59.000Z'));
+    spy.mockClear();
 
     store.clearFilters();
 
@@ -325,9 +354,12 @@ describe('SalesStore', () => {
   });
 
   it('calculates total pages from total and page size', () => {
-    store.total.set(45);
-    store.pageSize.set(20);
+    listSalesUseCase.execute.mockReturnValueOnce(
+      of({ data: [SALE_A], total: 45, page: 1, pageSize: 20 }),
+    );
 
-    expect(store.totalPages()).toBe(3);
+    return store.loadSales().then(() => {
+      expect(store.totalPages()).toBe(3);
+    });
   });
 });
