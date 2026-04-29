@@ -5,6 +5,7 @@
   OnInit,
   effect,
   inject,
+  signal,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -45,18 +46,18 @@ interface StatusOption { label: string; value: SupplierStatus | null; }
 })
 export class SuppliersPageComponent implements OnInit {
   readonly store = inject(SuppliersStore);
-  private readonly cdr = inject(ChangeDetectorRef);
   readonly importDialog = viewChild(ImportDialogComponent);
 
-  // Force CD when suppliers list changes.
+  // Keep explicit CD trigger for table updates in OnPush mode.
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly suppliersEffect = effect(() => {
     this.store.filteredSuppliers();
     this.cdr.markForCheck();
   });
 
   // Properties for details dialog
-  detailsDialogVisible = false;
-  selectedSupplierForDetails: Supplier | null = null;
+  readonly detailsDialogVisible = signal(false);
+  readonly selectedSupplierForDetails = signal<Supplier | null>(null);
 
   // Filter options (with "all" represented as null)
   readonly statusOptions: StatusOption[] = [
@@ -77,15 +78,15 @@ export class SuppliersPageComponent implements OnInit {
   async openDetailsDialog(supplier: Supplier): Promise<void> {
     const fullSupplier = await this.store.loadSupplierById(supplier.id);
     if (fullSupplier) {
-      this.selectedSupplierForDetails = fullSupplier;
-      this.detailsDialogVisible = true;
+      this.selectedSupplierForDetails.set(fullSupplier);
+      this.detailsDialogVisible.set(true);
     }
   }
 
   // Close details dialog
   closeDetailsDialog(): void {
-    this.detailsDialogVisible = false;
-    this.selectedSupplierForDetails = null;
+    this.detailsDialogVisible.set(false);
+    this.selectedSupplierForDetails.set(null);
   }
 
   // Status label mapping (enum -> UI text)
