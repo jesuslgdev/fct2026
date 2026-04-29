@@ -215,25 +215,25 @@ describe('SalesPageComponent', () => {
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
   });
 
-  it('muestra la acción de nueva venta para administradores', () => {
+  it('shows the new sale action for administrators', () => {
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
 
     expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
   });
 
-  it('navega a la página de alta de venta', () => {
+  it('navigates to the sale creation page', () => {
     component.onCreateSale();
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
   });
 
-  it('navega a la edicion de una venta', () => {
+  it('navigates to the sale edit page', () => {
     component.onEditSale(1);
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 1, 'edit']);
   });
 
-  it('renderiza la accion de editar como boton icon-only para ventas pendientes con permisos', () => {
+  it('renders the edit action as an icon-only button for pending sales with permissions', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
 
     expect(actionButton).toBeTruthy();
@@ -241,7 +241,7 @@ describe('SalesPageComponent', () => {
     expect(actionButton.attributes['variant']).toBe('ghost');
   });
 
-  it('oculta la accion de editar cuando la venta no esta pendiente', () => {
+  it('hides the edit action when the sale is not pending', () => {
     store.salesView.set([
       {
         saleId: 1,
@@ -282,7 +282,7 @@ describe('SalesPageComponent', () => {
     expect(emptyState.nativeElement.textContent).toContain('No hay ventas registradas.');
   });
 
-  it('traduce el estado para la interfaz', () => {
+  it('translates the status for the UI', () => {
     expect(component.getStatusLabel(SaleStatus.PENDING)).toBe('Pendiente');
     expect(component.getStatusLabel(SaleStatus.APPROVED)).toBe('Aprobada');
   });
