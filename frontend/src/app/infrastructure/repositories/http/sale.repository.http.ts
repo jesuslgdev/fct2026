@@ -55,8 +55,7 @@ const SALE_ERROR_CODES = {
   WAREHOUSE_NOT_FOUND: 8110,
   NOT_PENDING: 8111,
   DELIVERY_ADDRESS_REQUIRED: 8112,
-  NOT_DELETABLE: 8113,
-  INVALID_DISCOUNT: 8113,
+  AMBIGUOUS_NOT_DELETABLE_OR_INVALID_DISCOUNT: 8113,
   SALE_LINE_NOT_FOUND: 8114,
   MINIMUM_ONE_LINE: 8115,
 } as const;
@@ -207,7 +206,9 @@ export class HttpSaleRepository implements SaleRepository {
     err: HttpErrorResponse,
     message: string | undefined
   ): Error {
-    switch (errorCode) {
+    const businessErrorKey = this.buildBusinessErrorKey(err.status, errorCode);
+
+    switch (businessErrorKey) {
       case SALE_ERROR_CODES.CLIENT_NOT_ACTIVE:
         return new SaleClientNotActiveError(
           message ?? 'Client is not active and cannot receive sales.'
@@ -236,19 +237,14 @@ export class HttpSaleRepository implements SaleRepository {
         return new SaleDeliveryAddressRequiredError(
           message ?? 'Delivery address is required.'
         );
-      case SALE_ERROR_CODES.INVALID_DISCOUNT:
-        if (err.status === 400) {
-          return new SaleNotDeletableError(
-            message ?? 'Only pending sales can be deleted.'
-          );
-        }
-
-        if (err.status === 422) {
-          return new SaleInvalidDiscountError(
-            message ?? 'Discount cannot make the line subtotal negative.'
-          );
-        }
-        return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
+      case '400:8113':
+        return new SaleNotDeletableError(
+          message ?? 'Only pending sales can be deleted.'
+        );
+      case '422:8113':
+        return new SaleInvalidDiscountError(
+          message ?? 'Discount cannot make the line subtotal negative.'
+        );
       case SALE_ERROR_CODES.MINIMUM_ONE_LINE:
         return new SaleMinimumOneLineError(
           message ?? 'A sale must have at least one line.'
@@ -258,6 +254,19 @@ export class HttpSaleRepository implements SaleRepository {
     }
 
     return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
+  }
+
+  private buildBusinessErrorKey(
+    status: number,
+    errorCode: number | undefined
+  ): number | string | undefined {
+    if (
+      errorCode === SALE_ERROR_CODES.AMBIGUOUS_NOT_DELETABLE_OR_INVALID_DISCOUNT
+    ) {
+      return `${status}:${errorCode}`;
+    }
+
+    return errorCode;
   }
 
   private extractErrorCode(err: HttpErrorResponse): number | undefined {
