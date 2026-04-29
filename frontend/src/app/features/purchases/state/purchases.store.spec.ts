@@ -333,8 +333,15 @@ describe('PurchasesStore', () => {
   });
 
   it('deletes a purchase from list', () => {
-    store.purchases.set([PURCHASE_SUMMARY]);
-    store.total.set(1);
+    getPurchasesUseCase.execute.mockReturnValueOnce(
+      of({
+        data: [PURCHASE_SUMMARY],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      }),
+    );
+    store.loadPurchases();
     deletePurchaseUseCase.execute.mockReturnValueOnce(of(undefined));
 
     store.requestDeletePurchase(PURCHASE_SUMMARY);
@@ -349,7 +356,15 @@ describe('PurchasesStore', () => {
   it('cancels a purchase and updates its status', () => {
     const cancelled = { ...PURCHASE_DETAIL, status: 'Cancelled' as PurchaseStatus };
 
-    store.purchases.set([PURCHASE_SUMMARY]);
+    getPurchasesUseCase.execute.mockReturnValueOnce(
+      of({
+        data: [PURCHASE_SUMMARY],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      }),
+    );
+    store.loadPurchases();
     cancelPurchaseUseCase.execute.mockReturnValueOnce(of(cancelled));
 
     store.requestCancelPurchase(PURCHASE_SUMMARY);
@@ -367,7 +382,15 @@ describe('PurchasesStore', () => {
   it('changes purchase status', () => {
     const approved = { ...PURCHASE_DETAIL, status: 'Approved' as PurchaseStatus };
 
-    store.purchases.set([PURCHASE_SUMMARY]);
+    getPurchasesUseCase.execute.mockReturnValueOnce(
+      of({
+        data: [PURCHASE_SUMMARY],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      }),
+    );
+    store.loadPurchases();
     changePurchaseStatusUseCase.execute.mockReturnValueOnce(of(approved));
 
     store.requestStatusChange(PURCHASE_SUMMARY, 'Approved');
