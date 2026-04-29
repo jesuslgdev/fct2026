@@ -288,7 +288,6 @@ describe('SaleCreateStore', () => {
     expect(store.total()).toBeCloseTo(totalAntesDeEditar);
     expect(store.getLineDraft(lineId)).toBeUndefined();
   });
-
   it('marks the line as invalid when quantity exceeds available stock', async () => {
     await store.initialize();
 
@@ -354,7 +353,6 @@ describe('SaleCreateStore', () => {
 
     expect(store.canSubmit()).toBe(false);
   });
-
   it('maps the insufficient stock error to a Spanish message', async () => {
     await store.initialize();
     await store.onClientChange(1);
