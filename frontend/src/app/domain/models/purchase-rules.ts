@@ -17,6 +17,7 @@ import {
   PurchaseTotals,
   UpdatePurchasePayload,
 } from '@domain/models/purchase.model';
+import { UserRole } from '@domain/enums/user-role.enum';
 import {
   PurchaseBusinessRuleError,
   PurchaseForbiddenError,
@@ -179,7 +180,7 @@ export function shouldResetLinesWhenSupplierChanges(
 }
 
 export function canManagePurchases(context: PurchasePermissionContext): boolean {
-  if (context.role === 'Administrator') {
+  if (context.role === UserRole.Administrator) {
     return true;
   }
 
@@ -188,7 +189,7 @@ export function canManagePurchases(context: PurchasePermissionContext): boolean 
   }
 
   const isPurchasesDepartment = context.departmentId === context.purchasesDepartmentId;
-  const isAllowedRole = context.role === 'Employee' || context.role === 'Manager';
+  const isAllowedRole = context.role === UserRole.Employee || context.role === UserRole.Manager;
 
   return isPurchasesDepartment && isAllowedRole;
 }
