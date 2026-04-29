@@ -854,8 +854,7 @@ export class SaleCreateStore {
         lineId: this.lineSequence++,
         productId: line.productId,
         quantity: line.quantity,
-        discount: line.discount * 100,
-        discountType: 'percent',
+        ...this.mapSaleLineDiscountForEditing(line),
         availableStock: null,
         stockLoading: false,
         stockError: null,
@@ -881,6 +880,24 @@ export class SaleCreateStore {
     }
 
     return String(value);
+  }
+
+  private mapSaleLineDiscountForEditing(
+    line: SaleDetail['lines'][number],
+  ): Pick<SaleCreateLineDraft, 'discount' | 'discountType'> {
+    if (line.discountType === 'percent') {
+      return {
+        discount: line.discount * 100,
+        discountType: 'percent',
+      };
+    }
+
+    const grossAmount = line.unitPrice * line.quantity;
+
+    return {
+      discount: grossAmount * line.discount,
+      discountType: 'amount',
+    };
   }
 
   private formatClientDeliveryAddress(client: ClientDetail): string {
