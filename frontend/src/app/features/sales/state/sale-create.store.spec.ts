@@ -441,6 +441,48 @@ describe('SaleCreateStore', () => {
     expect(store.lines()[0]).toMatchObject({
       productId: 100,
       quantity: 1,
+      discount: 0.5,
+      discountType: 'amount',
+    });
+  });
+
+  it('mantiene el descuento efectivo al reenviar una venta editada sin discount type en detalle', async () => {
+    await store.initializeForEdit(77);
+
+    await store.submit();
+
+    expect(updateSaleUseCase.execute).toHaveBeenCalledWith(77, {
+      clientId: 1,
+      deliveryAddress: 'Direccion editada',
+      lines: [
+        {
+          productId: 100,
+          quantity: 1,
+          discount: 0.5,
+          discountType: 'amount',
+        },
+      ],
+    });
+  });
+
+  it('rehidrata descuentos porcentuales cuando el detalle informa su tipo', async () => {
+    getSaleUseCase.execute.mockReturnValueOnce(
+      of({
+        ...SALE_DETAIL,
+        lines: [
+          {
+            ...SALE_DETAIL.lines[0],
+            discountType: 'percent',
+          },
+        ],
+      }),
+    );
+
+    await store.initializeForEdit(77);
+
+    expect(store.lines()[0]).toMatchObject({
+      productId: 100,
+      quantity: 1,
       discount: 5,
       discountType: 'percent',
     });

@@ -165,6 +165,9 @@ export class SaleMapper {
       quantity: dto.quantity,
       unitPrice: Number(dto.unit_price),
       discount: Number(dto.discount),
+      ...(dto.discount_type !== undefined
+        ? { discountType: dto.discount_type }
+        : {}),
       lineSubtotal: Number(dto.line_subtotal),
       vatRate: Number(dto.vat_rate),
       lineTax: Number(dto.line_tax),
