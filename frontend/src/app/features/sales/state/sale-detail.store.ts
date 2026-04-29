@@ -34,12 +34,19 @@ export class SaleDetailStore {
   private readonly getSaleUseCase = inject(GetSaleUseCase);
   private readonly getProductsUseCase = inject(GetProductsUseCase);
 
-  readonly sale = signal<SaleDetail | null>(null);
-  readonly products = signal<Product[]>([]);
-  readonly loading = signal(false);
-  readonly loadingCatalogs = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
+  private readonly saleState = signal<SaleDetail | null>(null);
+  private readonly productsState = signal<Product[]>([]);
+  private readonly loadingState = signal(false);
+  private readonly loadingCatalogsState = signal(false);
+  private readonly errorState = signal<string | null>(null);
+  private readonly successMessageState = signal<string | null>(null);
+
+  readonly sale = this.saleState.asReadonly();
+  readonly products = this.productsState.asReadonly();
+  readonly loading = this.loadingState.asReadonly();
+  readonly loadingCatalogs = this.loadingCatalogsState.asReadonly();
+  readonly error = this.errorState.asReadonly();
+  readonly successMessage = this.successMessageState.asReadonly();
 
   readonly lineViews = computed<SaleDetailLineView[]>(() => {
     const sale = this.sale();
@@ -74,18 +81,18 @@ export class SaleDetailStore {
   readonly total = computed(() => this.sale()?.total ?? 0);
 
   async load(saleId: number): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
-    this.successMessage.set(null);
+    this.loadingState.set(true);
+    this.errorState.set(null);
+    this.successMessageState.set(null);
 
     try {
       const sale = await firstValueFrom(this.getSaleUseCase.execute(saleId));
-      this.sale.set(sale);
+      this.saleState.set(sale);
       await this.loadProducts();
     } catch (err) {
-      this.error.set(this.resolveLoadError(err));
+      this.errorState.set(this.resolveLoadError(err));
     } finally {
-      this.loading.set(false);
+      this.loadingState.set(false);
     }
   }
 
@@ -109,14 +116,14 @@ export class SaleDetailStore {
   }
 
   private async loadProducts(): Promise<void> {
-    this.loadingCatalogs.set(true);
+    this.loadingCatalogsState.set(true);
 
     try {
-      this.products.set(await this.loadAllProducts());
+      this.productsState.set(await this.loadAllProducts());
     } catch {
-      this.error.set('No se pudieron cargar los productos de la venta.');
+      this.errorState.set('No se pudieron cargar los productos de la venta.');
     } finally {
-      this.loadingCatalogs.set(false);
+      this.loadingCatalogsState.set(false);
     }
   }
 
