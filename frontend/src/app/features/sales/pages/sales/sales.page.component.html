@@ -86,7 +86,7 @@
       <tr>
         <td>{{ sale.saleNumber }}</td>
         <td>{{ sale.clientName }}</td>
-        <td>{{ sale.status }}</td>
+        <td>{{ getStatusLabel(sale.status) }}</td>
         <td>{{ sale.deliveryAddress }}</td>
         <td>{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
         <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>

@@ -220,7 +220,7 @@ describe('SalesPageComponent', () => {
 
     expect(cells[0].nativeElement.textContent.trim()).toBe('VEN-2026-0001');
     expect(cells[1].nativeElement.textContent.trim()).toBe('Cliente A');
-    expect(cells[2].nativeElement.textContent.trim()).toBe('Pending');
+    expect(cells[2].nativeElement.textContent.trim()).toBe('Pendiente');
     expect(cells[3].nativeElement.textContent.trim()).toBe('Calle Mayor 1, Madrid');
     expect(cells[5].nativeElement.textContent.trim()).toContain('€');
   });

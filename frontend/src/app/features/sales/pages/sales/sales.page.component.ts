@@ -74,4 +74,23 @@ export class SalesPageComponent implements OnInit {
       rows: event.rows ?? this.store.pageSize(),
     });
   }
+
+  getStatusLabel(status: SaleStatus): string {
+    switch (status) {
+      case SaleStatus.PENDING:
+        return 'Pendiente';
+      case SaleStatus.APPROVED:
+        return 'Aprobada';
+      case SaleStatus.IN_PROCESS:
+        return 'En proceso';
+      case SaleStatus.SHIPPED:
+        return 'Enviada';
+      case SaleStatus.DELIVERED:
+        return 'Entregada';
+      case SaleStatus.CANCELLED:
+        return 'Cancelada';
+      default:
+        return status;
+    }
+  }
 }
