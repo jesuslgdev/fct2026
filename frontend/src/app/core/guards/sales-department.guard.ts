@@ -1,16 +1,10 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { SALES_ACCESS_PERMISSIONS } from '@core/permissions/sales-access.policy';
 import { AuthService } from '@core/services/auth.service';
-import { UserPermission } from '@domain/enums/user-permission.enum';
 
 export const salesDepartmentGuard: CanActivateFn = () => {
-  if (
-    inject(AuthService).hasPermission([
-      UserPermission.Admin,
-      UserPermission.SalesManager,
-      UserPermission.SalesDepartment,
-    ])
-  ) {
+  if (inject(AuthService).hasPermission(SALES_ACCESS_PERMISSIONS)) {
     return true;
   }
 

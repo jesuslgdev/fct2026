@@ -216,7 +216,7 @@ export class SaleCreateStore {
   }
 
   startLineEdit(line: SaleCreateLineDraft): void {
-    this.lineDrafts.update((drafts) => ({
+    this.lineDraftsState.update((drafts) => ({
       ...drafts,
       [line.lineId]: {
         productId: line.productId,
@@ -237,7 +237,7 @@ export class SaleCreateStore {
   }
 
   clearAllLineDrafts(): void {
-    this.lineDrafts.set({});
+    this.lineDraftsState.set({});
   }
 
   async onClientChange(clientId: number | null): Promise<void> {
@@ -777,7 +777,7 @@ export class SaleCreateStore {
   }
 
   private updateLineDraft(lineId: number, changes: Partial<SaleCreateLineEditDraft>): void {
-    this.lineDrafts.update((drafts) => {
+    this.lineDraftsState.update((drafts) => {
       const currentDraft = drafts[lineId];
       if (!currentDraft) {
         return drafts;
@@ -794,7 +794,7 @@ export class SaleCreateStore {
   }
 
   private clearLineDraft(lineId: number): void {
-    this.lineDrafts.update((drafts) => {
+    this.lineDraftsState.update((drafts) => {
       const nextDrafts = { ...drafts };
       delete nextDrafts[lineId];
       return nextDrafts;
