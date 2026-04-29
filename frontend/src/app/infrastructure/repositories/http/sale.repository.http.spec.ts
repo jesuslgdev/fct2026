@@ -200,7 +200,7 @@ describe('HttpSaleRepository', () => {
       });
     });
 
-    it('should map 400 and 422 business-rule errors by backend error code', async () => {
+    it('should map 400 and 422 business-rule errors by backend error code and status', async () => {
       const cases = [
         { payload: { error_code: 8103 }, type: SaleClientNotActiveError },
         { payload: { error_code: 8105 }, type: SaleProductNotActiveError },
@@ -210,7 +210,7 @@ describe('HttpSaleRepository', () => {
         { payload: { error_code: 8109 }, type: SaleTerminalStateError },
         { payload: { error_code: 8111 }, type: SaleNotPendingError, status: 400 },
         { payload: { error_code: 8112 }, type: SaleDeliveryAddressRequiredError },
-        { payload: { error_code: 8113 }, type: SaleInvalidDiscountError },
+        { payload: { error_code: 8113 }, type: SaleInvalidDiscountError, status: 422 },
         { payload: { error_code: 8115 }, type: SaleMinimumOneLineError },
       ];
 
@@ -225,6 +225,19 @@ describe('HttpSaleRepository', () => {
         });
         await expect(promise).rejects.toBeInstanceOf(testCase.type);
       }
+    });
+
+    it('should map 400 status with error code 8113 to not deletable', async () => {
+      const promise = firstValueFrom(
+        repo.create({ clientId: 1, warehouseId: 1, lines: [] }),
+      );
+
+      controller.expectOne(BASE_URL).flush(
+        { error_code: 8113 },
+        { status: 400, statusText: 'Bad Request' },
+      );
+
+      await expect(promise).rejects.toBeInstanceOf(SaleNotDeletableError);
     });
 
     it('should map unknown 422 payloads to SaleValidationError', async () => {

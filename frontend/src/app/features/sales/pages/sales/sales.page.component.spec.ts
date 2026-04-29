@@ -141,12 +141,9 @@ describe('SalesPageComponent', () => {
           provide: AuthService,
           useValue: {
             isAdmin: signal(true),
-            hasPermission: vi.fn((permission: UserPermission | UserPermission[]) => {
-              if (Array.isArray(permission)) {
-                return permission.includes(UserPermission.SalesDepartment);
-              }
-
-              return permission === UserPermission.SalesDepartment;
+            hasPermission: vi.fn((permission: UserPermission | readonly UserPermission[]) => {
+              const permissionsToCheck = Array.isArray(permission) ? permission : [permission];
+              return permissionsToCheck.includes(UserPermission.SalesDepartment);
             }),
           },
         },
