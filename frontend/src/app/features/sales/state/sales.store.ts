@@ -1,4 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { SALES_ACCESS_PERMISSIONS } from '@core/permissions/sales-access.policy';
+import { AuthService } from '@core/services/auth.service';
 import { firstValueFrom } from 'rxjs';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import {
@@ -32,6 +34,7 @@ export class SalesStore {
   private readonly getClientsUseCase = inject(GetClientsUseCase);
   private readonly advanceSaleStatusUseCase = inject(AdvanceSaleStatusUseCase);
   private readonly deleteSaleUseCase = inject(DeleteSaleUseCase);
+  private readonly authService = inject(AuthService);
   private readonly clientsPageSize = 100;
 
   private readonly salesState = signal<Sale[]>([]);
@@ -73,6 +76,10 @@ export class SalesStore {
   readonly clients = this.clientsState.asReadonly();
   readonly clientsLoading = this.clientsLoadingState.asReadonly();
   readonly clientsError = this.clientsErrorState.asReadonly();
+
+  readonly canManageSales = computed(() =>
+    this.authService.hasPermission(SALES_ACCESS_PERMISSIONS),
+  );
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()));
 
@@ -219,14 +226,19 @@ export class SalesStore {
     void this.loadSales();
   }
 
+  canEditSale(saleId: number): boolean {
+    const sale = this.findSale(saleId);
+    return this.canManageSales() && sale?.status === SaleStatus.PENDING;
+  }
+
   canChangeStatus(saleId: number): boolean {
     const sale = this.findSale(saleId);
-    return (sale?.allowedTransitions.length ?? 0) > 0;
+    return this.canManageSales() && (sale?.allowedTransitions.length ?? 0) > 0;
   }
 
   canDeleteSale(saleId: number): boolean {
     const sale = this.findSale(saleId);
-    return sale?.status === SaleStatus.PENDING;
+    return this.canManageSales() && sale?.status === SaleStatus.PENDING;
   }
 
   isChangingStatusSale(saleId: number): boolean {
@@ -238,8 +250,7 @@ export class SalesStore {
   }
 
   async changeSaleStatus(saleId: number, newStatus: SaleStatus): Promise<void> {
-    const sale = this.findSale(saleId);
-    if (!sale || this.isChangingStatusSale(saleId)) {
+    if (!this.canChangeStatus(saleId) || this.isChangingStatusSale(saleId)) {
       return;
     }
 
@@ -262,7 +273,7 @@ export class SalesStore {
 
   async deleteSale(saleId: number): Promise<void> {
     const sale = this.findSale(saleId);
-    if (!sale || this.isDeletingSale(saleId)) {
+    if (!sale || !this.canDeleteSale(saleId) || this.isDeletingSale(saleId)) {
       return;
     }
 

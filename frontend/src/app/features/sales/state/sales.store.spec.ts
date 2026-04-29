@@ -1,6 +1,7 @@
 import { WritableSignal } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { AuthService } from '@core/services/auth.service';
 import { of, throwError } from 'rxjs';
 import { Client, PagedResult } from '@domain/models/client.model';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
@@ -97,12 +98,17 @@ class MockDeleteSaleUseCase {
   execute = vi.fn().mockReturnValue(of(void 0));
 }
 
+class MockAuthService {
+  hasPermission = vi.fn().mockReturnValue(true);
+}
+
 describe('SalesStore', () => {
   let store: SalesStore;
   let listSalesUseCase: MockListSalesUseCase;
   let getClientsUseCase: MockGetClientsUseCase;
   let advanceSaleStatusUseCase: MockAdvanceSaleStatusUseCase;
   let deleteSaleUseCase: MockDeleteSaleUseCase;
+  let authService: MockAuthService;
 
   const setSalesState = (sales: Sale[]): void => {
     (
@@ -117,10 +123,12 @@ describe('SalesStore', () => {
     getClientsUseCase = new MockGetClientsUseCase();
     advanceSaleStatusUseCase = new MockAdvanceSaleStatusUseCase();
     deleteSaleUseCase = new MockDeleteSaleUseCase();
+    authService = new MockAuthService();
 
     TestBed.configureTestingModule({
       providers: [
         SalesStore,
+        { provide: AuthService, useValue: authService as unknown as AuthService },
         { provide: ListSalesUseCase, useValue: listSalesUseCase as unknown as ListSalesUseCase },
         { provide: GetClientsUseCase, useValue: getClientsUseCase as unknown as GetClientsUseCase },
         {
@@ -402,13 +410,32 @@ describe('SalesStore', () => {
     });
   });
 
-  it('computes change-status and delete availability from the loaded sale', () => {
+  it('computes management actions from permission and loaded sale state', () => {
     setSalesState([SALE_A, SALE_B]);
 
+    expect(store.canManageSales()).toBe(true);
+    expect(store.canEditSale(1)).toBe(true);
+    expect(store.canEditSale(2)).toBe(false);
     expect(store.canChangeStatus(1)).toBe(true);
     expect(store.canDeleteSale(1)).toBe(true);
     expect(store.canChangeStatus(2)).toBe(true);
     expect(store.canDeleteSale(2)).toBe(false);
+  });
+
+  it('blocks management actions when the user lacks permission', async () => {
+    authService.hasPermission.mockReturnValue(false);
+    setSalesState([SALE_A, SALE_B]);
+
+    expect(store.canManageSales()).toBe(false);
+    expect(store.canEditSale(1)).toBe(false);
+    expect(store.canChangeStatus(1)).toBe(false);
+    expect(store.canDeleteSale(1)).toBe(false);
+
+    await store.changeSaleStatus(1, SaleStatus.CANCELLED);
+    await store.deleteSale(1);
+
+    expect(advanceSaleStatusUseCase.execute).not.toHaveBeenCalled();
+    expect(deleteSaleUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('changes sale status and refreshes the listing', async () => {

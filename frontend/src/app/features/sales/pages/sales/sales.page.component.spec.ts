@@ -3,8 +3,6 @@ import { signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { vi, type Mock } from 'vitest';
-import { AuthService } from '@core/services/auth.service';
-import { UserPermission } from '@domain/enums/user-permission.enum';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client } from '@domain/models/client.model';
 import { Sale } from '@domain/models/sale.model';
@@ -47,6 +45,8 @@ interface MockSalesStore {
   onDateToFilterChange: Mock<(dateTo: Date | null) => void>;
   clearFilters: Mock<() => void>;
   onPageChange: Mock<(event: { first: number; rows: number }) => void>;
+  canManageSales: WritableSignal<boolean>;
+  canEditSale: Mock<(saleId: number) => boolean>;
   canChangeStatus: Mock<(saleId: number) => boolean>;
   canDeleteSale: Mock<(saleId: number) => boolean>;
   isChangingStatusSale: Mock<(saleId: number) => boolean>;
@@ -126,6 +126,8 @@ describe('SalesPageComponent', () => {
       onDateToFilterChange: vi.fn(),
       clearFilters: vi.fn(),
       onPageChange: vi.fn(),
+      canManageSales: signal(true),
+      canEditSale: vi.fn((saleId: number) => saleId === 1),
       canChangeStatus: vi.fn((saleId: number) => saleId === 1),
       canDeleteSale: vi.fn((saleId: number) => saleId === 1),
       isChangingStatusSale: vi.fn(() => false),
@@ -137,16 +139,6 @@ describe('SalesPageComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SalesPageComponent],
       providers: [
-        {
-          provide: AuthService,
-          useValue: {
-            isAdmin: signal(true),
-            hasPermission: vi.fn((permission: UserPermission | readonly UserPermission[]) => {
-              const permissionsToCheck = Array.isArray(permission) ? permission : [permission];
-              return permissionsToCheck.includes(UserPermission.SalesDepartment);
-            }),
-          },
-        },
         {
           provide: Router,
           useValue: router,
@@ -234,7 +226,7 @@ describe('SalesPageComponent', () => {
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
   });
 
-  it('muestra la accion de nueva venta para administradores', () => {
+  it('muestra la accion de nueva venta cuando puede gestionar ventas', () => {
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
 
     expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
@@ -282,6 +274,21 @@ describe('SalesPageComponent', () => {
     expect(actionButton.attributes['variant']).toBe('ghost');
   });
 
+  it('oculta las acciones de gestion cuando el store no concede permisos', () => {
+    store.canManageSales.set(false);
+    store.canEditSale.mockReturnValue(false);
+    store.canChangeStatus.mockReturnValue(false);
+    store.canDeleteSale.mockReturnValue(false);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Cambiar estado de venta"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Eliminar venta"]'))).toBeNull();
+
+    const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
+    expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(false);
+  });
+
   it('renderiza la accion de cambio de estado como boton icon-only cuando aplica', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Cambiar estado de venta"]'));
 
@@ -308,6 +315,7 @@ describe('SalesPageComponent', () => {
         total: 100,
       },
     ]);
+    store.canEditSale.mockReturnValue(false);
     fixture.detectChanges();
 
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));

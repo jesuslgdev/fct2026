@@ -1,12 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import type { TablePageEvent } from 'primeng/table';
-import { SALES_ACCESS_PERMISSIONS } from '@core/permissions/sales-access.policy';
 import { DatePicker } from 'primeng/datepicker';
 import { Select } from 'primeng/select';
-import { AuthService } from '@core/services/auth.service';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { BadgeComponent, BadgeVariant } from '@shared/ui';
 import { ButtonComponent } from '@shared/ui/button/button.component';
@@ -43,10 +41,6 @@ export class SalesPageComponent implements OnInit {
   readonly deleteDialogVisible = signal(false);
   readonly selectedSaleId = signal<number | null>(null);
   readonly selectedNextStatus = signal<SaleStatus | null>(null);
-  private readonly authService = inject(AuthService);
-  readonly canCreateSale = computed(() =>
-    this.authService.hasPermission(SALES_ACCESS_PERMISSIONS),
-  );
   private readonly router = inject(Router);
 
   readonly statusOptions: StatusOption[] = [
@@ -137,10 +131,6 @@ export class SalesPageComponent implements OnInit {
 
     this.deleteDialogVisible.set(false);
     void this.store.deleteSale(saleId);
-  }
-
-  canEditSale(status: SaleStatus): boolean {
-    return status === SaleStatus.PENDING && this.canCreateSale();
   }
 
   getStatusBadgeVariant(status: SaleStatus): BadgeVariant {

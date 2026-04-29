@@ -1,7 +1,7 @@
 <section class="page">
   <div class="page-header flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-style-title">Ventas</h1>
-    @if (canCreateSale()) {
+    @if (store.canManageSales()) {
       <ui-button
         label="Nueva venta"
         icon="pi pi-plus"
@@ -117,7 +117,7 @@
               size="sm"
               (clicked)="onViewSale(sale.saleId); $event.stopPropagation()"
             />
-            @if (canEditSale(sale.status)) {
+            @if (store.canEditSale(sale.saleId)) {
               <ui-button
                 icon="pi pi-pencil"
                 ariaLabel="Editar venta"
