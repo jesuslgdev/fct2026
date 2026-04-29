@@ -376,9 +376,15 @@ describe('HttpPurchaseRepository', () => {
       ],
     });
 
-    const deleteReq = controller.expectOne(`${PURCHASES_URL}/9/lines/200`);
-    expect(deleteReq.request.method).toBe('DELETE');
-    deleteReq.flush({
+    const addReq = controller.expectOne(`${PURCHASES_URL}/9/lines`);
+    expect(addReq.request.method).toBe('POST');
+    expect(addReq.request.body).toEqual({
+      product_id: 55,
+      quantity: 2,
+      unit_price: 10,
+      discount: 0,
+    });
+    addReq.flush({
       purchase_id: 9,
       purchase_number: 'COM-2026-0009',
       supplier_id: 15,
@@ -399,15 +405,9 @@ describe('HttpPurchaseRepository', () => {
       lines: [],
     });
 
-    const addReq = controller.expectOne(`${PURCHASES_URL}/9/lines`);
-    expect(addReq.request.method).toBe('POST');
-    expect(addReq.request.body).toEqual({
-      product_id: 55,
-      quantity: 2,
-      unit_price: 10,
-      discount: 0,
-    });
-    addReq.flush({
+    const deleteReq = controller.expectOne(`${PURCHASES_URL}/9/lines/200`);
+    expect(deleteReq.request.method).toBe('DELETE');
+    deleteReq.flush({
       purchase_id: 9,
       purchase_number: 'COM-2026-0009',
       supplier_id: 15,
@@ -456,6 +456,135 @@ describe('HttpPurchaseRepository', () => {
     const result = await promise;
     expect(result.supplierId).toBe(15);
     expect(result.total).toBe(24.2);
+  });
+
+  it('updatePurchase updates existing line with PUT when product is unchanged', async () => {
+    const promise = firstValueFrom(
+      repo.updatePurchase(12, {
+        supplierId: 30,
+        lines: [{ productId: 7, quantity: 4, unitPrice: 12, vatRate: 21 }],
+      }),
+    );
+
+    controller.expectOne(`${PURCHASES_URL}/12`).flush({
+      purchase_id: 12,
+      purchase_number: 'COM-2026-0012',
+      supplier_id: 30,
+      supplier_name: 'Supplier East',
+      user_id: 2,
+      user_name: 'Buyer',
+      warehouse_id: 1,
+      warehouse_name: 'Main',
+      purchase_date: '2026-04-10T08:00:00.000Z',
+      status: 'Pending',
+      subtotal: 12,
+      taxes: 2.52,
+      total: 14.52,
+      cancelled_at: null,
+      cancelled_by_user_id: null,
+      created_at: '2026-04-10T08:00:00.000Z',
+      updated_at: '2026-04-10T08:00:00.000Z',
+      lines: [],
+    });
+
+    controller.expectOne(WAREHOUSES_URL).flush([
+      { warehouse_id: 1, name: 'Main', address: 'Road 1', total_stock: 0 },
+    ]);
+
+    const updateReq = controller.expectOne(`${PURCHASES_URL}/12`);
+    expect(updateReq.request.method).toBe('PUT');
+    expect(updateReq.request.body).toEqual({ supplier_id: 30, warehouse_id: 1 });
+
+    updateReq.flush({
+      purchase_id: 12,
+      purchase_number: 'COM-2026-0012',
+      supplier_id: 30,
+      supplier_name: null,
+      user_id: 2,
+      user_name: null,
+      warehouse_id: 1,
+      warehouse_name: null,
+      purchase_date: '2026-04-10T08:00:00.000Z',
+      status: 'Pending',
+      subtotal: 12,
+      taxes: 2.52,
+      total: 14.52,
+      cancelled_at: null,
+      cancelled_by_user_id: null,
+      created_at: '2026-04-10T08:00:00.000Z',
+      updated_at: '2026-04-10T09:00:00.000Z',
+      lines: [
+        {
+          purchase_line_id: 501,
+          purchase_id: 12,
+          product_id: 7,
+          product_name: 'Ink',
+          quantity: 1,
+          unit_price: 12,
+          discount: 0,
+          line_subtotal: 12,
+          vat_rate: 0.21,
+          line_tax: 2.52,
+        },
+      ],
+    });
+
+    const updateLineReq = controller.expectOne(`${PURCHASES_URL}/12/lines/501`);
+    expect(updateLineReq.request.method).toBe('PUT');
+    expect(updateLineReq.request.body).toEqual({
+      quantity: 4,
+      unit_price: 12,
+      discount: 0,
+    });
+    updateLineReq.flush({
+      purchase_id: 12,
+      purchase_number: 'COM-2026-0012',
+      supplier_id: 30,
+      supplier_name: null,
+      user_id: 2,
+      user_name: null,
+      warehouse_id: 1,
+      warehouse_name: null,
+      purchase_date: '2026-04-10T08:00:00.000Z',
+      status: 'Pending',
+      subtotal: 48,
+      taxes: 10.08,
+      total: 58.08,
+      cancelled_at: null,
+      cancelled_by_user_id: null,
+      created_at: '2026-04-10T08:00:00.000Z',
+      updated_at: '2026-04-10T09:05:00.000Z',
+      lines: [],
+    });
+
+    controller.expectOne(`${PURCHASES_URL}/12`).flush({
+      purchase_id: 12,
+      purchase_number: 'COM-2026-0012',
+      supplier_id: 30,
+      supplier_name: 'Supplier East',
+      user_id: 2,
+      user_name: 'Buyer',
+      warehouse_id: 1,
+      warehouse_name: 'Main',
+      purchase_date: '2026-04-10T08:00:00.000Z',
+      status: 'Pending',
+      subtotal: 48,
+      taxes: 10.08,
+      total: 58.08,
+      cancelled_at: null,
+      cancelled_by_user_id: null,
+      created_at: '2026-04-10T08:00:00.000Z',
+      updated_at: '2026-04-10T09:05:00.000Z',
+      lines: [],
+    });
+
+    controller.expectOne(WAREHOUSES_URL).flush([
+      { warehouse_id: 1, name: 'Main', address: 'Road 1', total_stock: 0 },
+    ]);
+
+    const result = await promise;
+    expect(result.purchaseId).toBe(12);
+    expect(result.total).toBe(58.08);
   });
 
   it('getSupplierProducts enriches supplier prices with VAT from catalog products', async () => {

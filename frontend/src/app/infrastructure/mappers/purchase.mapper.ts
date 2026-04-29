@@ -12,6 +12,7 @@ import {
   PurchasesPageDto,
   SupplierDto,
   SupplierProductDto,
+  UpdatePurchaseLineRequestDto,
   UpdatePurchaseRequestDto,
 } from '@infrastructure/dtos/purchase.dto';
 import { WarehouseDto } from '@infrastructure/dtos/warehouse.dto';
@@ -156,6 +157,14 @@ export class PurchaseMapper {
 
   static toAddLineDto(line: PurchaseLineInput): AddPurchaseLineRequestDto {
     return this.toCreateLineDto(line);
+  }
+
+  static toUpdateLineDto(line: PurchaseLineInput): UpdatePurchaseLineRequestDto {
+    return {
+      quantity: line.quantity,
+      unit_price: line.unitPrice,
+      discount: 0,
+    };
   }
 
   static toAdvanceStatusDto(status: PurchaseStatus): AdvancePurchaseStatusRequestDto {

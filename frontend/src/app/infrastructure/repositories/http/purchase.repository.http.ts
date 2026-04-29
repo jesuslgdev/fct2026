@@ -349,17 +349,24 @@ export class HttpPurchaseRepository implements PurchaseRepository {
     existingLines: PurchaseDetailDto['lines'],
     nextLines: PurchaseLineInput[],
   ): Observable<void> {
-    const removeLines$ = from(existingLines).pipe(
-      concatMap((line) =>
-        this.http.delete<PurchaseDetailDto>(
-          `${PURCHASES_URL}/${purchaseId}/lines/${line.purchase_line_id}`,
+    if (nextLines.length === 0) {
+      return throwError(() => new PurchaseValidationError('A purchase must contain at least one line.'));
+    }
+
+    const syncPlan = this.buildPurchaseLineSyncPlan(existingLines, nextLines);
+
+    const updateLines$ = from(syncPlan.linesToUpdate).pipe(
+      concatMap((entry) =>
+        this.http.put<PurchaseDetailDto>(
+          `${PURCHASES_URL}/${purchaseId}/lines/${entry.lineId}`,
+          PurchaseMapper.toUpdateLineDto(entry.line),
         ),
       ),
       defaultIfEmpty(null),
       map(() => undefined),
     );
 
-    const addLines$ = from(nextLines).pipe(
+    const addLines$ = from(syncPlan.linesToAdd).pipe(
       concatMap((line) =>
         this.http.post<PurchaseDetailDto>(
           `${PURCHASES_URL}/${purchaseId}/lines`,
@@ -370,7 +377,61 @@ export class HttpPurchaseRepository implements PurchaseRepository {
       map(() => undefined),
     );
 
-    return removeLines$.pipe(switchMap(() => addLines$));
+    const removeLines$ = from(syncPlan.lineIdsToDelete).pipe(
+      concatMap((lineId) => this.http.delete<PurchaseDetailDto>(`${PURCHASES_URL}/${purchaseId}/lines/${lineId}`)),
+      defaultIfEmpty(null),
+      map(() => undefined),
+    );
+
+    return updateLines$.pipe(
+      switchMap(() => addLines$),
+      switchMap(() => removeLines$),
+    );
+  }
+
+  private buildPurchaseLineSyncPlan(
+    existingLines: PurchaseDetailDto['lines'],
+    nextLines: PurchaseLineInput[],
+  ): {
+    linesToUpdate: { lineId: number; line: PurchaseLineInput }[];
+    linesToAdd: PurchaseLineInput[];
+    lineIdsToDelete: number[];
+  } {
+    const existingByProductId = new Map<number, PurchaseDetailDto['lines']>();
+
+    for (const existingLine of existingLines) {
+      const queue = existingByProductId.get(existingLine.product_id) ?? [];
+      queue.push(existingLine);
+      existingByProductId.set(existingLine.product_id, queue);
+    }
+
+    const linesToUpdate: { lineId: number; line: PurchaseLineInput }[] = [];
+    const linesToAdd: PurchaseLineInput[] = [];
+
+    for (const nextLine of nextLines) {
+      const queue = existingByProductId.get(nextLine.productId);
+      const existingLine = queue?.shift();
+
+      if (existingLine) {
+        linesToUpdate.push({
+          lineId: existingLine.purchase_line_id,
+          line: nextLine,
+        });
+        continue;
+      }
+
+      linesToAdd.push(nextLine);
+    }
+
+    const lineIdsToDelete = [...existingByProductId.values()]
+      .flat()
+      .map((line) => line.purchase_line_id);
+
+    return {
+      linesToUpdate,
+      linesToAdd,
+      lineIdsToDelete,
+    };
   }
 
   private patchPurchaseStatus(
