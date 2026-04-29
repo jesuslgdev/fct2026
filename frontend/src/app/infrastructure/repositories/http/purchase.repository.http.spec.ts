@@ -214,7 +214,7 @@ describe('HttpPurchaseRepository', () => {
         toStatus: 'Approved',
         changedAt: '2026-04-11T08:10:00.000Z',
         changedByUserId: 15,
-        changedByName: 'Usuario #15',
+        changedByName: 'User #15',
         effect: 'freeze_lines',
       },
       {
@@ -222,7 +222,7 @@ describe('HttpPurchaseRepository', () => {
         toStatus: 'InProcess',
         changedAt: '2026-04-11T08:20:00.000Z',
         changedByUserId: 15,
-        changedByName: 'Usuario #15',
+        changedByName: 'User #15',
         effect: 'none',
       },
       {
@@ -230,7 +230,7 @@ describe('HttpPurchaseRepository', () => {
         toStatus: 'Shipped',
         changedAt: '2026-04-11T08:30:00.000Z',
         changedByUserId: 15,
-        changedByName: 'Usuario #15',
+        changedByName: 'User #15',
         effect: 'none',
       },
     ]);
@@ -461,11 +461,11 @@ describe('HttpPurchaseRepository', () => {
   it('getSupplierProducts enriches supplier prices with VAT from catalog products', async () => {
     const promise = firstValueFrom(repo.getSupplierProducts(30));
 
-    const supplierProductsReq = controller.expectOne(
+    const firstSupplierProductsReq = controller.expectOne(
       `${SUPPLIERS_URL}/30/products?page=1&page_size=100`,
     );
-    expect(supplierProductsReq.request.method).toBe('GET');
-    supplierProductsReq.flush({
+    expect(firstSupplierProductsReq.request.method).toBe('GET');
+    firstSupplierProductsReq.flush({
       items: [
         {
           product_id: 100,
@@ -475,8 +475,27 @@ describe('HttpPurchaseRepository', () => {
           supplier_price: 2,
         },
       ],
-      total: 1,
+      total: 101,
       page: 1,
+      page_size: 100,
+    });
+
+    const secondSupplierProductsReq = controller.expectOne(
+      `${SUPPLIERS_URL}/30/products?page=2&page_size=100`,
+    );
+    expect(secondSupplierProductsReq.request.method).toBe('GET');
+    secondSupplierProductsReq.flush({
+      items: [
+        {
+          product_id: 101,
+          product_name: 'Bolts',
+          product_code: 'BLT-01',
+          category_name: 'Hardware',
+          supplier_price: 4,
+        },
+      ],
+      total: 101,
+      page: 2,
       page_size: 100,
     });
 
@@ -494,6 +513,20 @@ describe('HttpPurchaseRepository', () => {
       is_active: true,
     });
 
+    controller.expectOne(`${CATALOG_PRODUCTS_URL}/101`).flush({
+      product_id: 101,
+      product_code: 'BLT-01',
+      name: 'Bolts',
+      description: null,
+      category_id: 1,
+      category_name: 'Hardware',
+      price: 5,
+      vat_rate: 21,
+      stock_current: 8,
+      stock_min: 2,
+      is_active: true,
+    });
+
     const result = await promise;
 
     expect(result).toEqual([
@@ -503,6 +536,78 @@ describe('HttpPurchaseRepository', () => {
         supplierId: 30,
         unitPrice: 2,
         vatRate: 21,
+      },
+      {
+        productId: 101,
+        productName: 'Bolts',
+        supplierId: 30,
+        unitPrice: 4,
+        vatRate: 21,
+      },
+    ]);
+  });
+
+  it('getActiveSuppliers requests all pages and maps only active suppliers', async () => {
+    const promise = firstValueFrom(repo.getActiveSuppliers());
+
+    const firstSuppliersReq = controller.expectOne(
+      (req) =>
+        req.url === SUPPLIERS_URL
+        && req.params.get('active') === 'true'
+        && req.params.get('page') === '1'
+        && req.params.get('page_size') === '100',
+    );
+    expect(firstSuppliersReq.request.method).toBe('GET');
+    firstSuppliersReq.flush({
+      items: [
+        {
+          supplier_id: 1,
+          name: 'Supplier One',
+          tax_id: 'A111',
+          city: 'Bilbao',
+          is_active: true,
+        },
+      ],
+      total: 101,
+      page: 1,
+      page_size: 100,
+    });
+
+    const secondSuppliersReq = controller.expectOne(
+      (req) =>
+        req.url === SUPPLIERS_URL
+        && req.params.get('active') === 'true'
+        && req.params.get('page') === '2'
+        && req.params.get('page_size') === '100',
+    );
+    expect(secondSuppliersReq.request.method).toBe('GET');
+    secondSuppliersReq.flush({
+      items: [
+        {
+          supplier_id: 2,
+          name: 'Supplier Two',
+          tax_id: 'B222',
+          city: 'Madrid',
+          is_active: true,
+        },
+      ],
+      total: 101,
+      page: 2,
+      page_size: 100,
+    });
+
+    const result = await promise;
+
+    expect(result).toEqual([
+      {
+        supplierId: 1,
+        supplierName: 'Supplier One',
+        isActive: true,
+      },
+      {
+        supplierId: 2,
+        supplierName: 'Supplier Two',
+        isActive: true,
       },
     ]);
   });

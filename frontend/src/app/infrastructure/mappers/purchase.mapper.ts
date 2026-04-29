@@ -248,7 +248,7 @@ export class PurchaseMapper {
       case 'Cancelled':
         return 'Cancelled';
       default:
-        return 'Pending';
+        throw new Error(`Unsupported purchase status received from backend: ${status}`);
     }
   }
 
@@ -362,6 +362,6 @@ export class PurchaseMapper {
       return purchaseDetail.user_name.trim();
     }
 
-    return `Usuario #${changedByUserId}`;
+    return `User #${changedByUserId}`;
   }
 }

@@ -1,14 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
+  EMPTY,
   Observable,
   catchError,
   concatMap,
   defaultIfEmpty,
+  expand,
   forkJoin,
   from,
   map,
   of,
+  reduce,
   switchMap,
   throwError,
 } from 'rxjs';
@@ -51,6 +54,7 @@ const PURCHASES_URL = `${environment.apiUrl}/api/v1/purchases`;
 const WAREHOUSES_URL = `${environment.apiUrl}/api/v1/warehouse/warehouses`;
 const SUPPLIERS_URL = `${environment.apiUrl}/api/v1/suppliers`;
 const CATALOG_PRODUCTS_URL = `${environment.apiUrl}/api/v1/catalog/products`;
+const PAGE_SIZE = 100;
 
 const PURCHASE_ERROR_CODES = {
   NOT_FOUND: 7101,
@@ -224,13 +228,10 @@ export class HttpPurchaseRepository implements PurchaseRepository {
 
   getActiveSuppliers(): Observable<PurchaseSupplierOption[]> {
     return this.withErrorMapping(() =>
-      this.http
-        .get<SuppliersPageDto>(SUPPLIERS_URL, {
-          params: { page: 1, page_size: 100, active: true },
-        })
+      this.fetchAllActiveSuppliers()
         .pipe(
-          map((pageDto) =>
-            pageDto.items
+          map((suppliers) =>
+            suppliers
               .filter((supplier) => supplier.is_active)
               .map((supplier) => PurchaseMapper.fromSupplierDto(supplier)),
           ),
@@ -248,18 +249,15 @@ export class HttpPurchaseRepository implements PurchaseRepository {
 
   getSupplierProducts(supplierId: number): Observable<PurchaseSupplierProductOption[]> {
     return this.withErrorMapping(() =>
-      this.http
-        .get<SupplierProductsPageDto>(`${SUPPLIERS_URL}/${supplierId}/products`, {
-          params: { page: 1, page_size: 100 },
-        })
+      this.fetchAllSupplierProducts(supplierId)
         .pipe(
-          switchMap((pageDto) => {
-            if (pageDto.items.length === 0) {
+          switchMap((supplierProducts) => {
+            if (supplierProducts.length === 0) {
               return of([]);
             }
 
             const vatRates$ = forkJoin(
-              pageDto.items.map((item) =>
+              supplierProducts.map((item) =>
                 this.http
                   .get<CatalogProductDto>(`${CATALOG_PRODUCTS_URL}/${item.product_id}`)
                   .pipe(
@@ -277,7 +275,7 @@ export class HttpPurchaseRepository implements PurchaseRepository {
                   vatRates.map((vatRate) => [vatRate.productId, vatRate.vatRate]),
                 );
 
-                return pageDto.items.map((item) =>
+                return supplierProducts.map((item) =>
                   PurchaseMapper.toSupplierProductOption(
                     supplierId,
                     item,
@@ -289,6 +287,61 @@ export class HttpPurchaseRepository implements PurchaseRepository {
           }),
         ),
     );
+  }
+
+  private fetchAllActiveSuppliers(): Observable<SuppliersPageDto['items']> {
+    return this.http
+      .get<SuppliersPageDto>(SUPPLIERS_URL, {
+        params: { page: 1, page_size: PAGE_SIZE, active: true },
+      })
+      .pipe(
+        expand((pageDto) => {
+          if (!this.hasNextPage(pageDto.page, pageDto.page_size, pageDto.total)) {
+            return EMPTY;
+          }
+
+          return this.http.get<SuppliersPageDto>(SUPPLIERS_URL, {
+            params: {
+              page: pageDto.page + 1,
+              page_size: pageDto.page_size,
+              active: true,
+            },
+          });
+        }),
+        map((pageDto) => pageDto.items),
+        reduce((allItems, pageItems) => [...allItems, ...pageItems], [] as SuppliersPageDto['items']),
+      );
+  }
+
+  private fetchAllSupplierProducts(
+    supplierId: number,
+  ): Observable<SupplierProductsPageDto['items']> {
+    return this.http
+      .get<SupplierProductsPageDto>(`${SUPPLIERS_URL}/${supplierId}/products`, {
+        params: { page: 1, page_size: PAGE_SIZE },
+      })
+      .pipe(
+        expand((pageDto) => {
+          if (!this.hasNextPage(pageDto.page, pageDto.page_size, pageDto.total)) {
+            return EMPTY;
+          }
+
+          return this.http.get<SupplierProductsPageDto>(
+            `${SUPPLIERS_URL}/${supplierId}/products`,
+            {
+              params: {
+                page: pageDto.page + 1,
+                page_size: pageDto.page_size,
+              },
+            },
+          );
+        }),
+        map((pageDto) => pageDto.items),
+        reduce(
+          (allItems, pageItems) => [...allItems, ...pageItems],
+          [] as SupplierProductsPageDto['items'],
+        ),
+      );
   }
 
   private replacePurchaseLines(
@@ -507,6 +560,10 @@ export class HttpPurchaseRepository implements PurchaseRepository {
     }
 
     return `${location}: ${rawMessage.trim()}`;
+  }
+
+  private hasNextPage(page: number, pageSize: number, total: number): boolean {
+    return page * pageSize < total;
   }
 
   private shouldRetryWithLegacyInProcessStatus(err: unknown): boolean {
