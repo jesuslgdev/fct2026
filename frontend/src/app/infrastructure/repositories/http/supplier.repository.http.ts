@@ -37,6 +37,7 @@ const SUPPLIER_ERROR_CODE_MESSAGES: Record<number, string> = {
   3101: 'El proveedor indicado no existe.',
   3102: 'Ya existe un proveedor con ese NIF/CIF.',
   3103: 'El formato del NIF/CIF no es válido.',
+  3104: 'Ya existe un proveedor con ese correo electrónico.',
   3201: 'La asociación proveedor-producto no existe.',
   3202: 'El producto ya está asociado a este proveedor.',
   3203: 'No se puede completar la operación porque el proveedor está inactivo.',
@@ -288,6 +289,7 @@ export class HttpSupplierRepository implements SupplierRepository {
     const literalMap: Record<string, string> = {
       'Supplier not found': 'El proveedor indicado no existe.',
       'Supplier with this tax ID already exists': 'Ya existe un proveedor con ese NIF/CIF.',
+      'Supplier with this email already exists': 'Ya existe un proveedor con ese correo electrónico.',
       'Invalid tax ID format': 'El formato del NIF/CIF no es válido.',
       'Supplier-product association not found': 'La asociación proveedor-producto no existe.',
       'Supplier-product association already exists': 'El producto ya está asociado a este proveedor.',
@@ -317,8 +319,8 @@ export class HttpSupplierRepository implements SupplierRepository {
   }
 
   private getConflictMessage(context: SupplierRequestContext): string {
-    if (context === 'create') {
-      return 'Ya existe un proveedor con ese NIF/CIF.';
+    if (context === 'create' || context === 'update') {
+      return 'Ya existe un proveedor con ese NIF/CIF o correo electrónico.';
     }
 
     return 'La operación no se pudo completar por un conflicto de datos.';
