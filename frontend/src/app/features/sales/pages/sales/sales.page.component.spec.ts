@@ -226,31 +226,31 @@ describe('SalesPageComponent', () => {
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
   });
 
-  it('muestra la accion de nueva venta cuando puede gestionar ventas', () => {
+  it('shows the new sale action when sales can be managed', () => {
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
 
     expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
   });
 
-  it('navega a la pagina de alta de venta', () => {
+  it('navigates to the sale creation page', () => {
     component.onCreateSale();
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
   });
 
-  it('navega al detalle de una venta', () => {
+  it('navigates to a sale detail page', () => {
     component.onViewSale(1);
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
   });
 
-  it('navega a la edicion de una venta', () => {
+  it('navigates to the sale edit page', () => {
     component.onEditSale(1);
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 1, 'edit']);
   });
 
-  it('navega al detalle al hacer click en la fila', () => {
+  it('navigates to the detail page when clicking the row', () => {
     const row = fixture.debugElement.query(By.css('tbody tr'));
 
     row.triggerEventHandler('click');
@@ -258,7 +258,7 @@ describe('SalesPageComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
   });
 
-  it('renderiza la accion de detalle como boton icon-only', () => {
+  it('renders the detail action as an icon-only button', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Ver detalle de venta"]'));
 
     expect(actionButton).toBeTruthy();
@@ -266,7 +266,7 @@ describe('SalesPageComponent', () => {
     expect(actionButton.attributes['variant']).toBe('ghost');
   });
 
-  it('renderiza la accion de editar como boton icon-only para ventas pendientes con permisos', () => {
+  it('renders the edit action as an icon-only button for pending sales with permissions', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
 
     expect(actionButton).toBeTruthy();
@@ -274,7 +274,7 @@ describe('SalesPageComponent', () => {
     expect(actionButton.attributes['variant']).toBe('ghost');
   });
 
-  it('oculta las acciones de gestion cuando el store no concede permisos', () => {
+  it('hides management actions when the store does not grant permissions', () => {
     store.canManageSales.set(false);
     store.canEditSale.mockReturnValue(false);
     store.canChangeStatus.mockReturnValue(false);
@@ -289,21 +289,21 @@ describe('SalesPageComponent', () => {
     expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(false);
   });
 
-  it('renderiza la accion de cambio de estado como boton icon-only cuando aplica', () => {
+  it('renders the change status action as an icon-only button when applicable', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Cambiar estado de venta"]'));
 
     expect(actionButton).toBeTruthy();
     expect(actionButton.attributes['icon']).toBe('pi pi-sync');
   });
 
-  it('renderiza la accion de eliminar como boton icon-only cuando aplica', () => {
+  it('renders the delete action as an icon-only button when applicable', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Eliminar venta"]'));
 
     expect(actionButton).toBeTruthy();
     expect(actionButton.attributes['icon']).toBe('pi pi-trash');
   });
 
-  it('oculta la accion de editar cuando la venta no esta pendiente', () => {
+  it('hides the edit action when the sale is not pending', () => {
     store.salesView.set([
       {
         saleId: 1,
@@ -323,7 +323,7 @@ describe('SalesPageComponent', () => {
     expect(actionButton).toBeNull();
   });
 
-  it('abre el dialogo de cambio de estado y delega en el store', () => {
+  it('opens the change status dialog and delegates to the store', () => {
     component.onRequestChangeStatus(1);
 
     expect(component.changeStatusDialogVisible()).toBe(true);
@@ -339,7 +339,7 @@ describe('SalesPageComponent', () => {
     expect(store.changeSaleStatus).toHaveBeenCalledWith(1, SaleStatus.CANCELLED);
   });
 
-  it('abre el dialogo de eliminacion y delega en el store', () => {
+  it('opens the delete dialog and delegates to the store', () => {
     component.onRequestDeleteSale(1);
 
     expect(component.deleteDialogVisible()).toBe(true);
@@ -380,12 +380,12 @@ describe('SalesPageComponent', () => {
     expect(emptyState.nativeElement.textContent).toContain('No hay ventas registradas.');
   });
 
-  it('traduce el estado para la interfaz', () => {
+  it('translates the status for the UI', () => {
     expect(component.getStatusLabel(SaleStatus.PENDING)).toBe('Pendiente');
     expect(component.getStatusLabel(SaleStatus.APPROVED)).toBe('Aprobada');
   });
 
-  it('asigna la variante e icono correctos al badge de estado', () => {
+  it('assigns the correct variant and icon to the status badge', () => {
     expect(component.getStatusBadgeVariant(SaleStatus.PENDING)).toBe('warning');
     expect(component.getStatusBadgeIcon(SaleStatus.PENDING)).toBe('pi pi-clock');
     expect(component.getStatusBadgeVariant(SaleStatus.APPROVED)).toBe('info');
