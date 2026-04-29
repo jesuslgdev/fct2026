@@ -181,7 +181,7 @@ describe('SaleCreateStore', () => {
     store = TestBed.inject(SaleCreateStore);
   });
 
-  it('carga clientes, almacenes, productos y una linea vacia inicial', async () => {
+  it('loads clients, warehouses, products, and an initial empty line', async () => {
     await store.initialize();
 
     expect(store.clients()).toEqual([CLIENTE_A]);
@@ -190,7 +190,7 @@ describe('SaleCreateStore', () => {
     expect(store.lines()).toHaveLength(1);
   });
 
-  it('construye la direccion de entrega desde el detalle del cliente', async () => {
+  it('builds the delivery address from client details', async () => {
     await store.initialize();
 
     await store.onClientChange(1);
@@ -199,7 +199,7 @@ describe('SaleCreateStore', () => {
     expect(store.deliveryAddress()).toBe('Gran Via 1, Madrid, Madrid, 28001');
   });
 
-  it('solo permite editar lineas cuando hay cliente y almacen seleccionados', async () => {
+  it('only allows editing lines when client and warehouse are selected', async () => {
     await store.initialize();
 
     expect(store.canEditLines()).toBe(false);
@@ -211,7 +211,7 @@ describe('SaleCreateStore', () => {
     expect(store.canEditLines()).toBe(true);
   });
 
-  it('recalcula subtotal, IVA y total cuando cambia una linea', async () => {
+  it('recalculates subtotal, VAT, and total when a line changes', async () => {
     await store.initialize();
 
     const lineId = store.lines()[0].lineId;
@@ -233,7 +233,7 @@ describe('SaleCreateStore', () => {
     expect(store.total()).toBeCloseTo(21.78);
   });
 
-  it('marca la linea como invalida cuando la cantidad supera el stock disponible', async () => {
+  it('marks the line as invalid when quantity exceeds available stock', async () => {
     await store.initialize();
 
     const lineId = store.lines()[0].lineId;
@@ -250,7 +250,7 @@ describe('SaleCreateStore', () => {
     expect(store.canSubmit()).toBe(false);
   });
 
-  it('envia el payload correcto y redirige al listado', async () => {
+  it('submits the correct payload and redirects to the list', async () => {
     await store.initialize();
     await store.onClientChange(1);
     await store.onWarehouseChange(10);
@@ -280,7 +280,7 @@ describe('SaleCreateStore', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/sales']);
   });
 
-  it('mapea el error de stock insuficiente a un mensaje en espanol', async () => {
+  it('maps the insufficient stock error to a Spanish message', async () => {
     await store.initialize();
     await store.onClientChange(1);
     await store.onWarehouseChange(10);
@@ -302,7 +302,7 @@ describe('SaleCreateStore', () => {
     expect(store.error()).toBe('Una o varias lineas no tienen stock suficiente.');
   });
 
-  it('marca la linea como invalida cuando se confirma un producto duplicado', async () => {
+  it('marks the line as invalid when a duplicate product is confirmed', async () => {
     await store.initialize();
     await store.onWarehouseChange(10);
 
