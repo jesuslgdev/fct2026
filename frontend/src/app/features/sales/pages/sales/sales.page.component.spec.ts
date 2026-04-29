@@ -229,7 +229,12 @@ describe('SalesPageComponent', () => {
   it('shows the new sale action when sales can be managed', () => {
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
 
-    expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
+    expect(
+      buttons.some(
+        (button: { nativeElement: { textContent: string } }) =>
+          button.nativeElement.textContent.includes('Nueva venta'),
+      ),
+    ).toBe(true);
   });
 
   it('navigates to the sale creation page', () => {
@@ -243,7 +248,6 @@ describe('SalesPageComponent', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
   });
-
   it('navigates to the sale edit page', () => {
     component.onEditSale(1);
 
@@ -265,7 +269,6 @@ describe('SalesPageComponent', () => {
     expect(actionButton.attributes['icon']).toBe('pi pi-eye');
     expect(actionButton.attributes['variant']).toBe('ghost');
   });
-
   it('renders the edit action as an icon-only button for pending sales with permissions', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
 
@@ -286,7 +289,12 @@ describe('SalesPageComponent', () => {
     expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Eliminar venta"]'))).toBeNull();
 
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
-    expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(false);
+    expect(
+      buttons.some(
+        (button: { nativeElement: { textContent: string } }) =>
+          button.nativeElement.textContent.includes('Nueva venta'),
+      ),
+    ).toBe(false);
   });
 
   it('renders the change status action as an icon-only button when applicable', () => {
@@ -302,7 +310,6 @@ describe('SalesPageComponent', () => {
     expect(actionButton).toBeTruthy();
     expect(actionButton.attributes['icon']).toBe('pi pi-trash');
   });
-
   it('hides the edit action when the sale is not pending', () => {
     store.salesView.set([
       {
