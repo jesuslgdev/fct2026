@@ -1,3 +1,4 @@
+import { WritableSignal } from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -103,6 +104,14 @@ describe('SalesStore', () => {
   let advanceSaleStatusUseCase: MockAdvanceSaleStatusUseCase;
   let deleteSaleUseCase: MockDeleteSaleUseCase;
 
+  const setSalesState = (sales: Sale[]): void => {
+    (
+      store as unknown as {
+        salesState: WritableSignal<Sale[]>;
+      }
+    ).salesState.set(sales);
+  };
+
   beforeEach(() => {
     listSalesUseCase = new MockListSalesUseCase();
     getClientsUseCase = new MockGetClientsUseCase();
@@ -155,18 +164,18 @@ describe('SalesStore', () => {
   it('loads sales with combinable filters', async () => {
     const dateFrom = new Date('2026-04-01T00:00:00.000Z');
     const dateTo = new Date('2026-04-30T23:59:59.000Z');
-    listSalesUseCase.execute.mockReturnValueOnce(
+    listSalesUseCase.execute.mockReturnValue(
       of({ data: [SALE_A], total: 1, page: 1, pageSize: 20 }),
     );
 
-    store.statusFilter.set(SaleStatus.APPROVED);
-    store.clientFilter.set(7);
-    store.dateFromFilter.set(dateFrom);
-    store.dateToFilter.set(dateTo);
+    await store.onStatusFilterChange(SaleStatus.APPROVED);
+    await store.onClientFilterChange(7);
+    await store.onDateFromFilterChange(dateFrom);
+    await store.onDateToFilterChange(dateTo);
 
     await store.loadSales();
 
-    expect(listSalesUseCase.execute).toHaveBeenCalledWith({
+    expect(listSalesUseCase.execute).toHaveBeenLastCalledWith({
       page: 1,
       pageSize: 20,
       sortField: 'created_at',
@@ -207,13 +216,11 @@ describe('SalesStore', () => {
   });
 
   it('exposes the filtered empty message when there are no results', async () => {
-    listSalesUseCase.execute.mockReturnValueOnce(
+    listSalesUseCase.execute.mockReturnValue(
       of({ data: [], total: 0, page: 1, pageSize: 20 }),
     );
 
-    store.statusFilter.set(SaleStatus.PENDING);
-
-    await store.loadSales();
+    await store.onStatusFilterChange(SaleStatus.PENDING);
 
     expect(store.emptyMessage()).toBe('No se encontraron ventas con los filtros aplicados');
   });
@@ -229,30 +236,34 @@ describe('SalesStore', () => {
   });
 
   it('maps sales view with the fields required by the listing', () => {
-    store.sales.set([SALE_A, SALE_B]);
+    listSalesUseCase.execute.mockReturnValueOnce(
+      of({ data: [SALE_A, SALE_B], total: 2, page: 1, pageSize: 20 }),
+    );
 
-    expect(store.salesView()).toEqual([
-      {
-        saleId: 1,
-        saleNumber: 'VEN-2026-0001',
-        clientName: 'Cliente A',
-        status: SaleStatus.PENDING,
-        allowedTransitions: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
-        deliveryAddress: 'Calle Mayor 1, Madrid',
-        createdAt: SALE_A.createdAt,
-        total: 100,
-      },
-      {
-        saleId: 2,
-        saleNumber: 'VEN-2026-0002',
-        clientName: '-',
-        status: SaleStatus.APPROVED,
-        allowedTransitions: [SaleStatus.IN_PROCESS, SaleStatus.CANCELLED],
-        deliveryAddress: 'Gran Via 2, Barcelona',
-        createdAt: SALE_B.createdAt,
-        total: 250,
-      },
-    ]);
+    return store.loadSales().then(() => {
+      expect(store.salesView()).toEqual([
+        {
+          saleId: 1,
+          saleNumber: 'VEN-2026-0001',
+          clientName: 'Cliente A',
+          status: SaleStatus.PENDING,
+          allowedTransitions: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
+          deliveryAddress: 'Calle Mayor 1, Madrid',
+          createdAt: SALE_A.createdAt,
+          total: 100,
+        },
+        {
+          saleId: 2,
+          saleNumber: 'VEN-2026-0002',
+          clientName: '-',
+          status: SaleStatus.APPROVED,
+          allowedTransitions: [SaleStatus.IN_PROCESS, SaleStatus.CANCELLED],
+          deliveryAddress: 'Gran Via 2, Barcelona',
+          createdAt: SALE_B.createdAt,
+          total: 250,
+        },
+      ]);
+    });
   });
 
   it('loads clients for the client filter', async () => {
@@ -271,6 +282,28 @@ describe('SalesStore', () => {
     expect(store.clientsError()).toBeNull();
   });
 
+  it('loads all client pages for the client filter', async () => {
+    getClientsUseCase.execute
+      .mockReturnValueOnce(
+        of({ data: [CLIENT_A], total: 2, page: 1, pageSize: 100 }),
+      )
+      .mockReturnValueOnce(
+        of({ data: [CLIENT_B], total: 2, page: 2, pageSize: 100 }),
+      );
+
+    await store.loadClientsForFilter();
+
+    expect(getClientsUseCase.execute).toHaveBeenNthCalledWith(1, {
+      page: 1,
+      pageSize: 100,
+    });
+    expect(getClientsUseCase.execute).toHaveBeenNthCalledWith(2, {
+      page: 2,
+      pageSize: 100,
+    });
+    expect(store.clients()).toEqual([CLIENT_A, CLIENT_B]);
+  });
+
   it('sets error when loading clients for filter fails', async () => {
     getClientsUseCase.execute.mockReturnValueOnce(throwError(() => new Error('boom')));
 
@@ -282,7 +315,8 @@ describe('SalesStore', () => {
 
   it('status filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
-    store.page.set(5);
+    store.onPageChange({ first: 80, rows: 20 });
+    spy.mockClear();
 
     store.onStatusFilterChange(SaleStatus.APPROVED);
 
@@ -293,7 +327,8 @@ describe('SalesStore', () => {
 
   it('client filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
-    store.page.set(4);
+    store.onPageChange({ first: 60, rows: 20 });
+    spy.mockClear();
 
     store.onClientFilterChange(2);
 
@@ -305,7 +340,8 @@ describe('SalesStore', () => {
   it('date from filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
     const dateFrom = new Date('2026-04-01T00:00:00.000Z');
-    store.page.set(3);
+    store.onPageChange({ first: 40, rows: 20 });
+    spy.mockClear();
 
     store.onDateFromFilterChange(dateFrom);
 
@@ -317,7 +353,8 @@ describe('SalesStore', () => {
   it('date to filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
     const dateTo = new Date('2026-04-30T23:59:59.000Z');
-    store.page.set(3);
+    store.onPageChange({ first: 40, rows: 20 });
+    spy.mockClear();
 
     store.onDateToFilterChange(dateTo);
 
@@ -328,11 +365,12 @@ describe('SalesStore', () => {
 
   it('clear filters resets all filters and reloads first page', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
-    store.page.set(3);
-    store.statusFilter.set(SaleStatus.PENDING);
-    store.clientFilter.set(2);
-    store.dateFromFilter.set(new Date('2026-04-01T00:00:00.000Z'));
-    store.dateToFilter.set(new Date('2026-04-30T23:59:59.000Z'));
+    store.onPageChange({ first: 40, rows: 20 });
+    store.onStatusFilterChange(SaleStatus.PENDING);
+    store.onClientFilterChange(2);
+    store.onDateFromFilterChange(new Date('2026-04-01T00:00:00.000Z'));
+    store.onDateToFilterChange(new Date('2026-04-30T23:59:59.000Z'));
+    spy.mockClear();
 
     store.clearFilters();
 
@@ -355,14 +393,17 @@ describe('SalesStore', () => {
   });
 
   it('calculates total pages from total and page size', () => {
-    store.total.set(45);
-    store.pageSize.set(20);
+    listSalesUseCase.execute.mockReturnValueOnce(
+      of({ data: [SALE_A], total: 45, page: 1, pageSize: 20 }),
+    );
 
-    expect(store.totalPages()).toBe(3);
+    return store.loadSales().then(() => {
+      expect(store.totalPages()).toBe(3);
+    });
   });
 
   it('computes change-status and delete availability from the loaded sale', () => {
-    store.sales.set([SALE_A, SALE_B]);
+    setSalesState([SALE_A, SALE_B]);
 
     expect(store.canChangeStatus(1)).toBe(true);
     expect(store.canDeleteSale(1)).toBe(true);
@@ -371,7 +412,7 @@ describe('SalesStore', () => {
   });
 
   it('changes sale status and refreshes the listing', async () => {
-    store.sales.set([SALE_A]);
+    setSalesState([SALE_A]);
     const loadSpy = vi.spyOn(store, 'loadSales').mockResolvedValue();
 
     await store.changeSaleStatus(1, SaleStatus.CANCELLED);
@@ -384,7 +425,7 @@ describe('SalesStore', () => {
   });
 
   it('maps status-specific success messages', async () => {
-    store.sales.set([SALE_A]);
+    setSalesState([SALE_A]);
     const loadSpy = vi.spyOn(store, 'loadSales').mockResolvedValue();
 
     await store.changeSaleStatus(1, SaleStatus.APPROVED);
@@ -394,7 +435,7 @@ describe('SalesStore', () => {
   });
 
   it('deletes a sale and refreshes the listing', async () => {
-    store.sales.set([SALE_A]);
+    setSalesState([SALE_A]);
     const loadSpy = vi.spyOn(store, 'loadSales').mockResolvedValue();
 
     await store.deleteSale(1);
@@ -405,7 +446,7 @@ describe('SalesStore', () => {
   });
 
   it('maps change-status action errors to a friendly message', async () => {
-    store.sales.set([SALE_A]);
+    setSalesState([SALE_A]);
     advanceSaleStatusUseCase.execute.mockReturnValueOnce(
       throwError(() => new SaleValidationError({}, 'Invalid sale status transition.')),
     );
@@ -416,7 +457,7 @@ describe('SalesStore', () => {
   });
 
   it('maps delete action errors to a friendly message', async () => {
-    store.sales.set([SALE_A]);
+    setSalesState([SALE_A]);
     deleteSaleUseCase.execute.mockReturnValueOnce(
       throwError(() => new SaleNotDeletableError()),
     );

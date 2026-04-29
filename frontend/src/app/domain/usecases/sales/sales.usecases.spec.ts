@@ -255,6 +255,22 @@ describe('Sales Use Cases', () => {
       expect(repo.getById).not.toHaveBeenCalled();
     });
 
+    it('should reject non-integer sale ID', async () => {
+      const useCase = TestBed.inject(GetSaleUseCase);
+
+      await expect(firstValueFrom(useCase.execute(1.5))).rejects.toThrow(SaleValidationError);
+      expect(repo.getById).not.toHaveBeenCalled();
+    });
+
+    it('should reject NaN sale ID', async () => {
+      const useCase = TestBed.inject(GetSaleUseCase);
+
+      await expect(firstValueFrom(useCase.execute(Number.NaN))).rejects.toThrow(
+        SaleValidationError
+      );
+      expect(repo.getById).not.toHaveBeenCalled();
+    });
+
     it('should propagate error from repository', async () => {
       const useCase = TestBed.inject(GetSaleUseCase);
       const error = new SaleNotFoundError();
@@ -292,11 +308,35 @@ describe('Sales Use Cases', () => {
       expect(repo.create).not.toHaveBeenCalled();
     });
 
+    it('should reject non-integer clientId', async () => {
+      const useCase = TestBed.inject(CreateSaleUseCase);
+      const data: CreateSale = {
+        clientId: 1.5,
+        warehouseId: 2,
+        lines: [{ productId: 1, quantity: 5 }],
+      };
+
+      await expect(firstValueFrom(useCase.execute(data))).rejects.toThrow(SaleValidationError);
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+
     it('should throw SaleValidationError if warehouseId is missing', async () => {
       const useCase = TestBed.inject(CreateSaleUseCase);
       const data: CreateSale = {
         clientId: 1,
         warehouseId: 0,
+        lines: [{ productId: 1, quantity: 5 }],
+      };
+
+      await expect(firstValueFrom(useCase.execute(data))).rejects.toThrow(SaleValidationError);
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+
+    it('should reject non-integer warehouseId', async () => {
+      const useCase = TestBed.inject(CreateSaleUseCase);
+      const data: CreateSale = {
+        clientId: 1,
+        warehouseId: 2.5,
         lines: [{ productId: 1, quantity: 5 }],
       };
 
@@ -472,6 +512,15 @@ describe('Sales Use Cases', () => {
 
       await expect(
         firstValueFrom(useCase.execute(1, 0, { quantity: 1 }))
+      ).rejects.toThrow(SaleValidationError);
+      expect(repo.updateLine).not.toHaveBeenCalled();
+    });
+
+    it('should reject non-integer sale line ID', async () => {
+      const useCase = TestBed.inject(UpdateSaleLineUseCase);
+
+      await expect(
+        firstValueFrom(useCase.execute(1, 2.2, { quantity: 1 }))
       ).rejects.toThrow(SaleValidationError);
       expect(repo.updateLine).not.toHaveBeenCalled();
     });

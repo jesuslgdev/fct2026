@@ -7,6 +7,7 @@ export interface SaleLineDTO {
   quantity: number;
   unit_price: number | string;
   discount: number | string;
+  discount_type?: 'percent' | 'amount';
   line_subtotal: number | string;
   vat_rate: number | string;
   line_tax: number | string;
