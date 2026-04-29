@@ -215,13 +215,13 @@ describe('SalesPageComponent', () => {
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
   });
 
-  it('muestra la acción de nueva venta para administradores', () => {
+  it('shows the new sale action for administrators', () => {
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
 
     expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
   });
 
-  it('navega a la página de alta de venta', () => {
+  it('navigates to the sale creation page', () => {
     component.onCreateSale();
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
@@ -249,7 +249,7 @@ describe('SalesPageComponent', () => {
     expect(emptyState.nativeElement.textContent).toContain('No hay ventas registradas.');
   });
 
-  it('traduce el estado para la interfaz', () => {
+  it('translates the status for the UI', () => {
     expect(component.getStatusLabel(SaleStatus.PENDING)).toBe('Pendiente');
     expect(component.getStatusLabel(SaleStatus.APPROVED)).toBe('Aprobada');
   });

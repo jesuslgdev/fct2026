@@ -181,12 +181,12 @@ describe('SaleCreatePageComponent', () => {
     fixture.detectChanges();
   });
 
-  it('muestra la columna de acciones en la cabecera de lineas', () => {
+  it('shows the actions column in the line header', () => {
     const headers = fixture.debugElement.queryAll(By.css('th'));
     expect(headers.some((header) => header.nativeElement.textContent.trim() === 'Acciones')).toBe(true);
   });
 
-  it('muestra una columna dedicada al codigo de producto', () => {
+  it('shows a dedicated product code column', () => {
     const headers = fixture.debugElement.queryAll(By.css('th'));
     const headerTexts = headers.map((header) => header.nativeElement.textContent.trim());
 
@@ -195,7 +195,7 @@ describe('SaleCreatePageComponent', () => {
     expect(headerTexts.indexOf('Codigo')).toBeLessThan(headerTexts.indexOf('Producto'));
   });
 
-  it('deshabilita el boton de anadir linea hasta seleccionar cliente y almacen', () => {
+  it('disables the add line button until client and warehouse are selected', () => {
     const addLineButton = fixture.debugElement.queryAll(By.css('ui-button'))[2].componentInstance;
     expect(addLineButton.disabled()).toBe(true);
 
@@ -205,21 +205,21 @@ describe('SaleCreatePageComponent', () => {
     expect(addLineButton.disabled()).toBe(false);
   });
 
-  it('no permite entrar en edicion de fila mientras las lineas esten bloqueadas', () => {
+  it('prevents entering row edit mode while lines are blocked', () => {
     component.onStartLineEdit(LINE_A);
 
     expect(component.getLineDraft(LINE_A.lineId)).toBeUndefined();
     expect(store.startLineEdit).not.toHaveBeenCalled();
   });
 
-  it('muestra un mensaje guia cuando aun no se puede operar con lineas', () => {
+  it('shows helper text when line actions are not yet available', () => {
     const helperText = fixture.debugElement.queryAll(By.css('p'))
       .find((paragraph) => paragraph.nativeElement.textContent.includes('Selecciona primero el cliente y el almacen'));
 
     expect(helperText).toBeDefined();
   });
 
-  it('solicita una previsualizacion de stock al cambiar el producto del draft', () => {
+  it('requests a stock preview when changing the draft product', () => {
     store.canEditLines.mockReturnValue(true);
     component.onStartLineEdit(LINE_A);
 
