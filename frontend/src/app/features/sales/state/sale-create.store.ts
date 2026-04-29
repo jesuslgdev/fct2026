@@ -81,23 +81,41 @@ export class SaleCreateStore {
 
   private lineSequence = 1;
 
-  readonly clients = signal<Client[]>([]);
-  readonly warehouses = signal<Warehouse[]>([]);
-  readonly products = signal<Product[]>([]);
-  readonly lines = signal<SaleCreateLineDraft[]>([]);
-  readonly lineDrafts = signal<Record<number, SaleCreateLineEditDraft>>({});
-  readonly lineStockPreviews = signal<Record<number, SaleCreateLineStockPreview>>({});
+  private readonly clientsState = signal<Client[]>([]);
+  private readonly warehousesState = signal<Warehouse[]>([]);
+  private readonly productsState = signal<Product[]>([]);
+  private readonly linesState = signal<SaleCreateLineDraft[]>([]);
+  private readonly lineDraftsState = signal<Record<number, SaleCreateLineEditDraft>>({});
+  private readonly lineStockPreviewsState = signal<Record<number, SaleCreateLineStockPreview>>({});
 
-  readonly selectedClientId = signal<number | null>(null);
-  readonly selectedWarehouseId = signal<number | null>(null);
-  readonly selectedClientDetail = signal<ClientDetail | null>(null);
+  private readonly selectedClientIdState = signal<number | null>(null);
+  private readonly selectedWarehouseIdState = signal<number | null>(null);
+  private readonly selectedClientDetailState = signal<ClientDetail | null>(null);
 
-  readonly loading = signal(false);
-  readonly loadingProducts = signal(false);
-  readonly loadingClientDetail = signal(false);
-  readonly submitting = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
+  private readonly loadingState = signal(false);
+  private readonly loadingProductsState = signal(false);
+  private readonly loadingClientDetailState = signal(false);
+  private readonly submittingState = signal(false);
+  private readonly errorState = signal<string | null>(null);
+  private readonly successMessageState = signal<string | null>(null);
+
+  readonly clients = this.clientsState.asReadonly();
+  readonly warehouses = this.warehousesState.asReadonly();
+  readonly products = this.productsState.asReadonly();
+  readonly lines = this.linesState.asReadonly();
+  readonly lineDrafts = this.lineDraftsState.asReadonly();
+  readonly lineStockPreviews = this.lineStockPreviewsState.asReadonly();
+
+  readonly selectedClientId = this.selectedClientIdState.asReadonly();
+  readonly selectedWarehouseId = this.selectedWarehouseIdState.asReadonly();
+  readonly selectedClientDetail = this.selectedClientDetailState.asReadonly();
+
+  readonly loading = this.loadingState.asReadonly();
+  readonly loadingProducts = this.loadingProductsState.asReadonly();
+  readonly loadingClientDetail = this.loadingClientDetailState.asReadonly();
+  readonly submitting = this.submittingState.asReadonly();
+  readonly error = this.errorState.asReadonly();
+  readonly successMessage = this.successMessageState.asReadonly();
 
   readonly canEditLines = computed(() =>
     this.selectedClientId() !== null && this.selectedWarehouseId() !== null,
@@ -162,10 +180,10 @@ export class SaleCreateStore {
   );
 
   async initialize(): Promise<void> {
-    this.error.set(null);
-    this.successMessage.set(null);
+    this.errorState.set(null);
+    this.successMessageState.set(null);
     this.ensureAtLeastOneLine();
-    this.loading.set(true);
+    this.loadingState.set(true);
 
     try {
       const [clients, warehouses, products] = await Promise.all([
@@ -174,24 +192,24 @@ export class SaleCreateStore {
         this.loadAllActiveProducts(),
       ]);
 
-      this.clients.set(clients);
-      this.warehouses.set(warehouses);
-      this.products.set(products);
+      this.clientsState.set(clients);
+      this.warehousesState.set(warehouses);
+      this.productsState.set(products);
     } catch (err) {
-      this.error.set(this.resolveLoadError(err));
+      this.errorState.set(this.resolveLoadError(err));
     } finally {
-      this.loading.set(false);
+      this.loadingState.set(false);
     }
   }
 
   addLine(): void {
-    this.lines.update((lines) => [...lines, this.createEmptyLine()]);
+    this.linesState.update((lines) => [...lines, this.createEmptyLine()]);
   }
 
   removeLine(lineId: number): void {
     this.clearLineDraft(lineId);
     this.clearLineStockPreview(lineId);
-    this.lines.update((lines) => {
+    this.linesState.update((lines) => {
       const remaining = lines.filter((line) => line.lineId !== lineId);
       return remaining.length > 0 ? remaining : [this.createEmptyLine()];
     });
@@ -223,33 +241,33 @@ export class SaleCreateStore {
   }
 
   async onClientChange(clientId: number | null): Promise<void> {
-    this.selectedClientId.set(clientId);
-    this.selectedClientDetail.set(null);
-    this.error.set(null);
+    this.selectedClientIdState.set(clientId);
+    this.selectedClientDetailState.set(null);
+    this.errorState.set(null);
 
     if (!clientId) {
       return;
     }
 
-    this.loadingClientDetail.set(true);
+    this.loadingClientDetailState.set(true);
 
     try {
       const client = await firstValueFrom(this.getClientByIdUseCase.execute(clientId));
-      this.selectedClientDetail.set(client);
+      this.selectedClientDetailState.set(client);
     } catch (err) {
-      this.error.set(this.resolveLoadError(err));
+      this.errorState.set(this.resolveLoadError(err));
     } finally {
-      this.loadingClientDetail.set(false);
+      this.loadingClientDetailState.set(false);
     }
   }
 
   async onWarehouseChange(warehouseId: number | null): Promise<void> {
-    this.selectedWarehouseId.set(warehouseId);
-    this.error.set(null);
+    this.selectedWarehouseIdState.set(warehouseId);
+    this.errorState.set(null);
     this.clearAllLineStockPreviews();
 
     if (!warehouseId) {
-      this.lines.update((lines) =>
+      this.linesState.update((lines) =>
         lines.map((line) => ({
           ...line,
           availableStock: null,
@@ -381,7 +399,7 @@ export class SaleCreateStore {
         : {}),
     };
 
-    this.lines.update((lines) =>
+    this.linesState.update((lines) =>
       lines.map((line) => (line.lineId === lineId ? nextLine : line)),
     );
 
@@ -406,7 +424,7 @@ export class SaleCreateStore {
       return;
     }
 
-    this.lineStockPreviews.update((previews) => ({
+    this.lineStockPreviewsState.update((previews) => ({
       ...previews,
       [lineId]: {
         availableStock: null,
@@ -421,7 +439,7 @@ export class SaleCreateStore {
       );
       const stockForWarehouse = this.findStockForWarehouse(stocks, warehouseId);
 
-      this.lineStockPreviews.update((previews) => ({
+      this.lineStockPreviewsState.update((previews) => ({
         ...previews,
         [lineId]: {
           availableStock: stockForWarehouse?.currentStock ?? 0,
@@ -430,7 +448,7 @@ export class SaleCreateStore {
         },
       }));
     } catch {
-      this.lineStockPreviews.update((previews) => ({
+      this.lineStockPreviewsState.update((previews) => ({
         ...previews,
         [lineId]: {
           availableStock: null,
@@ -446,7 +464,7 @@ export class SaleCreateStore {
   }
 
   clearLineStockPreview(lineId: number): void {
-    this.lineStockPreviews.update((previews) => {
+    this.lineStockPreviewsState.update((previews) => {
       const nextPreviews = { ...previews };
       delete nextPreviews[lineId];
       return nextPreviews;
@@ -454,28 +472,28 @@ export class SaleCreateStore {
   }
 
   clearAllLineStockPreviews(): void {
-    this.lineStockPreviews.set({});
+    this.lineStockPreviewsState.set({});
   }
 
   async submit(): Promise<void> {
-    this.error.set(null);
-    this.successMessage.set(null);
+    this.errorState.set(null);
+    this.successMessageState.set(null);
 
     const payload = this.buildPayload();
     if (!payload) {
       return;
     }
 
-    this.submitting.set(true);
+    this.submittingState.set(true);
 
     try {
       await firstValueFrom(this.createSaleUseCase.execute(payload));
-      this.successMessage.set('La venta se ha creado correctamente.');
+      this.successMessageState.set('La venta se ha creado correctamente.');
       await this.router.navigate(['/sales']);
     } catch (err) {
-      this.error.set(this.resolveSubmitError(err));
+      this.errorState.set(this.resolveSubmitError(err));
     } finally {
-      this.submitting.set(false);
+      this.submittingState.set(false);
     }
   }
 
@@ -493,7 +511,7 @@ export class SaleCreateStore {
       return;
     }
 
-    this.lines.update((lines) =>
+    this.linesState.update((lines) =>
       lines.map((item) =>
         item.lineId === lineId
           ? {
@@ -511,7 +529,7 @@ export class SaleCreateStore {
       );
       const stockForWarehouse = this.findStockForWarehouse(stocks, warehouseId);
 
-      this.lines.update((lines) =>
+      this.linesState.update((lines) =>
         lines.map((item) =>
           item.lineId === lineId
             ? {
@@ -524,7 +542,7 @@ export class SaleCreateStore {
         ),
       );
     } catch {
-      this.lines.update((lines) =>
+      this.linesState.update((lines) =>
         lines.map((item) =>
           item.lineId === lineId
             ? {
@@ -542,7 +560,7 @@ export class SaleCreateStore {
   }
 
   private revalidateLine(lineId: number): void {
-    this.lines.update((lines) =>
+    this.linesState.update((lines) =>
       lines.map((line) =>
         line.lineId === lineId
           ? {
@@ -557,7 +575,7 @@ export class SaleCreateStore {
   private validateAllLines(): boolean {
     let isValid = true;
 
-    this.lines.update((lines) =>
+    this.linesState.update((lines) =>
       lines.map((line) => {
         const validationError = this.validateLine(line);
         if (validationError) {
@@ -643,23 +661,23 @@ export class SaleCreateStore {
 
   private buildPayload(): CreateSale | null {
     if (!this.selectedClientId()) {
-      this.error.set('Selecciona un cliente antes de guardar.');
+      this.errorState.set('Selecciona un cliente antes de guardar.');
       return null;
     }
 
     if (!this.selectedWarehouseId()) {
-      this.error.set('Selecciona un almacen antes de guardar.');
+      this.errorState.set('Selecciona un almacen antes de guardar.');
       return null;
     }
 
     if (!this.lines().length) {
-      this.error.set('Anade al menos una linea antes de guardar.');
+      this.errorState.set('Anade al menos una linea antes de guardar.');
       return null;
     }
 
     const linesAreValid = this.validateAllLines();
     if (!linesAreValid) {
-      this.error.set('Revisa los datos de las lineas antes de guardar la venta.');
+      this.errorState.set('Revisa los datos de las lineas antes de guardar la venta.');
       return null;
     }
 
@@ -672,7 +690,7 @@ export class SaleCreateStore {
       }));
 
     if (!payloadLines.length) {
-      this.error.set('Anade al menos una linea valida antes de guardar.');
+      this.errorState.set('Anade al menos una linea valida antes de guardar.');
       return null;
     }
 
@@ -840,7 +858,7 @@ export class SaleCreateStore {
 
   private ensureAtLeastOneLine(): void {
     if (!this.lines().length) {
-      this.lines.set([this.createEmptyLine()]);
+      this.linesState.set([this.createEmptyLine()]);
     }
   }
 
@@ -885,7 +903,7 @@ export class SaleCreateStore {
     let page = 1;
     let total = 0;
 
-    this.loadingProducts.set(true);
+    this.loadingProductsState.set(true);
 
     try {
       do {
@@ -900,7 +918,7 @@ export class SaleCreateStore {
         page += 1;
       } while (products.length < total);
     } finally {
-      this.loadingProducts.set(false);
+      this.loadingProductsState.set(false);
     }
 
     return products;
