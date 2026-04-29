@@ -82,7 +82,6 @@ export class SalesPageComponent implements OnInit {
   onCreateSale(): void {
     void this.router.navigate(['/sales/new']);
   }
-
   getStatusLabel(status: SaleStatus): string {
     switch (status) {
       case SaleStatus.PENDING:
