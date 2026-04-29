@@ -226,6 +226,14 @@ export class PurchasesStore {
       });
   }
 
+  setSupplierProducts(products: PurchaseSupplierProductOption[]): void {
+    this._supplierProducts.set(products);
+  }
+
+  clearSupplierProducts(): void {
+    this._supplierProducts.set([]);
+  }
+
   loadSupplierProductsCatalog(): void {
     const suppliers = this.suppliers();
     if (suppliers.length === 0) {
