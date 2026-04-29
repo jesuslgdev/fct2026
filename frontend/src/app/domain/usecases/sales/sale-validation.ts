@@ -13,6 +13,12 @@ import {
   SaleValidationError,
 } from '@domain/models/sale-errors';
 
+function validatePositiveInteger(value: number, field: string, message: string): void {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new SaleValidationError({ field, value }, message);
+  }
+}
+
 function validateDiscount(discount: number | undefined, discountType: SaleDiscountType | undefined): void {
   if (discountType !== undefined && !['percent', 'amount'].includes(discountType)) {
     throw new SaleValidationError(
@@ -58,33 +64,27 @@ export function normalizeSearch(search: string | undefined): string | undefined 
 }
 
 export function validateSaleId(saleId: number): void {
-  if (saleId <= 0) {
-    throw new SaleValidationError({ field: 'saleId' }, 'Sale ID must be greater than 0.');
-  }
+  validatePositiveInteger(saleId, 'saleId', 'Sale ID must be a positive integer.');
 }
 
 export function validateSaleLineId(saleLineId: number): void {
-  if (saleLineId <= 0) {
-    throw new SaleValidationError(
-      { field: 'saleLineId' },
-      'Sale line ID must be greater than 0.'
-    );
-  }
+  validatePositiveInteger(
+    saleLineId,
+    'saleLineId',
+    'Sale line ID must be a positive integer.'
+  );
 }
 
 export function validateWarehouseId(warehouseId: number): void {
-  if (warehouseId <= 0) {
-    throw new SaleValidationError(
-      { field: 'warehouseId' },
-      'Warehouse ID must be greater than 0.'
-    );
-  }
+  validatePositiveInteger(
+    warehouseId,
+    'warehouseId',
+    'Warehouse ID must be a positive integer.'
+  );
 }
 
 export function validateClientId(clientId: number): void {
-  if (clientId <= 0) {
-    throw new SaleValidationError({ field: 'clientId' }, 'Client ID is required.');
-  }
+  validatePositiveInteger(clientId, 'clientId', 'Client ID must be a positive integer.');
 }
 
 export function validateCreateSaleLines(lines: CreateSaleLineInput[]): void {
