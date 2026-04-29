@@ -232,7 +232,6 @@ describe('SalesPageComponent', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
   });
-
   it('navigates to the sale edit page', () => {
     component.onEditSale(1);
 
@@ -254,7 +253,6 @@ describe('SalesPageComponent', () => {
     expect(actionButton.attributes['icon']).toBe('pi pi-eye');
     expect(actionButton.attributes['variant']).toBe('ghost');
   });
-
   it('renders the edit action as an icon-only button for pending sales with permissions', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
 

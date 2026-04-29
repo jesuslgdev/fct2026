@@ -339,7 +339,6 @@ describe('SaleCreateStore', () => {
     expect(store.total()).toBeCloseTo(totalAntesDeEditar);
     expect(store.getLineDraft(lineId)).toBeUndefined();
   });
-
   it('marks the line as invalid when quantity exceeds available stock', async () => {
     await store.initialize();
 
@@ -405,7 +404,6 @@ describe('SaleCreateStore', () => {
 
     expect(store.canSubmit()).toBe(false);
   });
-
   it('maps the insufficient stock error to a Spanish message', async () => {
     await store.initialize();
     await store.onClientChange(1);
@@ -427,7 +425,6 @@ describe('SaleCreateStore', () => {
 
     expect(store.error()).toBe('Una o varias lineas no tienen stock suficiente.');
   });
-
   it('loads a pending sale for editing in the create form', async () => {
     await store.initializeForEdit(77);
 
@@ -516,7 +513,6 @@ describe('SaleCreateStore', () => {
     });
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 77]);
   });
-
   it('marks the line as invalid when a duplicate product is confirmed', async () => {
     await store.initialize();
     await store.onWarehouseChange(10);
