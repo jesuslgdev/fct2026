@@ -1,8 +1,8 @@
-<section class="flex flex-col gap-4">
+<section class="px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-4">
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-xl font-semibold text-surface-900">Resumen general</h1>
-      <p class="text-sm text-surface-500">
+      <h1 class="text-2xl font-bold text-surface-900">Resumen general</h1>
+      <p class="text-base text-surface-500">
         Estado global de compras, ventas y stock.
       </p>
     </div>
@@ -17,9 +17,7 @@
 
   @if (store.meta(); as meta) {
     <p class="text-xs text-surface-500">
-      Actualizado: {{ meta.generatedAt | date: 'dd/MM/yyyy HH:mm' }} ·
-      Umbral alertas: {{ meta.staleDays }} días ·
-      Últimos registros: {{ meta.recentLimit }}
+      Actualizado: {{ meta.generatedAt | date: 'dd/MM/yyyy HH:mm' }}
     </p>
   }
 
@@ -43,13 +41,13 @@
     </ui-card>
   } @else if (store.hasAnyData()) {
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <ui-card header="Compras por estado">
+      <ui-card header="Compras por estado" styleClass="h-full">
         @if (store.purchaseStatusSummary().length > 0) {
-          <div class="flex flex-wrap gap-2">
+          <div class="grid grid-cols-2 gap-2 min-h-28 content-start">
             @for (item of store.purchaseStatusSummary(); track item.status) {
-              <div class="flex items-center gap-2 rounded-lg border border-surface-200 px-3 py-2">
+              <div class="flex items-center justify-between gap-2 rounded-lg border border-surface-200 px-2 py-1.5">
                 <ui-badge
-                  [label]="item.status"
+                  [label]="statusLabel(item.status)"
                   [variant]="statusVariant(item.status)"
                 />
                 <span class="text-sm font-semibold text-surface-900">{{ item.count }}</span>
@@ -61,18 +59,76 @@
         }
       </ui-card>
 
-      <ui-card header="Ventas por estado">
+      <ui-card header="Ventas por estado" styleClass="h-full">
         @if (store.salesStatusSummary().length > 0) {
-          <div class="flex flex-wrap gap-2">
+          <div class="grid grid-cols-2 gap-2 min-h-28 content-start">
             @for (item of store.salesStatusSummary(); track item.status) {
-              <div class="flex items-center gap-2 rounded-lg border border-surface-200 px-3 py-2">
+              <div class="flex items-center justify-between gap-2 rounded-lg border border-surface-200 px-2 py-1.5">
                 <ui-badge
-                  [label]="item.status"
+                  [label]="statusLabel(item.status)"
                   [variant]="statusVariant(item.status)"
                 />
                 <span class="text-sm font-semibold text-surface-900">{{ item.count }}</span>
               </div>
             }
+          </div>
+        } @else {
+          <p class="text-sm text-surface-500">Sin datos disponibles.</p>
+        }
+      </ui-card>
+
+      <ui-card header="Gasto mensual (compras recibidas)" styleClass="h-full">
+        @if (store.spendComparison(); as spend) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-28 content-start">
+            <div class="rounded-lg border border-surface-200 p-3">
+              <p class="text-xs text-surface-500">Mes actual</p>
+              <p class="text-lg font-semibold">{{ spend.currentMonth | number: '1.2-2' }} €</p>
+            </div>
+            <div class="rounded-lg border border-surface-200 p-3">
+              <p class="text-xs text-surface-500">Mes anterior</p>
+              <p class="text-lg font-semibold">{{ spend.previousMonth | number: '1.2-2' }} €</p>
+            </div>
+            <div class="rounded-lg border border-surface-200 p-3">
+              <p class="text-xs text-surface-500">Diferencia absoluta</p>
+              <p class="text-lg font-semibold">{{ spend.differenceAmount | number: '1.2-2' }} €</p>
+            </div>
+            <div class="rounded-lg border border-surface-200 p-3">
+              <p class="text-xs text-surface-500">Diferencia porcentual</p>
+              <p class="text-lg font-semibold">
+                {{ spend.differencePercent === null ? 'N/A' : (spend.differencePercent | number: '1.2-2') + ' %' }}
+              </p>
+            </div>
+          </div>
+        } @else {
+          <p class="text-sm text-surface-500">Sin datos disponibles.</p>
+        }
+      </ui-card>
+
+      <ui-card header="Productos bajo stock mínimo" styleClass="h-full">
+        @if (store.lowStockProducts().length > 0) {
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-surface-600 border-b border-surface-200">
+                  <th class="py-2 pr-3">Código</th>
+                  <th class="py-2 pr-3">Producto</th>
+                  <th class="py-2 pr-3">Stock actual</th>
+                  <th class="py-2">Stock mínimo</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of store.lowStockProducts(); track item.productId) {
+                  <tr class="border-b border-surface-100">
+                    <td class="py-2 pr-3 font-medium">{{ item.productCode }}</td>
+                    <td class="py-2 pr-3">{{ item.productName }}</td>
+                    <td class="py-2 pr-3" [class]="lowStockClass(item.stockCurrent, item.stockMin)">
+                      {{ item.stockCurrent }}
+                    </td>
+                    <td class="py-2">{{ item.stockMin }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
         } @else {
           <p class="text-sm text-surface-500">Sin datos disponibles.</p>
@@ -98,7 +154,7 @@
                     <td class="py-2 pr-3 font-medium">{{ item.number }}</td>
                     <td class="py-2 pr-3">{{ item.counterpartName ?? '-' }}</td>
                     <td class="py-2 pr-3">
-                      <ui-badge [label]="item.status" [variant]="statusVariant(item.status)" />
+                      <ui-badge [label]="statusLabel(item.status)" [variant]="statusVariant(item.status)" />
                     </td>
                     <td class="py-2 pr-3">{{ item.total | number: '1.2-2' }} €</td>
                     <td class="py-2">{{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
@@ -131,68 +187,10 @@
                     <td class="py-2 pr-3 font-medium">{{ item.number }}</td>
                     <td class="py-2 pr-3">{{ item.counterpartName ?? '-' }}</td>
                     <td class="py-2 pr-3">
-                      <ui-badge [label]="item.status" [variant]="statusVariant(item.status)" />
+                      <ui-badge [label]="statusLabel(item.status)" [variant]="statusVariant(item.status)" />
                     </td>
                     <td class="py-2 pr-3">{{ item.total | number: '1.2-2' }} €</td>
                     <td class="py-2">{{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <p class="text-sm text-surface-500">Sin datos disponibles.</p>
-        }
-      </ui-card>
-
-      <ui-card header="Gasto mensual (compras recibidas)">
-        @if (store.spendComparison(); as spend) {
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="rounded-lg border border-surface-200 p-3">
-              <p class="text-xs text-surface-500">Mes actual</p>
-              <p class="text-lg font-semibold">{{ spend.currentMonth | number: '1.2-2' }} €</p>
-            </div>
-            <div class="rounded-lg border border-surface-200 p-3">
-              <p class="text-xs text-surface-500">Mes anterior</p>
-              <p class="text-lg font-semibold">{{ spend.previousMonth | number: '1.2-2' }} €</p>
-            </div>
-            <div class="rounded-lg border border-surface-200 p-3">
-              <p class="text-xs text-surface-500">Diferencia absoluta</p>
-              <p class="text-lg font-semibold">{{ spend.differenceAmount | number: '1.2-2' }} €</p>
-            </div>
-            <div class="rounded-lg border border-surface-200 p-3">
-              <p class="text-xs text-surface-500">Diferencia porcentual</p>
-              <p class="text-lg font-semibold">
-                {{ spend.differencePercent === null ? 'N/A' : (spend.differencePercent | number: '1.2-2') + ' %' }}
-              </p>
-            </div>
-          </div>
-        } @else {
-          <p class="text-sm text-surface-500">Sin datos disponibles.</p>
-        }
-      </ui-card>
-
-      <ui-card header="Productos bajo stock mínimo">
-        @if (store.lowStockProducts().length > 0) {
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="text-left text-surface-600 border-b border-surface-200">
-                  <th class="py-2 pr-3">Código</th>
-                  <th class="py-2 pr-3">Producto</th>
-                  <th class="py-2 pr-3">Stock actual</th>
-                  <th class="py-2">Stock mínimo</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of store.lowStockProducts(); track item.productId) {
-                  <tr class="border-b border-surface-100">
-                    <td class="py-2 pr-3 font-medium">{{ item.productCode }}</td>
-                    <td class="py-2 pr-3">{{ item.productName }}</td>
-                    <td class="py-2 pr-3" [class]="lowStockClass(item.stockCurrent, item.stockMin)">
-                      {{ item.stockCurrent }}
-                    </td>
-                    <td class="py-2">{{ item.stockMin }}</td>
                   </tr>
                 }
               </tbody>
@@ -214,10 +212,10 @@
                 <li class="rounded-md border border-surface-200 p-2">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-medium">{{ item.number }}</span>
-                    <ui-badge [label]="item.status" [variant]="statusVariant(item.status)" />
+                    <ui-badge [label]="statusLabel(item.status)" [variant]="statusVariant(item.status)" />
                   </div>
                   <p class="text-surface-600 mt-1">
-                    {{ item.daysInStatus }} días en estado ·
+                    Sin cambios desde hace {{ item.daysInStatus }} días ·
                     {{ item.statusChangedAt | date: 'dd/MM/yyyy HH:mm' }}
                   </p>
                 </li>
@@ -236,10 +234,10 @@
                 <li class="rounded-md border border-surface-200 p-2">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-medium">{{ item.number }}</span>
-                    <ui-badge [label]="item.status" [variant]="statusVariant(item.status)" />
+                    <ui-badge [label]="statusLabel(item.status)" [variant]="statusVariant(item.status)" />
                   </div>
                   <p class="text-surface-600 mt-1">
-                    {{ item.daysInStatus }} días en estado ·
+                    Sin cambios desde hace {{ item.daysInStatus }} días ·
                     {{ item.statusChangedAt | date: 'dd/MM/yyyy HH:mm' }}
                   </p>
                 </li>

@@ -39,6 +39,21 @@ export class DashboardPageComponent implements OnInit {
     return variantMap[normalized] ?? 'default';
   }
 
+  statusLabel(status: string): string {
+    const normalized = status.trim().toLowerCase();
+    const labelMap: Record<string, string> = {
+      pending: 'Pendiente',
+      approved: 'Aprobada',
+      'in process': 'En Proceso',
+      sent: 'Enviada',
+      received: 'Recibida',
+      delivered: 'Entregada',
+      cancelled: 'Cancelada',
+    };
+
+    return labelMap[normalized] ?? status;
+  }
+
   lowStockClass(stockCurrent: number, stockMin: number): string {
     if (stockCurrent <= Math.max(1, Math.floor(stockMin / 2))) {
       return 'text-red-600 font-medium';
