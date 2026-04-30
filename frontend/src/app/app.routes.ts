@@ -23,7 +23,11 @@ export const routes: Routes = [
 			{
 				path: '',
 				pathMatch: 'full',
-				redirectTo: 'departments',
+				redirectTo: 'dashboard',
+			},
+			{
+				path: 'dashboard',
+				loadChildren: () => import('@features/dashboard/dashboard.routes').then(m => m.DASHBOARD_ROUTES),
 			},
 			{
 				path: 'departments',
@@ -56,11 +60,6 @@ export const routes: Routes = [
 			{
 				path: 'suppliers',
 				loadChildren: () => import('@features/suppliers/suppliers.routes').then(m => m.SUPPLIERS_ROUTES),
-			},
-			{
-				path: '',
-				redirectTo: 'legal',
-				pathMatch: 'full',
 			},
 			{
 				path: '**',
