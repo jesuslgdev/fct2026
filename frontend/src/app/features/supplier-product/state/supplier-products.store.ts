@@ -100,6 +100,15 @@ export class SupplierProductsStore {
     return currentSupplierId;
   }
 
+  private parseProductId(productId: number | string): number | null {
+    const normalized = typeof productId === 'number' ? productId : Number(productId);
+    if (!Number.isInteger(normalized) || normalized <= 0) {
+      this.error.set('ID de producto invalido.');
+      return null;
+    }
+    return normalized;
+  }
+
   private parseSupplierPrice(value: number | string): number | null {
     const normalized = value.toString().trim().replace(',', '.');
     const price = Number(normalized);
@@ -204,8 +213,10 @@ export class SupplierProductsStore {
 
   startInlinePriceEdit(supplierProduct: SupplierProduct): void {
     if (!this.ensureCanModify()) return;
-    this.editingProductId.set(supplierProduct.productId);
-    this.priceDraft.set(supplierProduct.supplierPrice.toString());
+    const productId = this.parseProductId(supplierProduct.productId);
+    if (!productId) return;
+    this.editingProductId.set(productId);
+    this.priceDraft.set((supplierProduct.supplierPrice ?? '').toString());
   }
 
   cancelInlinePriceEdit(): void {
@@ -221,12 +232,13 @@ export class SupplierProductsStore {
     this.error.set(null);
     if (!this.ensureCanModify()) return;
     const supplierId = this.requireSupplierId();
+    const productId = this.parseProductId(supplierProduct.productId);
     const supplierPrice = this.parseSupplierPrice(this.priceDraft());
-    if (!supplierId || supplierPrice === null) return;
-    this.savingProductIds.update((ids) => new Set(ids).add(supplierProduct.productId));
+    if (!supplierId || !productId || supplierPrice === null) return;
+    this.savingProductIds.update((ids) => new Set(ids).add(productId));
     try {
       await firstValueFrom(
-        this.updateSupplierProductPriceUseCase.execute(supplierId, supplierProduct.productId, { supplierPrice }),
+        this.updateSupplierProductPriceUseCase.execute(supplierId, productId, { supplierPrice }),
       );
       this.cancelInlinePriceEdit();
       await this.fetchSupplierProducts(supplierId);
@@ -235,7 +247,7 @@ export class SupplierProductsStore {
     } finally {
       this.savingProductIds.update((ids) => {
         const next = new Set(ids);
-        next.delete(supplierProduct.productId);
+        next.delete(productId);
         return next;
       });
     }
@@ -257,10 +269,11 @@ export class SupplierProductsStore {
     if (!this.ensureCanModify()) return;
     const supplierId = this.requireSupplierId();
     const supplierProduct = this.selectedSupplierProduct();
-    if (!supplierId || !supplierProduct) return;
+    const productId = supplierProduct ? this.parseProductId(supplierProduct.productId) : null;
+    if (!supplierId || !supplierProduct || !productId) return;
     this.loading.set(true);
     try {
-      await firstValueFrom(this.removeProductFromSupplierUseCase.execute(supplierId, supplierProduct.productId));
+      await firstValueFrom(this.removeProductFromSupplierUseCase.execute(supplierId, productId));
       this.cancelDeleteProduct();
       await this.fetchSupplierProducts(supplierId);
     } catch (err) {

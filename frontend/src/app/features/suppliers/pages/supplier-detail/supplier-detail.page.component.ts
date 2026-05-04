@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Supplier } from '@domain/models/supplier.model';
+import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
+import { SupplierStatusBadgeComponent } from '@features/suppliers/components/supplier-status-badge/supplier-status-badge.component';
+import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CardComponent } from '@shared/ui/card/card.component';
-import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
-import { ProviderFormDialogComponent } from '@features/suppliers/components/provider-form-dialog/provider-form-dialog.component';
-import { ProviderStatusBadgeComponent } from '@features/suppliers/components/provider-status-badge/provider-status-badge.component';
-import { Provider } from '@domain/models/provider.model';
 
 @Component({
   selector: 'app-supplier-detail-page',
@@ -15,8 +15,8 @@ import { Provider } from '@domain/models/provider.model';
   imports: [
     ButtonComponent,
     CardComponent,
-    ProviderFormDialogComponent,
-    ProviderStatusBadgeComponent,
+    SupplierFormDialogComponent,
+    SupplierStatusBadgeComponent,
   ],
   templateUrl: './supplier-detail.page.component.html',
 })
@@ -25,7 +25,7 @@ export class SupplierDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly supplier = signal<Provider | null>(null);
+  readonly supplier = signal<Supplier | null>(null);
   readonly detailLoading = signal(false);
   readonly detailError = signal<string | null>(null);
   readonly supplierNumericId = signal<number | null>(null);
@@ -42,7 +42,7 @@ export class SupplierDetailPageComponent implements OnInit {
     this.supplierNumericId.set(numericId);
     this.detailLoading.set(true);
     try {
-      const supplier = await this.store.loadProviderById(rawId);
+      const supplier = await this.store.loadSupplierById(rawId);
       this.supplier.set(supplier);
     } finally {
       this.detailLoading.set(false);
