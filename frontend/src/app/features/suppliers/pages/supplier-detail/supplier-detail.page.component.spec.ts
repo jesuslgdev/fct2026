@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 import { Supplier } from '@domain/models/supplier.model';
+import { SupplierProductsStore } from '@features/supplier-product/state/supplier-products.store';
 import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
 import { SupplierDetailPageComponent } from './supplier-detail.page.component';
 
@@ -33,6 +34,13 @@ describe('SupplierDetailPageComponent', () => {
     loadSupplierById: ReturnType<typeof vi.fn>;
     openEditDialog: ReturnType<typeof vi.fn>;
   };
+  let supplierProductsStore: {
+    loadSupplierProducts: ReturnType<typeof vi.fn>;
+    supplierPageSize: ReturnType<typeof vi.fn>;
+    onSupplierProductsPageChange: ReturnType<typeof vi.fn>;
+    setPriceDraft: ReturnType<typeof vi.fn>;
+    setAddProductPriceDraft: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     routeId = '1';
@@ -42,6 +50,13 @@ describe('SupplierDetailPageComponent', () => {
       canEdit: vi.fn().mockReturnValue(true),
       loadSupplierById: vi.fn().mockResolvedValue(SUPPLIER),
       openEditDialog: vi.fn().mockResolvedValue(undefined),
+    };
+    supplierProductsStore = {
+      loadSupplierProducts: vi.fn().mockResolvedValue(undefined),
+      supplierPageSize: vi.fn().mockReturnValue(10),
+      onSupplierProductsPageChange: vi.fn(),
+      setPriceDraft: vi.fn(),
+      setAddProductPriceDraft: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -62,7 +77,10 @@ describe('SupplierDetailPageComponent', () => {
     })
       .overrideComponent(SupplierDetailPageComponent, {
         set: {
-          providers: [{ provide: SuppliersStore, useValue: store }],
+          providers: [
+            { provide: SuppliersStore, useValue: store },
+            { provide: SupplierProductsStore, useValue: supplierProductsStore },
+          ],
         },
       })
       .compileComponents();
@@ -75,6 +93,7 @@ describe('SupplierDetailPageComponent', () => {
     await component.ngOnInit();
 
     expect(store.loadSupplierById).toHaveBeenCalledWith('1');
+    expect(supplierProductsStore.loadSupplierProducts).toHaveBeenCalledWith(1);
     expect(component.supplierNumericId()).toBe(1);
     expect(component.supplier()).toEqual(SUPPLIER);
     expect(component.detailLoading()).toBe(false);
@@ -89,6 +108,7 @@ describe('SupplierDetailPageComponent', () => {
       await component.ngOnInit();
 
       expect(store.loadSupplierById).not.toHaveBeenCalled();
+      expect(supplierProductsStore.loadSupplierProducts).not.toHaveBeenCalled();
       expect(component.detailError()).toBe('Identificador de proveedor invalido.');
       expect(component.detailLoading()).toBe(false);
     },
