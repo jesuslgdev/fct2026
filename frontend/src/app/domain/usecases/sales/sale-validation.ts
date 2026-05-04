@@ -31,6 +31,13 @@ function validateDiscount(discount: number | undefined, discountType: SaleDiscou
     return;
   }
 
+  if (discountType === undefined) {
+    throw new SaleValidationError(
+      { field: 'discountType', discount },
+      'Discount type is required when discount is provided.'
+    );
+  }
+
   if (discount < 0) {
     throw new SaleInvalidDiscountError('Discount must be greater than or equal to 0.');
   }
