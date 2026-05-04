@@ -18,7 +18,6 @@ async def sample_product(db_session: AsyncSession) -> Product:
         description="A powerful laptop",
         category_id=category.category_id,
         price=999.99,
-        stock_current=10,
         stock_min=2,
         is_active=True,
     )

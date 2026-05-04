@@ -9,4 +9,12 @@ export const SUPPLIERS_ROUTES: Routes = [
 			),
 		title: 'Proveedores',
 	},
+	{
+		path: ':id',
+		loadComponent: () =>
+			import('./pages/supplier-detail/supplier-detail.page.component').then(
+				(m) => m.SupplierDetailPageComponent,
+			),
+		title: 'Detalle de proveedor',
+	},
 ];

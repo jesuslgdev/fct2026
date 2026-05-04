@@ -41,6 +41,22 @@ export class UserAlreadyExistsError extends Error {
   }
 }
 
+export class UserDepartmentNotFoundError extends Error {
+  override readonly name = 'UserDepartmentNotFoundError';
+
+  constructor(message = 'Department not found.') {
+    super(message);
+  }
+}
+
+export class UserDepartmentRequiredError extends Error {
+  override readonly name = 'UserDepartmentRequiredError';
+
+  constructor(message = 'Department is required for this role.') {
+    super(message);
+  }
+}
+
 export class UserAlreadyActiveError extends Error {
   override readonly name = 'UserAlreadyActiveError';
 

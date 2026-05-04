@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
-import { DownloadProviderTemplateUseCase } from '@domain/usecases/supplier/download-provider-template.usecase';
-import { ImportProvidersUseCase } from '@domain/usecases/supplier/import-providers.usecase';
+﻿import { Injectable, inject } from '@angular/core';
+import { DownloadSupplierTemplateUseCase } from '@domain/usecases/supplier/download-supplier-template.usecase';
+import { ImportSuppliersUseCase } from '@domain/usecases/supplier/import-suppliers.usecase';
 
 export interface ExcelImportResult {
   success: boolean;
@@ -8,7 +8,7 @@ export interface ExcelImportResult {
   validRecords: number;
   invalidRecords: number;
   errors: ImportError[];
-  importedProviders?: ImportedProvider[];
+  importedSuppliers?: ImportedSupplier[];
 }
 
 export interface ImportError {
@@ -18,7 +18,7 @@ export interface ImportError {
   message: string;
 }
 
-export interface ImportedProvider {
+export interface ImportedSupplier {
   name: string;
   taxId: string;
   email: string;
@@ -38,13 +38,14 @@ export interface ExcelTemplate {
   providedIn: 'root'
 })
 export class ExcelImportService {
-  private readonly downloadProviderTemplateUseCase = inject(DownloadProviderTemplateUseCase);
-  private readonly importProvidersUseCase = inject(ImportProvidersUseCase);
+  private readonly downloadSupplierTemplateUseCase = inject(DownloadSupplierTemplateUseCase);
+  private readonly importSuppliersUseCase = inject(ImportSuppliersUseCase);
+  private static readonly PHONE_PATTERN = /^\d{9}$/;
 
-  // ── Download Excel template ─────────────────────────────────────────────
+  // Download Excel template
   async downloadTemplate(): Promise<ExcelTemplate> {
     try {
-      return await this.downloadProviderTemplateUseCase.execute();
+      return await this.downloadSupplierTemplateUseCase.execute();
     } catch {
       // Fallback to a locally generated template if the endpoint fails
       const templateData = this.generateTemplateData();
@@ -57,7 +58,7 @@ export class ExcelImportService {
     }
   }
 
-  // ── Generate template data (simulated) ───────────────────────────────────
+  // Generate template data (simulated)
   private generateTemplateData(): ArrayBuffer {
     // In a real case, this could come from the backend or use a library like xlsx
     const templateContent = this.createCsvTemplate(); // Simplified as CSV
@@ -94,8 +95,8 @@ export class ExcelImportService {
     ].join('\n');
   }
 
-  // ── Parse Excel/CSV file ───────────────────────────────────────────────
-  async parseFile(file: File): Promise<ImportedProvider[]> {
+  // Parse Excel/CSV file
+  async parseFile(file: File): Promise<ImportedSupplier[]> {
     const content = await this.readFileContent(file);
     const lines = content.split('\n').filter(line => line.trim());
     
@@ -104,18 +105,18 @@ export class ExcelImportService {
     }
 
     const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const providers: ImportedProvider[] = [];
+    const suppliers: ImportedSupplier[] = [];
 
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      const provider = this.mapRowToProvider(headers, values, i + 1);
+      const supplier = this.mapRowToSupplier(headers, values);
       
-      if (provider) {
-        providers.push(provider);
+      if (supplier) {
+        suppliers.push(supplier);
       }
     }
 
-    return providers;
+    return suppliers;
   }
 
   private async readFileContent(file: File): Promise<string> {
@@ -127,132 +128,141 @@ export class ExcelImportService {
     });
   }
 
-  private mapRowToProvider(headers: string[], values: string[], rowNumber: number): ImportedProvider | null {
-    const fieldMapping: Record<string, keyof ImportedProvider> = {
+  private mapRowToSupplier(headers: string[], values: string[]): ImportedSupplier | null {
+    const fieldMapping: Record<string, keyof ImportedSupplier> = {
       'Nombre': 'name',
       'CIF': 'taxId',
       'Dirección': 'address',
+      'Direccion': 'address',
       'Ciudad': 'city',
       'Provincia': 'province',
       'Código postal': 'postalCode',
+      'Codigo postal': 'postalCode',
       'Teléfono': 'phone',
+      'Telefono': 'phone',
       'Email': 'email'
     };
 
-    const provider: Partial<ImportedProvider> = {};
+    const supplier: Partial<ImportedSupplier> = {};
 
     headers.forEach((header, index) => {
       const field = fieldMapping[header];
       if (field && values[index]) {
-        provider[field] = values[index] || undefined;
+        supplier[field] = values[index] || undefined;
       }
     });
 
     // Validate required fields
-    if (!provider.name || !provider.taxId || !provider.email) {
-      console.warn(`Row ${rowNumber}: Missing required fields`);
+    if (!supplier.name || !supplier.taxId || !supplier.email) {
       return null;
     }
 
-    return provider as ImportedProvider;
+    return supplier as ImportedSupplier;
   }
 
-  // ── Validate supplier data ───────────────────────────────────────────────
-  validateProviders(providers: ImportedProvider[]): ExcelImportResult {
+  // Validate supplier data
+  validateSuppliers(suppliers: ImportedSupplier[]): ExcelImportResult {
     const errors: ImportError[] = [];
-    const validProviders: ImportedProvider[] = [];
+    const validSuppliers: ImportedSupplier[] = [];
 
-    providers.forEach((provider, index) => {
+    suppliers.forEach((supplier, index) => {
       const rowNumber = index + 2; // +2 because row 1 is the header
-      const providerErrors = this.validateProvider(provider, rowNumber);
+      const supplierErrors = this.validateSupplier(supplier, rowNumber);
       
-      if (providerErrors.length === 0) {
-        validProviders.push(provider);
+      if (supplierErrors.length === 0) {
+        validSuppliers.push(supplier);
       } else {
-        errors.push(...providerErrors);
+        errors.push(...supplierErrors);
       }
     });
 
     return {
       success: errors.length === 0,
-      totalRecords: providers.length,
-      validRecords: validProviders.length,
+      totalRecords: suppliers.length,
+      validRecords: validSuppliers.length,
       invalidRecords: errors.length,
       errors,
-      importedProviders: errors.length === 0 ? validProviders : []
+      importedSuppliers: errors.length === 0 ? validSuppliers : []
     };
   }
 
-  private validateProvider(provider: ImportedProvider, rowNumber: number): ImportError[] {
+  private validateSupplier(supplier: ImportedSupplier, rowNumber: number): ImportError[] {
     const errors: ImportError[] = [];
 
     // Validate name
-    if (!provider.name || provider.name.trim().length === 0) {
+    if (!supplier.name || supplier.name.trim().length === 0) {
       errors.push({
         row: rowNumber,
         field: 'Nombre',
-        value: provider.name || '',
+        value: supplier.name || '',
         message: 'El nombre es obligatorio'
       });
-    } else if (provider.name.length > 100) {
+    } else if (supplier.name.length > 100) {
       errors.push({
         row: rowNumber,
         field: 'Nombre',
-        value: provider.name,
+        value: supplier.name,
         message: 'El nombre no puede exceder 100 caracteres'
       });
     }
 
     // Validate tax ID
-    if (!provider.taxId || provider.taxId.trim().length === 0) {
+    if (!supplier.taxId || supplier.taxId.trim().length === 0) {
       errors.push({
         row: rowNumber,
         field: 'CIF',
-        value: provider.taxId || '',
+        value: supplier.taxId || '',
         message: 'El CIF es obligatorio'
       });
-    } else if (!/^[A-Z0-9]{8,9}$/.test(provider.taxId)) {
+    } else if (!/^[A-Z0-9]{8,9}$/.test(supplier.taxId)) {
       errors.push({
         row: rowNumber,
         field: 'CIF',
-        value: provider.taxId,
+        value: supplier.taxId,
         message: 'El formato del CIF no es válido (8-9 caracteres alfanuméricos)'
       });
     }
 
     // Validate email
-    if (!provider.email || provider.email.trim().length === 0) {
+    if (!supplier.email || supplier.email.trim().length === 0) {
       errors.push({
         row: rowNumber,
         field: 'Email',
-        value: provider.email || '',
+        value: supplier.email || '',
         message: 'El email es obligatorio'
       });
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(provider.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supplier.email)) {
       errors.push({
         row: rowNumber,
         field: 'Email',
-        value: provider.email,
+        value: supplier.email,
         message: 'El formato del email no es válido'
       });
     }
 
-    // Validate phone (optional)
-    if (provider.phone && !/^[0-9]{9}$/.test(provider.phone.replace(/\s/g, ''))) {
+    // Validate phone (required in backend import contract)
+    if (!supplier.phone || supplier.phone.trim().length === 0) {
       errors.push({
         row: rowNumber,
         field: 'Teléfono',
-        value: provider.phone,
-        message: 'El formato del teléfono no es válido (9 dígitos)'
+        value: supplier.phone || '',
+        message: 'El teléfono es obligatorio'
+      });
+    } else if (!ExcelImportService.PHONE_PATTERN.test(supplier.phone)) {
+      errors.push({
+        row: rowNumber,
+        field: 'Teléfono',
+        value: supplier.phone,
+        message: 'El formato del teléfono no es válido (exactamente 9 dígitos)'
       });
     }
 
     // Validate postal code (optional)
-    if (provider.postalCode && !/^[0-9]{5}$/.test(provider.postalCode)) {
+    if (supplier.postalCode && !/^[0-9]{5}$/.test(supplier.postalCode)) {
       errors.push({
         row: rowNumber,
         field: 'Código postal',
-        value: provider.postalCode,
+        value: supplier.postalCode,
         message: 'El código postal debe tener 5 dígitos'
       });
     }
@@ -260,15 +270,15 @@ export class ExcelImportService {
     return errors;
   }
 
-  // ── Import suppliers to backend ───────────────────────────────────────
-  async importProviders(file: File): Promise<{
+  // Import suppliers to backend
+  async importSuppliers(file: File): Promise<{
     success: boolean;
     importedCount: number;
     message: string;
     errors?: ImportError[];
   }> {
     try {
-      const backendResult = await this.importProvidersUseCase.execute(file);
+      const backendResult = await this.importSuppliersUseCase.execute(file);
 
       const errors: ImportError[] = (backendResult.errors ?? []).map((error) => ({
         row: error.row,
@@ -292,7 +302,7 @@ export class ExcelImportService {
     }
   }
 
-  // ── Download file in browser ─────────────────────────────────────────
+  // Download file in browser
   downloadFile(data: ArrayBuffer, filename: string): void {
     const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = window.URL.createObjectURL(blob);
@@ -305,3 +315,4 @@ export class ExcelImportService {
     window.URL.revokeObjectURL(url);
   }
 }
+

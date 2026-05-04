@@ -36,43 +36,48 @@
         <th>Nombre</th>
         <th>Direccion</th>
         <th>Stock total</th>
-        @if (store.canEdit()) {
-          <th>Acciones</th>
-        }
+        <th>Acciones</th>
       </tr>
     </ng-template>
 
     <ng-template #body let-warehouse>
-      <tr>
+      <tr class="cursor-pointer" (click)="openWarehouseDetail(warehouse)">
         <td>{{ warehouse.name }}</td>
         <td>{{ warehouse.address }}</td>
         <td>{{ warehouse.totalStock }}</td>
-        @if (store.canEdit()) {
-          <td>
-            <div>
+        <td>
+          <div>
+            <ui-button
+              icon="pi pi-eye"
+              ariaLabel="Ver detalle de almacen"
+              variant="ghost"
+              size="sm"
+              (clicked)="openWarehouseDetail(warehouse); $event.stopPropagation()"
+            />
+            @if (store.canEdit()) {
               <ui-button
                 icon="pi pi-pencil"
                 ariaLabel="Editar almacen"
                 variant="ghost"
                 size="sm"
-                (clicked)="store.openEditDialog(warehouse)"
+                (clicked)="store.openEditDialog(warehouse); $event.stopPropagation()"
               />
               <ui-button
                 icon="pi pi-trash"
                 ariaLabel="Eliminar almacen"
                 variant="destructive"
                 size="sm"
-                (clicked)="store.requestDeleteWarehouse(warehouse)"
+                (clicked)="store.requestDeleteWarehouse(warehouse); $event.stopPropagation()"
               />
-            </div>
-          </td>
-        }
+            }
+          </div>
+        </td>
       </tr>
     </ng-template>
 
     <ng-template #emptymessage>
       <tr>
-        <td [attr.colspan]="store.canEdit() ? 4 : 3" class="empty-state">
+        <td colspan="4" class="empty-state">
           No se encontraron almacenes.
         </td>
       </tr>

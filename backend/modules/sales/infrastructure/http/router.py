@@ -1,16 +1,32 @@
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from composition.dependencies import (
+    get_add_sale_line_use_case,
+    get_advance_sale_status_use_case,
     get_create_sale_use_case,
+    get_delete_sale_use_case,
     get_get_sale_use_case,
     get_list_sales_use_case,
+    get_remove_sale_line_use_case,
+    get_update_sale_line_use_case,
+    get_update_sale_use_case,
 )
 from composition.security import require_sales_department_or_admin
+from modules.sales.domain.exceptions import InsufficientStockForLineError
+from modules.sales.domain.interfaces.use_cases.i_add_sale_line_use_case import (
+    IAddSaleLineUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case import (
+    IAdvanceSaleStatusUseCase,
+)
 from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
     ICreateSaleUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_delete_sale_use_case import (
+    IDeleteSaleUseCase,
 )
 from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
     IGetSaleUseCase,
@@ -18,15 +34,42 @@ from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
 from modules.sales.domain.interfaces.use_cases.i_list_sales_use_case import (
     IListSalesUseCase,
 )
+from modules.sales.domain.interfaces.use_cases.i_remove_sale_line_use_case import (
+    IRemoveSaleLineUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_update_sale_line_use_case import (
+    IUpdateSaleLineUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_update_sale_use_case import (
+    IUpdateSaleUseCase,
+)
+from modules.sales.domain.sale_status import allowed_next
 from modules.sales.infrastructure.http.schemas import (
+    ChangeSaleStatusRequest,
     CreateSaleRequest,
     SaleDetailDTO,
     SaleDTO,
+    SaleLineInput,
+    UpdateSaleLineRequest,
+    UpdateSaleRequest,
 )
 from shared.domain.dtos.user_session import UserSession
 from shared.infrastructure.http.paginated_response import PaginatedResponse
 
 router = APIRouter(prefix="/sales")
+
+
+def _stock_field_error(line_index: int) -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail=[
+            {
+                "loc": ["body", "lines", line_index, "quantity"],
+                "msg": "Insufficient stock for this product",
+                "type": "value_error",
+            }
+        ],
+    )
 
 
 @router.post("", response_model=SaleDetailDTO, status_code=201, tags=["Sales"])
@@ -35,12 +78,16 @@ async def create_sale(
     current_user: UserSession = Depends(require_sales_department_or_admin),
     use_case: ICreateSaleUseCase = Depends(get_create_sale_use_case),
 ):
-    """Create a new sale."""
-    sale = await use_case.execute(
-        client_id=body.client_id,
-        user_id=current_user.user_id,
-        lines=[line.model_dump() for line in body.lines],
-    )
+    """Create a new sale in Pending status."""
+    try:
+        sale = await use_case.execute(
+            client_id=body.client_id,
+            warehouse_id=body.warehouse_id,
+            user_id=current_user.user_id,
+            lines=[line.model_dump() for line in body.lines],
+        )
+    except InsufficientStockForLineError as exc:
+        raise _stock_field_error(exc.line_index)
     return SaleDetailDTO.from_entity(sale)
 
 
@@ -52,9 +99,10 @@ async def list_sales(
         "sale_number", "client_name", "status", "sale_date", "total", "created_at"
     ] = Query("created_at", description="Field to sort by"),
     sort_order: Literal["asc", "desc"] = Query("desc", description="Sort direction"),
-    status: str | None = Query(
-        None, description="Filter by sale status (e.g. Pending)"
-    ),
+    status: Literal[
+        "Pending", "Approved", "InProcess", "Shipped", "Delivered", "Cancelled"
+    ]
+    | None = Query(None, description="Filter by sale status"),
     client_id: int | None = Query(None, description="Filter by client ID"),
     date_from: datetime | None = Query(
         None, description="Filter sales from this date (e.g. 2024-01-01T00:00:00)"
@@ -69,6 +117,11 @@ async def list_sales(
     use_case: IListSalesUseCase = Depends(get_list_sales_use_case),
 ):
     """Return a paginated list of sales with optional filters."""
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(
+            status_code=422,
+            detail="date_from must be earlier than or equal to date_to",
+        )
     result = await use_case.execute(
         page=page,
         page_size=page_size,
@@ -86,12 +139,17 @@ async def list_sales(
                 sale_id=sale.sale_id,
                 sale_number=sale.sale_number,
                 client_id=sale.client_id,
+                warehouse_id=sale.warehouse_id,
                 client_name=client_name,
+                creator_name=creator_name,
                 status=sale.status,
+                allowed_transitions=allowed_next(sale.status),
                 sale_date=sale.sale_date,
+                delivery_address=sale.delivery_address,
+                created_at=sale.created_at,
                 total=sale.total,
             )
-            for sale, client_name in result.items
+            for sale, client_name, creator_name in result.items
         ],
         total=result.total,
         page=result.page,
@@ -108,3 +166,112 @@ async def get_sale(
     """Return the full detail of a single sale."""
     sale = await use_case.execute(sale_id)
     return SaleDetailDTO.from_entity(sale)
+
+
+@router.put("/{sale_id}", response_model=SaleDetailDTO, tags=["Sales"])
+async def update_sale(
+    sale_id: int,
+    body: UpdateSaleRequest,
+    _: UserSession = Depends(require_sales_department_or_admin),
+    use_case: IUpdateSaleUseCase = Depends(get_update_sale_use_case),
+):
+    """Update an existing pending sale (replaces full line set)."""
+    try:
+        sale = await use_case.execute(
+            sale_id=sale_id,
+            client_id=body.client_id,
+            delivery_address=body.delivery_address,
+            lines=[line.model_dump() for line in body.lines],
+        )
+    except InsufficientStockForLineError as exc:
+        raise _stock_field_error(exc.line_index)
+    return SaleDetailDTO.from_entity(sale)
+
+
+@router.post(
+    "/{sale_id}/lines",
+    response_model=SaleDetailDTO,
+    status_code=201,
+    tags=["Sales"],
+)
+async def add_sale_line(
+    sale_id: int,
+    body: SaleLineInput,
+    _: UserSession = Depends(require_sales_department_or_admin),
+    use_case: IAddSaleLineUseCase = Depends(get_add_sale_line_use_case),
+):
+    """Add a single line to an existing pending sale."""
+    sale = await use_case.execute(
+        sale_id=sale_id,
+        product_id=body.product_id,
+        quantity=body.quantity,
+        discount=body.discount,
+        discount_type=body.discount_type,
+    )
+    return SaleDetailDTO.from_entity(sale)
+
+
+@router.put(
+    "/{sale_id}/lines/{sale_line_id}",
+    response_model=SaleDetailDTO,
+    tags=["Sales"],
+)
+async def update_sale_line(
+    sale_id: int,
+    sale_line_id: int,
+    body: UpdateSaleLineRequest,
+    _: UserSession = Depends(require_sales_department_or_admin),
+    use_case: IUpdateSaleLineUseCase = Depends(get_update_sale_line_use_case),
+):
+    """Update quantity and discount on a single sale line."""
+    sale = await use_case.execute(
+        sale_id=sale_id,
+        sale_line_id=sale_line_id,
+        quantity=body.quantity,
+        discount=body.discount,
+        discount_type=body.discount_type,
+    )
+    return SaleDetailDTO.from_entity(sale)
+
+
+@router.delete(
+    "/{sale_id}/lines/{sale_line_id}",
+    response_model=SaleDetailDTO,
+    tags=["Sales"],
+)
+async def remove_sale_line(
+    sale_id: int,
+    sale_line_id: int,
+    _: UserSession = Depends(require_sales_department_or_admin),
+    use_case: IRemoveSaleLineUseCase = Depends(get_remove_sale_line_use_case),
+):
+    """Remove a line from a pending sale (minimum one line must remain)."""
+    sale = await use_case.execute(sale_id=sale_id, sale_line_id=sale_line_id)
+    return SaleDetailDTO.from_entity(sale)
+
+
+@router.patch("/{sale_id}/status", response_model=SaleDetailDTO, tags=["Sales"])
+async def change_sale_status(
+    sale_id: int,
+    body: ChangeSaleStatusRequest,
+    current_user: UserSession = Depends(require_sales_department_or_admin),
+    use_case: IAdvanceSaleStatusUseCase = Depends(get_advance_sale_status_use_case),
+):
+    """Advance a sale to the next status in the lifecycle."""
+    sale = await use_case.execute(
+        sale_id=sale_id,
+        new_status=body.new_status,
+        actor=current_user,
+    )
+    return SaleDetailDTO.from_entity(sale)
+
+
+@router.delete("/{sale_id}", status_code=204, tags=["Sales"])
+async def delete_sale(
+    sale_id: int,
+    _: UserSession = Depends(require_sales_department_or_admin),
+    use_case: IDeleteSaleUseCase = Depends(get_delete_sale_use_case),
+):
+    """Physically delete a sale. Only allowed when status is Pending."""
+    await use_case.execute(sale_id=sale_id)
+    return Response(status_code=204)

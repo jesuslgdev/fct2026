@@ -133,12 +133,10 @@ describe('Product Use Cases', () => {
   it('CreateProductUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(CreateProductUseCase);
     const payload: CreateProductPayload = {
-      code: 'P-0001',
       name: 'Producto ejemplo',
       description: 'Descripción ejemplo',
       categoryId: 1,
       price: 10,
-      stock: 5,
       minStock: 2,
     };
     repo.createProduct.mockReturnValueOnce(of(PRODUCT_MOCK));

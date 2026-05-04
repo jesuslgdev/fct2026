@@ -2,12 +2,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from shared.constants import POSTAL_CODE_PATTERN
+
 
 class AddressDTO(BaseModel):
     street: str = Field(..., min_length=1, max_length=255)
     city: str = Field(..., min_length=1, max_length=100)
     province: str = Field(..., min_length=1, max_length=100)
-    postal_code: str = Field(..., min_length=1, max_length=10)
+    postal_code: str = Field(..., pattern=POSTAL_CODE_PATTERN)
 
 
 class CreateWarehouseDTO(BaseModel):
@@ -63,6 +65,37 @@ class StockDistributionItemDTO(BaseModel):
     stock: int
     reserved_stock: int
     available_stock: int
+
+
+# ── Stock Movement History ──────────────────────────────────────
+
+
+class StockMovementItemDTO(BaseModel):
+    """Single row in the stock movement history list."""
+
+    movement_id: int
+    product_id: int
+    product_name: str
+    movement_type: str
+    difference: int
+    reason: str | None
+    created_at: datetime
+
+
+class StockMovementDetailDTO(BaseModel):
+    """Full detail of a single stock movement."""
+
+    movement_id: int
+    warehouse_id: int
+    product_id: int
+    product_name: str
+    movement_type: str
+    previous_quantity: int
+    new_quantity: int
+    difference: int
+    reason: str | None
+    user_email: str
+    created_at: datetime
 
 
 # ── Stock Adjustment ────────────────────────────────────────────

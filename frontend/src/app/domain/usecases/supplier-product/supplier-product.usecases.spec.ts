@@ -5,6 +5,7 @@ import { SupplierProductRepository } from '@domain/repositories/supplier-product
 import {
   SupplierProduct,
   AddSupplierProductRequest,
+  DownloadSupplierProductTemplateRequest,
   UpdateSupplierProductPriceRequest,
   ImportSupplierProductsRequest,
   ImportResult,
@@ -255,16 +256,64 @@ describe('Supplier Product Use Cases', () => {
     });
 
     it('should throw ValidationError if inputs are invalid', () => {
-      const validRequest: ImportSupplierProductsRequest = { file: new File([], 'test.xlsx') };
+      const validRequest: ImportSupplierProductsRequest = {
+        file: new File([], 'test.xlsx', {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+      };
       expect(() => importSupplierProductsUseCase.execute(0, validRequest)).toThrow(SupplierProductValidationError);
       
       const invalidFileRequest = { file: null } as unknown as ImportSupplierProductsRequest;
       expect(() => importSupplierProductsUseCase.execute(1, invalidFileRequest)).toThrow(SupplierProductValidationError);
+
+      const invalidExtensionRequest: ImportSupplierProductsRequest = {
+        file: new File([], 'test.jpg', {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+      };
+      expect(() => importSupplierProductsUseCase.execute(1, invalidExtensionRequest)).toThrow(SupplierProductValidationError);
+
+      const invalidMimeTypeRequest: ImportSupplierProductsRequest = {
+        file: new File([], 'test.xlsx', { type: 'image/jpeg' })
+      };
+      expect(() => importSupplierProductsUseCase.execute(1, invalidMimeTypeRequest)).toThrow(SupplierProductValidationError);
+    });
+
+    it('should accept valid Excel extensions regardless of case', async () => {
+      const supplierId = 1;
+      const request: ImportSupplierProductsRequest = {
+        file: new File([''], 'PRODUCTS.XLSX', {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+      };
+      const importResult: ImportResult = { total: 1, created: 1, errors: 0, errorDetail: [] };
+      repo.importSupplierProducts.mockReturnValue(of(importResult));
+
+      const result = await firstValueFrom(importSupplierProductsUseCase.execute(supplierId, request));
+
+      expect(repo.importSupplierProducts).toHaveBeenCalledWith(supplierId, request);
+      expect(result).toEqual(importResult);
+    });
+
+    it('should accept valid Excel extension when browser does not provide MIME type', async () => {
+      const supplierId = 1;
+      const request: ImportSupplierProductsRequest = {
+        file: new File([''], 'products.xlsx')
+      };
+      const importResult: ImportResult = { total: 1, created: 1, errors: 0, errorDetail: [] };
+      repo.importSupplierProducts.mockReturnValue(of(importResult));
+
+      const result = await firstValueFrom(importSupplierProductsUseCase.execute(supplierId, request));
+
+      expect(repo.importSupplierProducts).toHaveBeenCalledWith(supplierId, request);
+      expect(result).toEqual(importResult);
     });
 
     it('should propagate repository errors', async () => {
       const supplierId = 1;
-      const mockFile = new File([''], 'test.xlsx');
+      const mockFile = new File([''], 'test.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
       const request: ImportSupplierProductsRequest = {
         file: mockFile
       };
@@ -283,13 +332,32 @@ describe('Supplier Product Use Cases', () => {
 
       const result = await firstValueFrom(downloadTemplateUseCase.execute(supplierId));
 
-      expect(repo.downloadTemplate).toHaveBeenCalledWith(supplierId);
+      expect(repo.downloadTemplate).toHaveBeenCalledWith(supplierId, undefined);
+      expect(result).toBe(mockBlob);
+    });
+
+    it('should normalize, deduplicate and delegate selected product ids', async () => {
+      const supplierId = 1;
+      const request: DownloadSupplierProductTemplateRequest = {
+        productIds: [7, 3, 7, 4],
+      };
+      const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      repo.downloadTemplate.mockReturnValue(of(mockBlob));
+
+      const result = await firstValueFrom(downloadTemplateUseCase.execute(supplierId, request));
+
+      expect(repo.downloadTemplate).toHaveBeenCalledWith(supplierId, { productIds: [7, 3, 4] });
       expect(result).toBe(mockBlob);
     });
 
     it('should throw ValidationError if supplierId is invalid', () => {
       expect(() => downloadTemplateUseCase.execute(0)).toThrow(SupplierProductValidationError);
       expect(() => downloadTemplateUseCase.execute(-1)).toThrow(SupplierProductValidationError);
+    });
+
+    it('should throw ValidationError if any product id is invalid', () => {
+      expect(() => downloadTemplateUseCase.execute(1, { productIds: [1, 0] })).toThrow(SupplierProductValidationError);
+      expect(() => downloadTemplateUseCase.execute(1, { productIds: [1, -2] })).toThrow(SupplierProductValidationError);
     });
 
     it('should propagate repository errors', async () => {

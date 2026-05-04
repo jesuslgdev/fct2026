@@ -11,6 +11,7 @@ from shared.infrastructure.database.base_model import Base
 
 if TYPE_CHECKING:
     from modules.sales.domain.entities.sale_line import SaleLine
+    from modules.sales.domain.entities.sale_status_history import SaleStatusHistory
 
 
 class Sale(Base):
@@ -21,6 +22,9 @@ class Sale(Base):
     client_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("clients.client_id"), nullable=False
     )
+    warehouse_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("warehouses.warehouse_id"), nullable=False
+    )
     delivery_address: Mapped[str] = mapped_column(String(500), nullable=False)
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.user_id"), nullable=False
@@ -29,6 +33,9 @@ class Sale(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     status: Mapped[str] = mapped_column(String(20), default="Pending", nullable=False)
+    status_changed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     taxes: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     total: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
@@ -43,3 +50,6 @@ class Sale(Base):
     )
 
     lines: Mapped[list[SaleLine]] = relationship("SaleLine", lazy="selectin")
+    status_history: Mapped[list[SaleStatusHistory]] = relationship(
+        "SaleStatusHistory", lazy="selectin", order_by="SaleStatusHistory.changed_at"
+    )

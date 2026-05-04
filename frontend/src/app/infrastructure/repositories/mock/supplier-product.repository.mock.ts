@@ -4,6 +4,7 @@ import { SupplierProductRepository } from '@domain/repositories/supplier-product
 import {
   SupplierProduct,
   AddSupplierProductRequest,
+  DownloadSupplierProductTemplateRequest,
   UpdateSupplierProductPriceRequest,
   ImportSupplierProductsRequest,
   ImportResult,
@@ -169,7 +170,11 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
     });
   }
 
-  downloadTemplate(supplierId: number): Observable<Blob> {
+  downloadTemplate(
+    supplierId: number,
+    request?: DownloadSupplierProductTemplateRequest,
+  ): Observable<Blob> {
+    void request;
     const supplierPrefix = supplierId.toString(16).padStart(2, '0');
     const mockContent = new Uint8Array([0x50, 0x4b, 0x03, 0x04, parseInt(supplierPrefix, 16)]);
     return of(new Blob([mockContent], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
@@ -185,7 +190,7 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
         supplierId: sp.supplierId,
         supplierName: `Supplier ${sp.supplierId}`,
         taxId: 'B12345678',
-        supplierPrice: sp.product.supplierPrice,
+        supplierPrice: sp.product.supplierPrice ?? sp.product.specificPrice ?? 0,
       })),
       total: filtered.length,
       page: queryParams.page,

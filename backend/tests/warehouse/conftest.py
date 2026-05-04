@@ -41,7 +41,6 @@ async def sample_product(
         name="Smartphone",
         category_id=sample_category.category_id,
         price=599.99,
-        stock_current=0,
         stock_min=10,
     )
     db_session.add(product)
@@ -199,7 +198,6 @@ async def inactive_product(
         name="Discontinued Item",
         category_id=sample_category.category_id,
         price=9.99,
-        stock_current=0,
         stock_min=0,
         is_active=False,
     )
@@ -218,7 +216,6 @@ async def second_product(
         name="Tablet",
         category_id=sample_category.category_id,
         price=299.99,
-        stock_current=0,
         stock_min=5,
     )
     db_session.add(product)

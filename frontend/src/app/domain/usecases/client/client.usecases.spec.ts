@@ -9,7 +9,7 @@ import {
   ClientQueryParams,
   PagedResult,
 } from '@domain/models/client.model';
-import { ClientInvalidTaxIdError } from '@domain/models/client-errors';
+import { ClientInvalidPhoneError, ClientInvalidTaxIdError } from '@domain/models/client-errors';
 import { GetClientsUseCase } from './get-clients.usecase';
 import { GetClientByIdUseCase } from './get-client-by-id.usecase';
 import { CreateClientUseCase } from './create-client.usecase';
@@ -125,6 +125,26 @@ describe('Client Use Cases', () => {
     expect(repo.createClient).not.toHaveBeenCalled();
   });
 
+  it.each(['+34 600 000 001', '600 000 001', '600-000-001', '123', 'abcdefghi'])(
+    'CreateClientUseCase throws ClientInvalidPhoneError with invalid phone %s',
+    async (phone) => {
+      const useCase = TestBed.inject(CreateClientUseCase);
+      const payload: CreateClientPayload = {
+        name: 'Test Client',
+        taxId: '12345678A',
+        address: 'Test Address',
+        city: 'Test City',
+        province: 'Test Province',
+        postalCode: '12345',
+        phone,
+        email: 'test@example.com',
+      };
+
+      await expect(firstValueFrom(useCase.execute(payload))).rejects.toThrow(ClientInvalidPhoneError);
+      expect(repo.createClient).not.toHaveBeenCalled();
+    },
+  );
+
   it('CreateClientUseCase propagates repository errors', async () => {
     const useCase = TestBed.inject(CreateClientUseCase);
     const payload: CreateClientPayload = {
@@ -153,6 +173,34 @@ describe('Client Use Cases', () => {
 
     expect(repo.updateClient).toHaveBeenCalledWith(1, payload);
     expect(result).toEqual(updated);
+  });
+
+  it('UpdateClientUseCase throws ClientInvalidPhoneError when provided phone is invalid', async () => {
+    const useCase = TestBed.inject(UpdateClientUseCase);
+    const payload: UpdateClientPayload = { phone: '600 000 001' };
+
+    await expect(firstValueFrom(useCase.execute(1, payload))).rejects.toThrow(ClientInvalidPhoneError);
+    expect(repo.updateClient).not.toHaveBeenCalled();
+  });
+
+  it('UpdateClientUseCase delegates when phone is omitted', async () => {
+    const useCase = TestBed.inject(UpdateClientUseCase);
+    const payload: UpdateClientPayload = { email: 'updated@example.com' };
+    repo.updateClient.mockReturnValueOnce(of(CLIENT_MOCK));
+
+    await firstValueFrom(useCase.execute(1, payload));
+
+    expect(repo.updateClient).toHaveBeenCalledWith(1, payload);
+  });
+
+  it('UpdateClientUseCase delegates when phone is null', async () => {
+    const useCase = TestBed.inject(UpdateClientUseCase);
+    const payload: UpdateClientPayload = { phone: null };
+    repo.updateClient.mockReturnValueOnce(of(CLIENT_MOCK));
+
+    await firstValueFrom(useCase.execute(1, payload));
+
+    expect(repo.updateClient).toHaveBeenCalledWith(1, payload);
   });
 
   it('ToggleClientStatusUseCase delegates to repository', async () => {

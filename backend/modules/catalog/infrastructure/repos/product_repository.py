@@ -80,6 +80,14 @@ class ProductRepository(IProductRepository, IProductReader):
         result = await self._db.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_by_name(self, name: str) -> Product | None:
+        normalized_name = name.strip()
+        query = select(Product).where(
+            func.lower(func.trim(Product.name)) == normalized_name.lower()
+        )
+        result = await self._db.execute(query)
+        return result.scalar_one_or_none()
+
     async def create(
         self,
         product_code: str,
@@ -88,7 +96,6 @@ class ProductRepository(IProductRepository, IProductReader):
         category_id: int,
         price: Decimal,
         vat_rate: Decimal,
-        stock_current: int,
         stock_min: int,
     ) -> Product:
         product = Product(
@@ -98,14 +105,14 @@ class ProductRepository(IProductRepository, IProductReader):
             category_id=category_id,
             price=price,
             vat_rate=vat_rate,
-            stock_current=stock_current,
             stock_min=stock_min,
             is_active=True,
         )
         self._db.add(product)
         await self._db.flush()
-        await self._db.refresh(product, ["category"])
-        return product
+        # Re-query so that the stock_current column_property (subquery) and
+        # the category relationship are loaded eagerly within the async session.
+        return await self.get_by_id(product.product_id)
 
     async def update(
         self,
@@ -138,8 +145,7 @@ class ProductRepository(IProductRepository, IProductReader):
             product.stock_min = stock_min
 
         await self._db.flush()
-        await self._db.refresh(product, ["category"])
-        return product
+        return await self.get_by_id(product.product_id)
 
     async def set_active(self, product_id: int, is_active: bool) -> None:
         product = await self.get_by_id(product_id)

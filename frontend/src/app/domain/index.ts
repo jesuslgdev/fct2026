@@ -1,25 +1,26 @@
-// Models
-export * from './models/provider.model';
-export * from './models/provider-product.model';
+﻿// Models
+export * from './models/supplier.model';
+export * from './models/supplier-product.model';
 export * from './models/page-event.model';
 export * from './models/auth-user.model';
 export * from './models/session.model';
 
 // Enums
-export * from './enums/provider-status.enum';
+export * from './enums/supplier-status.enum';
 export * from './enums/user-role.enum';
 
 // Repositories
-export * from './repositories/provider.repository';
+export * from './repositories/supplier.repository';
 export * from './repositories/auth.repository';
 
 // Use Cases
-export * from './usecases/supplier/get-providers.usecase';
-export * from './usecases/supplier/get-provider-by-id.usecase';
-export * from './usecases/supplier/create-provider.usecase';
-export * from './usecases/supplier/update-provider.usecase';
-export * from './usecases/supplier/activate-provider.usecase';
-export * from './usecases/supplier/deactivate-provider.usecase';
-export * from './usecases/supplier/get-provider-products.usecase';
+export * from './usecases/supplier/get-suppliers.usecase';
+export * from './usecases/supplier/get-supplier-by-id.usecase';
+export * from './usecases/supplier/create-supplier.usecase';
+export * from './usecases/supplier/update-supplier.usecase';
+export * from './usecases/supplier/activate-supplier.usecase';
+export * from './usecases/supplier/deactivate-supplier.usecase';
+export * from './usecases/supplier/get-supplier-products.usecase';
 export * from './usecases/auth/sign-in-with-google.usecase';
 export * from './usecases/auth/sign-out.usecase';
+
