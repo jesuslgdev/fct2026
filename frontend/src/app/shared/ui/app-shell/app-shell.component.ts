@@ -3,6 +3,8 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { SignOutUseCase } from '@domain/usecases/auth/sign-out.usecase';
 import { AuthService } from '@core/services/auth.service';
 import { UserRole } from '@domain/enums/user-role.enum';
+import { PurchasePermissionContext } from '@domain/models/purchase.model';
+import { canManagePurchases } from '@domain/models/purchase-rules';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
@@ -63,6 +65,7 @@ export class AppShellComponent {
   private readonly router = inject(Router);
   private readonly signOut = inject(SignOutUseCase);
   private readonly authService = inject(AuthService);
+  private readonly purchasesDepartmentId = 2;
 
   readonly user = this.authService.user;
 
@@ -99,6 +102,13 @@ export class AppShellComponent {
 
   readonly navSections = computed(() => {
     const isAdmin = this.authService.isAdmin();
+    const user = this.authService.user();
+    const purchasePermissionContext: PurchasePermissionContext = {
+      role: user?.role,
+      departmentId: user?.departmentId ?? null,
+      purchasesDepartmentId: this.purchasesDepartmentId,
+    };
+    const canAccessPurchases = canManagePurchases(purchasePermissionContext);
 
     const allSections: NavSection[] = [
       {
@@ -110,7 +120,9 @@ export class AppShellComponent {
       {
         title: 'Operaciones',
         items: [
-          { label: 'Compras', icon: 'pi pi-shopping-cart', route: '/purchases' },
+          ...(canAccessPurchases
+            ? [{ label: 'Compras', icon: 'pi pi-shopping-cart', route: '/purchases' }]
+            : []),
           { label: 'Ventas', icon: 'pi pi-credit-card', route: '/sales' },
         ],
       },
