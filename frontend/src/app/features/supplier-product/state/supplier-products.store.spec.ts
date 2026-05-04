@@ -48,7 +48,7 @@ class MockAuthService {
       return permissions.some((perm) => this.permissions().includes(perm));
     });
   }
-});
+}
 
 class MockGetSupplierProductsUseCase {
   execute = vi.fn<
