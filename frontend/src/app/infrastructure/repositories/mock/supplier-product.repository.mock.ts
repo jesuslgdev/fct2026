@@ -185,7 +185,7 @@ export class MockSupplierProductRepository implements SupplierProductRepository 
         supplierId: sp.supplierId,
         supplierName: `Supplier ${sp.supplierId}`,
         taxId: 'B12345678',
-        supplierPrice: sp.product.supplierPrice,
+        supplierPrice: sp.product.supplierPrice ?? sp.product.specificPrice ?? 0,
       })),
       total: filtered.length,
       page: queryParams.page,

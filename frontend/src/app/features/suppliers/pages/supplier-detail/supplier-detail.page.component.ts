@@ -10,9 +10,9 @@ import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { TableComponent } from '@shared/ui/table/table.component';
 import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
 import { SupplierProductsStore } from '@features/supplier-product/state/supplier-products.store';
-import { ProviderFormDialogComponent } from '@features/suppliers/components/provider-form-dialog/provider-form-dialog.component';
-import { ProviderStatusBadgeComponent } from '@features/suppliers/components/provider-status-badge/provider-status-badge.component';
-import { Provider } from '@domain/models/provider.model';
+import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
+import { SupplierStatusBadgeComponent } from '@features/suppliers/components/supplier-status-badge/supplier-status-badge.component';
+import { Supplier } from '@domain/models/supplier.model';
 
 @Component({
   selector: 'app-supplier-detail-page',
@@ -26,8 +26,8 @@ import { Provider } from '@domain/models/provider.model';
     ButtonComponent,
     CardComponent,
     DialogComponent,
-    ProviderFormDialogComponent,
-    ProviderStatusBadgeComponent,
+    SupplierFormDialogComponent,
+    SupplierStatusBadgeComponent,
     TableComponent,
   ],
   templateUrl: './supplier-detail.page.component.html',
@@ -38,7 +38,7 @@ export class SupplierDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly supplier = signal<Provider | null>(null);
+  readonly supplier = signal<Supplier | null>(null);
   readonly detailLoading = signal(false);
   readonly detailError = signal<string | null>(null);
   readonly supplierNumericId = signal<number | null>(null);
@@ -54,10 +54,13 @@ export class SupplierDetailPageComponent implements OnInit {
 
     this.supplierNumericId.set(numericId);
     this.detailLoading.set(true);
-    const supplier = await this.store.loadProviderById(rawId);
-    this.supplier.set(supplier);
-    await this.supplierProductsStore.loadSupplierProducts(numericId);
-    this.detailLoading.set(false);
+    try {
+      const supplier = await this.store.loadSupplierById(rawId);
+      this.supplier.set(supplier);
+      await this.supplierProductsStore.loadSupplierProducts(numericId);
+    } finally {
+      this.detailLoading.set(false);
+    }
   }
 
   async openEditFromDetail(): Promise<void> {

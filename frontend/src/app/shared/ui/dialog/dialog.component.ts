@@ -12,7 +12,7 @@ import { ButtonComponent } from '@shared/ui/button/button.component';
 // Dialog size types
 export type DialogSize = 'sm' | 'default' | 'lg' | 'xl' | 'fullscreen';
 
-// Dialog variant types — drives the header accent color
+// Dialog variant types â€” drives the header accent color
 export type DialogVariant = 'default' | 'info' | 'success' | 'warning' | 'danger';
 
 // Width mapping per size
@@ -24,7 +24,7 @@ const SIZE_WIDTH_MAP: Record<DialogSize, string> = {
   fullscreen: '100vw',
 };
 
-// Variant → icon + header accent class
+// Variant â†’ icon + header accent class
 const VARIANT_MAP: Record<DialogVariant, { icon: string; headerClass: string }> = {
   default: { icon: '',                           headerClass: '' },
   info:    { icon: 'pi pi-info-circle',          headerClass: 'text-info' },

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Output, inject, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ExcelImportService, ExcelImportResult, ImportError } from '@features/suppliers/services/excel-import.service';
 import { ButtonComponent } from '@shared/ui/button/button.component';
@@ -30,7 +30,7 @@ export class ImportDialogComponent {
   // Output to notify the main page when import completes
   @Output() importCompleted = new EventEmitter<void>();
 
-  // ── Dialog actions ───────────────────────────────────────────────────────
+  // Dialog actions
   open(): void {
     this.visible.set(true);
     this.currentStep.set('upload');
@@ -50,7 +50,7 @@ export class ImportDialogComponent {
     this.loading.set(false);
   }
 
-  // ── File handling ───────────────────────────────────────────────────────
+  // File handling
   onFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -75,7 +75,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Drag and Drop ───────────────────────────────────────────────────────
+  // Drag and drop
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
@@ -112,7 +112,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Download template ───────────────────────────────────────────────────
+  // Download template
   async downloadTemplate(): Promise<void> {
     try {
       this.loading.set(true);
@@ -126,7 +126,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Validate file ───────────────────────────────────────────────────────
+  // Validate file
   async validateFile(): Promise<void> {
     const file = this.selectedFile();
     if (!file) {
@@ -138,10 +138,10 @@ export class ImportDialogComponent {
       this.loading.set(true);
       
       // Parse file
-      const providers = await this.excelImportService.parseFile(file);
+      const suppliers = await this.excelImportService.parseFile(file);
       
       // Validate data
-      const result = this.excelImportService.validateProviders(providers);
+      const result = this.excelImportService.validateSuppliers(suppliers);
       
       this.importResult.set(result);
       this.currentStep.set('validation');
@@ -154,8 +154,8 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Import suppliers ───────────────────────────────────────────────────
-  async importProviders(): Promise<void> {
+  // Import suppliers
+  async importSuppliers(): Promise<void> {
     const file = this.selectedFile();
     if (!file) {
       alert('Por favor, selecciona un archivo para importar');
@@ -165,7 +165,7 @@ export class ImportDialogComponent {
     try {
       this.loading.set(true);
       
-      const importResult = await this.excelImportService.importProviders(file);
+      const importResult = await this.excelImportService.importSuppliers(file);
       
       if (importResult.success) {
         this.currentStep.set('success');
@@ -176,7 +176,6 @@ export class ImportDialogComponent {
           validRecords: importResult.importedCount,
           invalidRecords: 0,
           errors: [],
-          importedProviders: [] // No necesitamos los detalles para el éxito
         });
         
         // Emit event so the main page can refresh data
@@ -189,7 +188,7 @@ export class ImportDialogComponent {
           validRecords: 0,
           invalidRecords: importResult.errors?.length || 0,
           errors: importResult.errors || [],
-          importedProviders: []
+          importedSuppliers: []
         });
         this.currentStep.set('validation');
       }
@@ -202,7 +201,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Navigation actions ───────────────────────────────────────────────────
+  // Navigation actions
   goBack(): void {
     if (this.currentStep() === 'validation') {
       this.currentStep.set('upload');
@@ -210,7 +209,7 @@ export class ImportDialogComponent {
     }
   }
 
-  // ── Utilities ───────────────────────────────────────────────────────────
+  // Utilities
   getErrorMessage(error: ImportError): string {
     return `Fila ${error.row} - ${error.field}: ${error.message}`;
   }
@@ -226,7 +225,7 @@ export class ImportDialogComponent {
     const result = this.importResult();
     if (!result) return '';
 
-    const importedCount = result.importedProviders?.length ?? result.validRecords;
+    const importedCount = result.validRecords;
     return `Se han importado ${importedCount} proveedores correctamente`;
   }
 
@@ -234,7 +233,7 @@ export class ImportDialogComponent {
     return new Date().toLocaleDateString('es-ES');
   }
 
-  // ─── UI helpers ──────────────────────────────────────────────────────────
+  // UI helpers
   canValidate(): boolean {
     return this.selectedFile() !== null && !this.loading();
   }
@@ -246,8 +245,8 @@ export class ImportDialogComponent {
   getStepTitle(): string {
     switch (this.currentStep()) {
       case 'upload': return 'Importar Proveedores';
-      case 'validation': return 'Validación de Datos';
-      case 'success': return 'Importación Completada';
+      case 'validation': return 'Validación de datos';
+      case 'success': return 'Importación completada';
       default: return 'Importar Proveedores';
     }
   }
@@ -266,3 +265,4 @@ export class ImportDialogComponent {
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   }
 }
+

@@ -54,6 +54,7 @@ from modules.purchases.domain.interfaces.use_cases.i_update_purchase_line_use_ca
 from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case import (
     IUpdatePurchaseUseCase,
 )
+from modules.purchases.domain.purchase_status import allowed_next
 from modules.purchases.infrastructure.http.schemas import (
     AddPurchaseLineRequest,
     AdvancePurchaseStatusRequest,
@@ -61,6 +62,7 @@ from modules.purchases.infrastructure.http.schemas import (
     PurchaseDetailDTO,
     PurchaseDTO,
     PurchaseLineDTO,
+    PurchaseStatusHistoryDTO,
     SupplierPriceDTO,
     UpdatePurchaseLineRequest,
     UpdatePurchaseRequest,
@@ -72,6 +74,15 @@ router = APIRouter(prefix="/purchases")
 
 
 def _purchase_detail(purchase) -> PurchaseDetailDTO:
+    status_history = [
+        PurchaseStatusHistoryDTO(
+            from_status=item.from_status,
+            to_status=item.to_status,
+            changed_at=item.changed_at,
+            changed_by_user_id=item.changed_by_user_id,
+        )
+        for item in getattr(purchase, "status_history", [])
+    ]
     return PurchaseDetailDTO(
         purchase_id=purchase.purchase_id,
         purchase_number=purchase.purchase_number,
@@ -80,6 +91,7 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
         warehouse_id=purchase.warehouse_id,
         purchase_date=purchase.purchase_date,
         status=purchase.status,
+        allowed_transitions=allowed_next(purchase.status),
         subtotal=purchase.subtotal,
         taxes=purchase.taxes,
         total=purchase.total,
@@ -101,6 +113,7 @@ def _purchase_detail(purchase) -> PurchaseDetailDTO:
             )
             for line in purchase.lines
         ],
+        status_history=status_history,
     )
 
 
@@ -164,6 +177,15 @@ async def list_purchases(
 
 
 def _to_purchase_detail_dto(enriched: PurchaseEnriched) -> PurchaseDetailDTO:
+    status_history = [
+        PurchaseStatusHistoryDTO(
+            from_status=item.from_status,
+            to_status=item.to_status,
+            changed_at=item.changed_at,
+            changed_by_user_id=item.changed_by_user_id,
+        )
+        for item in getattr(enriched.purchase, "status_history", [])
+    ]
     return PurchaseDetailDTO(
         purchase_id=enriched.purchase.purchase_id,
         purchase_number=enriched.purchase.purchase_number,
@@ -175,9 +197,12 @@ def _to_purchase_detail_dto(enriched: PurchaseEnriched) -> PurchaseDetailDTO:
         warehouse_name=enriched.warehouse_name,
         purchase_date=enriched.purchase.purchase_date,
         status=enriched.purchase.status,
+        allowed_transitions=allowed_next(enriched.purchase.status),
         subtotal=enriched.purchase.subtotal,
         taxes=enriched.purchase.taxes,
         total=enriched.purchase.total,
+        cancelled_at=enriched.purchase.cancelled_at,
+        cancelled_by_user_id=enriched.purchase.cancelled_by_user_id,
         created_at=enriched.purchase.created_at,
         updated_at=enriched.purchase.updated_at,
         lines=[
@@ -195,6 +220,7 @@ def _to_purchase_detail_dto(enriched: PurchaseEnriched) -> PurchaseDetailDTO:
             )
             for line in enriched.purchase.lines
         ],
+        status_history=status_history,
     )
 
 
@@ -256,7 +282,7 @@ async def advance_purchase_status(
     purchase = await use_case.execute(
         purchase_id=purchase_id,
         new_status=body.status,
-        user_email=current_user.email,
+        actor=current_user,
     )
     return _purchase_detail(purchase)
 
