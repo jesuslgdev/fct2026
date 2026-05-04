@@ -91,7 +91,7 @@
     </ng-template>
 
     <ng-template #body let-sale>
-      <tr>
+      <tr class="cursor-pointer" (click)="onViewSale(sale.saleId)">
         <td>{{ sale.saleNumber }}</td>
         <td>{{ sale.clientName }}</td>
         <td>{{ getStatusLabel(sale.status) }}</td>
@@ -100,13 +100,20 @@
         <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>
         <td class="text-right">
           <div class="table-actions flex items-center justify-end">
+            <ui-button
+              icon="pi pi-eye"
+              ariaLabel="Ver detalle de venta"
+              variant="ghost"
+              size="sm"
+              (clicked)="onViewSale(sale.saleId); $event.stopPropagation()"
+            />
             @if (canEditSale(sale.status)) {
               <ui-button
                 icon="pi pi-pencil"
                 ariaLabel="Editar venta"
                 variant="ghost"
                 size="sm"
-                (clicked)="onEditSale(sale.saleId)"
+                (clicked)="onEditSale(sale.saleId); $event.stopPropagation()"
               />
             }
           </div>

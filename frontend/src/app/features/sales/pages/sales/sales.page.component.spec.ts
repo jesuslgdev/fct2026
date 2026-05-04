@@ -227,12 +227,32 @@ describe('SalesPageComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
   });
 
+  it('navigates to a sale detail page', () => {
+    component.onViewSale(1);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
+  });
   it('navigates to the sale edit page', () => {
     component.onEditSale(1);
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales', 1, 'edit']);
   });
 
+  it('navigates to the detail page when clicking the row', () => {
+    const row = fixture.debugElement.query(By.css('tbody tr'));
+
+    row.triggerEventHandler('click');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
+  });
+
+  it('renders the detail action as an icon-only button', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Ver detalle de venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-eye');
+    expect(actionButton.attributes['variant']).toBe('ghost');
+  });
   it('renders the edit action as an icon-only button for pending sales with permissions', () => {
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
 

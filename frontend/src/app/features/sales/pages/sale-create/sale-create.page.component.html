@@ -10,9 +10,9 @@
       </h1>
       <p class="text-sm text-surface-600">
         @if (store.isEditMode()) {
-          Corrige cliente, direccion de entrega y lineas antes de aprobar la venta.
+          Corrige cliente, dirección de entrega y líneas antes de aprobar la venta.
         } @else {
-          Registra una venta seleccionando cliente, almacen y lineas de producto.
+          Registra una venta seleccionando cliente, almacén y líneas de producto.
         }
       </p>
     </div>
@@ -61,13 +61,13 @@
       </div>
 
       <div class="flex flex-col gap-2">
-        <label for="sale-warehouse" class="text-sm font-medium text-surface-700">Almacen de salida</label>
+        <label for="sale-warehouse" class="text-sm font-medium text-surface-700">Almacén de salida</label>
         <p-select
           inputId="sale-warehouse"
           [options]="store.warehouses()"
           optionLabel="name"
           optionValue="warehouseId"
-          placeholder="Selecciona un almacen"
+          placeholder="Selecciona un almacén"
           class="w-full"
           appendTo="body"
           [loading]="store.loading()"
@@ -78,13 +78,13 @@
       </div>
 
       <div class="md:col-span-2 flex flex-col gap-2">
-        <label for="sale-address" class="text-sm font-medium text-surface-700">Direccion de entrega</label>
+        <label for="sale-address" class="text-sm font-medium text-surface-700">Dirección de entrega</label>
         <input
           id="sale-address"
           pInputText
           class="w-full"
           [ngModel]="store.deliveryAddress() || ''"
-          [placeholder]="store.isEditMode() ? 'Indica la direccion de entrega' : 'Se genera automaticamente desde el cliente seleccionado'"
+          [placeholder]="store.isEditMode() ? 'Indica la dirección de entrega' : 'Se genera automáticamente desde el cliente seleccionado'"
           [readonly]="!store.isEditMode()"
           (ngModelChange)="onDeliveryAddressChange($event)"
         />
@@ -92,18 +92,18 @@
     </div>
   </ui-card>
 
-  <ui-card header="Lineas de venta">
+  <ui-card header="Líneas de venta">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm text-surface-600">
         @if (store.canEditLines()) {
-          Anade al menos una linea con un producto activo y stock suficiente en el almacen seleccionado.
+          Añade al menos una línea con un producto activo y stock suficiente en el almacén seleccionado.
         } @else {
-          Selecciona primero el cliente y el almacen para poder anadir y editar lineas de venta.
+          Selecciona primero el cliente y el almacén para poder añadir y editar líneas de venta.
         }
       </p>
 
       <ui-button
-        label="Anadir linea"
+        label="Añadir línea"
         icon="pi pi-plus"
         [disabled]="!store.canEditLines()"
         (clicked)="onAddLine()"
@@ -120,7 +120,7 @@
     >
       <ng-template #header>
         <tr>
-          <th>Codigo</th>
+          <th>Código</th>
           <th>Producto</th>
           <th class="text-center">Stock</th>
           <th class="text-center">Cant.</th>
@@ -267,7 +267,7 @@
                   type="button"
                   pInitEditableRow
                   class="inline-flex h-8 w-8 items-center justify-center rounded-md text-surface-700 transition hover:bg-surface-100 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Editar linea"
+                  aria-label="Editar línea"
                   [disabled]="!store.canEditLines()"
                   (click)="onStartLineEdit(line)"
                 >
@@ -278,7 +278,7 @@
                   type="button"
                   pSaveEditableRow
                   class="inline-flex h-8 w-8 items-center justify-center rounded-md text-success transition hover:bg-surface-100 hover:text-success"
-                  aria-label="Guardar linea"
+                  aria-label="Guardar línea"
                   (click)="onSaveLineEdit(line.lineId)"
                 >
                   <i class="pi pi-check"></i>
@@ -287,7 +287,7 @@
                   type="button"
                   pCancelEditableRow
                   class="inline-flex h-8 w-8 items-center justify-center rounded-md text-surface-700 transition hover:bg-surface-100 hover:text-surface-900"
-                  aria-label="Cancelar edicion de linea"
+                  aria-label="Cancelar edición de línea"
                   (click)="onCancelLineEdit(line.lineId)"
                 >
                   <i class="pi pi-times"></i>
@@ -296,7 +296,7 @@
 
               <ui-button
                 icon="pi pi-trash"
-                ariaLabel="Eliminar linea"
+                ariaLabel="Eliminar línea"
                 variant="destructive"
                 size="sm"
                 (clicked)="onRemoveLine(line.lineId)"
@@ -321,14 +321,14 @@
       <ng-template #emptymessage>
         <tr>
           <td colspan="10" class="empty-state">
-            No hay lineas anadidas todavia.
+            No hay líneas añadidas todavía.
           </td>
         </tr>
       </ng-template>
     </ui-table>
   </ui-card>
 
-  <ui-card header="Resumen economico">
+  <ui-card header="Resumen económico">
     <div class="grid gap-3 text-sm md:ml-auto md:max-w-sm">
       <div class="flex items-center justify-between gap-3">
         <span class="text-surface-600">Subtotal</span>
