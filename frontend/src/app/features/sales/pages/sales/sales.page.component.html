@@ -1,0 +1,104 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Ventas</h1>
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (store.clientsError(); as clientsErrorMessage) {
+    <p class="warning-text" role="alert">{{ clientsErrorMessage }}</p>
+  }
+
+  <div class="filters-row">
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los estados"
+      class="min-w-44"
+      [ngModel]="store.statusFilter()"
+      (ngModelChange)="onStatusChange($event)"
+    />
+
+    <p-select
+      [options]="store.clients()"
+      optionLabel="name"
+      optionValue="clientId"
+      placeholder="Todos los clientes"
+      class="min-w-56"
+      [loading]="store.clientsLoading()"
+      [ngModel]="store.clientFilter()"
+      (ngModelChange)="onClientChange($event)"
+    />
+
+    <p-datepicker
+      inputId="sales-date-from"
+      placeholder="Creada desde"
+      dateFormat="dd/mm/yy"
+      [showIcon]="true"
+      [ngModel]="store.dateFromFilter()"
+      (ngModelChange)="onDateFromChange($event)"
+    />
+
+    <p-datepicker
+      inputId="sales-date-to"
+      placeholder="Creada hasta"
+      dateFormat="dd/mm/yy"
+      [showIcon]="true"
+      [ngModel]="store.dateToFilter()"
+      (ngModelChange)="onDateToChange($event)"
+    />
+
+    <ui-button
+      label="Limpiar filtros"
+      variant="outline"
+      (clicked)="onClearFilters()"
+    />
+  </div>
+
+  <ui-table
+    [value]="store.salesView()"
+    [loading]="store.loading()"
+    [paginator]="true"
+    [lazy]="true"
+    [first]="(store.page() - 1) * store.pageSize()"
+    [rows]="store.pageSize()"
+    [totalRecords]="store.total()"
+    [rowsPerPageOptions]="[20, 50, 100]"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="saleId"
+    (page)="onPageChange($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Nº Venta</th>
+        <th>Cliente</th>
+        <th>Estado</th>
+        <th>Dirección de entrega</th>
+        <th>Fecha de creación</th>
+        <th>Total</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-sale>
+      <tr>
+        <td>{{ sale.saleNumber }}</td>
+        <td>{{ sale.clientName }}</td>
+        <td>{{ getStatusLabel(sale.status) }}</td>
+        <td>{{ sale.deliveryAddress }}</td>
+        <td>{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+        <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="6" class="empty-state">
+          {{ store.emptyMessage() ?? 'No hay ventas registradas.' }}
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+</section>
