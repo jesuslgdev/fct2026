@@ -10,15 +10,16 @@ from shared.domain.dtos.address import Address
 
 
 def _make_supplier(**kwargs) -> Supplier:
+    tax_id = kwargs.get("tax_id", "B12345674")
     defaults = {
         "name": "Proveedor Test S.L.",
-        "tax_id": "B12345674",
+        "tax_id": tax_id,
         "street": "Calle Mayor 1",
         "city": "Madrid",
         "province": "Madrid",
         "postal_code": "28001",
         "phone": "910000000",
-        "email": "test@test.com",
+        "email": f"test_{tax_id}@test.com",
     }
     defaults.update(kwargs)
     return Supplier(**defaults)

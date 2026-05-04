@@ -62,6 +62,10 @@ export const routes: Routes = [
 				loadChildren: () => import('@features/suppliers/suppliers.routes').then(m => m.SUPPLIERS_ROUTES),
 			},
 			{
+				path: 'purchases',
+				loadChildren: () => import('@features/purchases/purchases.routes').then(m => m.PURCHASES_ROUTES),
+			},
+			{
 				path: '',
 				redirectTo: 'legal',
 				pathMatch: 'full',

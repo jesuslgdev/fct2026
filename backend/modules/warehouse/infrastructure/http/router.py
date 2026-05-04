@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query, Response
 
 from composition.dependencies import (
@@ -5,8 +8,10 @@ from composition.dependencies import (
     get_create_warehouse_use_case,
     get_delete_warehouse_use_case,
     get_get_product_stock_overview_use_case,
+    get_get_stock_movement_use_case,
     get_get_warehouse_use_case,
     get_list_stock_distribution_use_case,
+    get_list_stock_movements_use_case,
     get_list_warehouses_use_case,
     get_update_warehouse_use_case,
 )
@@ -23,11 +28,17 @@ from modules.warehouse.domain.interfaces.use_cases.i_delete_warehouse_use_case i
 from modules.warehouse.domain.interfaces.use_cases.i_get_product_stock_overview_use_case import (
     IGetProductStockOverviewUseCase,
 )
+from modules.warehouse.domain.interfaces.use_cases.i_get_stock_movement_use_case import (
+    IGetStockMovementUseCase,
+)
 from modules.warehouse.domain.interfaces.use_cases.i_get_warehouse_use_case import (
     IGetWarehouseUseCase,
 )
 from modules.warehouse.domain.interfaces.use_cases.i_list_stock_distribution_use_case import (
     IListStockDistributionUseCase,
+)
+from modules.warehouse.domain.interfaces.use_cases.i_list_stock_movements_use_case import (
+    IListStockMovementsUseCase,
 )
 from modules.warehouse.domain.interfaces.use_cases.i_list_warehouses_use_case import (
     IListWarehousesUseCase,
@@ -42,6 +53,8 @@ from modules.warehouse.infrastructure.http.schemas import (
     CreateWarehouseDTO,
     ProductStockOverviewDTO,
     StockDistributionItemDTO,
+    StockMovementDetailDTO,
+    StockMovementItemDTO,
     UpdateWarehouseDTO,
     WarehouseDTO,
     WarehouseStockDetailDTO,
@@ -193,7 +206,7 @@ async def delete_warehouse(
     return Response(status_code=204)
 
 
-# ── Stock Distribution & Adjustment ─────────────────────────────
+# ── Stock Distribution, Movement History & Adjustment ───────────
 
 
 @router.get("/stock", response_model=PaginatedResponse[StockDistributionItemDTO])
@@ -227,6 +240,78 @@ async def list_stock_distribution(
         total=result.total,
         page=result.page,
         page_size=result.page_size,
+    )
+
+
+@router.get("/stock/movements", response_model=PaginatedResponse[StockMovementItemDTO])
+async def list_stock_movements(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    product_id: int | None = Query(None, description="Filter by product ID"),
+    movement_type: Literal["inbound", "outbound", "adjustment"] | None = Query(
+        None, description="Filter by movement type"
+    ),
+    date_from: datetime | None = Query(
+        None, description="Filter movements from this date (ISO 8601)"
+    ),
+    date_to: datetime | None = Query(
+        None, description="Filter movements up to this date (ISO 8601)"
+    ),
+    reason_search: str | None = Query(
+        None, description="Case-insensitive search on reason/reference"
+    ),
+    use_case: IListStockMovementsUseCase = Depends(get_list_stock_movements_use_case),
+    _: dict = Depends(get_current_user),
+):
+    """Return paginated stock movement history with optional filters."""
+    result = await use_case.execute(
+        page=page,
+        page_size=page_size,
+        product_id=product_id,
+        movement_type=movement_type,
+        date_from=date_from,
+        date_to=date_to,
+        reason_search=reason_search,
+    )
+    return PaginatedResponse(
+        items=[
+            StockMovementItemDTO(
+                movement_id=item.movement_id,
+                product_id=item.product_id,
+                product_name=item.product_name,
+                movement_type=item.movement_type,
+                difference=item.difference,
+                reason=item.reason,
+                created_at=item.created_at,
+            )
+            for item in result.items
+        ],
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+    )
+
+
+@router.get("/stock/movements/{movement_id}", response_model=StockMovementDetailDTO)
+async def get_stock_movement(
+    movement_id: int,
+    use_case: IGetStockMovementUseCase = Depends(get_get_stock_movement_use_case),
+    _: dict = Depends(get_current_user),
+):
+    """Return the full detail of a single stock movement."""
+    result = await use_case.execute(movement_id)
+    return StockMovementDetailDTO(
+        movement_id=result.movement_id,
+        warehouse_id=result.warehouse_id,
+        product_id=result.product_id,
+        product_name=result.product_name,
+        movement_type=result.movement_type,
+        previous_quantity=result.previous_quantity,
+        new_quantity=result.new_quantity,
+        difference=result.difference,
+        reason=result.reason,
+        user_email=result.user_email,
+        created_at=result.created_at,
     )
 
 

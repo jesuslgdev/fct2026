@@ -1,4 +1,4 @@
-﻿<section class="page">
+<section class="page">
 
   <!-- Header -->
   <ui-card class="page-header-card">
@@ -22,12 +22,10 @@
     </div>
   </ui-card>
 
-  <!-- Error global -->
   @if (store.error(); as errorMessage) {
     <p class="dialog-error-banner" role="alert">{{ errorMessage }}</p>
   }
 
-  <!-- Filters -->
   <ui-card class="filters-card">
     <div class="flex gap-3 mb-4">
       <ui-input
@@ -48,7 +46,6 @@
     </div>
   </ui-card>
 
-  <!-- Table -->
   <ui-card class="table-card">
     <ui-table
       [value]="store.filteredSuppliers()"
@@ -68,32 +65,43 @@
           <th>Nombre</th>
           <th>NIF/CIF</th>
           <th>Estado</th>
-          @if (store.canEdit()) { <th>Acciones</th> }
+          @if (store.canEdit()) {
+            <th>Acciones</th>
+          }
         </tr>
       </ng-template>
 
       <ng-template #body let-supplier>
-        <tr>
+        <tr class="cursor-pointer" (click)="openSupplierDetail(supplier)">
           <td>{{ supplier.name }}</td>
           <td>{{ supplier.taxId }}</td>
           <td>
-            <ui-badge 
-              [label]="getStatusLabel(supplier.status)" 
-              [variant]="getStatusBadgeVariant(supplier.status)" 
+            <ui-badge
+              [label]="getStatusLabel(supplier.status)"
+              [variant]="getStatusBadgeVariant(supplier.status)"
             />
           </td>
           @if (store.canEdit()) {
             <td>
               <div class="flex gap-2">
-                <ui-button icon="pi pi-eye" variant="ghost" size="sm"
-                  (clicked)="openDetailsDialog(supplier)" />
-                <ui-button icon="pi pi-pencil" variant="ghost" size="sm"
-                  (clicked)="store.openEditDialog(supplier)" />
+                <ui-button
+                  icon="pi pi-eye"
+                  variant="ghost"
+                  size="sm"
+                  (clicked)="openSupplierDetail(supplier); $event.stopPropagation()"
+                />
+                <ui-button
+                  icon="pi pi-pencil"
+                  variant="ghost"
+                  size="sm"
+                  (clicked)="store.openEditDialog(supplier); $event.stopPropagation()"
+                />
                 <ui-button
                   [icon]="supplier.isActive ? 'pi pi-ban' : 'pi pi-check-circle'"
                   [variant]="supplier.isActive ? 'destructive' : 'secondary'"
                   size="sm"
-                  (clicked)="store.requestToggleStatus(supplier)" />
+                  (clicked)="store.requestToggleStatus(supplier); $event.stopPropagation()"
+                />
               </div>
             </td>
           }
@@ -111,64 +119,7 @@
   </ui-card>
 </section>
 
-<!-- Create/Edit dialog -->
 <app-supplier-form-dialog />
-
-<!-- Supplier details dialog -->
-<ui-dialog
-  [(visible)]="detailsDialogVisible"
-  header="Detalles del Proveedor"
-  size="lg"
-  (cancelled)="closeDetailsDialog()"
->
-  @if (selectedSupplierForDetails; as supplier) {
-    <div class="space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <span class="text-sm font-medium text-neutral-muted">Nombre</span>
-          <p class="text-base">{{ supplier.name }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-neutral-muted">NIF/CIF</span>
-          <p class="text-base">{{ supplier.taxId }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-neutral-muted">Email</span>
-          <p class="text-base">{{ supplier.email || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-neutral-muted">Teléfono</span>
-          <p class="text-base">{{ supplier.phone || 'No disponible' }}</p>
-        </div>
-        <div class="col-span-2">
-          <span class="text-sm font-medium text-neutral-muted">Dirección</span>
-          <p class="text-base">{{ supplier.address || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-neutral-muted">Ciudad</span>
-          <p class="text-base">{{ supplier.city || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-neutral-muted">Provincia</span>
-          <p class="text-base">{{ supplier.province || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-neutral-muted">Código Postal</span>
-          <p class="text-base">{{ supplier.postalCode || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-neutral-muted">Estado</span>
-          <p class="text-base">
-            <ui-badge 
-              [label]="getStatusLabel(supplier.status)" 
-              [variant]="getStatusBadgeVariant(supplier.status)" 
-            />
-          </p>
-        </div>
-      </div>
-    </div>
-  }
-</ui-dialog>
 
 <!-- Confirmation dialog -->
 <ui-dialog
@@ -195,6 +146,4 @@
   }
 </ui-dialog>
 
-<!-- Import dialog -->
 <app-import-dialog (importCompleted)="onImportCompleted()" />
-

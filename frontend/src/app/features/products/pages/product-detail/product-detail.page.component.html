@@ -97,7 +97,7 @@
                     >
                       @switch (warehouse.status) {
                         @case ('out') { Sin stock }
-                        @case ('critical') { Crítico }
+                        @case ('critical') { Critico }
                         @case ('low') { Bajo }
                         @default { Normal }
                       }
@@ -110,23 +110,111 @@
               }
             </ul>
           } @else {
-            <p class="mt-2 text-surface-500">Sin stock por almacén para este producto.</p>
+            <p class="mt-2 text-surface-500">Sin stock por almacen para este producto.</p>
           }
         } @else {
-          <h2 class="mt-4 text-style-subtitle">Proveedores</h2>
+          <div class="mt-4 mb-3 flex items-center justify-between gap-2">
+            <h2 class="text-style-subtitle">Proveedores</h2>
+            @if (supplierStore.canModify()) {
+              <ui-button
+                label="Añadir proveedor"
+                icon="pi pi-plus"
+                size="sm"
+                (clicked)="supplierStore.openAddSupplierDialog()"
+              />
+            }
+          </div>
 
-          @if (store.productSuppliers().length) {
-            <ul class="mt-2 space-y-2 list-none p-0">
-              @for (supplier of store.productSuppliers(); track supplier.supplierId) {
-                <li class="flex items-center justify-between rounded border border-surface-200 px-3 py-2">
-                  <span>{{ supplier.supplierName }}</span>
-                  <span class="font-medium">{{ supplier.supplierPrice | currency: 'EUR' }}</span>
-                </li>
-              }
-            </ul>
-          } @else {
-            <p class="mt-2 text-surface-500">Sin proveedores asociados.</p>
+          @if (supplierStore.error(); as supplierErrorMessage) {
+            <p class="warning-text" role="alert">{{ supplierErrorMessage }}</p>
           }
+
+          <ui-table
+            [value]="supplierStore.productSuppliers()"
+            [loading]="supplierStore.loading()"
+            [paginator]="true"
+            [lazy]="true"
+            [first]="(supplierStore.productPage() - 1) * supplierStore.productPageSize()"
+            [rows]="supplierStore.productPageSize()"
+            [totalRecords]="supplierStore.productTotal()"
+            [rowsPerPageOptions]="[10, 20, 50]"
+            tableClass="ui-table-base ui-table-compact ui-table-bordered"
+            dataKey="supplierId"
+            (page)="onProductSuppliersPageChange($event)"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Proveedor</th>
+                <th>CIF</th>
+                <th>Precio proveedor</th>
+                @if (supplierStore.canModify()) { <th>Acciones</th> }
+              </tr>
+            </ng-template>
+
+            <ng-template #body let-supplier>
+              <tr>
+                <td>{{ supplier.supplierName }}</td>
+                <td>{{ supplier.taxId }}</td>
+                <td>
+                  @if (supplierStore.editingSupplierId() === supplier.supplierId) {
+                    <input
+                      class="p-inputtext p-component w-32"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      [value]="supplierStore.priceDraft()"
+                      [disabled]="supplierStore.savingSupplierIds().has(supplier.supplierId)"
+                      (input)="onSupplierPriceInput($event)"
+                    />
+                  } @else {
+                    {{ supplier.supplierPrice | currency: 'EUR' }}
+                  }
+                </td>
+                @if (supplierStore.canModify()) {
+                  <td>
+                    <div class="flex flex-wrap gap-2">
+                      @if (supplierStore.editingSupplierId() === supplier.supplierId) {
+                        <ui-button
+                          icon="pi pi-check"
+                          variant="ghost"
+                          size="sm"
+                          [loading]="supplierStore.savingSupplierIds().has(supplier.supplierId)"
+                          (clicked)="supplierStore.saveInlinePrice(supplier)"
+                        />
+                        <ui-button
+                          icon="pi pi-times"
+                          variant="ghost"
+                          size="sm"
+                          (clicked)="supplierStore.cancelInlinePriceEdit()"
+                        />
+                      } @else {
+                        <ui-button
+                          icon="pi pi-pencil"
+                          variant="ghost"
+                          size="sm"
+                          (clicked)="supplierStore.startInlinePriceEdit(supplier)"
+                        />
+                        <ui-button
+                          icon="pi pi-trash"
+                          variant="destructive"
+                          size="sm"
+                          (clicked)="supplierStore.requestDeleteSupplier(supplier)"
+                        />
+                      }
+                    </div>
+                  </td>
+                }
+              </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+              <tr>
+                <td [attr.colspan]="supplierStore.canModify() ? 4 : 3" class="empty-state">
+                  Sin proveedores asociados.
+                </td>
+              </tr>
+            </ng-template>
+          </ui-table>
         }
       </div>
     </ui-card>
@@ -134,3 +222,68 @@
 </section>
 
 <app-product-form-dialog />
+
+<ui-dialog
+  [(visible)]="supplierStore.addSupplierDialogVisible"
+  header="Añadir proveedor"
+  size="sm"
+  confirmLabel="Guardar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="supplierStore.loading()"
+  [confirmDisabled]="!supplierStore.selectedSupplierId() || !supplierStore.addSupplierPriceDraft()"
+  (confirmed)="supplierStore.addSelectedSupplierToProduct()"
+  (cancelled)="supplierStore.closeAddSupplierDialog()"
+>
+  <div class="dialog-form">
+    <label class="dialog-field">
+      <span class="dialog-field-label">Proveedor</span>
+      <p-select
+        [options]="supplierStore.activeSuppliersForAdd()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecciona un proveedor activo"
+        [filter]="true"
+        filterBy="name"
+        filterPlaceholder="Buscar proveedor"
+        emptyFilterMessage="Sin proveedores encontrados"
+        styleClass="w-full"
+        appendTo="body"
+        [loading]="supplierStore.suppliersLoading()"
+        [ngModel]="supplierStore.selectedSupplierId()"
+        (ngModelChange)="supplierStore.setSelectedSupplierId($event)"
+      />
+    </label>
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Precio proveedor</span>
+      <input
+        class="p-inputtext p-component w-full"
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="0.00"
+        [value]="supplierStore.addSupplierPriceDraft()"
+        (input)="onAddSupplierPriceInput($event)"
+      />
+    </label>
+  </div>
+</ui-dialog>
+
+<ui-dialog
+  [(visible)]="supplierStore.confirmDeleteSupplierDialogVisible"
+  header="Eliminar asociación"
+  variant="warning"
+  size="sm"
+  confirmLabel="Eliminar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="supplierStore.loading()"
+  (confirmed)="supplierStore.confirmDeleteSupplier()"
+  (cancelled)="supplierStore.cancelDeleteSupplier()"
+>
+  @if (supplierStore.selectedProductSupplier(); as supplier) {
+    <p class="warning-text">
+      Vas a eliminar la asociación con <strong>{{ supplier.supplierName }}</strong>.
+      Las compras históricas no se verán afectadas.
+    </p>
+  }
+</ui-dialog>
