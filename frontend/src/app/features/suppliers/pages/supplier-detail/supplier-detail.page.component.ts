@@ -41,9 +41,12 @@ export class SupplierDetailPageComponent implements OnInit {
 
     this.supplierNumericId.set(numericId);
     this.detailLoading.set(true);
-    const supplier = await this.store.loadProviderById(rawId);
-    this.supplier.set(supplier);
-    this.detailLoading.set(false);
+    try {
+      const supplier = await this.store.loadProviderById(rawId);
+      this.supplier.set(supplier);
+    } finally {
+      this.detailLoading.set(false);
+    }
   }
 
   async openEditFromDetail(): Promise<void> {

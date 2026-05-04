@@ -67,15 +67,16 @@ export class SupplierProductsStore {
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof SupplierProductValidationError) {
       const map: Record<string, string> = {
-        'Invalid supplier ID.': 'ID de proveedor invalido.',
-        'Invalid product ID.': 'ID de producto invalido.',
-        'Supplier price must be greater than zero.': 'El precio del proveedor debe ser mayor que cero.',
-        'Excel file is required for import.': 'Se requiere archivo Excel para importar.',
-        'Page must be greater than 0.': 'La pagina debe ser mayor que 0.',
-        'Page size must be between 1 and 100.': 'El tamano de pagina debe estar entre 1 y 100.',
-        'Supplier price must have maximum 2 decimal places.': 'El precio del proveedor debe tener maximo 2 decimales.',
+        'Invalid supplier ID': 'ID de proveedor invalido.',
+        'Invalid product ID': 'ID de producto invalido.',
+        'Supplier price must be greater than zero': 'El precio del proveedor debe ser mayor que cero.',
+        'Excel file is required for import': 'Se requiere archivo Excel para importar.',
+        'Page must be greater than 0': 'La pagina debe ser mayor que 0.',
+        'Page size must be between 1 and 100': 'El tamano de pagina debe estar entre 1 y 100.',
+        'Supplier price must have maximum 2 decimal places': 'El precio del proveedor debe tener maximo 2 decimales.',
       };
-      return map[err.message] ?? 'Por favor, verifique los datos enviados.';
+      const normalizedMessage = err.message.trim().replace(/[.]$/, '');
+      return map[normalizedMessage] ?? 'Por favor, verifique los datos enviados.';
     }
     if (err instanceof SupplierProductUnauthorizedError) return 'Su sesion ha expirado. Por favor, inicie sesion nuevamente.';
     if (err instanceof SupplierProductForbiddenError) return 'No tiene permisos para realizar esta accion.';
