@@ -481,7 +481,7 @@ describe('SaleCreateStore', () => {
 
     await store.submit();
 
-    expect(store.error()).toBe('Una o varias lineas no tienen stock suficiente.');
+    expect(store.error()).toBe('Una o varias líneas no tienen stock suficiente.');
   });
   it('loads a pending sale for editing in the create form', async () => {
     await store.initializeForEdit(77);
@@ -593,7 +593,7 @@ describe('SaleCreateStore', () => {
       discountType: 'percent',
     });
 
-    expect(store.lineViews()[1].validationError).toBe('Este producto ya esta anadido en otra linea.');
+    expect(store.lineViews()[1].validationError).toBe('Este producto ya está añadido en otra línea.');
     expect(store.canSubmit()).toBe(false);
   });
 });
