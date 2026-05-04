@@ -17,13 +17,18 @@ import {
   SaleDeliveryAddressRequiredError,
   SaleEmptyLinesError,
   SaleInvalidDiscountError,
+  SaleInvalidStatusTransitionError,
+  SaleNotCancellableError,
+  SaleNotDeletableError,
   SaleNotFoundError,
   SaleValidationError,
 } from '@domain/models/sale-errors';
 import { SaleRepository } from '@domain/repositories/sale.repository';
 import { AddSaleLineUseCase } from './add-sale-line.usecase';
 import { AdvanceSaleStatusUseCase } from './advance-sale-status.usecase';
+import { CancelSaleUseCase } from './cancel-sale.usecase';
 import { CreateSaleUseCase } from './create-sale.usecase';
+import { DeleteSaleUseCase } from './delete-sale.usecase';
 import { GetSaleUseCase } from './get-sale.usecase';
 import { ListSalesUseCase } from './list-sales.usecase';
 import { RemoveSaleLineUseCase } from './remove-sale-line.usecase';
@@ -84,6 +89,8 @@ class MockSaleRepository implements SaleRepository {
   getById = vi.fn<(id: number) => Observable<SaleDetail>>();
   create = vi.fn<(data: CreateSale) => Observable<SaleDetail>>();
   update = vi.fn<(saleId: number, data: UpdateSale) => Observable<SaleDetail>>();
+  cancel = vi.fn<(saleId: number) => Observable<SaleDetail>>();
+  delete = vi.fn<(saleId: number) => Observable<void>>();
   addLine = vi.fn<(saleId: number, data: AddSaleLine) => Observable<SaleDetail>>();
   updateLine = vi.fn<
     (saleId: number, saleLineId: number, data: UpdateSaleLine) => Observable<SaleDetail>
@@ -101,7 +108,9 @@ describe('Sales Use Cases', () => {
       providers: [
         AddSaleLineUseCase,
         AdvanceSaleStatusUseCase,
+        CancelSaleUseCase,
         CreateSaleUseCase,
+        DeleteSaleUseCase,
         GetSaleUseCase,
         ListSalesUseCase,
         RemoveSaleLineUseCase,
@@ -596,6 +605,70 @@ describe('Sales Use Cases', () => {
         )
       ).rejects.toThrow(SaleValidationError);
       expect(repo.advanceStatus).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('CancelSaleUseCase', () => {
+    it('should cancel a sale when cancelled is an allowed transition', async () => {
+      const useCase = TestBed.inject(CancelSaleUseCase);
+      repo.cancel.mockReturnValue(of(SALE_DETAIL_MOCK));
+
+      const result = await firstValueFrom(useCase.execute(SALE_DETAIL_MOCK));
+
+      expect(repo.cancel).toHaveBeenCalledWith(1);
+      expect(result).toEqual(SALE_DETAIL_MOCK);
+    });
+
+    it('should reject sales that cannot be cancelled', async () => {
+      const useCase = TestBed.inject(CancelSaleUseCase);
+
+      await expect(
+        firstValueFrom(
+          useCase.execute({
+            saleId: 1,
+            allowedTransitions: [SaleStatus.APPROVED],
+          })
+        )
+      ).rejects.toThrow(SaleNotCancellableError);
+
+      expect(repo.cancel).not.toHaveBeenCalled();
+    });
+
+    it('should map invalid transition errors to SaleNotCancellableError', async () => {
+      const useCase = TestBed.inject(CancelSaleUseCase);
+      repo.cancel.mockReturnValue(
+        throwError(() => new SaleInvalidStatusTransitionError())
+      );
+
+      await expect(firstValueFrom(useCase.execute(SALE_DETAIL_MOCK))).rejects.toThrow(
+        SaleNotCancellableError
+      );
+    });
+  });
+
+  describe('DeleteSaleUseCase', () => {
+    it('should delete pending sales', async () => {
+      const useCase = TestBed.inject(DeleteSaleUseCase);
+      repo.delete.mockReturnValue(of(void 0));
+
+      await firstValueFrom(useCase.execute(SALE_DETAIL_MOCK));
+
+      expect(repo.delete).toHaveBeenCalledWith(1);
+    });
+
+    it('should reject non-pending sales', async () => {
+      const useCase = TestBed.inject(DeleteSaleUseCase);
+
+      await expect(
+        firstValueFrom(
+          useCase.execute({
+            saleId: 1,
+            status: SaleStatus.APPROVED,
+          })
+        )
+      ).rejects.toThrow(SaleNotDeletableError);
+
+      expect(repo.delete).not.toHaveBeenCalled();
     });
   });
 });

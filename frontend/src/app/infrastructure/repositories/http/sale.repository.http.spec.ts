@@ -19,6 +19,7 @@ import {
   SaleInvalidStatusTransitionError,
   SaleLineNotFoundError,
   SaleMinimumOneLineError,
+  SaleNotDeletableError,
   SaleNotFoundError,
   SaleNotPendingError,
   SaleProductNotActiveError,
@@ -199,7 +200,7 @@ describe('HttpSaleRepository', () => {
       });
     });
 
-    it('should map 400 and 422 business-rule errors by backend error code', async () => {
+    it('should map 400 and 422 business-rule errors by backend error code and status', async () => {
       const cases = [
         { payload: { error_code: 8103 }, type: SaleClientNotActiveError },
         { payload: { error_code: 8105 }, type: SaleProductNotActiveError },
@@ -209,7 +210,7 @@ describe('HttpSaleRepository', () => {
         { payload: { error_code: 8109 }, type: SaleTerminalStateError },
         { payload: { error_code: 8111 }, type: SaleNotPendingError, status: 400 },
         { payload: { error_code: 8112 }, type: SaleDeliveryAddressRequiredError },
-        { payload: { error_code: 8113 }, type: SaleInvalidDiscountError },
+        { payload: { error_code: 8113 }, type: SaleInvalidDiscountError, status: 422 },
         { payload: { error_code: 8115 }, type: SaleMinimumOneLineError },
       ];
 
@@ -224,6 +225,19 @@ describe('HttpSaleRepository', () => {
         });
         await expect(promise).rejects.toBeInstanceOf(testCase.type);
       }
+    });
+
+    it('should map 400 status with error code 8113 to not deletable', async () => {
+      const promise = firstValueFrom(
+        repo.create({ clientId: 1, warehouseId: 1, lines: [] }),
+      );
+
+      controller.expectOne(BASE_URL).flush(
+        { error_code: 8113 },
+        { status: 400, statusText: 'Bad Request' },
+      );
+
+      await expect(promise).rejects.toBeInstanceOf(SaleNotDeletableError);
     });
 
     it('should map unknown 422 payloads to SaleValidationError', async () => {
@@ -418,6 +432,46 @@ describe('HttpSaleRepository', () => {
       req.flush(SALE_DETAIL_DTO);
 
       await expect(promise).resolves.toMatchObject({ saleId: 1 });
+    });
+  });
+
+  describe('cancel()', () => {
+    it('should PATCH cancelled status and map the response on 200', async () => {
+      const promise = firstValueFrom(repo.cancel(1));
+      const req = controller.expectOne(`${BASE_URL}/1/status`);
+
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ new_status: SaleStatus.CANCELLED });
+      req.flush({
+        ...SALE_DETAIL_DTO,
+        status: 'Cancelled',
+        allowed_transitions: [],
+      });
+
+      await expect(promise).resolves.toMatchObject({ status: SaleStatus.CANCELLED });
+    });
+  });
+
+  describe('delete()', () => {
+    it('should DELETE the sale and complete on 204', async () => {
+      const promise = firstValueFrom(repo.delete(1));
+      const req = controller.expectOne(`${BASE_URL}/1`);
+
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null, { status: 204, statusText: 'No Content' });
+
+      await expect(promise).resolves.toBeUndefined();
+    });
+
+    it('should map not-deletable business errors', async () => {
+      const promise = firstValueFrom(repo.delete(1));
+
+      controller.expectOne(`${BASE_URL}/1`).flush(
+        { error_code: 8113 },
+        { status: 400, statusText: 'Bad Request' },
+      );
+
+      await expect(promise).rejects.toBeInstanceOf(SaleNotDeletableError);
     });
   });
 });

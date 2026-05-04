@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { SaleStatus } from '@domain/enums/sale-status.enum';
 import {
   AddSaleLine,
   AdvanceSaleStatus,
@@ -23,6 +24,7 @@ import {
   SaleInvalidStatusTransitionError,
   SaleLineNotFoundError,
   SaleMinimumOneLineError,
+  SaleNotDeletableError,
   SaleNotFoundError,
   SaleNotPendingError,
   SaleProductNotActiveError,
@@ -53,7 +55,7 @@ const SALE_ERROR_CODES = {
   WAREHOUSE_NOT_FOUND: 8110,
   NOT_PENDING: 8111,
   DELIVERY_ADDRESS_REQUIRED: 8112,
-  INVALID_DISCOUNT: 8113,
+  AMBIGUOUS_NOT_DELETABLE_OR_INVALID_DISCOUNT: 8113,
   SALE_LINE_NOT_FOUND: 8114,
   MINIMUM_ONE_LINE: 8115,
 } as const;
@@ -99,6 +101,23 @@ export class HttpSaleRepository implements SaleRepository {
       this.http
         .put<SaleDetailDTO>(`${BASE_URL}/${saleId}`, SaleMapper.toUpdateDto(data))
         .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
+  }
+
+  cancel(saleId: number): Observable<SaleDetail> {
+    return this.withErrorMapping(() =>
+      this.http
+        .patch<SaleDetailDTO>(
+          `${BASE_URL}/${saleId}/status`,
+          SaleMapper.toAdvanceStatusDto({ newStatus: SaleStatus.CANCELLED })
+        )
+        .pipe(map((dto) => SaleMapper.fromDetailDto(dto)))
+    );
+  }
+
+  delete(saleId: number): Observable<void> {
+    return this.withErrorMapping(() =>
+      this.http.delete<void>(`${BASE_URL}/${saleId}`).pipe(map(() => undefined))
     );
   }
 
@@ -187,7 +206,9 @@ export class HttpSaleRepository implements SaleRepository {
     err: HttpErrorResponse,
     message: string | undefined
   ): Error {
-    switch (errorCode) {
+    const businessErrorKey = this.buildBusinessErrorKey(err.status, errorCode);
+
+    switch (businessErrorKey) {
       case SALE_ERROR_CODES.CLIENT_NOT_ACTIVE:
         return new SaleClientNotActiveError(
           message ?? 'Client is not active and cannot receive sales.'
@@ -216,7 +237,11 @@ export class HttpSaleRepository implements SaleRepository {
         return new SaleDeliveryAddressRequiredError(
           message ?? 'Delivery address is required.'
         );
-      case SALE_ERROR_CODES.INVALID_DISCOUNT:
+      case '400:8113':
+        return new SaleNotDeletableError(
+          message ?? 'Only pending sales can be deleted.'
+        );
+      case '422:8113':
         return new SaleInvalidDiscountError(
           message ?? 'Discount cannot make the line subtotal negative.'
         );
@@ -225,8 +250,23 @@ export class HttpSaleRepository implements SaleRepository {
           message ?? 'A sale must have at least one line.'
         );
       default:
-        return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
+        break;
     }
+
+    return new SaleValidationError(err.error, message ?? 'Sale validation failed.');
+  }
+
+  private buildBusinessErrorKey(
+    status: number,
+    errorCode: number | undefined
+  ): number | string | undefined {
+    if (
+      errorCode === SALE_ERROR_CODES.AMBIGUOUS_NOT_DELETABLE_OR_INVALID_DISCOUNT
+    ) {
+      return `${status}:${errorCode}`;
+    }
+
+    return errorCode;
   }
 
   private extractErrorCode(err: HttpErrorResponse): number | undefined {

@@ -47,6 +47,13 @@ export class SaleInvalidStatusTransitionError extends Error {
   }
 }
 
+export class SaleNotCancellableError extends Error {
+  override readonly name = 'SaleNotCancellableError';
+  constructor(message = 'Sale can only be cancelled in allowed statuses.') {
+    super(message);
+  }
+}
+
 export class SaleTerminalStateError extends Error {
   override readonly name = 'SaleTerminalStateError';
   constructor(message = 'Sale is in a terminal state.') {
@@ -71,6 +78,13 @@ export class SaleNotPendingError extends Error {
 export class SaleDeliveryAddressRequiredError extends Error {
   override readonly name = 'SaleDeliveryAddressRequiredError';
   constructor(message = 'Delivery address is required.') {
+    super(message);
+  }
+}
+
+export class SaleNotDeletableError extends Error {
+  override readonly name = 'SaleNotDeletableError';
+  constructor(message = 'Only pending sales can be deleted.') {
     super(message);
   }
 }
