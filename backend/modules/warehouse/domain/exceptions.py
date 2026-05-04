@@ -37,6 +37,7 @@ class WarehouseExceptionInfo(AppExceptionInfo):
         404,
     )
     PRODUCT_NOT_ACTIVE = (6204, "Product is not active", 409)
+    MOVEMENT_NOT_FOUND = (6205, "Stock movement not found", 404)
 
 
 class WarehouseException(AppException):

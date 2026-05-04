@@ -35,7 +35,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/clients': 'Clientes',
   '/suppliers': 'Proveedores',
   '/warehouses': 'Almacenes',
-  '/stock-by-warehouse': 'Stock por almacén',
   '/movements': 'Movimientos',
   '/departments': 'Departamentos',
   '/users': 'Usuarios',
@@ -132,7 +131,6 @@ export class AppShellComponent {
         title: 'Inventario',
         items: [
           { label: 'Almacenes', icon: 'pi pi-building', route: '/warehouses' },
-          { label: 'Stock por almacén', icon: 'pi pi-database', route: '/stock-by-warehouse' },
           { label: 'Movimientos', icon: 'pi pi-refresh', route: '/movements' },
         ],
       },

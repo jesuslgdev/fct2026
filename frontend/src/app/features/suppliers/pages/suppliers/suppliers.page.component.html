@@ -1,6 +1,4 @@
 <section class="page">
-
-  <!-- ── Header ─────────────────────────────────────── -->
   <ui-card class="page-header-card">
     <div class="page-header">
       <h1 class="text-style-title">Proveedores</h1>
@@ -22,14 +20,10 @@
     </div>
   </ui-card>
 
-  <!-- Error global -->
   @if (store.error(); as errorMessage) {
-    <ui-card variant="danger" class="mb-4">
-      <p class="text-white" role="alert">{{ errorMessage }}</p>
-    </ui-card>
+    <p class="dialog-error-banner" role="alert">{{ errorMessage }}</p>
   }
 
-  <!-- ── Filters ────────────────────────────────────── -->
   <ui-card class="filters-card">
     <div class="flex gap-3 mb-4">
       <ui-input
@@ -50,10 +44,9 @@
     </div>
   </ui-card>
 
-  <!-- ── Table ──────────────────────────────────────── -->
   <ui-card class="table-card">
     <ui-table
-      [value]="store.filteredProviders()"
+      [value]="store.filteredSuppliers()"
       [loading]="store.loading()"
       [paginator]="true"
       [lazy]="true"
@@ -70,32 +63,43 @@
           <th>Nombre</th>
           <th>NIF/CIF</th>
           <th>Estado</th>
-          @if (store.canEdit()) { <th>Acciones</th> }
+          @if (store.canEdit()) {
+            <th>Acciones</th>
+          }
         </tr>
       </ng-template>
 
-      <ng-template #body let-provider>
+      <ng-template #body let-supplier>
         <tr>
-          <td>{{ provider.name }}</td>
-          <td>{{ provider.taxId }}</td>
+          <td>{{ supplier.name }}</td>
+          <td>{{ supplier.taxId }}</td>
           <td>
-            <ui-badge 
-              [label]="getStatusLabel(provider.status)" 
-              [variant]="getStatusBadgeVariant(provider.status)" 
+            <ui-badge
+              [label]="getStatusLabel(supplier.status)"
+              [variant]="getStatusBadgeVariant(supplier.status)"
             />
           </td>
           @if (store.canEdit()) {
             <td>
               <div class="flex gap-2">
-                <ui-button icon="pi pi-eye" variant="ghost" size="sm"
-                  (clicked)="openSupplierDetail(provider)" />
-                <ui-button icon="pi pi-pencil" variant="ghost" size="sm"
-                  (clicked)="store.openEditDialog(provider)" />
                 <ui-button
-                  [icon]="provider.isActive ? 'pi pi-ban' : 'pi pi-check-circle'"
-                  [variant]="provider.isActive ? 'destructive' : 'secondary'"
+                  icon="pi pi-eye"
+                  variant="ghost"
                   size="sm"
-                  (clicked)="store.requestToggleStatus(provider)" />
+                  (clicked)="openSupplierDetail(supplier)"
+                />
+                <ui-button
+                  icon="pi pi-pencil"
+                  variant="ghost"
+                  size="sm"
+                  (clicked)="store.openEditDialog(supplier)"
+                />
+                <ui-button
+                  [icon]="supplier.isActive ? 'pi pi-ban' : 'pi pi-check-circle'"
+                  [variant]="supplier.isActive ? 'destructive' : 'secondary'"
+                  size="sm"
+                  (clicked)="store.requestToggleStatus(supplier)"
+                />
               </div>
             </td>
           }
@@ -113,89 +117,30 @@
   </ui-card>
 </section>
 
-<!-- Create/Edit dialog -->
-<app-provider-form-dialog />
+<app-supplier-form-dialog />
 
-<!-- Provider details dialog -->
-<ui-dialog
-  [(visible)]="detailsDialogVisible"
-  header="Detalles del Proveedor"
-  size="lg"
-  (cancelled)="closeDetailsDialog()"
->
-  @if (selectedProviderForDetails; as provider) {
-    <div class="space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <span class="text-sm font-medium text-gray-500">Nombre</span>
-          <p class="text-base">{{ provider.name }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-gray-500">NIF/CIF</span>
-          <p class="text-base">{{ provider.taxId }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-gray-500">Email</span>
-          <p class="text-base">{{ provider.email || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-gray-500">Teléfono</span>
-          <p class="text-base">{{ provider.phone || 'No disponible' }}</p>
-        </div>
-        <div class="col-span-2">
-          <span class="text-sm font-medium text-gray-500">Dirección</span>
-          <p class="text-base">{{ provider.address || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-gray-500">Ciudad</span>
-          <p class="text-base">{{ provider.city || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-gray-500">Provincia</span>
-          <p class="text-base">{{ provider.province || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-gray-500">Código Postal</span>
-          <p class="text-base">{{ provider.postalCode || 'No disponible' }}</p>
-        </div>
-        <div>
-          <span class="text-sm font-medium text-gray-500">Estado</span>
-          <p class="text-base">
-            <ui-badge 
-              [label]="getStatusLabel(provider.status)" 
-              [variant]="getStatusBadgeVariant(provider.status)" 
-            />
-          </p>
-        </div>
-      </div>
-    </div>
-  }
-</ui-dialog>
-
-<!-- Confirmation dialog -->
 <ui-dialog
   [(visible)]="store.confirmDialogVisible"
-  [header]="store.providerToToggle()?.isActive ? 'Desactivar proveedor' : 'Activar proveedor'"
+  [header]="store.supplierToToggle()?.isActive ? 'Desactivar proveedor' : 'Activar proveedor'"
   variant="warning"
   size="sm"
-  confirmLabel="Confirm"
-  cancelLabel="Cancel"
+  confirmLabel="Confirmar"
+  cancelLabel="Cancelar"
   [confirmLoading]="store.loading()"
   (confirmed)="store.confirmToggleStatus()"
   (cancelled)="store.cancelToggleStatus()"
 >
-  @if (store.providerToToggle(); as provider) {
+  @if (store.supplierToToggle(); as supplier) {
     <p class="warning-text">
-      @if (provider.isActive) {
+      @if (supplier.isActive) {
         ¿Está seguro de que desea desactivar
-        <strong>{{ provider.name }}</strong>?
+        <strong>{{ supplier.name }}</strong>?
       } @else {
         ¿Está seguro de que desea reactivar
-        <strong>{{ provider.name }}</strong>?
+        <strong>{{ supplier.name }}</strong>?
       }
     </p>
   }
 </ui-dialog>
 
-<!-- Import dialog -->
 <app-import-dialog (importCompleted)="onImportCompleted()" />

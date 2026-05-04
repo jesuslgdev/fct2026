@@ -102,14 +102,12 @@ export class MockProductRepository implements ProductRepository {
   }
 
   createProduct(payload: CreateProductPayload): Observable<Product> {
-    const exists = this.products.some((p) => p.code === payload.code);
-    if (exists) {
-      return throwError(() => new Error('Product code already exists'));
-    }
+    const productId = this.nextId++;
+    const generatedCode = `P-${productId.toString().padStart(4, '0')}`;
 
     const newProduct: Product = {
-      productId: this.nextId++,
-      code: payload.code,
+      productId,
+      code: generatedCode,
       name: payload.name,
       description: payload.description,
       categoryId: payload.categoryId,

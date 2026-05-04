@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { ClientEmailAlreadyExistsError } from '@domain/models/client-errors';
+import { ClientEmailAlreadyExistsError, ClientInvalidPhoneError } from '@domain/models/client-errors';
 import { CreateClientPayload, UpdateClientPayload } from '@domain/models/client.model';
 import { environment } from 'environments/environment';
 import { HttpClientRepository } from './client.repository.http';
@@ -165,5 +165,24 @@ describe('HttpClientRepository', () => {
     );
 
     await expect(promise).rejects.toBeInstanceOf(ClientEmailAlreadyExistsError);
+  });
+
+  it('maps backend phone validation errors to invalid phone errors', async () => {
+    const promise = firstValueFrom(repo.createClient(CREATE_PAYLOAD));
+    controller.expectOne(BASE_URL).flush(
+      {
+        detail: [
+          {
+            type: 'string_pattern_mismatch',
+            loc: ['body', 'phone'],
+            msg: 'String should match pattern',
+            input: '+34 600 000 001',
+          },
+        ],
+      },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+
+    await expect(promise).rejects.toBeInstanceOf(ClientInvalidPhoneError);
   });
 });
