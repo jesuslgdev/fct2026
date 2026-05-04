@@ -35,8 +35,8 @@ describe('SupplierDetailPageComponent', () => {
     openEditDialog: ReturnType<typeof vi.fn>;
   };
   let supplierProductsStore: {
-    supplierPageSize: ReturnType<typeof vi.fn>;
     loadSupplierProducts: ReturnType<typeof vi.fn>;
+    supplierPageSize: ReturnType<typeof vi.fn>;
     onSupplierProductsPageChange: ReturnType<typeof vi.fn>;
     setPriceDraft: ReturnType<typeof vi.fn>;
     setAddProductPriceDraft: ReturnType<typeof vi.fn>;
@@ -52,8 +52,8 @@ describe('SupplierDetailPageComponent', () => {
       openEditDialog: vi.fn().mockResolvedValue(undefined),
     };
     supplierProductsStore = {
-      supplierPageSize: vi.fn().mockReturnValue(10),
       loadSupplierProducts: vi.fn().mockResolvedValue(undefined),
+      supplierPageSize: vi.fn().mockReturnValue(10),
       onSupplierProductsPageChange: vi.fn(),
       setPriceDraft: vi.fn(),
       setAddProductPriceDraft: vi.fn(),

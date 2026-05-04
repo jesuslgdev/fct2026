@@ -1,12 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Select } from 'primeng/select';
 import type { TablePageEvent } from 'primeng/table';
 import { Supplier } from '@domain/models/supplier.model';
-import { SupplierProductsStore } from '@features/supplier-product/state/supplier-products.store';
 import { SupplierProductsImportDialogComponent } from '@features/supplier-product/components/supplier-products-import-dialog/supplier-products-import-dialog.component';
+import { SupplierProductsStore } from '@features/supplier-product/state/supplier-products.store';
 import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
 import { SupplierStatusBadgeComponent } from '@features/suppliers/components/supplier-status-badge/supplier-status-badge.component';
 import { SuppliersStore } from '@features/suppliers/state/suppliers.store';

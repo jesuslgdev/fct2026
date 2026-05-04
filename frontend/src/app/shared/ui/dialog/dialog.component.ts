@@ -45,16 +45,16 @@ export class DialogComponent {
   visible = model<boolean>(false);
 
   // Inputs
-  header        = input<string>('');                  // Dialog title
-  variant       = input<DialogVariant>('default');    // Visual variant
-  size          = input<DialogSize>('default');       // Dialog width preset
-  modal         = input<boolean>(true);               // Backdrop overlay
-  closable      = input<boolean>(true);               // Show close button
-  closeOnEscape = input<boolean>(true);               // Close on Escape key
-  dismissable   = input<boolean>(false);              // Close on backdrop click
-  draggable     = input<boolean>(false);              // Allow dragging
-  resizable     = input<boolean>(false);              // Allow resizing
-  styleClass    = input<string>('');                  // Extra class on dialog root
+  header         = input<string>('');                 // Dialog title
+  variant        = input<DialogVariant>('default');   // Visual variant
+  size           = input<DialogSize>('default');      // Dialog width preset
+  modal          = input<boolean>(true);              // Backdrop overlay
+  closable       = input<boolean>(true);              // Show close button
+  closeOnEscape  = input<boolean>(true);              // Close on Escape key
+  dismissable    = input<boolean>(false);             // Close on backdrop click
+  draggable      = input<boolean>(false);             // Allow dragging
+  resizable      = input<boolean>(false);             // Allow resizing
+  styleClass     = input<string>('');                 // Extra class on dialog root
 
   // Footer action inputs (optional convenience shortcuts)
   confirmLabel   = input<string>('');                 // Confirm button label
