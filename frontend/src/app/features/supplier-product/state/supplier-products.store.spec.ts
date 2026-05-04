@@ -11,7 +11,6 @@ import {
   SupplierProductApiError,
   SupplierProductDuplicateError,
   SupplierProductForbiddenError,
-  SupplierProductNotFoundError,
   SupplierProductUnauthorizedError,
   SupplierProductValidationError,
 } from '@domain/models/supplier-product-errors';
