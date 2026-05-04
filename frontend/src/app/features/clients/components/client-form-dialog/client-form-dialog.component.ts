@@ -26,7 +26,7 @@ export class ClientFormDialogComponent {
     city: ['', [Validators.required, Validators.maxLength(100)]],
     province: ['', [Validators.required, Validators.maxLength(100)]],
     postalCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
-    phone: ['', [Validators.required, Validators.pattern(/^\+?[\d\s-]{9,20}$/)]],
+    phone: ['', [Validators.required, Validators.pattern(/^\d{9}$/)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
   });
 

@@ -1,0 +1,120 @@
+<ui-dialog
+  [(visible)]="store.dialogVisible"
+  [header]="store.dialogMode() === 'create' ? 'Nuevo proveedor' : 'Editar proveedor'"
+  confirmLabel="Guardar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  [confirmDisabled]="form.invalid"
+  [closeOnConfirm]="false"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+>
+  <form [formGroup]="form" class="dialog-form">
+    @if (store.formError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
+    <!-- Grid de 2 columnas -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <label for="name" class="dialog-field-label">Nombre del proveedor</label>
+        <ui-input id="name" formControlName="name" placeholder="Nombre del proveedor"
+          [state]="name.invalid && name.touched ? 'error' : 'default'" />
+        @if (name.invalid && name.touched) {
+          <span class="dialog-field-error">El nombre es obligatorio.</span>
+        }
+      </div>
+      <div class="dialog-field">
+        <label for="taxId" class="dialog-field-label">NIF/CIF</label>
+        <ui-input id="taxId" formControlName="taxId" placeholder="12345678Z o B12345678"
+          [state]="taxId.invalid && taxId.touched ? 'error' : 'default'" />
+        @if (taxId.invalid && taxId.touched) {
+          <span class="dialog-field-error">
+            @if (taxId.hasError('required')) { El NIF/CIF es obligatorio. }
+            @else { El formato de NIF/CIF no es válido. }
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Campo de email -->
+    <div class="dialog-field">
+      <label for="email" class="dialog-field-label">Correo electrónico</label>
+      <ui-input id="email" formControlName="email" type="email"
+        placeholder="proveedor@empresa.com"
+        [state]="email.invalid && email.touched ? 'error' : 'default'" />
+      @if (email.invalid && email.touched) {
+        <span class="dialog-field-error">
+          @if (email.hasError('required')) { El correo es obligatorio. }
+          @else { Introduce un correo electrónico válido. }
+        </span>
+      }
+    </div>
+
+    <!-- Campo de dirección -->
+    <div class="dialog-field">
+      <label for="address" class="dialog-field-label">Dirección</label>
+      <ui-input id="address" formControlName="address" placeholder="Calle Principal 123"
+        [state]="address.invalid && address.touched ? 'error' : 'default'" />
+      @if (address.invalid && address.touched) {
+        <span class="dialog-field-error">
+          @if (address.hasError('required')) { La dirección es obligatoria. }
+          @else { La dirección no es válida. }
+        </span>
+      }
+    </div>
+
+    <!-- Grid de 2 columnas para campos opcionales -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <label for="city" class="dialog-field-label">Ciudad</label>
+        <ui-input id="city" formControlName="city" placeholder="Madrid"
+          [state]="city.invalid && city.touched ? 'error' : 'default'" />
+        @if (city.invalid && city.touched) {
+          <span class="dialog-field-error">
+            @if (city.hasError('required')) { La ciudad es obligatoria. }
+            @else { La ciudad no es válida. }
+          </span>
+        }
+      </div>
+      <div class="dialog-field">
+        <label for="province" class="dialog-field-label">Provincia</label>
+        <ui-input id="province" formControlName="province" placeholder="Madrid"
+          [state]="province.invalid && province.touched ? 'error' : 'default'" />
+        @if (province.invalid && province.touched) {
+          <span class="dialog-field-error">
+            @if (province.hasError('required')) { La provincia es obligatoria. }
+            @else { La provincia no es válida. }
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Grid de 2 columnas para campos opcionales -->
+    <div class="dialog-form-grid">
+      <div class="dialog-field">
+        <label for="postalCode" class="dialog-field-label">Código Postal</label>
+        <ui-input id="postalCode" formControlName="postalCode" placeholder="28001"
+          [state]="postalCode.invalid && postalCode.touched ? 'error' : 'default'" />
+        @if (postalCode.invalid && postalCode.touched) {
+          <span class="dialog-field-error">
+            @if (postalCode.hasError('required')) { El código postal es obligatorio. }
+            @else { El código postal no es válido. }
+          </span>
+        }
+      </div>
+      <div class="dialog-field">
+        <label for="phone" class="dialog-field-label">Teléfono</label>
+        <ui-input id="phone" formControlName="phone" placeholder="912345678"
+          [state]="phone.invalid && phone.touched ? 'error' : 'default'" />
+        @if (phone.invalid && phone.touched) {
+          <span class="dialog-field-error">
+            @if (phone.hasError('required')) { El teléfono es obligatorio. }
+            @else { El teléfono debe tener exactamente 9 dígitos. }
+          </span>
+        }
+      </div>
+    </div>
+
+  </form>
+</ui-dialog>

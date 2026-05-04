@@ -67,6 +67,37 @@ class StockDistributionItemDTO(BaseModel):
     available_stock: int
 
 
+# ── Stock Movement History ──────────────────────────────────────
+
+
+class StockMovementItemDTO(BaseModel):
+    """Single row in the stock movement history list."""
+
+    movement_id: int
+    product_id: int
+    product_name: str
+    movement_type: str
+    difference: int
+    reason: str | None
+    created_at: datetime
+
+
+class StockMovementDetailDTO(BaseModel):
+    """Full detail of a single stock movement."""
+
+    movement_id: int
+    warehouse_id: int
+    product_id: int
+    product_name: str
+    movement_type: str
+    previous_quantity: int
+    new_quantity: int
+    difference: int
+    reason: str | None
+    user_email: str
+    created_at: datetime
+
+
 # ── Stock Adjustment ────────────────────────────────────────────
 
 

@@ -33,6 +33,9 @@ class Sale(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     status: Mapped[str] = mapped_column(String(20), default="Pending", nullable=False)
+    status_changed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     taxes: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     total: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
@@ -48,5 +51,5 @@ class Sale(Base):
 
     lines: Mapped[list[SaleLine]] = relationship("SaleLine", lazy="selectin")
     status_history: Mapped[list[SaleStatusHistory]] = relationship(
-        "SaleStatusHistory", lazy="select", order_by="SaleStatusHistory.changed_at"
+        "SaleStatusHistory", lazy="selectin", order_by="SaleStatusHistory.changed_at"
     )

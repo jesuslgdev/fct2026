@@ -35,6 +35,7 @@ async def test_advance_to_approved_returns_200(auth_client: AsyncClient):
     del app.dependency_overrides[require_purchases_department_or_admin]
     assert response.status_code == 200
     assert response.json()["purchase_id"] == 1
+    assert set(response.json()["allowed_transitions"]) == {"Cancelled", "In Process"}
 
 
 async def test_advance_to_in_process_returns_200(auth_client: AsyncClient):
@@ -49,6 +50,7 @@ async def test_advance_to_in_process_returns_200(auth_client: AsyncClient):
     del app.dependency_overrides[get_advance_purchase_status_use_case]
     del app.dependency_overrides[require_purchases_department_or_admin]
     assert response.status_code == 200
+    assert response.json()["allowed_transitions"] == ["Sent"]
 
 
 async def test_advance_to_sent_returns_200(auth_client: AsyncClient):
@@ -63,6 +65,7 @@ async def test_advance_to_sent_returns_200(auth_client: AsyncClient):
     del app.dependency_overrides[get_advance_purchase_status_use_case]
     del app.dependency_overrides[require_purchases_department_or_admin]
     assert response.status_code == 200
+    assert response.json()["allowed_transitions"] == ["Received"]
 
 
 async def test_advance_to_received_returns_200(auth_client: AsyncClient):
@@ -77,6 +80,7 @@ async def test_advance_to_received_returns_200(auth_client: AsyncClient):
     del app.dependency_overrides[get_advance_purchase_status_use_case]
     del app.dependency_overrides[require_purchases_department_or_admin]
     assert response.status_code == 200
+    assert response.json()["allowed_transitions"] == []
 
 
 async def test_advance_status_purchase_not_found(auth_client: AsyncClient):
@@ -109,7 +113,7 @@ async def test_advance_status_invalid_transition(auth_client: AsyncClient):
     assert response.status_code == 400
 
 
-async def test_advance_status_passes_email_to_use_case(auth_client: AsyncClient):
+async def test_advance_status_passes_actor_to_use_case(auth_client: AsyncClient):
     purchase = make_purchase(status="Approved")
     mock = MagicMock()
     mock.execute = AsyncMock(return_value=purchase)
@@ -119,7 +123,9 @@ async def test_advance_status_passes_email_to_use_case(auth_client: AsyncClient)
     del app.dependency_overrides[get_advance_purchase_status_use_case]
     del app.dependency_overrides[require_purchases_department_or_admin]
     mock.execute.assert_called_once_with(
-        purchase_id=1, new_status="Approved", user_email="test@test.com"
+        purchase_id=1,
+        new_status="Approved",
+        actor=_purchases_user(),
     )
 
 

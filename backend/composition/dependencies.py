@@ -155,6 +155,13 @@ from modules.clients.domain.interfaces.use_cases.i_update_client_use_case import
     IUpdateClientUseCase,
 )
 from modules.clients.infrastructure.repos.client_repository import ClientRepository
+from modules.dashboard.application.get_dashboard_use_case import GetDashboardUseCase
+from modules.dashboard.domain.interfaces.use_cases.i_get_dashboard_use_case import (
+    IGetDashboardUseCase,
+)
+from modules.dashboard.infrastructure.repos.dashboard_repository import (
+    DashboardRepository,
+)
 from modules.purchases.application.add_purchase_line_use_case import (
     AddPurchaseLineUseCase,
 )
@@ -216,23 +223,43 @@ from modules.purchases.domain.interfaces.use_cases.i_update_purchase_use_case im
 from modules.purchases.infrastructure.repos.purchase_repository import (
     PurchaseRepository,
 )
+from modules.sales.application.add_sale_line_use_case import AddSaleLineUseCase
 from modules.sales.application.advance_sale_status_use_case import (
     AdvanceSaleStatusUseCase,
 )
 from modules.sales.application.create_sale_use_case import CreateSaleUseCase
+from modules.sales.application.delete_sale_use_case import DeleteSaleUseCase
 from modules.sales.application.get_sale_use_case import GetSaleUseCase
 from modules.sales.application.list_sales_use_case import ListSalesUseCase
+from modules.sales.application.remove_sale_line_use_case import RemoveSaleLineUseCase
+from modules.sales.application.update_sale_line_use_case import UpdateSaleLineUseCase
+from modules.sales.application.update_sale_use_case import UpdateSaleUseCase
+from modules.sales.domain.interfaces.use_cases.i_add_sale_line_use_case import (
+    IAddSaleLineUseCase,
+)
 from modules.sales.domain.interfaces.use_cases.i_advance_sale_status_use_case import (
     IAdvanceSaleStatusUseCase,
 )
 from modules.sales.domain.interfaces.use_cases.i_create_sale_use_case import (
     ICreateSaleUseCase,
 )
+from modules.sales.domain.interfaces.use_cases.i_delete_sale_use_case import (
+    IDeleteSaleUseCase,
+)
 from modules.sales.domain.interfaces.use_cases.i_get_sale_use_case import (
     IGetSaleUseCase,
 )
 from modules.sales.domain.interfaces.use_cases.i_list_sales_use_case import (
     IListSalesUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_remove_sale_line_use_case import (
+    IRemoveSaleLineUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_update_sale_line_use_case import (
+    IUpdateSaleLineUseCase,
+)
+from modules.sales.domain.interfaces.use_cases.i_update_sale_use_case import (
+    IUpdateSaleUseCase,
 )
 from modules.sales.infrastructure.repos.sale_repository import SaleRepository
 from modules.suppliers.application.add_product_to_supplier_use_case import (
@@ -326,9 +353,15 @@ from modules.warehouse.application.delete_warehouse_use_case import (
 from modules.warehouse.application.get_product_stock_overview_use_case import (
     GetProductStockOverviewUseCase,
 )
+from modules.warehouse.application.get_stock_movement_use_case import (
+    GetStockMovementUseCase,
+)
 from modules.warehouse.application.get_warehouse_use_case import GetWarehouseUseCase
 from modules.warehouse.application.list_stock_distribution_use_case import (
     ListStockDistributionUseCase,
+)
+from modules.warehouse.application.list_stock_movements_use_case import (
+    ListStockMovementsUseCase,
 )
 from modules.warehouse.application.list_warehouses_use_case import (
     ListWarehousesUseCase,
@@ -348,11 +381,17 @@ from modules.warehouse.domain.interfaces.use_cases.i_delete_warehouse_use_case i
 from modules.warehouse.domain.interfaces.use_cases.i_get_product_stock_overview_use_case import (
     IGetProductStockOverviewUseCase,
 )
+from modules.warehouse.domain.interfaces.use_cases.i_get_stock_movement_use_case import (
+    IGetStockMovementUseCase,
+)
 from modules.warehouse.domain.interfaces.use_cases.i_get_warehouse_use_case import (
     IGetWarehouseUseCase,
 )
 from modules.warehouse.domain.interfaces.use_cases.i_list_stock_distribution_use_case import (
     IListStockDistributionUseCase,
+)
+from modules.warehouse.domain.interfaces.use_cases.i_list_stock_movements_use_case import (
+    IListStockMovementsUseCase,
 )
 from modules.warehouse.domain.interfaces.use_cases.i_list_warehouses_use_case import (
     IListWarehousesUseCase,
@@ -369,12 +408,16 @@ from modules.warehouse.infrastructure.repos.stock_movement_repository import (
 from modules.warehouse.infrastructure.repos.stock_output_recorder import (
     StockOutputRecorder,
 )
+from modules.warehouse.infrastructure.repos.stock_reservation_recorder import (
+    StockReservationRecorder,
+)
 from modules.warehouse.infrastructure.repos.warehouse_repository import (
     WarehouseRepository,
 )
 from modules.warehouse.infrastructure.repos.warehouse_stock_repository import (
     WarehouseStockRepository,
 )
+from shared.config import settings
 from shared.infrastructure.database.connection import get_db
 
 
@@ -457,7 +500,11 @@ async def get_activate_user_use_case(
 async def get_delete_user_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IDeleteUserUseCase:
-    return DeleteUserUseCase(UserRepository(db), PurchaseRepository(db))
+    return DeleteUserUseCase(
+        UserRepository(db),
+        PurchaseRepository(db),
+        SaleRepository(db),
+    )
 
 
 async def get_list_categories_use_case(
@@ -588,6 +635,17 @@ async def get_set_client_active_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ISetClientActiveUseCase:
     return SetClientActiveUseCase(ClientRepository(db))
+
+
+async def get_dashboard_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetDashboardUseCase:
+    return GetDashboardUseCase(
+        dashboard_repo=DashboardRepository(db),
+        department_reader=DepartmentRepository(db),
+        stale_days=settings.dashboard_stale_days,
+        recent_limit=settings.dashboard_recent_limit,
+    )
 
 
 async def get_add_product_to_supplier_use_case(
@@ -781,6 +839,18 @@ async def get_adjust_stock_use_case(
     )
 
 
+async def get_list_stock_movements_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IListStockMovementsUseCase:
+    return ListStockMovementsUseCase(StockMovementRepository(db))
+
+
+async def get_get_stock_movement_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IGetStockMovementUseCase:
+    return GetStockMovementUseCase(StockMovementRepository(db))
+
+
 # ── Sales ──────────────────────────────────────────────────────────
 
 
@@ -793,13 +863,18 @@ async def get_create_sale_use_case(
         product_reader=ProductRepository(db),
         warehouse_reader=WarehouseRepository(db),
         stock_reader=WarehouseStockRepository(db),
+        user_reader=UserRepository(db),
     )
 
 
 async def get_get_sale_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IGetSaleUseCase:
-    return GetSaleUseCase(SaleRepository(db))
+    return GetSaleUseCase(
+        repo=SaleRepository(db),
+        user_reader=UserRepository(db),
+        client_reader=ClientRepository(db),
+    )
 
 
 async def get_list_sales_use_case(
@@ -808,18 +883,70 @@ async def get_list_sales_use_case(
     return ListSalesUseCase(SaleRepository(db))
 
 
+async def get_update_sale_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IUpdateSaleUseCase:
+    return UpdateSaleUseCase(
+        sale_repo=SaleRepository(db),
+        client_reader=ClientRepository(db),
+        product_reader=ProductRepository(db),
+        stock_reader=WarehouseStockRepository(db),
+        user_reader=UserRepository(db),
+    )
+
+
+async def get_add_sale_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IAddSaleLineUseCase:
+    return AddSaleLineUseCase(
+        sale_repo=SaleRepository(db),
+        product_reader=ProductRepository(db),
+        stock_reader=WarehouseStockRepository(db),
+        client_reader=ClientRepository(db),
+        user_reader=UserRepository(db),
+    )
+
+
+async def get_update_sale_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IUpdateSaleLineUseCase:
+    return UpdateSaleLineUseCase(
+        sale_repo=SaleRepository(db),
+        stock_reader=WarehouseStockRepository(db),
+        client_reader=ClientRepository(db),
+        user_reader=UserRepository(db),
+    )
+
+
+async def get_remove_sale_line_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IRemoveSaleLineUseCase:
+    return RemoveSaleLineUseCase(
+        sale_repo=SaleRepository(db),
+        client_reader=ClientRepository(db),
+        user_reader=UserRepository(db),
+    )
+
+
 async def get_advance_sale_status_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> IAdvanceSaleStatusUseCase:
+    stock_repo = WarehouseStockRepository(db)
+    movement_repo = StockMovementRepository(db)
     return AdvanceSaleStatusUseCase(
         sale_repo=SaleRepository(db),
-        product_reader=ProductRepository(db),
+        stock_reader=stock_repo,
+        stock_reservation_recorder=StockReservationRecorder(stock_repo=stock_repo),
         stock_output_recorder=StockOutputRecorder(
-            stock_repo=WarehouseStockRepository(db),
-            movement_repo=StockMovementRepository(db),
+            stock_repo=stock_repo,
+            movement_repo=movement_repo,
         ),
-        stock_entry_recorder=StockEntryRecorder(
-            stock_repo=WarehouseStockRepository(db),
-            movement_repo=StockMovementRepository(db),
-        ),
+        user_reader=UserRepository(db),
+        client_reader=ClientRepository(db),
     )
+
+
+async def get_delete_sale_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> IDeleteSaleUseCase:
+    return DeleteSaleUseCase(SaleRepository(db))
