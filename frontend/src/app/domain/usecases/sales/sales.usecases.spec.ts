@@ -372,12 +372,24 @@ describe('Sales Use Cases', () => {
       const data: CreateSale = {
         clientId: 1,
         warehouseId: 2,
-        lines: [{ productId: 1, quantity: 5, discount: -1 }],
+        lines: [{ productId: 1, quantity: 5, discount: -1, discountType: 'amount' }],
       };
 
       await expect(firstValueFrom(useCase.execute(data))).rejects.toThrow(
         SaleInvalidDiscountError
       );
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+
+    it('should reject discount without discount type', async () => {
+      const useCase = TestBed.inject(CreateSaleUseCase);
+      const data: CreateSale = {
+        clientId: 1,
+        warehouseId: 2,
+        lines: [{ productId: 1, quantity: 5, discount: 0 }],
+      };
+
+      await expect(firstValueFrom(useCase.execute(data))).rejects.toThrow(SaleValidationError);
       expect(repo.create).not.toHaveBeenCalled();
     });
 
@@ -480,6 +492,15 @@ describe('Sales Use Cases', () => {
       ).rejects.toThrow(SaleValidationError);
       expect(repo.addLine).not.toHaveBeenCalled();
     });
+
+    it('should reject discount without discount type', async () => {
+      const useCase = TestBed.inject(AddSaleLineUseCase);
+
+      await expect(
+        firstValueFrom(useCase.execute(1, { productId: 1, quantity: 1, discount: 0 }))
+      ).rejects.toThrow(SaleValidationError);
+      expect(repo.addLine).not.toHaveBeenCalled();
+    });
   });
 
   describe('UpdateSaleLineUseCase', () => {
@@ -521,6 +542,15 @@ describe('Sales Use Cases', () => {
 
       await expect(
         firstValueFrom(useCase.execute(1, 1, { quantity: 0 }))
+      ).rejects.toThrow(SaleValidationError);
+      expect(repo.updateLine).not.toHaveBeenCalled();
+    });
+
+    it('should reject discount without discount type', async () => {
+      const useCase = TestBed.inject(UpdateSaleLineUseCase);
+
+      await expect(
+        firstValueFrom(useCase.execute(1, 1, { quantity: 1, discount: 0 }))
       ).rejects.toThrow(SaleValidationError);
       expect(repo.updateLine).not.toHaveBeenCalled();
     });

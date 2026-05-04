@@ -1,30 +1,32 @@
-﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { SuppliersPageComponent } from './suppliers.page.component';
+import { Router } from '@angular/router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 import { Supplier } from '@domain/models/supplier.model';
 import { SupplierRepository } from '@domain/repositories/supplier.repository';
+import { SuppliersPageComponent } from './suppliers.page.component';
 
 describe('SuppliersPageComponent', () => {
   let component: SuppliersPageComponent;
   let fixture: ComponentFixture<SuppliersPageComponent>;
+  let navigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    navigate = vi.fn();
+
     await TestBed.configureTestingModule({
-      imports: [
-        FormsModule,
-        SuppliersPageComponent,
-      ],
+      imports: [FormsModule, SuppliersPageComponent],
       providers: [
+        { provide: Router, useValue: { navigate } },
         { provide: SupplierRepository, useValue: {} },
       ],
     })
-    .overrideComponent(SuppliersPageComponent, {
-      remove: { imports: [SuppliersPageComponent] },
-      add: { imports: [FormsModule] }
-    })
-    .compileComponents();
+      .overrideComponent(SuppliersPageComponent, {
+        remove: { imports: [SuppliersPageComponent] },
+        add: { imports: [FormsModule] },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(SuppliersPageComponent);
     component = fixture.componentInstance;
@@ -44,7 +46,7 @@ describe('SuppliersPageComponent', () => {
   });
 
   it('should track suppliers by id', () => {
-    const mockProvider: Supplier = {
+    const mockSupplier: Supplier = {
       id: '1',
       name: 'Test Supplier',
       taxId: '123456789',
@@ -56,33 +58,34 @@ describe('SuppliersPageComponent', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    const result = component.trackById(0, mockProvider);
-    expect(result).toBe(1);
+
+    expect(component.trackById(0, mockSupplier)).toBe(1);
+  });
+
+  it('should navigate to supplier detail page', () => {
+    component.openSupplierDetail({ id: '7' } as Supplier);
+
+    expect(navigate).toHaveBeenCalledWith(['/suppliers', '7']);
   });
 
   it('should get correct status label for active supplier', () => {
-    const result = component.getStatusLabel(SupplierStatus.ACTIVE);
-    expect(result).toBe('Activo');
+    expect(component.getStatusLabel(SupplierStatus.ACTIVE)).toBe('Activo');
   });
 
   it('should get correct status label for inactive supplier', () => {
-    const result = component.getStatusLabel(SupplierStatus.INACTIVE);
-    expect(result).toBe('Inactivo');
+    expect(component.getStatusLabel(SupplierStatus.INACTIVE)).toBe('Inactivo');
   });
 
   it('should return status as fallback for unknown status', () => {
-    const result = component.getStatusLabel('unknown' as SupplierStatus);
-    expect(result).toBe('unknown');
+    expect(component.getStatusLabel('unknown' as SupplierStatus)).toBe('unknown');
   });
 
   it('should return success variant for active status', () => {
-    const result = component.getStatusBadgeVariant(SupplierStatus.ACTIVE);
-    expect(result).toBe('success');
+    expect(component.getStatusBadgeVariant(SupplierStatus.ACTIVE)).toBe('success');
   });
 
   it('should return danger variant for inactive status', () => {
-    const result = component.getStatusBadgeVariant(SupplierStatus.INACTIVE);
-    expect(result).toBe('danger');
+    expect(component.getStatusBadgeVariant(SupplierStatus.INACTIVE)).toBe('danger');
   });
 
   it('should reload first page when import completes', () => {
@@ -100,4 +103,3 @@ describe('SuppliersPageComponent', () => {
     });
   });
 });
-

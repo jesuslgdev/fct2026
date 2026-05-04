@@ -1,4 +1,4 @@
-﻿import {
+import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -8,21 +8,24 @@
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Select } from 'primeng/select';
-import { TableComponent } from '@shared/ui/table/table.component';
-import { ButtonComponent } from '@shared/ui/button/button.component';
-import { DialogComponent } from '@shared/ui/dialog/dialog.component';
-import { InputComponent } from '@shared/ui/input/input.component';
-import { CardComponent } from '@shared/ui/card/card.component';
-import { BadgeComponent } from '@shared/ui/badge/badge.component';
-import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
-import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
-import { ImportDialogComponent } from '@features/suppliers/components/import-dialog/import-dialog.component';
 import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 import { Supplier } from '@domain/models/supplier.model';
+import { ImportDialogComponent } from '@features/suppliers/components/import-dialog/import-dialog.component';
+import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
+import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
+import { BadgeComponent } from '@shared/ui/badge/badge.component';
+import { ButtonComponent } from '@shared/ui/button/button.component';
+import { CardComponent } from '@shared/ui/card/card.component';
+import { DialogComponent } from '@shared/ui/dialog/dialog.component';
+import { InputComponent } from '@shared/ui/input/input.component';
+import { TableComponent } from '@shared/ui/table/table.component';
 
-// Types for filter selects
-interface StatusOption { label: string; value: SupplierStatus | null; }
+interface StatusOption {
+  label: string;
+  value: SupplierStatus | null;
+}
 
 @Component({
   selector: 'app-suppliers-page',
@@ -46,19 +49,14 @@ interface StatusOption { label: string; value: SupplierStatus | null; }
 export class SuppliersPageComponent implements OnInit {
   readonly store = inject(SuppliersStore);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
   readonly importDialog = viewChild(ImportDialogComponent);
 
-  // Force CD when suppliers list changes.
   private readonly suppliersEffect = effect(() => {
     this.store.filteredSuppliers();
     this.cdr.markForCheck();
   });
 
-  // Properties for details dialog
-  detailsDialogVisible = false;
-  selectedSupplierForDetails: Supplier | null = null;
-
-  // Filter options (with "all" represented as null)
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos los estados', value: null },
     { label: 'Activo', value: SupplierStatus.ACTIVE },
@@ -70,45 +68,33 @@ export class SuppliersPageComponent implements OnInit {
   }
 
   trackById(_: number, supplier: Supplier): number {
-    return parseInt(supplier.id);
+    return parseInt(supplier.id, 10);
   }
 
-  // Open supplier details dialog
-  async openDetailsDialog(supplier: Supplier): Promise<void> {
-    const fullSupplier = await this.store.loadSupplierById(supplier.id);
-    if (fullSupplier) {
-      this.selectedSupplierForDetails = fullSupplier;
-      this.detailsDialogVisible = true;
-    }
+  openSupplierDetail(supplier: Supplier): void {
+    this.router.navigate(['/suppliers', supplier.id]);
   }
 
-  // Close details dialog
-  closeDetailsDialog(): void {
-    this.detailsDialogVisible = false;
-    this.selectedSupplierForDetails = null;
-  }
-
-  // Status label mapping (enum -> UI text)
   getStatusLabel(status: Supplier['status']): string {
     switch (status) {
-      case SupplierStatus.ACTIVE: return 'Activo';
-      case SupplierStatus.INACTIVE: return 'Inactivo';
-      default: return status;
+      case SupplierStatus.ACTIVE:
+        return 'Activo';
+      case SupplierStatus.INACTIVE:
+        return 'Inactivo';
+      default:
+        return status;
     }
   }
 
-  // Helper for badge variant by status
   getStatusBadgeVariant(status: Supplier['status']): 'success' | 'danger' {
     return status === SupplierStatus.ACTIVE ? 'success' : 'danger';
   }
 
-  // Import actions
   openImportDialog(): void {
     this.importDialog()?.open();
   }
 
   onImportCompleted(): void {
-    // After import, force first page so newly imported suppliers are visible immediately.
     this.store.loadSuppliers({
       page: 1,
       rows: this.store.pageSize(),
@@ -116,4 +102,3 @@ export class SuppliersPageComponent implements OnInit {
     });
   }
 }
-

@@ -1,4 +1,5 @@
 import { SaleStatus } from '@domain/enums/sale-status.enum';
+import { SaleValidationError } from '@domain/models/sale-errors';
 import {
   AddSaleLine,
   AdvanceSaleStatus,
@@ -89,6 +90,23 @@ describe('SaleMapper', () => {
       const result = SaleMapper.fromDto(dtoWithNumber);
       expect(result.total).toBe(121);
     });
+
+    it('should throw SaleValidationError when status is invalid', () => {
+      const invalidDto: SaleDTO = { ...mockSaleDTO, status: 'InvalidStatus' };
+
+      expect(() => SaleMapper.fromDto(invalidDto)).toThrow(SaleValidationError);
+      expect(() => SaleMapper.fromDto(invalidDto)).toThrow('Sale status is invalid.');
+    });
+
+    it('should throw SaleValidationError when an allowed transition is invalid', () => {
+      const invalidDto: SaleDTO = {
+        ...mockSaleDTO,
+        allowed_transitions: ['Approved', 'InvalidStatus'],
+      };
+
+      expect(() => SaleMapper.fromDto(invalidDto)).toThrow(SaleValidationError);
+      expect(() => SaleMapper.fromDto(invalidDto)).toThrow('Sale status is invalid.');
+    });
   });
 
   describe('fromDetailDto()', () => {
@@ -114,6 +132,43 @@ describe('SaleMapper', () => {
       expect(result.lines[0].discountType).toBe('amount');
       expect(result.statusHistory).toHaveLength(1);
       expect(result.statusHistory[0].toStatus).toBe(SaleStatus.PENDING);
+    });
+
+    it('should throw SaleValidationError when status is invalid', () => {
+      const invalidDto: SaleDetailDTO = { ...mockSaleDetailDTO, status: 'InvalidStatus' };
+
+      expect(() => SaleMapper.fromDetailDto(invalidDto)).toThrow(SaleValidationError);
+      expect(() => SaleMapper.fromDetailDto(invalidDto)).toThrow('Sale status is invalid.');
+    });
+
+    it('should throw SaleValidationError when status history toStatus is invalid', () => {
+      const invalidDto: SaleDetailDTO = {
+        ...mockSaleDetailDTO,
+        status_history: [
+          {
+            ...mockSaleDetailDTO.status_history[0],
+            to_status: 'InvalidStatus',
+          },
+        ],
+      };
+
+      expect(() => SaleMapper.fromDetailDto(invalidDto)).toThrow(SaleValidationError);
+      expect(() => SaleMapper.fromDetailDto(invalidDto)).toThrow('Sale status is invalid.');
+    });
+
+    it('should throw SaleValidationError when status history fromStatus is invalid', () => {
+      const invalidDto: SaleDetailDTO = {
+        ...mockSaleDetailDTO,
+        status_history: [
+          {
+            ...mockSaleDetailDTO.status_history[0],
+            from_status: 'InvalidStatus',
+          },
+        ],
+      };
+
+      expect(() => SaleMapper.fromDetailDto(invalidDto)).toThrow(SaleValidationError);
+      expect(() => SaleMapper.fromDetailDto(invalidDto)).toThrow('Sale status is invalid.');
     });
   });
 

@@ -523,7 +523,7 @@ export class SaleCreateStore {
         [lineId]: {
           availableStock: null,
           stockLoading: false,
-          stockError: 'No se ha podido consultar el stock del almacen seleccionado.',
+          stockError: 'No se ha podido consultar el stock del almacén seleccionado.',
         },
       }));
     }
@@ -646,7 +646,7 @@ export class SaleCreateStore {
                 ...item,
                 availableStock: null,
                 stockLoading: false,
-                stockError: 'No se ha podido consultar el stock del almacen seleccionado.',
+                stockError: 'No se ha podido consultar el stock del almacén seleccionado.',
               }
             : item,
         ),
@@ -707,15 +707,15 @@ export class SaleCreateStore {
     }
 
     if (this.hasDuplicateProductInLines(lines, line.lineId, line.productId)) {
-      return 'Este producto ya esta anadido en otra linea.';
+      return 'Este producto ya está añadido en otra línea.';
     }
 
     if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
-      return 'La cantidad debe ser un numero entero mayor que 0.';
+      return 'La cantidad debe ser un número entero mayor que 0.';
     }
 
     if (!this.selectedWarehouseId()) {
-      return 'Selecciona primero un almacen para validar el stock.';
+      return 'Selecciona primero un almacén para validar el stock.';
     }
 
     if (line.stockLoading) {
@@ -727,7 +727,7 @@ export class SaleCreateStore {
     }
 
     if (line.availableStock === null) {
-      return 'El stock aun no esta disponible para esta linea.';
+      return 'El stock aún no está disponible para esta línea.';
     }
 
     if (line.quantity > line.availableStock) {
@@ -750,7 +750,7 @@ export class SaleCreateStore {
     );
 
     if (discountAmount >= grossAmount && grossAmount > 0) {
-      return 'El descuento no puede dejar el subtotal de linea en negativo.';
+      return 'El descuento no puede dejar el subtotal de línea en negativo.';
     }
 
     return null;
@@ -763,18 +763,18 @@ export class SaleCreateStore {
     }
 
     if (!this.selectedWarehouseId()) {
-      this.errorState.set('Selecciona un almacen antes de guardar.');
+      this.errorState.set('Selecciona un almacén antes de guardar.');
       return null;
     }
 
     if (!this.lines().length) {
-      this.errorState.set('Anade al menos una linea antes de guardar.');
+      this.errorState.set('Añade al menos una línea antes de guardar.');
       return null;
     }
 
     const linesAreValid = this.validateAllLines();
     if (!linesAreValid) {
-      this.errorState.set('Revisa los datos de las lineas antes de guardar la venta.');
+      this.errorState.set('Revisa los datos de las líneas antes de guardar la venta.');
       return null;
     }
 
@@ -787,7 +787,7 @@ export class SaleCreateStore {
       }));
 
     if (!payloadLines.length) {
-      this.errorState.set('Anade al menos una linea valida antes de guardar.');
+      this.errorState.set('Añade al menos una línea válida antes de guardar.');
       return null;
     }
 
@@ -829,18 +829,18 @@ export class SaleCreateStore {
     }
 
     if (!this.deliveryAddress()) {
-      this.errorState.set('Indica una direccion de entrega antes de guardar.');
+      this.errorState.set('Indica una dirección de entrega antes de guardar.');
       return null;
     }
 
     if (!this.lines().length) {
-      this.errorState.set('Anade al menos una linea antes de guardar.');
+      this.errorState.set('Añade al menos una línea antes de guardar.');
       return null;
     }
 
     const linesAreValid = this.validateAllLines();
     if (!linesAreValid) {
-      this.errorState.set('Revisa los datos de las lineas antes de guardar la venta.');
+      this.errorState.set('Revisa los datos de las líneas antes de guardar la venta.');
       return null;
     }
 
@@ -853,7 +853,7 @@ export class SaleCreateStore {
       }));
 
     if (!payloadLines.length) {
-      this.errorState.set('Anade al menos una linea valida antes de guardar.');
+      this.errorState.set('Añade al menos una línea válida antes de guardar.');
       return null;
     }
 
@@ -892,7 +892,9 @@ export class SaleCreateStore {
       return null;
     }
 
-    const parsedValue = Number(trimmedValue);
+    const normalizedValue = trimmedValue.replace(',', '.');
+    const parsedValue = Number(normalizedValue);
+
     return Number.isNaN(parsedValue) ? null : parsedValue;
   }
 
@@ -1119,15 +1121,15 @@ export class SaleCreateStore {
 
   private resolveSubmitError(err: unknown): string {
     if (err instanceof SaleInsufficientStockError) {
-      return 'Una o varias lineas no tienen stock suficiente.';
+      return 'Una o varias líneas no tienen stock suficiente.';
     }
 
     if (err instanceof SaleClientNotActiveError) {
-      return 'El cliente seleccionado esta inactivo.';
+      return 'El cliente seleccionado está inactivo.';
     }
 
     if (err instanceof SaleProductNotActiveError) {
-      return 'Uno o varios productos seleccionados estan inactivos.';
+      return 'Uno o varios productos seleccionados están inactivos.';
     }
 
     if (err instanceof SaleInvalidDiscountError) {
@@ -1135,7 +1137,7 @@ export class SaleCreateStore {
     }
 
     if (err instanceof SaleEmptyLinesError) {
-      return 'Debes anadir al menos una linea antes de guardar.';
+      return 'Debes añadir al menos una línea antes de guardar.';
     }
 
     if (err instanceof SaleValidationError) {
@@ -1143,7 +1145,7 @@ export class SaleCreateStore {
     }
 
     if (err instanceof SaleUnauthorizedError) {
-      return 'Tu sesion ha expirado. Vuelve a iniciar sesion.';
+      return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
     }
 
     if (err instanceof SaleForbiddenError) {

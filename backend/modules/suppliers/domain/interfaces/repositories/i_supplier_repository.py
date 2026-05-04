@@ -30,6 +30,9 @@ class ISupplierRepository(ABC):
     async def get_by_tax_id(self, tax_id: str) -> Supplier | None: ...
 
     @abstractmethod
+    async def get_by_email(self, email: str) -> Supplier | None: ...
+
+    @abstractmethod
     async def update(
         self,
         supplier_id: int,

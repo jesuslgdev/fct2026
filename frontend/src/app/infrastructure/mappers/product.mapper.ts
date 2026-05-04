@@ -101,8 +101,6 @@ export class ProductMapper {
 
   static toCreateDto(payload: CreateProductPayload): CreateProductDto {
     return {
-      product_code: payload.code,
-      code: payload.code,
       name: payload.name,
       description: payload.description,
       category_id: payload.categoryId,

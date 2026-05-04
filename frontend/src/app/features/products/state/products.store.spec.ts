@@ -8,7 +8,6 @@ import { CreateProductUseCase } from '@domain/usecases/product/create-product.us
 import { UpdateProductUseCase } from '@domain/usecases/product/update-product.usecase';
 import { ToggleProductStatusUseCase } from '@domain/usecases/product/toggle-product-status.usecase';
 import { GetProductByIdUseCase } from '@domain/usecases/product/get-product-by-id.usecase';
-import { CheckProductCodeUseCase } from '@domain/usecases/product/check-product-code.usecase';
 import { GetLowStockProductsUseCase } from '@domain/usecases/product/get-low-stock-products.usecase';
 import { GetProductCategoriesUseCase } from '@domain/usecases/product/get-product-categories.usecase';
 import { GetProductSuppliersUseCase } from '@domain/usecases/product/get-product-suppliers.usecase';
@@ -55,10 +54,6 @@ class MockGetProductByIdUseCase {
   execute = vi.fn<(id: number) => Observable<Product>>();
 }
 
-class MockCheckProductCodeUseCase {
-  execute = vi.fn<(code: string) => Observable<boolean>>();
-}
-
 class MockGetLowStockProductsUseCase {
   execute = vi.fn<() => Observable<Product[]>>();
 }
@@ -83,7 +78,6 @@ describe('ProductsStore', () => {
   let updateProductUseCase: MockUpdateProductUseCase;
   let toggleProductStatusUseCase: MockToggleProductStatusUseCase;
   let getProductByIdUseCase: MockGetProductByIdUseCase;
-  let checkProductCodeUseCase: MockCheckProductCodeUseCase;
   let getLowStockProductsUseCase: MockGetLowStockProductsUseCase;
   let getProductCategoriesUseCase: MockGetProductCategoriesUseCase;
   let getProductSuppliersUseCase: MockGetProductSuppliersUseCase;
@@ -130,7 +124,6 @@ describe('ProductsStore', () => {
     updateProductUseCase = new MockUpdateProductUseCase();
     toggleProductStatusUseCase = new MockToggleProductStatusUseCase();
     getProductByIdUseCase = new MockGetProductByIdUseCase();
-    checkProductCodeUseCase = new MockCheckProductCodeUseCase();
     getLowStockProductsUseCase = new MockGetLowStockProductsUseCase();
     getProductCategoriesUseCase = new MockGetProductCategoriesUseCase();
     getProductSuppliersUseCase = new MockGetProductSuppliersUseCase();
@@ -145,7 +138,6 @@ describe('ProductsStore', () => {
         { provide: UpdateProductUseCase, useValue: updateProductUseCase },
         { provide: ToggleProductStatusUseCase, useValue: toggleProductStatusUseCase },
         { provide: GetProductByIdUseCase, useValue: getProductByIdUseCase },
-        { provide: CheckProductCodeUseCase, useValue: checkProductCodeUseCase },
         { provide: GetLowStockProductsUseCase, useValue: getLowStockProductsUseCase },
         { provide: GetProductCategoriesUseCase, useValue: getProductCategoriesUseCase },
         { provide: GetProductSuppliersUseCase, useValue: getProductSuppliersUseCase },
@@ -169,6 +161,7 @@ describe('ProductsStore', () => {
       expect(store.statusFilter()).toBeNull();
       expect(store.dialogVisible()).toBe(false);
       expect(store.dialogMode()).toBe('create');
+      expect(store.dialogError()).toBeNull();
     });
   });
 
@@ -263,7 +256,6 @@ describe('ProductsStore', () => {
   describe('CRUD Operations', () => {
     it('should create product successfully', async () => {
       const payload: CreateProductPayload = {
-        code: 'NEW001',
         name: 'New Product',
         description: 'New Description',
         categoryId: 1,
@@ -283,6 +275,26 @@ describe('ProductsStore', () => {
 
       expect(createProductUseCase.execute).toHaveBeenCalledWith(payload);
       expect(store.dialogVisible()).toBe(false);
+      expect(store.dialogError()).toBeNull();
+    });
+
+    it('should set dialog error when create product fails', async () => {
+      const payload: CreateProductPayload = {
+        name: 'Invalid Product',
+        description: 'New Description',
+        categoryId: 1,
+        price: 50,
+        minStock: 10,
+      };
+
+      createProductUseCase.execute.mockReturnValue(
+        throwError(() => new ProductValidationError({}, 'Validation from backend')),
+      );
+
+      await store.createProduct(payload);
+
+      expect(store.dialogError()).toBe('Validation from backend');
+      expect(store.dialogVisible()).toBe(false);
     });
 
     it('should update product successfully', async () => {
@@ -301,6 +313,22 @@ describe('ProductsStore', () => {
       await store.updateProduct(1, payload);
 
       expect(updateProductUseCase.execute).toHaveBeenCalledWith(1, payload);
+      expect(store.dialogVisible()).toBe(false);
+      expect(store.dialogError()).toBeNull();
+    });
+
+    it('should set dialog error when update product fails', async () => {
+      const payload: UpdateProductPayload = {
+        name: 'Updated Product',
+      };
+
+      updateProductUseCase.execute.mockReturnValue(
+        throwError(() => new ProductValidationError({}, 'Update rejected by backend')),
+      );
+
+      await store.updateProduct(1, payload);
+
+      expect(store.dialogError()).toBe('Update rejected by backend');
       expect(store.dialogVisible()).toBe(false);
     });
 
@@ -360,39 +388,15 @@ describe('ProductsStore', () => {
     });
   });
 
-  describe('Validation', () => {
-    it('should validate product code successfully', async () => {
-      checkProductCodeUseCase.execute.mockReturnValue(of(false));
-
-      await store.validateProductCode('NEW001');
-
-      expect(checkProductCodeUseCase.execute).toHaveBeenCalledWith('NEW001');
-      expect(store.codeValidationError()).toBeNull();
-      expect(store.codeValidationLoading()).toBe(false);
-    });
-
-    it('should show error for duplicate code', async () => {
-      checkProductCodeUseCase.execute.mockReturnValue(of(true));
-
-      await store.validateProductCode('DUPLICATE001');
-
-      expect(store.codeValidationError()).toBe('Product code already exists');
-    });
-
-    it('should clear validation error for empty code', async () => {
-      await store.validateProductCode('');
-
-      expect(store.codeValidationError()).toBeNull();
-    });
-  });
-
   describe('Dialog Actions', () => {
     it('should open create dialog', () => {
+      store.dialogError.set('previous error');
       store.openCreateDialog();
 
       expect(store.dialogMode()).toBe('create');
       expect(store.dialogVisible()).toBe(true);
       expect(store.selectedProduct()).toBeNull();
+      expect(store.dialogError()).toBeNull();
     });
 
     it('should open edit dialog and load product', async () => {
@@ -419,13 +423,13 @@ describe('ProductsStore', () => {
     it('should close dialog', () => {
       store.dialogVisible.set(true);
       store.selectedProduct.set(mockProduct);
-      store.codeValidationError.set('Error');
+      store.dialogError.set('Error');
 
       store.closeDialog();
 
       expect(store.dialogVisible()).toBe(false);
       expect(store.selectedProduct()).toBeNull();
-      expect(store.codeValidationError()).toBeNull();
+      expect(store.dialogError()).toBeNull();
     });
 
     it('should open confirm dialog', () => {

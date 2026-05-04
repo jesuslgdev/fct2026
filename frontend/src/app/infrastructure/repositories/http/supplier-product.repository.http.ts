@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { SupplierProductRepository } from '@domain/repositories/supplier-product.repository';
 import {
@@ -15,6 +15,7 @@ import {
 import {
   SupplierProduct,
   AddSupplierProductRequest,
+  DownloadSupplierProductTemplateRequest,
   UpdateSupplierProductPriceRequest,
   ImportSupplierProductsRequest,
   ImportResult,
@@ -181,10 +182,20 @@ export class HttpSupplierProductRepository implements SupplierProductRepository 
     );
   }
 
-  downloadTemplate(supplierId: number): Observable<Blob> {
+  downloadTemplate(
+    supplierId: number,
+    request?: DownloadSupplierProductTemplateRequest,
+  ): Observable<Blob> {
+    let params = new HttpParams();
+
+    for (const productId of request?.productIds ?? []) {
+      params = params.append('product_ids', productId);
+    }
+
     return this.withErrorMapping(
       this.http.get(`${BASE_URL}/${supplierId}/products/template`, {
         responseType: 'blob',
+        params,
       })
     );
   }

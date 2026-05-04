@@ -136,6 +136,13 @@ export class HttpProductRepository implements ProductRepository {
       }
 
       if (Array.isArray(rawDetail) && rawDetail.length > 0) {
+        const firstError = rawDetail[0] as Record<string, unknown> | undefined;
+        const firstMessage = firstError?.['msg'];
+
+        if (typeof firstMessage === 'string' && firstMessage.trim()) {
+          return firstMessage;
+        }
+
         return 'Validation failed.';
       }
     }
