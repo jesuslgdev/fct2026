@@ -91,6 +91,7 @@ describe('ProductsStore', () => {
     categoryId: 1,
     categoryName: 'Test Category',
     price: 100,
+    vatRate: 0.21,
     stock: 10,
     minStock: 5,
     isActive: true,

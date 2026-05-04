@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { vi, type Mock } from 'vitest';
+import { AuthService } from '@core/services/auth.service';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client } from '@domain/models/client.model';
 import { Sale } from '@domain/models/sale.model';
@@ -10,17 +12,15 @@ import { SalesPageComponent } from './sales.page.component';
 
 interface MockSalesStore {
   sales: WritableSignal<Sale[]>;
-  salesView: WritableSignal<
-    Array<{
-      saleId: number;
-      saleNumber: string;
-      clientName: string;
-      status: SaleStatus;
-      deliveryAddress: string;
-      createdAt: Date;
-      total: number;
-    }>
-  >;
+  salesView: WritableSignal<{
+    saleId: number;
+    saleNumber: string;
+    clientName: string;
+    status: SaleStatus;
+    deliveryAddress: string;
+    createdAt: Date;
+    total: number;
+  }[]>;
   clients: WritableSignal<Client[]>;
   total: WritableSignal<number>;
   page: WritableSignal<number>;
@@ -71,8 +71,13 @@ describe('SalesPageComponent', () => {
   let fixture: ComponentFixture<SalesPageComponent>;
   let component: SalesPageComponent;
   let store: MockSalesStore;
+  let router: { navigate: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
+    router = {
+      navigate: vi.fn().mockResolvedValue(true),
+    };
+
     store = {
       sales: signal<Sale[]>([SALE_A]),
       salesView: signal([
@@ -111,6 +116,18 @@ describe('SalesPageComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [SalesPageComponent],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: {
+            isAdmin: signal(true),
+          },
+        },
+        {
+          provide: Router,
+          useValue: router,
+        },
+      ],
     })
       .overrideComponent(SalesPageComponent, {
         set: {
@@ -193,6 +210,18 @@ describe('SalesPageComponent', () => {
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
   });
 
+  it('shows the new sale action for administrators', () => {
+    const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
+
+    expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
+  });
+
+  it('navigates to the sale creation page', () => {
+    component.onCreateSale();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
+  });
+
   it('renders the filtered empty message when provided by the store', () => {
     store.salesView.set([]);
     store.emptyMessage.set('No se encontraron ventas con los filtros aplicados');
@@ -213,6 +242,11 @@ describe('SalesPageComponent', () => {
     const emptyState = fixture.debugElement.query(By.css('.empty-state'));
 
     expect(emptyState.nativeElement.textContent).toContain('No hay ventas registradas.');
+  });
+
+  it('translates the status for the UI', () => {
+    expect(component.getStatusLabel(SaleStatus.PENDING)).toBe('Pendiente');
+    expect(component.getStatusLabel(SaleStatus.APPROVED)).toBe('Aprobada');
   });
 
   it('renders the sales row with the fields required by the listing', () => {

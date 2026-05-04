@@ -13,6 +13,7 @@ const PRODUCT_MOCK: Product = {
   categoryId: 1,
   categoryName: 'Categoria',
   price: 10,
+  vatRate: 0.21,
   stock: 5,
   minStock: 2,
   isActive: true,

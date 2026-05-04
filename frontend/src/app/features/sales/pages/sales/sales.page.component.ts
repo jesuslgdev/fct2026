@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import type { TablePageEvent } from 'primeng/table';
 import { DatePicker } from 'primeng/datepicker';
 import { Select } from 'primeng/select';
+import { AuthService } from '@core/services/auth.service';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { TableComponent } from '@shared/ui/table/table.component';
@@ -32,6 +34,8 @@ interface StatusOption {
 })
 export class SalesPageComponent implements OnInit {
   readonly store = inject(SalesStore);
+  readonly isAdmin = inject(AuthService).isAdmin;
+  private readonly router = inject(Router);
 
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos los estados', value: null },
@@ -75,6 +79,9 @@ export class SalesPageComponent implements OnInit {
     });
   }
 
+  onCreateSale(): void {
+    void this.router.navigate(['/sales/new']);
+  }
   getStatusLabel(status: SaleStatus): string {
     switch (status) {
       case SaleStatus.PENDING:
