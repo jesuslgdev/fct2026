@@ -12,6 +12,7 @@ import {
   PurchasesPageDto,
   SupplierDto,
   SupplierProductDto,
+  UpdatePurchaseLineRequestDto,
   UpdatePurchaseRequestDto,
 } from '@infrastructure/dtos/purchase.dto';
 import { WarehouseDto } from '@infrastructure/dtos/warehouse.dto';
@@ -158,6 +159,14 @@ export class PurchaseMapper {
     return this.toCreateLineDto(line);
   }
 
+  static toUpdateLineDto(line: PurchaseLineInput): UpdatePurchaseLineRequestDto {
+    return {
+      quantity: line.quantity,
+      unit_price: line.unitPrice,
+      discount: 0,
+    };
+  }
+
   static toAdvanceStatusDto(status: PurchaseStatus): AdvancePurchaseStatusRequestDto {
     const backendStatus = this.toBackendStatus(status);
 
@@ -248,7 +257,7 @@ export class PurchaseMapper {
       case 'Cancelled':
         return 'Cancelled';
       default:
-        return 'Pending';
+        throw new Error(`Unsupported purchase status received from backend: ${status}`);
     }
   }
 
@@ -362,6 +371,6 @@ export class PurchaseMapper {
       return purchaseDetail.user_name.trim();
     }
 
-    return `Usuario #${changedByUserId}`;
+    return `User #${changedByUserId}`;
   }
 }
