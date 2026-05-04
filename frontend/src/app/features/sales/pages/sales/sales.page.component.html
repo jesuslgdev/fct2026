@@ -1,7 +1,7 @@
 <section class="page">
   <div class="page-header flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-style-title">Ventas</h1>
-    @if (canCreateSale()) {
+    @if (store.canManageSales()) {
       <ui-button
         label="Nueva venta"
         icon="pi pi-plus"
@@ -12,6 +12,10 @@
 
   @if (store.error(); as errorMessage) {
     <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (store.successMessage(); as successMessage) {
+    <p class="text-sm font-medium text-success" role="status">{{ successMessage }}</p>
   }
 
   @if (store.clientsError(); as clientsErrorMessage) {
@@ -94,7 +98,13 @@
       <tr class="cursor-pointer" (click)="onViewSale(sale.saleId)">
         <td>{{ sale.saleNumber }}</td>
         <td>{{ sale.clientName }}</td>
-        <td>{{ getStatusLabel(sale.status) }}</td>
+        <td>
+          <ui-badge
+            [label]="getStatusLabel(sale.status)"
+            [variant]="getStatusBadgeVariant(sale.status)"
+            [icon]="getStatusBadgeIcon(sale.status)"
+          />
+        </td>
         <td>{{ sale.deliveryAddress }}</td>
         <td>{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
         <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>
@@ -107,13 +117,35 @@
               size="sm"
               (clicked)="onViewSale(sale.saleId); $event.stopPropagation()"
             />
-            @if (canEditSale(sale.status)) {
+            @if (store.canEditSale(sale.saleId)) {
               <ui-button
                 icon="pi pi-pencil"
                 ariaLabel="Editar venta"
                 variant="ghost"
                 size="sm"
                 (clicked)="onEditSale(sale.saleId); $event.stopPropagation()"
+              />
+            }
+            @if (store.canChangeStatus(sale.saleId)) {
+              <ui-button
+                icon="pi pi-sync"
+                ariaLabel="Cambiar estado de venta"
+                variant="ghost"
+                size="sm"
+                [loading]="store.isChangingStatusSale(sale.saleId)"
+                [disabled]="store.isDeletingSale(sale.saleId)"
+                (clicked)="onRequestChangeStatus(sale.saleId); $event.stopPropagation()"
+              />
+            }
+            @if (store.canDeleteSale(sale.saleId)) {
+              <ui-button
+                icon="pi pi-trash"
+                ariaLabel="Eliminar venta"
+                variant="destructive"
+                size="sm"
+                [loading]="store.isDeletingSale(sale.saleId)"
+                [disabled]="store.isChangingStatusSale(sale.saleId)"
+                (clicked)="onRequestDeleteSale(sale.saleId); $event.stopPropagation()"
               />
             }
           </div>
@@ -129,4 +161,54 @@
       </tr>
     </ng-template>
   </ui-table>
+
+  <ui-dialog
+    header="Cambiar estado de venta"
+    variant="warning"
+    size="sm"
+    [(visible)]="changeStatusDialogVisible"
+    confirmLabel="Confirmar cambio"
+    cancelLabel="Volver"
+    [confirmLoading]="selectedSaleId() !== null && store.isChangingStatusSale(selectedSaleId()!)"
+    [confirmDisabled]="selectedSaleId() === null || selectedNextStatus() === null"
+    [closeOnConfirm]="false"
+    (confirmed)="onConfirmChangeStatus()"
+  >
+    <div class="flex flex-col gap-4">
+      <p class="text-sm leading-6 text-surface-700">
+        Estado actual: <span class="font-medium text-surface-900">{{ getCurrentSaleStatusLabel() }}</span>
+      </p>
+
+      <p-select
+        [options]="selectedSaleId() !== null ? getAvailableTransitions(selectedSaleId()!) : []"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecciona la siguiente transicion"
+        appendTo="body"
+        [ngModel]="selectedNextStatus()"
+        (ngModelChange)="onTransitionSelectionChange($event)"
+      />
+
+      <p class="text-sm leading-6 text-surface-700">
+        {{ getSelectedTransitionImpact() }}
+      </p>
+    </div>
+  </ui-dialog>
+
+  <ui-dialog
+    header="Eliminar venta"
+    variant="danger"
+    size="sm"
+    [(visible)]="deleteDialogVisible"
+    confirmLabel="Confirmar eliminacion"
+    cancelLabel="Volver"
+    [confirmLoading]="selectedSaleId() !== null && store.isDeletingSale(selectedSaleId()!)"
+    [confirmDisabled]="selectedSaleId() === null"
+    [closeOnConfirm]="false"
+    (confirmed)="onConfirmDeleteSale()"
+  >
+    <p class="text-sm leading-6 text-surface-700">
+      La venta pendiente se eliminara de forma permanente.
+    </p>
+  </ui-dialog>
 </section>

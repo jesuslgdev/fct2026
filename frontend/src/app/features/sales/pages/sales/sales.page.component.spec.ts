@@ -3,12 +3,11 @@ import { signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { vi, type Mock } from 'vitest';
-import { AuthService } from '@core/services/auth.service';
-import { UserPermission } from '@domain/enums/user-permission.enum';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client } from '@domain/models/client.model';
 import { Sale } from '@domain/models/sale.model';
 import { SalesStore } from '@features/sales/state/sales.store';
+import { BadgeComponent } from '@shared/ui';
 import { SalesPageComponent } from './sales.page.component';
 
 interface MockSalesStore {
@@ -27,7 +26,10 @@ interface MockSalesStore {
   page: WritableSignal<number>;
   pageSize: WritableSignal<number>;
   loading: WritableSignal<boolean>;
+  cancellingSaleId: WritableSignal<number | null>;
+  deletingSaleId: WritableSignal<number | null>;
   error: WritableSignal<string | null>;
+  successMessage: WritableSignal<string | null>;
   clientsLoading: WritableSignal<boolean>;
   clientsError: WritableSignal<string | null>;
   statusFilter: WritableSignal<SaleStatus | null>;
@@ -43,6 +45,14 @@ interface MockSalesStore {
   onDateToFilterChange: Mock<(dateTo: Date | null) => void>;
   clearFilters: Mock<() => void>;
   onPageChange: Mock<(event: { first: number; rows: number }) => void>;
+  canManageSales: WritableSignal<boolean>;
+  canEditSale: Mock<(saleId: number) => boolean>;
+  canChangeStatus: Mock<(saleId: number) => boolean>;
+  canDeleteSale: Mock<(saleId: number) => boolean>;
+  isChangingStatusSale: Mock<(saleId: number) => boolean>;
+  isDeletingSale: Mock<(saleId: number) => boolean>;
+  changeSaleStatus: Mock<(saleId: number, status: SaleStatus) => Promise<void>>;
+  deleteSale: Mock<(saleId: number) => Promise<void>>;
 }
 
 const CLIENT_A: Client = {
@@ -97,7 +107,10 @@ describe('SalesPageComponent', () => {
       page: signal(1),
       pageSize: signal(20),
       loading: signal(false),
+      cancellingSaleId: signal<number | null>(null),
+      deletingSaleId: signal<number | null>(null),
       error: signal<string | null>(null),
+      successMessage: signal<string | null>(null),
       clientsLoading: signal(false),
       clientsError: signal<string | null>(null),
       statusFilter: signal<SaleStatus | null>(null),
@@ -113,21 +126,19 @@ describe('SalesPageComponent', () => {
       onDateToFilterChange: vi.fn(),
       clearFilters: vi.fn(),
       onPageChange: vi.fn(),
+      canManageSales: signal(true),
+      canEditSale: vi.fn((saleId: number) => saleId === 1),
+      canChangeStatus: vi.fn((saleId: number) => saleId === 1),
+      canDeleteSale: vi.fn((saleId: number) => saleId === 1),
+      isChangingStatusSale: vi.fn(() => false),
+      isDeletingSale: vi.fn(() => false),
+      changeSaleStatus: vi.fn().mockResolvedValue(undefined),
+      deleteSale: vi.fn().mockResolvedValue(undefined),
     };
 
     await TestBed.configureTestingModule({
       imports: [SalesPageComponent],
       providers: [
-        {
-          provide: AuthService,
-          useValue: {
-            isAdmin: signal(true),
-            hasPermission: vi.fn((permission: UserPermission | readonly UserPermission[]) => {
-              const permissionsToCheck = Array.isArray(permission) ? permission : [permission];
-              return permissionsToCheck.includes(UserPermission.SalesDepartment);
-            }),
-          },
-        },
         {
           provide: Router,
           useValue: router,
@@ -215,10 +226,15 @@ describe('SalesPageComponent', () => {
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
   });
 
-  it('shows the new sale action for administrators', () => {
+  it('shows the new sale action when sales can be managed', () => {
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
 
-    expect(buttons.some((button) => button.nativeElement.textContent.includes('Nueva venta'))).toBe(true);
+    expect(
+      buttons.some(
+        (button: { nativeElement: { textContent: string } }) =>
+          button.nativeElement.textContent.includes('Nueva venta'),
+      ),
+    ).toBe(true);
   });
 
   it('navigates to the sale creation page', () => {
@@ -261,6 +277,39 @@ describe('SalesPageComponent', () => {
     expect(actionButton.attributes['variant']).toBe('ghost');
   });
 
+  it('hides management actions when the store does not grant permissions', () => {
+    store.canManageSales.set(false);
+    store.canEditSale.mockReturnValue(false);
+    store.canChangeStatus.mockReturnValue(false);
+    store.canDeleteSale.mockReturnValue(false);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Cambiar estado de venta"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Eliminar venta"]'))).toBeNull();
+
+    const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
+    expect(
+      buttons.some(
+        (button: { nativeElement: { textContent: string } }) =>
+          button.nativeElement.textContent.includes('Nueva venta'),
+      ),
+    ).toBe(false);
+  });
+
+  it('renders the change status action as an icon-only button when applicable', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Cambiar estado de venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-sync');
+  });
+
+  it('renders the delete action as an icon-only button when applicable', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Eliminar venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-trash');
+  });
   it('hides the edit action when the sale is not pending', () => {
     store.salesView.set([
       {
@@ -273,11 +322,47 @@ describe('SalesPageComponent', () => {
         total: 100,
       },
     ]);
+    store.canEditSale.mockReturnValue(false);
     fixture.detectChanges();
 
     const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
 
     expect(actionButton).toBeNull();
+  });
+
+  it('opens the change status dialog and delegates to the store', () => {
+    component.onRequestChangeStatus(1);
+
+    expect(component.changeStatusDialogVisible()).toBe(true);
+    expect(component.selectedSaleId()).toBe(1);
+    expect(component.getCurrentSaleStatusLabel()).toBe('Pendiente');
+
+    component.onTransitionSelectionChange(SaleStatus.CANCELLED);
+    expect(component.getSelectedTransitionImpact()).toContain('quedara cancelada');
+
+    component.onConfirmChangeStatus();
+
+    expect(component.changeStatusDialogVisible()).toBe(false);
+    expect(store.changeSaleStatus).toHaveBeenCalledWith(1, SaleStatus.CANCELLED);
+  });
+
+  it('opens the delete dialog and delegates to the store', () => {
+    component.onRequestDeleteSale(1);
+
+    expect(component.deleteDialogVisible()).toBe(true);
+    expect(component.selectedSaleId()).toBe(1);
+
+    component.onConfirmDeleteSale();
+
+    expect(component.deleteDialogVisible()).toBe(false);
+    expect(store.deleteSale).toHaveBeenCalledWith(1);
+  });
+
+  it('builds the available transitions from the selected sale', () => {
+    expect(component.getAvailableTransitions(1)).toEqual([
+      { label: 'Aprobar', value: SaleStatus.APPROVED },
+      { label: 'Cancelar', value: SaleStatus.CANCELLED },
+    ]);
   });
 
   it('renders the filtered empty message when provided by the store', () => {
@@ -307,12 +392,27 @@ describe('SalesPageComponent', () => {
     expect(component.getStatusLabel(SaleStatus.APPROVED)).toBe('Aprobada');
   });
 
+  it('assigns the correct variant and icon to the status badge', () => {
+    expect(component.getStatusBadgeVariant(SaleStatus.PENDING)).toBe('warning');
+    expect(component.getStatusBadgeIcon(SaleStatus.PENDING)).toBe('pi pi-clock');
+    expect(component.getStatusBadgeVariant(SaleStatus.APPROVED)).toBe('info');
+    expect(component.getStatusBadgeVariant(SaleStatus.IN_PROCESS)).toBe('contrast');
+    expect(component.getStatusBadgeVariant(SaleStatus.SHIPPED)).toBe('secondary');
+    expect(component.getStatusBadgeVariant(SaleStatus.DELIVERED)).toBe('success');
+    expect(component.getStatusBadgeVariant(SaleStatus.CANCELLED)).toBe('danger');
+    expect(component.getStatusBadgeIcon(SaleStatus.DELIVERED)).toBe('pi pi-check-circle');
+  });
+
   it('renders the sales row with the fields required by the listing', () => {
     const cells = fixture.debugElement.queryAll(By.css('tbody tr td'));
+    const badge = fixture.debugElement.query(By.directive(BadgeComponent));
 
     expect(cells[0].nativeElement.textContent.trim()).toBe('VEN-2026-0001');
     expect(cells[1].nativeElement.textContent.trim()).toBe('Cliente A');
-    expect(cells[2].nativeElement.textContent.trim()).toBe('Pendiente');
+    expect(cells[2].nativeElement.textContent.trim()).toContain('Pendiente');
+    expect(badge).toBeTruthy();
+    expect((badge.componentInstance as BadgeComponent).icon()).toBe('pi pi-clock');
+    expect((badge.componentInstance as BadgeComponent).variant()).toBe('warning');
     expect(cells[3].nativeElement.textContent.trim()).toBe('Calle Mayor 1, Madrid');
     expect(cells[5].nativeElement.textContent.trim()).toContain('€');
   });
