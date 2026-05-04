@@ -257,12 +257,12 @@ export class PurchaseFormDialogComponent {
 
     if (this.isCreateMode()) {
       if (supplierId === null) {
-        this.store.supplierProducts.set([]);
+        this.store.clearSupplierProducts();
         return;
       }
 
       const supplierProducts = this.getProductsForSupplier(supplierId);
-      this.store.supplierProducts.set(supplierProducts);
+      this.store.setSupplierProducts(supplierProducts);
       this.repriceLinesForSupplier(supplierId);
       return;
     }
@@ -427,6 +427,12 @@ export class PurchaseFormDialogComponent {
     this.store.closeDialog();
   }
 
+  onDialogVisibleChange(visible: boolean): void {
+    if (!visible) {
+      this.store.closeDialog();
+    }
+  }
+
   getLineTotals(line: PurchaseLineDraft): PurchaseLineTotals {
     const quantity = line.quantity ?? 0;
     const unitPrice = line.unitPrice ?? 0;
@@ -500,7 +506,7 @@ export class PurchaseFormDialogComponent {
     this.productPickerVisible.set(false);
     this.productSearchQuery.set('');
     this.previousSupplierId.set(null);
-    this.store.supplierProducts.set([]);
+    this.store.clearSupplierProducts();
     this.syncInProgress.set(false);
   }
 
@@ -572,7 +578,30 @@ export class PurchaseFormDialogComponent {
       return null;
     }
 
-    const parsed = typeof value === 'number' ? value : Number.parseFloat(value);
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+
+    const trimmedValue = value.trim().replace(/\s+/g, '');
+    if (trimmedValue === '') {
+      return null;
+    }
+
+    const hasComma = trimmedValue.includes(',');
+    const hasDot = trimmedValue.includes('.');
+    let normalizedValue = trimmedValue;
+
+    if (hasComma && hasDot) {
+      if (trimmedValue.lastIndexOf(',') > trimmedValue.lastIndexOf('.')) {
+        normalizedValue = trimmedValue.replace(/\./g, '').replace(',', '.');
+      } else {
+        normalizedValue = trimmedValue.replace(/,/g, '');
+      }
+    } else if (hasComma) {
+      normalizedValue = trimmedValue.replace(',', '.');
+    }
+
+    const parsed = Number(normalizedValue);
     return Number.isFinite(parsed) ? parsed : null;
   }
 
@@ -601,14 +630,14 @@ export class PurchaseFormDialogComponent {
     const selectedProductIds = this.selectedProductIds();
     if (selectedProductIds.length === 0) {
       this.supplierId.set(null);
-      this.store.supplierProducts.set([]);
+      this.store.clearSupplierProducts();
       return;
     }
 
     const isCompatible = this.supportsAllSelectedProducts(supplierId, selectedProductIds);
     if (!isCompatible) {
       this.supplierId.set(null);
-      this.store.supplierProducts.set([]);
+      this.store.clearSupplierProducts();
     }
   }
 

@@ -1,5 +1,6 @@
 <ui-dialog
-  [(visible)]="store.dialogVisible"
+  [visible]="store.dialogVisible()"
+  (visibleChange)="onDialogVisibleChange($event)"
   [header]="dialogTitle()"
   [confirmLabel]="isViewMode() ? 'Cerrar' : 'Guardar'"
   [cancelLabel]="isViewMode() ? '' : 'Cancelar'"
