@@ -51,7 +51,7 @@
           </div>
 
           <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
-            <span class="dialog-field-label">Fecha de creacion</span>
+            <span class="dialog-field-label">Fecha de creación</span>
             <p class="mt-2 font-medium text-surface-900">{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
           </div>
 
@@ -61,7 +61,7 @@
           </div>
 
           <div class="rounded-md border border-surface-200 bg-surface-0 p-4 md:col-span-2">
-            <span class="dialog-field-label">Direccion de entrega</span>
+            <span class="dialog-field-label">Dirección de entrega</span>
             <p class="mt-2 leading-6 text-surface-800">{{ sale.deliveryAddress }}</p>
           </div>
 
@@ -78,7 +78,7 @@
     <p-tabs value="detail">
       <p-tablist>
         <p-tab value="detail">Detalle</p-tab>
-        <p-tab value="lines">Lineas</p-tab>
+        <p-tab value="lines">Líneas</p-tab>
       </p-tablist>
 
       <p-tabpanels>
@@ -95,13 +95,13 @@
                   <span class="font-medium text-surface-900">{{ store.getStatusLabel(sale.status) }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-3">
-                  <span class="text-surface-600">Ultima actualizacion</span>
+                  <span class="text-surface-600">Última actualización</span>
                   <span class="font-medium text-surface-900">{{ sale.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
                 </div>
               </div>
             </ui-card>
 
-            <ui-card header="Resumen economico">
+            <ui-card header="Resumen económico">
               <div class="grid gap-3 text-sm">
                 <div class="flex items-center justify-between gap-3">
                   <span class="text-surface-600">Subtotal</span>
@@ -129,7 +129,7 @@
           >
             <ng-template #header>
               <tr>
-                <th>Codigo</th>
+                <th>Código</th>
                 <th>Producto</th>
                 <th class="text-center">Cant.</th>
                 <th class="text-right">Precio</th>
@@ -201,7 +201,7 @@
             <ng-template #emptymessage>
               <tr>
                 <td colspan="9" class="empty-state">
-                  No hay lineas registradas.
+                  No hay líneas registradas.
                 </td>
               </tr>
             </ng-template>

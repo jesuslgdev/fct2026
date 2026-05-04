@@ -210,9 +210,9 @@ describe('SaleCreatePageComponent', () => {
     const headers = fixture.debugElement.queryAll(By.css('th'));
     const headerTexts = headers.map((header) => header.nativeElement.textContent.trim());
 
-    expect(headerTexts).toContain('Codigo');
+    expect(headerTexts).toContain('Código');
     expect(headerTexts).toContain('Producto');
-    expect(headerTexts.indexOf('Codigo')).toBeLessThan(headerTexts.indexOf('Producto'));
+    expect(headerTexts.indexOf('Código')).toBeLessThan(headerTexts.indexOf('Producto'));
   });
 
   it('disables the add line button until client and warehouse are selected', () => {
@@ -234,7 +234,7 @@ describe('SaleCreatePageComponent', () => {
 
   it('shows helper text when line actions are not yet available', () => {
     const helperText = fixture.debugElement.queryAll(By.css('p'))
-      .find((paragraph) => paragraph.nativeElement.textContent.includes('Selecciona primero el cliente y el almacen'));
+      .find((paragraph) => paragraph.nativeElement.textContent.includes('Selecciona primero el cliente y el almacén'));
 
     expect(helperText).toBeDefined();
   });
