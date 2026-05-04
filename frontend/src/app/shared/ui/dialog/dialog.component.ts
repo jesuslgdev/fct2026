@@ -12,7 +12,7 @@ import { ButtonComponent } from '@shared/ui/button/button.component';
 // Dialog size types
 export type DialogSize = 'sm' | 'default' | 'lg' | 'xl' | 'fullscreen';
 
-// Dialog variant types â€” drives the header accent color
+// Dialog variant types - drives the header accent color
 export type DialogVariant = 'default' | 'info' | 'success' | 'warning' | 'danger';
 
 // Width mapping per size
@@ -24,7 +24,7 @@ const SIZE_WIDTH_MAP: Record<DialogSize, string> = {
   fullscreen: '100vw',
 };
 
-// Variant â†’ icon + header accent class
+// Variant -> icon + header accent class
 const VARIANT_MAP: Record<DialogVariant, { icon: string; headerClass: string }> = {
   default: { icon: '',                           headerClass: '' },
   info:    { icon: 'pi pi-info-circle',          headerClass: 'text-info' },
@@ -45,20 +45,20 @@ export class DialogComponent {
   visible = model<boolean>(false);
 
   // Inputs
-  header        = input<string>('');                  // Dialog title
-  variant       = input<DialogVariant>('default');    // Visual variant
-  size          = input<DialogSize>('default');       // Dialog width preset
-  modal         = input<boolean>(true);               // Backdrop overlay
-  closable      = input<boolean>(true);               // Show close button
-  closeOnEscape = input<boolean>(true);               // Close on Escape key
-  dismissable   = input<boolean>(false);              // Close on backdrop click
-  draggable     = input<boolean>(false);              // Allow dragging
-  resizable     = input<boolean>(false);              // Allow resizing
-  styleClass    = input<string>('');                  // Extra class on dialog root
+  header         = input<string>('');                 // Dialog title
+  variant        = input<DialogVariant>('default');   // Visual variant
+  size           = input<DialogSize>('default');      // Dialog width preset
+  modal          = input<boolean>(true);              // Backdrop overlay
+  closable       = input<boolean>(true);              // Show close button
+  closeOnEscape  = input<boolean>(true);              // Close on Escape key
+  dismissable    = input<boolean>(false);             // Close on backdrop click
+  draggable      = input<boolean>(false);             // Allow dragging
+  resizable      = input<boolean>(false);             // Allow resizing
+  styleClass     = input<string>('');                 // Extra class on dialog root
 
   // Footer action inputs (optional convenience shortcuts)
-  confirmLabel  = input<string>('');                  // Confirm button label
-  cancelLabel   = input<string>('');                  // Cancel button label
+  confirmLabel   = input<string>('');                 // Confirm button label
+  cancelLabel    = input<string>('');                 // Cancel button label
   confirmLoading = input<boolean>(false);             // Confirm button loading state
   confirmDisabled = input<boolean>(false);            // Confirm button disabled state
   closeOnConfirm = input<boolean>(true);              // Auto-close when confirm button is clicked

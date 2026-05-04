@@ -71,12 +71,21 @@
         <div class="mb-3 flex items-center justify-between gap-2">
           <h2 class="text-style-subtitle">Productos</h2>
           @if (supplierProductsStore.canModify() && supplierDetail.isActive) {
-            <ui-button
-              label="Añadir producto"
-              icon="pi pi-plus"
-              size="sm"
-              (clicked)="supplierProductsStore.openAddProductDialog()"
-            />
+            <div class="flex flex-wrap gap-2">
+              <ui-button
+                label="Importar Excel"
+                icon="pi pi-upload"
+                variant="outline"
+                size="sm"
+                (clicked)="supplierProductsStore.openImportDialog()"
+              />
+              <ui-button
+                label="Añadir producto"
+                icon="pi pi-plus"
+                size="sm"
+                (clicked)="supplierProductsStore.openAddProductDialog()"
+              />
+            </div>
           }
         </div>
 
@@ -198,6 +207,8 @@
     </p>
   }
 </ui-dialog>
+
+<app-supplier-products-import-dialog />
 
 <ui-dialog
   [(visible)]="supplierProductsStore.addProductDialogVisible"

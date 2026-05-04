@@ -89,7 +89,7 @@ describe('SupplierDetailPageComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('should load the supplier and clear detailLoading with a valid id', async () => {
+  it('should load the supplier, products, and clear detailLoading with a valid id', async () => {
     await component.ngOnInit();
 
     expect(store.loadSupplierById).toHaveBeenCalledWith('1');
@@ -121,6 +121,18 @@ describe('SupplierDetailPageComponent', () => {
     await expect(component.ngOnInit()).rejects.toThrow('boom');
 
     expect(component.supplierNumericId()).toBe(1);
+    expect(supplierProductsStore.loadSupplierProducts).not.toHaveBeenCalled();
+    expect(component.detailLoading()).toBe(false);
+  });
+
+  it('should clear detailLoading even if supplier products loading fails', async () => {
+    const error = new Error('products boom');
+    supplierProductsStore.loadSupplierProducts.mockRejectedValueOnce(error);
+
+    await expect(component.ngOnInit()).rejects.toThrow('products boom');
+
+    expect(store.loadSupplierById).toHaveBeenCalledWith('1');
+    expect(supplierProductsStore.loadSupplierProducts).toHaveBeenCalledWith(1);
     expect(component.detailLoading()).toBe(false);
   });
 });
