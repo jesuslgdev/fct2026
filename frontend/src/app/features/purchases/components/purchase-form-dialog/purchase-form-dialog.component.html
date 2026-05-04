@@ -1,0 +1,329 @@
+<ui-dialog
+  [visible]="store.dialogVisible()"
+  (visibleChange)="onDialogVisibleChange($event)"
+  [header]="dialogTitle()"
+  [confirmLabel]="isViewMode() ? 'Cerrar' : 'Guardar'"
+  [cancelLabel]="isViewMode() ? '' : 'Cancelar'"
+  [confirmLoading]="store.loadingDetail()"
+  [confirmDisabled]="!isViewMode() && (formInvalid() || store.loadingOptions() || store.loadingSupplierProducts() || store.loadingSupplierCatalog())"
+  size="xl"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+>
+  <div class="dialog-form">
+    @if (store.dialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
+    @if (store.loadingOptions()) {
+      <p class="warning-text">Cargando proveedores y almacenes...</p>
+    }
+
+
+    @if (store.dialogMode() !== 'create' && store.loadingDetail() && !store.selectedPurchase()) {
+      <p class="warning-text">Cargando detalle de compra...</p>
+    } @else {
+      <div class="dialog-form-grid">
+        <div class="dialog-field">
+          <span class="dialog-field-label">Proveedor</span>
+          <p-select
+            [options]="supplierOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Seleccione proveedor"
+            [showClear]="!isViewMode()"
+            class="w-full"
+            [disabled]="supplierSelectDisabled()"
+            [ngModel]="supplierId()"
+            (ngModelChange)="onSupplierChange($event)"
+          />
+          @if (isCreateMode() && selectedProductIds().length === 0) {
+            <span class="text-xs text-surface-500">
+              Seleccione al menos un producto para habilitar proveedores.
+            </span>
+          }
+          @if (isCreateMode() && selectedProductIds().length > 0 && supplierOptions().length === 0) {
+            <span class="dialog-field-error">
+              No hay proveedores que ofrezcan todos los productos seleccionados.
+            </span>
+          }
+          @if (submitAttempted() && supplierId() === null) {
+            <span class="dialog-field-error">Debe seleccionar un proveedor.</span>
+          }
+        </div>
+
+        <div class="dialog-field">
+          <span class="dialog-field-label">Almacén de entrega</span>
+          <p-select
+            [options]="warehouseOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Seleccione almacén"
+            [showClear]="!isViewMode()"
+            class="w-full"
+            [disabled]="warehouseSelectDisabled()"
+            [ngModel]="deliveryWarehouseId()"
+            (ngModelChange)="onWarehouseChange($event)"
+          />
+          @if (submitAttempted() && deliveryWarehouseId() === null) {
+            <span class="dialog-field-error">Debe seleccionar un almacén de entrega.</span>
+          }
+        </div>
+      </div>
+
+      <div class="dialog-field">
+        <div class="flex items-center justify-between">
+          <span class="dialog-field-label">Líneas de compra</span>
+          @if (!isViewMode()) {
+            @if (isCreateMode()) {
+              <div class="flex gap-2">
+                <ui-button
+                  label="Agregar producto"
+                  icon="pi pi-plus"
+                  variant="secondary"
+                  size="sm"
+                  (clicked)="toggleProductPicker()"
+                />
+                @if (productPickerVisible()) {
+                  <ui-button
+                    label="Cerrar"
+                    icon="pi pi-times"
+                    variant="outline"
+                    size="sm"
+                    (clicked)="closeProductPicker()"
+                  />
+                }
+              </div>
+            } @else {
+              <ui-button
+                label="Agregar línea"
+                icon="pi pi-plus"
+                variant="secondary"
+                size="sm"
+                (clicked)="addLine()"
+              />
+            }
+          }
+        </div>
+
+        @if (isCreateMode() && productPickerVisible()) {
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-3">
+            <div class="dialog-field">
+              <span class="dialog-field-label">Buscar producto</span>
+              <ui-input
+                type="text"
+                placeholder="Escribe para filtrar productos..."
+                [ngModel]="productSearchQuery()"
+                (valueChange)="onProductSearchChange($event)"
+                [disabled]="store.loadingSupplierCatalog()"
+              />
+            </div>
+
+            @if (store.loadingSupplierCatalog()) {
+              <p class="text-sm text-surface-500">Cargando catálogo de productos...</p>
+            } @else {
+              <div class="mt-2 max-h-56 overflow-auto rounded-md border border-surface-200">
+                @if (filteredProductOptions().length === 0) {
+                  <p class="px-3 py-2 text-sm text-surface-500">No hay productos disponibles con ese filtro.</p>
+                } @else {
+                  <ul class="m-0 list-none p-0">
+                    @for (option of filteredProductOptions(); track option.value) {
+                      <li class="border-b border-surface-100 last:border-b-0">
+                        <button
+                          type="button"
+                          class="w-full cursor-pointer px-3 py-2 text-left text-sm text-surface-700 hover:bg-surface-50"
+                          (click)="addProductFromPicker(option.value)"
+                        >
+                          {{ option.label }}
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <div class="overflow-auto rounded-md border border-surface-200">
+          <table class="w-full min-w-[820px] text-sm">
+            <thead class="bg-surface-50 text-surface-700">
+              <tr>
+                <th class="px-3 py-2 text-left">Producto</th>
+                <th class="px-3 py-2 text-right">Cantidad</th>
+                <th class="px-3 py-2 text-right">Precio unitario</th>
+                <th class="px-3 py-2 text-right">IVA (%)</th>
+                <th class="px-3 py-2 text-right">Subtotal</th>
+                <th class="px-3 py-2 text-right">IVA</th>
+                <th class="px-3 py-2 text-right">Total</th>
+                @if (!isViewMode()) {
+                  <th class="px-3 py-2 text-center">Acciones</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of lines(); track $index; let i = $index) {
+                <tr class="border-t border-surface-100 align-top">
+                  <td class="px-3 py-2">
+                    @if (isCreateMode() || isViewMode()) {
+                      <span class="block pt-2 text-sm text-surface-700">{{ getLineProductLabel(line) }}</span>
+                    } @else {
+                      <p-select
+                        [options]="productOptions()"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Seleccione producto"
+                        [showClear]="!isViewMode()"
+                        class="w-full"
+                        [disabled]="isViewMode() || supplierId() === null || store.loadingSupplierProducts()"
+                        [ngModel]="line.productId"
+                        (ngModelChange)="onProductChange(i, $event)"
+                      />
+                    }
+                  </td>
+                  <td class="px-3 py-2">
+                    <ui-input
+                      type="number"
+                      placeholder="0"
+                      styleClass="text-right"
+                      [disabled]="isViewMode()"
+                      [ngModel]="displayNumericValue(line.quantity)"
+                      (valueChange)="onLineQuantityChange(i, $event)"
+                    />
+                  </td>
+                  <td class="px-3 py-2">
+                    <ui-input
+                      type="number"
+                      placeholder="0.00"
+                      styleClass="text-right"
+                      [disabled]="isViewMode()"
+                      [ngModel]="displayNumericValue(line.unitPrice)"
+                      (valueChange)="onLineUnitPriceChange(i, $event)"
+                    />
+                  </td>
+                  <td class="px-3 py-2">
+                    <ui-input
+                      type="number"
+                      placeholder="0"
+                      styleClass="text-right"
+                      [disabled]="isViewMode()"
+                      [ngModel]="displayNumericValue(line.vatRate)"
+                      (valueChange)="onLineVatRateChange(i, $event)"
+                    />
+                  </td>
+                  <td class="px-3 py-2 text-right">{{ getLineTotals(line).subtotal | currency: 'EUR' }}</td>
+                  <td class="px-3 py-2 text-right">{{ getLineTotals(line).vatAmount | currency: 'EUR' }}</td>
+                  <td class="px-3 py-2 text-right font-medium">{{ getLineTotals(line).total | currency: 'EUR' }}</td>
+                  @if (!isViewMode()) {
+                    <td class="px-3 py-2 text-center">
+                      <ui-button
+                        icon="pi pi-trash"
+                        variant="destructive"
+                        size="sm"
+                        [disabled]="lines().length === 1"
+                        (clicked)="removeLine(i)"
+                      />
+                    </td>
+                  }
+                </tr>
+                @if (submitAttempted() && isLineInvalid(i)) {
+                  <tr class="border-t border-surface-100">
+                    <td class="px-3 py-2" [attr.colspan]="isViewMode() ? 7 : 8">
+                      <span class="dialog-field-error">
+                        Complete la línea {{ i + 1 }}: producto, cantidad mayor que cero, precio no negativo e IVA entre 0 y 100.
+                      </span>
+                    </td>
+                  </tr>
+                }
+              }
+              @if (lines().length === 0) {
+                <tr class="border-t border-surface-100">
+                  <td class="px-3 py-6 text-center text-surface-500" [attr.colspan]="isViewMode() ? 7 : 8">
+                    No hay líneas de compra.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ml-auto w-full rounded-md border border-surface-200 bg-surface-50 p-4 sm:w-[22rem]">
+        <div class="flex items-center justify-between py-1">
+          <span class="text-sm text-surface-600">Subtotal</span>
+          <span class="font-medium">{{ totals().subtotal | currency: 'EUR' }}</span>
+        </div>
+        <div class="flex items-center justify-between py-1">
+          <span class="text-sm text-surface-600">IVA</span>
+          <span class="font-medium">{{ totals().vatAmount | currency: 'EUR' }}</span>
+        </div>
+        <div class="mt-2 flex items-center justify-between border-t border-surface-200 pt-2">
+          <span class="text-base font-semibold text-surface-800">Total</span>
+          <span class="text-base font-semibold text-surface-900">{{ totals().total | currency: 'EUR' }}</span>
+        </div>
+      </div>
+
+      @if (isViewMode()) {
+        @if (store.selectedPurchase(); as purchase) {
+          <div class="rounded-md border border-surface-200 p-4">
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <h3 class="text-style-subtitle !mb-0">Información de la compra</h3>
+              <ui-purchase-status-badge [status]="purchase.status" />
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 text-sm text-surface-700 sm:grid-cols-2">
+              <div>
+                <span class="text-surface-500">Número</span>
+                <p class="m-0 font-medium">{{ purchase.purchaseNumber }}</p>
+              </div>
+              <div>
+                <span class="text-surface-500">Proveedor</span>
+                <p class="m-0 font-medium">{{ purchase.supplierName }}</p>
+              </div>
+              <div>
+                <span class="text-surface-500">Creada por</span>
+                <p class="m-0 font-medium">{{ purchase.createdByName }}</p>
+              </div>
+              <div>
+                <span class="text-surface-500">Fecha creación</span>
+                <p class="m-0 font-medium">{{ purchase.createdAt | date: 'short' }}</p>
+              </div>
+              <div>
+                <span class="text-surface-500">Última actualización</span>
+                <p class="m-0 font-medium">{{ purchase.updatedAt ? (purchase.updatedAt | date: 'short') : '-' }}</p>
+              </div>
+              <div>
+                <span class="text-surface-500">Cancelación</span>
+                <p class="m-0 font-medium">
+                  {{ purchase.cancelledAt ? (purchase.cancelledAt | date: 'short') : '-' }}
+                  @if (purchase.cancelledByName) {
+                    por {{ purchase.cancelledByName }}
+                  }
+                </p>
+              </div>
+            </div>
+
+            @if (purchase.statusHistory.length > 0) {
+              <div class="mt-4 border-t border-surface-200 pt-3">
+                <h4 class="mb-2 text-sm font-semibold text-surface-700">Historial de estados</h4>
+                <div class="space-y-2">
+                  @for (entry of purchase.statusHistory; track $index) {
+                    <div class="rounded-md bg-surface-50 px-3 py-2 text-sm text-surface-700">
+                      <span class="font-medium">
+                        {{ entry.fromStatus ? statusLabel(entry.fromStatus) : 'Creación' }}
+                        ->
+                        {{ statusLabel(entry.toStatus) }}
+                      </span>
+                      <span class="ml-2 text-surface-500">{{ entry.changedAt | date: 'short' }}</span>
+                      <div class="text-surface-500">Por {{ entry.changedByName }}</div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      }
+    }
+  </div>
+</ui-dialog>

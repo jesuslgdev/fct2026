@@ -126,6 +126,15 @@ export class InputComponent implements ControlValueAccessor {
       return;
     }
 
+    if (typeof val === 'number') {
+      this.value.set(Number.isFinite(val) ? String(val) : '');
+      return;
+    }
+
+    if (typeof val === 'string') {
+      this.value.set(val.toLowerCase() === 'nan' ? '' : val);
+      return;
+    }
     this.value.set(String(val));
   }
   registerOnChange(fn: (_: unknown) => void): void {
