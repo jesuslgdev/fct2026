@@ -234,13 +234,11 @@ async def create_product(
 ):
     """Create a new product."""
     result = await use_case.execute(
-        product_code=body.product_code,
         name=body.name,
         description=body.description,
         category_id=body.category_id,
         price=body.price,
         vat_rate=body.vat_rate,
-        stock_current=body.stock_current,
         stock_min=body.stock_min,
     )
     return _product_to_dto(result)

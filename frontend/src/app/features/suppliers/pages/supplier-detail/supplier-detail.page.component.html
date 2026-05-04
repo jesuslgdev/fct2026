@@ -1,0 +1,262 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Detalle de proveedor</h1>
+    <div class="flex items-center gap-2">
+      <ui-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        variant="outline"
+        (clicked)="goBack()"
+      />
+      @if (store.canEdit() && supplier()) {
+        <ui-button
+          label="Editar"
+          icon="pi pi-pencil"
+          (clicked)="openEditFromDetail()"
+        />
+      }
+    </div>
+  </div>
+
+  @if (detailLoading()) {
+    <p class="warning-text">Cargando detalle del proveedor...</p>
+  }
+
+  @if (detailError() || store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (supplier(); as supplierDetail) {
+    <ui-card>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <p class="text-sm text-surface-500">Nombre</p>
+          <p class="font-semibold">{{ supplierDetail.name }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">NIF/CIF</p>
+          <p class="font-semibold">{{ supplierDetail.taxId }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Email</p>
+          <p>{{ supplierDetail.email || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Telefono</p>
+          <p>{{ supplierDetail.phone || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Ciudad</p>
+          <p>{{ supplierDetail.city || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Provincia</p>
+          <p>{{ supplierDetail.province || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Codigo postal</p>
+          <p>{{ supplierDetail.postalCode || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Estado</p>
+          <ui-supplier-status-badge [status]="supplierDetail.status" />
+        </div>
+        <div class="md:col-span-2">
+          <p class="text-sm text-surface-500">Direccion</p>
+          <p>{{ supplierDetail.address || 'No disponible' }}</p>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <h2 class="text-style-subtitle">Productos</h2>
+          @if (supplierProductsStore.canModify() && supplierDetail.isActive) {
+            <div class="flex flex-wrap gap-2">
+              <ui-button
+                label="Importar Excel"
+                icon="pi pi-upload"
+                variant="outline"
+                size="sm"
+                (clicked)="supplierProductsStore.openImportDialog()"
+              />
+              <ui-button
+                label="Añadir producto"
+                icon="pi pi-plus"
+                size="sm"
+                (clicked)="supplierProductsStore.openAddProductDialog()"
+              />
+            </div>
+          }
+        </div>
+
+        @if (supplierProductsStore.error(); as associationError) {
+          <p class="warning-text" role="alert">{{ associationError }}</p>
+        }
+
+        <ui-table
+          [value]="supplierProductsStore.supplierProducts()"
+          [loading]="supplierProductsStore.loading()"
+          [paginator]="true"
+          [lazy]="true"
+          [first]="(supplierProductsStore.supplierPage() - 1) * supplierProductsStore.supplierPageSize()"
+          [rows]="supplierProductsStore.supplierPageSize()"
+          [totalRecords]="supplierProductsStore.supplierTotal()"
+          [rowsPerPageOptions]="[10, 20, 50]"
+          tableClass="ui-table-base ui-table-compact ui-table-bordered"
+          dataKey="productId"
+          (page)="onSupplierProductsPageChange($event)"
+        >
+          <ng-template #header>
+            <tr>
+              <th>Producto</th>
+              <th>Codigo</th>
+              <th>Categoria</th>
+              <th>Precio proveedor</th>
+              @if (supplierProductsStore.canModify()) { <th>Acciones</th> }
+            </tr>
+          </ng-template>
+
+          <ng-template #body let-product>
+            <tr>
+              <td>{{ product.productName }}</td>
+              <td>{{ product.productCode }}</td>
+              <td>{{ product.categoryName }}</td>
+              <td>
+                @if (supplierProductsStore.editingProductId() === product.productId) {
+                  <input
+                    class="p-inputtext p-component w-32"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    [value]="supplierProductsStore.priceDraft()"
+                    [disabled]="supplierProductsStore.savingProductIds().has(product.productId)"
+                    (input)="onSupplierProductPriceInput($event)"
+                  />
+                } @else {
+                  {{ product.supplierPrice | currency: 'EUR' }}
+                }
+              </td>
+              @if (supplierProductsStore.canModify()) {
+                <td>
+                  <div class="flex flex-wrap gap-2">
+                    @if (supplierProductsStore.editingProductId() === product.productId) {
+                      <ui-button
+                        icon="pi pi-check"
+                        variant="ghost"
+                        size="sm"
+                        [loading]="supplierProductsStore.savingProductIds().has(product.productId)"
+                        (clicked)="supplierProductsStore.saveInlinePrice(product)"
+                      />
+                      <ui-button
+                        icon="pi pi-times"
+                        variant="ghost"
+                        size="sm"
+                        (clicked)="supplierProductsStore.cancelInlinePriceEdit()"
+                      />
+                    } @else {
+                      <ui-button
+                        icon="pi pi-pencil"
+                        variant="ghost"
+                        size="sm"
+                        (clicked)="supplierProductsStore.startInlinePriceEdit(product)"
+                      />
+                      <ui-button
+                        icon="pi pi-trash"
+                        variant="destructive"
+                        size="sm"
+                        ariaLabel="Eliminar asociacion"
+                        (clicked)="supplierProductsStore.requestDeleteProduct(product)"
+                      />
+                    }
+                  </div>
+                </td>
+              }
+            </tr>
+          </ng-template>
+
+          <ng-template #emptymessage>
+            <tr>
+              <td [attr.colspan]="supplierProductsStore.canModify() ? 5 : 4" class="empty-state">
+                Sin productos asociados.
+              </td>
+            </tr>
+          </ng-template>
+        </ui-table>
+      </div>
+    </ui-card>
+  }
+</section>
+
+<app-supplier-form-dialog />
+
+<ui-dialog
+  [(visible)]="supplierProductsStore.confirmDeleteProductDialogVisible"
+  header="Eliminar asociación"
+  variant="warning"
+  size="sm"
+  confirmLabel="Eliminar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="supplierProductsStore.loading()"
+  (confirmed)="supplierProductsStore.confirmDeleteProduct()"
+  (cancelled)="supplierProductsStore.cancelDeleteProduct()"
+>
+  @if (supplierProductsStore.selectedSupplierProduct(); as product) {
+    <p class="warning-text">
+      Vas a eliminar la asociación con <strong>{{ product.productName }}</strong>.
+      Las compras históricas no se verán afectadas.
+    </p>
+  }
+</ui-dialog>
+
+<app-supplier-products-import-dialog />
+
+<ui-dialog
+  [(visible)]="supplierProductsStore.addProductDialogVisible"
+  header="Añadir producto"
+  size="sm"
+  confirmLabel="Guardar"
+  cancelLabel="Cancelar"
+  [closeOnConfirm]="false"
+  [confirmLoading]="supplierProductsStore.loading()"
+  [confirmDisabled]="!supplierProductsStore.selectedProductId() || !supplierProductsStore.addProductPriceDraft()"
+  (confirmed)="supplierProductsStore.addSelectedProductToSupplier()"
+  (cancelled)="supplierProductsStore.closeAddProductDialog()"
+>
+  <div class="dialog-form">
+    @if (supplierProductsStore.addProductDialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Producto</span>
+      <p-select
+        [options]="supplierProductsStore.activeProductsForAdd()"
+        optionLabel="name"
+        optionValue="productId"
+        placeholder="Selecciona un producto activo"
+        [filter]="true"
+        filterBy="name,code"
+        filterPlaceholder="Buscar producto"
+        emptyFilterMessage="Sin productos encontrados"
+        styleClass="w-full"
+        appendTo="body"
+        [loading]="supplierProductsStore.productsLoading()"
+        [ngModel]="supplierProductsStore.selectedProductId()"
+        (ngModelChange)="supplierProductsStore.setSelectedProductId($event)"
+      />
+    </label>
+
+    <label class="dialog-field">
+      <span class="dialog-field-label">Precio proveedor</span>
+      <input
+        class="p-inputtext p-component w-full"
+        type="number"
+        min="0.01"
+        step="0.01"
+        placeholder="0.00"
+        [value]="supplierProductsStore.addProductPriceDraft()"
+        (input)="onAddProductPriceInput($event)"
+      />
+    </label>
+  </div>
+</ui-dialog>

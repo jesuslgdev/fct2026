@@ -1,4 +1,8 @@
-import { APP_INITIALIZER, ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  APP_INITIALIZER,
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -19,19 +23,21 @@ import { DepartmentRepository } from '@domain/repositories/department.repository
 import { HttpDepartmentRepository } from '@infrastructure/repositories/http/department.repository.http';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { environment } from 'environments/environment';
-import { HttpProviderRepository } from '@infrastructure/repositories/http/provider.repository.http';
-import { ProviderRepository } from '@domain/repositories/provider.repository';
+import { HttpSupplierRepository } from '@infrastructure/repositories/http/supplier.repository.http';
+import { SupplierRepository } from '@domain/repositories/supplier.repository';
 import { HttpUserRepository } from '@infrastructure/repositories/http/user.repository.http';
 import { UserRepository } from '@domain/repositories/user.repository';
+import { SupplierProductRepository } from '@domain/repositories/supplier-product.repository';
+import { HttpSupplierProductRepository } from '@infrastructure/repositories/http/supplier-product.repository.http';
+import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
+import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
+import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
+import { HttpStockDistributionRepository } from '@infrastructure/repositories/http/stock-distribution.repository.http';
 import { HttpProductRepository } from '@infrastructure/repositories/http/product.repository.http';
 import { HttpProductCategoryRepository } from '@infrastructure/repositories/http/product-category.repository.http';
 import { AuthService } from '@core/services/auth.service';
 import { ProductRepository } from '@domain/repositories/product.repository';
 import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
-import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
-import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
-import { PurchaseRepository } from '@domain/repositories/purchase.repository';
-import { HttpPurchaseRepository } from '@infrastructure/repositories/http/purchase.repository.http';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -41,29 +47,26 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
     provideAnimations(),
-    provideHttpClient(
-      withInterceptors([
-        authInterceptor,
-      ])
-    ),
+    provideHttpClient(withInterceptors([authInterceptor])),
     { provide: FIREBASE_AUTH, useValue: firebaseAuth },
     { provide: AuthRepository, useClass: FirebaseAuthRepository },
+    { provide: CategoryRepository, useClass: HttpCategoryRepository },
+    { provide: ClientRepository, useClass: HttpClientRepository },
+    { provide: UserRepository, useClass: HttpUserRepository },
+    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
+    { provide: StockDistributionRepository, useClass: HttpStockDistributionRepository },
+    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
+    { provide: SupplierRepository, useClass: HttpSupplierRepository },
     {
       provide: APP_INITIALIZER,
-      useFactory: (authRepo: AuthRepository, authService: AuthService) =>
-        () => authRepo.restoreSession().then((session) => authService.setSession(session)),
+      useFactory: (authRepo: AuthRepository, authService: AuthService) => () =>
+        authRepo.restoreSession().then((session) => authService.setSession(session)),
       deps: [AuthRepository, AuthService],
       multi: true,
     },
-    { provide: CategoryRepository, useClass: HttpCategoryRepository },
-    { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
-    { provide: ClientRepository, useClass: HttpClientRepository },
-    { provide: UserRepository, useClass: HttpUserRepository },
     { provide: ProductRepository, useClass: HttpProductRepository },
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
-    { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
-    { provide: ProviderRepository, useClass: HttpProviderRepository },
-    { provide: PurchaseRepository, useClass: HttpPurchaseRepository },
+    { provide: SupplierProductRepository, useClass: HttpSupplierProductRepository },
     providePrimeNG({
       ripple: true,
       theme: {

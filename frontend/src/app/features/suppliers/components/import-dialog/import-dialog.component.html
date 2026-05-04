@@ -1,23 +1,23 @@
-<ui-dialog
+﻿<ui-dialog
   [(visible)]="visible"
   [header]="getStepTitle()"
   size="lg"
   variant="info"
   [closable]="true"
   [confirmLoading]="loading()"
-  (confirmed)="currentStep() === 'validation' && canImport() ? importProviders() : null"
+  (confirmed)="currentStep() === 'validation' && canImport() ? importSuppliers() : null"
   (cancelled)="close()"
 >
 
-  <!-- ── Step 1: Upload ──────────────────────────────────────────────────── -->
+  <!-- Step 1: Upload -->
   @if (currentStep() === 'upload') {
     <div class="space-y-6">
       <!-- Información inicial -->
       <ui-card class="border-info-subtle bg-info-subtle">
         <div class="space-y-3">
-          <h3 class="text-lg font-semibold text-info">Importación Masiva de Proveedores</h3>
+          <h3 class="text-lg font-semibold text-info">Importación masiva de proveedores</h3>
           <p class="text-neutral-muted">
-            Importa múltiples proveedores desde un archivo Excel o CSV. 
+            Importa múltiples proveedores desde un archivo Excel o CSV.
             El sistema valida todos los datos antes de importar y muestra un resumen.
           </p>
           
@@ -40,7 +40,7 @@
       <!-- Download template -->
       <div class="flex justify-center">
         <ui-button
-          label="📥  Descargar Plantilla Excel"
+          label="Descargar plantilla de Excel"
           variant="outline"
           [loading]="loading()"
           (clicked)="downloadTemplate()"
@@ -59,7 +59,7 @@
             <div class="space-y-2">
               <div class="text-2xl">Archivo</div>
               <p class="text-neutral-muted">
-                Arrastra un archivo aquí o 
+                Arrastra un archivo aquí o
                 <label for="file-upload" class="text-info cursor-pointer underline">
                   haz clic para seleccionarlo
                 </label>
@@ -103,14 +103,14 @@
     </div>
   }
 
-  <!-- ── Step 2: Validation ────────────────────────────────────────────────── -->
+  <!-- Step 2: Validation -->
   @if (currentStep() === 'validation') {
     @if (importResult(); as result) {
       <div class="space-y-6">
         <!-- Resumen de validación -->
         <ui-card class="border-success-subtle bg-success-subtle">
           <div class="space-y-4">
-            <h4 class="font-semibold text-lg">Resumen de Validación</h4>
+            <h4 class="font-semibold text-lg">Resumen de validación</h4>
             
             <div class="grid grid-cols-3 gap-4 text-center">
               <div class="bg-neutral-subtle rounded-lg p-4">
@@ -175,20 +175,20 @@
             variant="default"
             [loading]="loading()"
             [disabled]="!canImport()"
-            (clicked)="importProviders()"
+            (clicked)="importSuppliers()"
           />
         </div>
       </div>
     }
   }
 
-  <!-- ── Step 3: Success ─────────────────────────────────────────────────── -->
+  <!-- Step 3: Success -->
   @if (currentStep() === 'success') {
     <div class="space-y-6">
       <ui-card class="border-success-subtle bg-success-subtle">
         <div class="text-center space-y-4">
           <div class="text-5xl">Completado</div>
-          <h3 class="text-xl font-bold text-success">Importación Completada</h3>
+          <h3 class="text-xl font-bold text-success">Importación completada</h3>
           
           <div class="bg-success-subtle border border-success-subtle rounded-lg p-4">
             <div class="text-lg font-medium text-success">
@@ -217,3 +217,4 @@
   }
 
 </ui-dialog>
+

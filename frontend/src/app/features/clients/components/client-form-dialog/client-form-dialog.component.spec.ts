@@ -125,6 +125,23 @@ describe('ClientFormDialogComponent', () => {
     expect(mockStore.saveClient).toHaveBeenCalledWith(payload);
   });
 
+  it('should accept a phone with exactly 9 digits', () => {
+    component.phone.setValue('612345678');
+
+    expect(component.phone.valid).toBe(true);
+  });
+
+  it.each(['+34 612345678', '+34 600 000 001', '600 000 001', '600-000-001'])(
+    'should reject phone format %s',
+    (phone) => {
+      component.phone.setValue(phone);
+      component.phone.markAsTouched();
+
+      expect(component.phone.valid).toBe(false);
+      expect(component.phone.hasError('pattern')).toBe(true);
+    },
+  );
+
   it('should NOT call saveClient on confirm when form is INVALID', () => {
     mockStore.dialogMode.set('create');
     component.form.patchValue({ name: 'Short' });

@@ -1,6 +1,7 @@
 <ui-dialog
   [(visible)]="store.dialogVisible"
   [header]="dialogTitle()"
+  [closeOnConfirm]="false"
   [confirmLabel]="isViewMode() ? '' : 'Guardar'"
   [cancelLabel]="isViewMode() ? 'Cerrar' : 'Cancelar'"
   [confirmLoading]="store.loading()"
@@ -10,18 +11,6 @@
 >
   <form [formGroup]="form" class="dialog-form">
     <div class="dialog-form-grid">
-      <label class="dialog-field">
-        <span class="dialog-field-label">Codigo</span>
-        <ui-input
-          formControlName="code"
-          placeholder="PRD-0001"
-          [state]="code.invalid && code.touched ? 'error' : 'default'"
-        />
-        @if (code.invalid && code.touched) {
-          <span class="dialog-field-error">El codigo es obligatorio.</span>
-        }
-      </label>
-
       <div class="dialog-field">
         <span class="dialog-field-label">Categoria</span>
         <p-select
@@ -69,7 +58,8 @@
         <ui-input
           formControlName="price"
           type="number"
-          placeholder="0"
+          step="0.01"
+          placeholder="0.00"
           [state]="price.invalid && price.touched ? 'error' : 'default'"
         />
         @if (price.touched && price.hasError('required')) {
@@ -79,16 +69,6 @@
           <span class="dialog-field-error">El precio no puede ser menor ni igual a 0.</span>
         }
       </label>
-
-      <label class="dialog-field">
-        <span class="dialog-field-label">Stock</span>
-        <ui-input
-          formControlName="stock"
-          type="number"
-          placeholder="0"
-          [state]="stock.invalid && stock.touched ? 'error' : 'default'"
-        />
-      </label>
     </div>
 
     <label class="dialog-field">
@@ -96,13 +76,15 @@
       <ui-input
         formControlName="minStock"
         type="number"
+        step="1"
         placeholder="0"
         [state]="minStock.invalid && minStock.touched ? 'error' : 'default'"
       />
     </label>
 
-    @if (store.codeValidationError()) {
-      <span class="dialog-field-error">{{ store.codeValidationError() }}</span>
+    @if (store.dialogError(); as dialogError) {
+      <span class="dialog-field-error" role="alert">{{ dialogError }}</span>
     }
+
   </form>
 </ui-dialog>

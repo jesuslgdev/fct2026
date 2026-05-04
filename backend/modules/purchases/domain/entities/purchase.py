@@ -11,6 +11,9 @@ from shared.infrastructure.database.base_model import Base
 
 if TYPE_CHECKING:
     from modules.purchases.domain.entities.purchase_line import PurchaseLine
+    from modules.purchases.domain.entities.purchase_status_history import (
+        PurchaseStatusHistory,
+    )
 
 
 class Purchase(Base):
@@ -31,6 +34,9 @@ class Purchase(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     status: Mapped[str] = mapped_column(String(20), default="Pending", nullable=False)
+    status_changed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=True)
     taxes: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=True)
     total: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=True)
@@ -50,3 +56,8 @@ class Purchase(Base):
     cancelled_by_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     lines: Mapped[list[PurchaseLine]] = relationship("PurchaseLine", lazy="selectin")
+    status_history: Mapped[list[PurchaseStatusHistory]] = relationship(
+        "PurchaseStatusHistory",
+        lazy="selectin",
+        order_by="PurchaseStatusHistory.changed_at",
+    )

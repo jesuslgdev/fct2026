@@ -7,6 +7,8 @@ import {
   UserAlreadyActiveError,
   UserApiError,
   UserDeletedError,
+  UserDepartmentNotFoundError,
+  UserDepartmentRequiredError,
   UserForbiddenError,
   UserAlreadyInactiveError,
   UserNotFoundError,
@@ -55,6 +57,9 @@ export class HttpUserRepository implements UserRepository {
       case 403:
         return new UserForbiddenError(message ?? 'Insufficient permissions.');
       case 404:
+        if (code === 1203) {
+          return new UserDepartmentNotFoundError(message);
+        }
         return new UserNotFoundError(message ?? 'User not found.');
       case 409:
         if (code === 1202) {
@@ -71,6 +76,9 @@ export class HttpUserRepository implements UserRepository {
         }
         return new UserApiError(message ?? 'Users operation conflict.');
       case 422:
+        if (code === 1204) {
+          return new UserDepartmentRequiredError(message);
+        }
         return new UserValidationError(err.error, message ?? 'Validation failed.');
       default:
         return new UserApiError(message ?? 'Unexpected users API error.');

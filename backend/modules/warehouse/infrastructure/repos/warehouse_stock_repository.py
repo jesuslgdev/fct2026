@@ -9,10 +9,13 @@ from modules.warehouse.domain.interfaces.repositories.i_warehouse_stock_reposito
     IWarehouseStockRepository,
 )
 from shared.domain.dtos.paginated_result import PaginatedResult
+from shared.domain.interfaces.i_stock_availability_reader import (
+    IStockAvailabilityReader,
+)
 from shared.infrastructure.database.read_tables import products_table
 
 
-class WarehouseStockRepository(IWarehouseStockRepository):
+class WarehouseStockRepository(IWarehouseStockRepository, IStockAvailabilityReader):
     """SQLAlchemy implementation of the warehouse stock repository."""
 
     def __init__(self, db: AsyncSession) -> None:
@@ -57,6 +60,23 @@ class WarehouseStockRepository(IWarehouseStockRepository):
             )
         )
         return result.scalar_one_or_none()
+
+    async def get_available_stock(self, warehouse_id: int, product_id: int) -> int:
+        """Return available (unreserved) stock for a product in a warehouse."""
+        record = await self.get_by_warehouse_and_product(warehouse_id, product_id)
+        if record is None:
+            return 0
+        return record.available_stock
+
+    async def adjust_reserved_stock(
+        self, warehouse_id: int, product_id: int, delta: int
+    ) -> None:
+        record = await self.get_by_warehouse_and_product(warehouse_id, product_id)
+        if record is not None:
+            record.reserved_stock = max(
+                0, min(record.stock, record.reserved_stock + delta)
+            )
+            await self._db.flush()
 
     async def upsert_stock(
         self, warehouse_id: int, product_id: int, new_stock: int
@@ -109,6 +129,9 @@ class WarehouseStockRepository(IWarehouseStockRepository):
 
         if search is not None:
             query = query.where(products_table.c.name.ilike(f"%{search}%"))
+
+        # Filter out products with zero stock
+        query = query.where(WarehouseStock.stock > 0)
 
         count_query = select(func.count()).select_from(query.subquery())
         total = (await self._db.execute(count_query)).scalar_one()

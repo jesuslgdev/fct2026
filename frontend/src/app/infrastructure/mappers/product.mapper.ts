@@ -100,17 +100,12 @@ export class ProductMapper {
 
   static toCreateDto(payload: CreateProductPayload): CreateProductDto {
     return {
-      product_code: payload.code,
-      code: payload.code,
       name: payload.name,
       description: payload.description,
       category_id: payload.categoryId,
       price: payload.price,
       vat_rate: 0.21,
-      stock_current: payload.stock,
       stock_min: payload.minStock,
-      stock: payload.stock,
-      min_stock: payload.minStock,
     };
   }
 
@@ -121,13 +116,8 @@ export class ProductMapper {
     if (payload.description !== undefined && payload.description !== null) dto.description = payload.description;
     if (payload.categoryId !== undefined && payload.categoryId !== null) dto.category_id = payload.categoryId;
     if (payload.price !== undefined && payload.price !== null) dto.price = payload.price;
-    if (payload.stock !== undefined && payload.stock !== null) {
-      dto.stock_current = payload.stock;
-      dto.stock = payload.stock;
-    }
     if (payload.minStock !== undefined && payload.minStock !== null) {
       dto.stock_min = payload.minStock;
-      dto.min_stock = payload.minStock;
     }
 
     return dto;

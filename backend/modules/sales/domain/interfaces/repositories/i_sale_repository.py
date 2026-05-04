@@ -3,6 +3,8 @@ from datetime import datetime
 from decimal import Decimal
 
 from modules.sales.domain.entities.sale import Sale
+from modules.sales.domain.entities.sale_line import SaleLine
+from modules.sales.domain.entities.sale_status_history import SaleStatusHistory
 from shared.domain.dtos.paginated_result import PaginatedResult
 
 
@@ -15,6 +17,7 @@ class ISaleRepository(ABC):
         self,
         sale_number: str,
         client_id: int,
+        warehouse_id: int,
         delivery_address: str,
         user_id: int,
         status: str,
@@ -26,6 +29,18 @@ class ISaleRepository(ABC):
 
     @abstractmethod
     async def get_by_id(self, sale_id: int) -> Sale | None: ...
+
+    @abstractmethod
+    async def update(
+        self,
+        sale_id: int,
+        client_id: int,
+        delivery_address: str,
+        subtotal: Decimal,
+        taxes: Decimal,
+        total: Decimal,
+        lines: list[dict],
+    ) -> Sale: ...
 
     @abstractmethod
     async def get_all_paginated(
@@ -40,3 +55,50 @@ class ISaleRepository(ABC):
         date_to: datetime | None,
         search: str | None = None,
     ) -> PaginatedResult: ...
+
+    @abstractmethod
+    async def save(self, sale: Sale) -> Sale: ...
+
+    @abstractmethod
+    async def add_status_history(self, history: SaleStatusHistory) -> None: ...
+
+    @abstractmethod
+    async def delete_sale(self, sale_id: int) -> None: ...
+
+    @abstractmethod
+    async def get_line_by_id(self, sale_line_id: int) -> SaleLine | None: ...
+
+    @abstractmethod
+    async def add_line(
+        self,
+        sale_id: int,
+        product_id: int,
+        quantity: int,
+        unit_price: Decimal,
+        discount: Decimal,
+        vat_rate: Decimal,
+        line_subtotal: Decimal,
+        line_tax: Decimal,
+    ) -> None: ...
+
+    @abstractmethod
+    async def update_line(
+        self,
+        sale_line_id: int,
+        quantity: int,
+        discount: Decimal,
+        line_subtotal: Decimal,
+        line_tax: Decimal,
+    ) -> None: ...
+
+    @abstractmethod
+    async def delete_line(self, sale_line_id: int) -> None: ...
+
+    @abstractmethod
+    async def update_totals(
+        self,
+        sale_id: int,
+        subtotal: Decimal,
+        taxes: Decimal,
+        total: Decimal,
+    ) -> Sale: ...

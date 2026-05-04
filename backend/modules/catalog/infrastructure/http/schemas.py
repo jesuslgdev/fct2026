@@ -36,13 +36,11 @@ class ProductDTO(BaseModel):
 
 
 class CreateProductRequest(BaseModel):
-    product_code: str = Field(..., min_length=1, max_length=50, pattern=r"^\S+$")
     name: str = Field(..., min_length=1, max_length=150)
     description: str | None = Field(None, max_length=500)
     category_id: int = Field(..., gt=0)
     price: Decimal = Field(..., gt=0, decimal_places=2)
     vat_rate: Decimal = Field(Decimal("0.21"), ge=0, le=1)
-    stock_current: int = Field(0, ge=0)
     stock_min: int = Field(0, ge=0)
 
 

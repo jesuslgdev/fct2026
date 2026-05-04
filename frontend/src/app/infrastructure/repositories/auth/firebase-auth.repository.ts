@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+﻿import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
   GoogleAuthProvider,
@@ -29,8 +29,8 @@ export class FirebaseAuthRepository implements AuthRepository {
   private readonly http = inject(HttpClient);
 
   async signInWithGoogle(): Promise<Session> {
-    const provider = new GoogleAuthProvider();
-    const credential = await signInWithPopup(this.auth, provider);
+    const supplier = new GoogleAuthProvider();
+    const credential = await signInWithPopup(this.auth, supplier);
     const firebaseToken = await getIdToken(credential.user);
 
     try {
@@ -115,3 +115,4 @@ export class FirebaseAuthRepository implements AuthRepository {
     });
   }
 }
+
