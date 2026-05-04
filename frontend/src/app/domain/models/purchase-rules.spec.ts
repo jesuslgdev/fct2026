@@ -26,6 +26,7 @@ import {
   PurchasePermissionContext,
   PurchaseQueryParams,
 } from '@domain/models/purchase.model';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import { UserRole } from '@domain/enums/user-role.enum';
 
 describe('purchase-rules', () => {
@@ -176,5 +177,17 @@ describe('purchase-rules', () => {
     expect(canManagePurchases(forbiddenContext)).toBe(false);
 
     expect(() => assertCanManagePurchases(forbiddenContext)).toThrow(PurchaseForbiddenError);
+  });
+
+  it('allows purchases access by explicit permissions', () => {
+    const permissionContext: PurchasePermissionContext = {
+      role: null,
+      departmentId: null,
+      purchasesDepartmentId: -1,
+      permissions: [UserPermission.PurchasesDepartment],
+    };
+
+    expect(canManagePurchases(permissionContext)).toBe(true);
+    expect(() => assertCanManagePurchases(permissionContext)).not.toThrow();
   });
 });

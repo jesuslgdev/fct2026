@@ -109,6 +109,7 @@ export class AppShellComponent {
       role: user?.role,
       departmentId: user?.departmentId ?? null,
       purchasesDepartmentId,
+      permissions: user?.permissions ?? [],
     };
     const canAccessPurchases = canManagePurchases(purchasePermissionContext);
 

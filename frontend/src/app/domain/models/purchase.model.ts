@@ -1,4 +1,5 @@
 import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import { UserRole } from '@domain/enums/user-role.enum';
 import { PagedResult } from '@domain/models/user.model';
 
@@ -149,4 +150,5 @@ export interface PurchasePermissionContext {
   role: UserRole | null | undefined;
   departmentId: number | null | undefined;
   purchasesDepartmentId: number;
+  permissions?: UserPermission[] | null;
 }

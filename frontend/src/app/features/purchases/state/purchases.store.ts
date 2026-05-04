@@ -575,6 +575,7 @@ export class PurchasesStore {
       role: user?.role,
       departmentId: user?.departmentId ?? null,
       purchasesDepartmentId,
+      permissions: user?.permissions ?? [],
     };
   }
 
