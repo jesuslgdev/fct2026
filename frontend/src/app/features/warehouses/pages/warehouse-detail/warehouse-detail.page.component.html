@@ -82,7 +82,7 @@
         </div>
 
         <ui-table
-          [value]="store.availableStockItems()"
+          [value]="store.stockItems()"
           [loading]="store.loadingStock()"
           [paginator]="true"
           [lazy]="true"
@@ -120,7 +120,7 @@
           <ng-template #emptymessage>
             <tr>
               <td colspan="3" class="empty-state">
-                No se encontraron productos con stock disponible.
+                No se encontraron productos con stock.
               </td>
             </tr>
           </ng-template>

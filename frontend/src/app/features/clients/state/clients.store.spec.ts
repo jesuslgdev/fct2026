@@ -21,6 +21,7 @@ import {
 } from '@domain/models/client.model';
 import {
   ClientForbiddenError,
+  ClientInvalidPhoneError,
   ClientValidationError,
   ClientUnauthorizedError,
   ClientNotFoundError,
@@ -194,6 +195,25 @@ describe('ClientsStore', () => {
     } as unknown as CreateClientPayload);
 
     expect(store.dialogError()).toBe('Tax ID already exists.');
+  });
+
+  it('maps invalid phone clients error to a Spanish dialog message', async () => {
+    createClientUseCase.execute.mockReturnValueOnce(
+      throwError(() => new ClientInvalidPhoneError()),
+    );
+
+    await store.saveClient({
+      name: 'Test Client',
+      taxId: '12345678A',
+      address: 'Test Address',
+      city: 'Test City',
+      province: 'Test Province',
+      postalCode: '12345',
+      phone: '600 000 001',
+      email: 'test@example.com',
+    } as unknown as CreateClientPayload);
+
+    expect(store.dialogError()).toBe('El teléfono debe contener exactamente 9 dígitos.');
   });
 
   it('creates a new client and updates state', async () => {

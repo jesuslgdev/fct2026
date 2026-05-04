@@ -37,6 +37,7 @@ class UpdatePurchaseLineUseCase(IUpdatePurchaseLineUseCase):
             raise PurchaseException(PurchaseExceptionInfo.INVALID_DISCOUNT)
 
         line_subtotal = gross - discount
+        line_tax = line_subtotal * line.vat_rate
 
         await self._purchase_repo.update_line(
             purchase_line_id=purchase_line_id,
@@ -44,11 +45,13 @@ class UpdatePurchaseLineUseCase(IUpdatePurchaseLineUseCase):
             unit_price=unit_price,
             discount=discount,
             line_subtotal=line_subtotal,
+            vat_rate=line.vat_rate,
+            line_tax=line_tax,
         )
 
         updated = await self._purchase_repo.get_by_id(purchase_id)
         subtotal = sum(line.line_subtotal for line in updated.lines)
-        taxes = subtotal * Decimal("0.21")
+        taxes = sum(line.line_tax for line in updated.lines)
         total = subtotal + taxes
 
         return await self._purchase_repo.update_totals(

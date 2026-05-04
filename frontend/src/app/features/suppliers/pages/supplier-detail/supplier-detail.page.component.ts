@@ -1,19 +1,19 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Select } from 'primeng/select';
 import type { TablePageEvent } from 'primeng/table';
+import { Supplier } from '@domain/models/supplier.model';
+import { SupplierProductsImportDialogComponent } from '@features/supplier-product/components/supplier-products-import-dialog/supplier-products-import-dialog.component';
+import { SupplierProductsStore } from '@features/supplier-product/state/supplier-products.store';
+import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
+import { SupplierStatusBadgeComponent } from '@features/suppliers/components/supplier-status-badge/supplier-status-badge.component';
+import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CardComponent } from '@shared/ui/card/card.component';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { TableComponent } from '@shared/ui/table/table.component';
-import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
-import { SupplierProductsStore } from '@features/supplier-product/state/supplier-products.store';
-import { SupplierProductsImportDialogComponent } from '@features/supplier-product/components/supplier-products-import-dialog/supplier-products-import-dialog.component';
-import { ProviderFormDialogComponent } from '@features/suppliers/components/provider-form-dialog/provider-form-dialog.component';
-import { ProviderStatusBadgeComponent } from '@features/suppliers/components/provider-status-badge/provider-status-badge.component';
-import { Provider } from '@domain/models/provider.model';
 
 @Component({
   selector: 'app-supplier-detail-page',
@@ -27,8 +27,8 @@ import { Provider } from '@domain/models/provider.model';
     ButtonComponent,
     CardComponent,
     DialogComponent,
-    ProviderFormDialogComponent,
-    ProviderStatusBadgeComponent,
+    SupplierFormDialogComponent,
+    SupplierStatusBadgeComponent,
     SupplierProductsImportDialogComponent,
     TableComponent,
   ],
@@ -40,7 +40,7 @@ export class SupplierDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly supplier = signal<Provider | null>(null);
+  readonly supplier = signal<Supplier | null>(null);
   readonly detailLoading = signal(false);
   readonly detailError = signal<string | null>(null);
   readonly supplierNumericId = signal<number | null>(null);
@@ -56,10 +56,13 @@ export class SupplierDetailPageComponent implements OnInit {
 
     this.supplierNumericId.set(numericId);
     this.detailLoading.set(true);
-    const supplier = await this.store.loadProviderById(rawId);
-    this.supplier.set(supplier);
-    await this.supplierProductsStore.loadSupplierProducts(numericId);
-    this.detailLoading.set(false);
+    try {
+      const supplier = await this.store.loadSupplierById(rawId);
+      this.supplier.set(supplier);
+      await this.supplierProductsStore.loadSupplierProducts(numericId);
+    } finally {
+      this.detailLoading.set(false);
+    }
   }
 
   async openEditFromDetail(): Promise<void> {
@@ -72,7 +75,7 @@ export class SupplierDetailPageComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/suppliers']);
+    void this.router.navigate(['/suppliers']);
   }
 
   onSupplierProductsPageChange(event: TablePageEvent): void {

@@ -33,6 +33,14 @@ export class ClientInvalidTaxIdError extends Error {
   }
 }
 
+export class ClientInvalidPhoneError extends Error {
+  override readonly name = 'ClientInvalidPhoneError';
+
+  constructor(message = 'Phone must contain exactly 9 digits.') {
+    super(message);
+  }
+}
+
 export class ClientUnauthorizedError extends Error {
   override readonly name = 'ClientUnauthorizedError';
 
