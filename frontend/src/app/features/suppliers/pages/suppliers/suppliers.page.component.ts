@@ -10,17 +10,17 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Select } from 'primeng/select';
-import { TableComponent } from '@shared/ui/table/table.component';
-import { ButtonComponent } from '@shared/ui/button/button.component';
-import { DialogComponent } from '@shared/ui/dialog/dialog.component';
-import { InputComponent } from '@shared/ui/input/input.component';
-import { CardComponent } from '@shared/ui/card/card.component';
-import { BadgeComponent } from '@shared/ui/badge/badge.component';
-import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
-import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
-import { ImportDialogComponent } from '@features/suppliers/components/import-dialog/import-dialog.component';
 import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 import { Supplier } from '@domain/models/supplier.model';
+import { ImportDialogComponent } from '@features/suppliers/components/import-dialog/import-dialog.component';
+import { SupplierFormDialogComponent } from '@features/suppliers/components/supplier-form-dialog/supplier-form-dialog.component';
+import { SuppliersStore } from '@features/suppliers/state/suppliers.store';
+import { BadgeComponent } from '@shared/ui/badge/badge.component';
+import { ButtonComponent } from '@shared/ui/button/button.component';
+import { CardComponent } from '@shared/ui/card/card.component';
+import { DialogComponent } from '@shared/ui/dialog/dialog.component';
+import { InputComponent } from '@shared/ui/input/input.component';
+import { TableComponent } from '@shared/ui/table/table.component';
 
 interface StatusOption {
   label: string;
@@ -68,7 +68,7 @@ export class SuppliersPageComponent implements OnInit {
   }
 
   trackById(_: number, supplier: Supplier): number {
-    return parseInt(supplier.id);
+    return parseInt(supplier.id, 10);
   }
 
   openSupplierDetail(supplier: Supplier): void {
@@ -77,9 +77,12 @@ export class SuppliersPageComponent implements OnInit {
 
   getStatusLabel(status: Supplier['status']): string {
     switch (status) {
-      case SupplierStatus.ACTIVE: return 'Activo';
-      case SupplierStatus.INACTIVE: return 'Inactivo';
-      default: return status;
+      case SupplierStatus.ACTIVE:
+        return 'Activo';
+      case SupplierStatus.INACTIVE:
+        return 'Inactivo';
+      default:
+        return status;
     }
   }
 

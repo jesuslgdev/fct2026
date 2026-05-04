@@ -22,12 +22,10 @@
     </div>
   </ui-card>
 
-  <!-- Error global -->
   @if (store.error(); as errorMessage) {
     <p class="dialog-error-banner" role="alert">{{ errorMessage }}</p>
   }
 
-  <!-- Filters -->
   <ui-card class="filters-card">
     <div class="flex gap-3 mb-4">
       <ui-input
@@ -48,7 +46,6 @@
     </div>
   </ui-card>
 
-  <!-- Table -->
   <ui-card class="table-card">
     <ui-table
       [value]="store.filteredSuppliers()"
@@ -68,7 +65,9 @@
           <th>Nombre</th>
           <th>NIF/CIF</th>
           <th>Estado</th>
-          @if (store.canEdit()) { <th>Acciones</th> }
+          @if (store.canEdit()) {
+            <th>Acciones</th>
+          }
         </tr>
       </ng-template>
 
@@ -120,7 +119,6 @@
   </ui-card>
 </section>
 
-<!-- Create/Edit dialog -->
 <app-supplier-form-dialog />
 
 <!-- Confirmation dialog -->
@@ -148,5 +146,4 @@
   }
 </ui-dialog>
 
-<!-- Import dialog -->
 <app-import-dialog (importCompleted)="onImportCompleted()" />
