@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import type { TablePageEvent } from 'primeng/table';
+import { SALES_ACCESS_PERMISSIONS } from '@core/permissions/sales-access.policy';
 import { DatePicker } from 'primeng/datepicker';
 import { Select } from 'primeng/select';
 import { AuthService } from '@core/services/auth.service';
@@ -34,7 +35,10 @@ interface StatusOption {
 })
 export class SalesPageComponent implements OnInit {
   readonly store = inject(SalesStore);
-  readonly isAdmin = inject(AuthService).isAdmin;
+  private readonly authService = inject(AuthService);
+  readonly canCreateSale = computed(() =>
+    this.authService.hasPermission(SALES_ACCESS_PERMISSIONS),
+  );
   private readonly router = inject(Router);
 
   readonly statusOptions: StatusOption[] = [

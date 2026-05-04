@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { vi, type Mock } from 'vitest';
 import { AuthService } from '@core/services/auth.service';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client } from '@domain/models/client.model';
 import { Sale } from '@domain/models/sale.model';
@@ -121,6 +122,10 @@ describe('SalesPageComponent', () => {
           provide: AuthService,
           useValue: {
             isAdmin: signal(true),
+            hasPermission: vi.fn((permission: UserPermission | readonly UserPermission[]) => {
+              const permissionsToCheck = Array.isArray(permission) ? permission : [permission];
+              return permissionsToCheck.includes(UserPermission.SalesDepartment);
+            }),
           },
         },
         {

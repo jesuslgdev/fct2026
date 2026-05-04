@@ -233,6 +233,119 @@ describe('SaleCreateStore', () => {
     expect(store.total()).toBeCloseTo(21.78);
   });
 
+  it('previews subtotal, VAT, and total while editing an unsaved line', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftQuantityChange(lineId, '3');
+    store.onDraftDiscountChange(lineId, '5');
+    store.onDraftDiscountTypeChange(lineId, 'amount');
+
+    const line = store.getLineView(lineId);
+
+    expect(line?.lineSubtotal).toBe(25);
+    expect(line?.lineTax).toBeCloseTo(5.25);
+    expect(store.subtotal()).toBe(25);
+    expect(store.taxes()).toBeCloseTo(5.25);
+    expect(store.total()).toBeCloseTo(30.25);
+    expect(store.lines()[0].quantity).toBe(1);
+    expect(store.lines()[0].discount).toBe(0);
+  });
+
+  it('accepts comma decimals while previewing a line edit draft', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftQuantityChange(lineId, '3,5');
+    store.onDraftDiscountChange(lineId, '5,5');
+    store.onDraftDiscountTypeChange(lineId, 'amount');
+
+    const line = store.getLineView(lineId);
+
+    expect(line?.lineSubtotal).toBe(24.5);
+    expect(line?.lineTax).toBeCloseTo(5.145);
+    expect(store.subtotal()).toBe(24.5);
+    expect(store.taxes()).toBeCloseTo(5.145);
+    expect(store.total()).toBeCloseTo(29.645);
+    expect(store.lines()[0].quantity).toBe(1);
+    expect(store.lines()[0].discount).toBe(0);
+  });
+
+  it('normalizes comma decimals when saving a line edit draft', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftQuantityChange(lineId, '3,5');
+    store.onDraftDiscountChange(lineId, '5,5');
+    store.onDraftDiscountTypeChange(lineId, 'amount');
+
+    await store.saveLineEdit(lineId);
+
+    expect(store.lines()[0].quantity).toBe(3);
+    expect(store.lines()[0].discount).toBe(5.5);
+    expect(store.lines()[0].discountType).toBe('amount');
+    expect(store.getLineDraft(lineId)).toBeUndefined();
+    expect(store.subtotal()).toBe(24.5);
+    expect(store.taxes()).toBeCloseTo(5.145);
+    expect(store.total()).toBeCloseTo(29.645);
+  });
+
+  it('reverts the preview when cancelling line editing', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 2,
+      discount: 10,
+      discountType: 'percent',
+    });
+
+    const totalAntesDeEditar = store.total();
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftDiscountChange(lineId, '0');
+    store.onDraftQuantityChange(lineId, '4');
+
+    expect(store.total()).not.toBe(totalAntesDeEditar);
+
+    store.cancelLineEdit(lineId);
+
+    expect(store.total()).toBeCloseTo(totalAntesDeEditar);
+    expect(store.getLineDraft(lineId)).toBeUndefined();
+  });
   it('marks the line as invalid when quantity exceeds available stock', async () => {
     await store.initialize();
 
@@ -280,6 +393,24 @@ describe('SaleCreateStore', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/sales']);
   });
 
+  it('disables submit while a line is being edited', async () => {
+    await store.initialize();
+    await store.onClientChange(1);
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftQuantityChange(lineId, '2');
+
+    expect(store.canSubmit()).toBe(false);
+  });
   it('maps the insufficient stock error to a Spanish message', async () => {
     await store.initialize();
     await store.onClientChange(1);

@@ -55,6 +55,13 @@ export interface SaleCreateLineEditChanges {
   discountType: SaleDiscountType;
 }
 
+export interface SaleCreateLineEditDraft {
+  productId: number | null;
+  quantity: string;
+  discount: string;
+  discountType: SaleDiscountType;
+}
+
 export interface SaleCreateLineStockPreview {
   availableStock: number | null;
   stockLoading: boolean;
@@ -78,6 +85,7 @@ export class SaleCreateStore {
   private readonly warehousesState = signal<Warehouse[]>([]);
   private readonly productsState = signal<Product[]>([]);
   private readonly linesState = signal<SaleCreateLineDraft[]>([]);
+  private readonly lineDraftsState = signal<Record<number, SaleCreateLineEditDraft>>({});
   private readonly lineStockPreviewsState = signal<Record<number, SaleCreateLineStockPreview>>({});
 
   private readonly selectedClientIdState = signal<number | null>(null);
@@ -95,6 +103,7 @@ export class SaleCreateStore {
   readonly warehouses = this.warehousesState.asReadonly();
   readonly products = this.productsState.asReadonly();
   readonly lines = this.linesState.asReadonly();
+  readonly lineDrafts = this.lineDraftsState.asReadonly();
   readonly lineStockPreviews = this.lineStockPreviewsState.asReadonly();
 
   readonly selectedClientId = this.selectedClientIdState.asReadonly();
@@ -129,32 +138,7 @@ export class SaleCreateStore {
   });
 
   readonly lineViews = computed<SaleCreateLineView[]>(() =>
-    this.lines().map((line) => {
-      const product = this.findProduct(line.productId);
-      const unitPrice = product?.price ?? 0;
-      const vatRate = product?.vatRate ?? 0;
-      const grossAmount = unitPrice * line.quantity;
-      const discountAmount = this.calculateDiscountAmount(
-        grossAmount,
-        line.discount,
-        line.discountType,
-      );
-      const lineSubtotal = Math.max(grossAmount - discountAmount, 0);
-      const lineTax = lineSubtotal * vatRate;
-
-      return {
-        ...line,
-        productName: product?.name ?? '',
-        productCode: product?.code ?? '',
-        unitPrice,
-        vatRate,
-        grossAmount,
-        discountAmount,
-        lineSubtotal,
-        lineTax,
-        lineTotal: lineSubtotal + lineTax,
-      };
-    }),
+    this.buildLineViews(this.lines().map((line) => this.resolveEffectiveLine(line))),
   );
 
   readonly lineViewMap = computed(() => {
@@ -178,6 +162,10 @@ export class SaleCreateStore {
     }
 
     if (!this.selectedClientId() || !this.selectedWarehouseId() || !this.deliveryAddress()) {
+      return false;
+    }
+
+    if (Object.keys(this.lineDrafts()).length > 0) {
       return false;
     }
 
@@ -219,10 +207,37 @@ export class SaleCreateStore {
   }
 
   removeLine(lineId: number): void {
+    this.clearLineDraft(lineId);
+    this.clearLineStockPreview(lineId);
     this.linesState.update((lines) => {
       const remaining = lines.filter((line) => line.lineId !== lineId);
       return remaining.length > 0 ? remaining : [this.createEmptyLine()];
     });
+  }
+
+  startLineEdit(line: SaleCreateLineDraft): void {
+    this.lineDraftsState.update((drafts) => ({
+      ...drafts,
+      [line.lineId]: {
+        productId: line.productId,
+        quantity: String(line.quantity),
+        discount: String(line.discount),
+        discountType: line.discountType,
+      },
+    }));
+  }
+
+  getLineDraft(lineId: number): SaleCreateLineEditDraft | undefined {
+    return this.lineDrafts()[lineId];
+  }
+
+  cancelLineEdit(lineId: number): void {
+    this.clearLineDraft(lineId);
+    this.clearLineStockPreview(lineId);
+  }
+
+  clearAllLineDrafts(): void {
+    this.lineDraftsState.set({});
   }
 
   async onClientChange(clientId: number | null): Promise<void> {
@@ -284,6 +299,40 @@ export class SaleCreateStore {
       discount: line.discount,
       discountType: line.discountType,
     });
+  }
+
+  onDraftProductChange(lineId: number, productId: number | null): void {
+    this.updateLineDraft(lineId, { productId });
+    void this.previewLineStock(lineId, productId);
+  }
+
+  onDraftQuantityChange(lineId: number, quantity: string | number | null): void {
+    this.updateLineDraft(lineId, { quantity: this.stringifyDraftValue(quantity) });
+  }
+
+  onDraftDiscountChange(lineId: number, discount: string | number | null): void {
+    this.updateLineDraft(lineId, { discount: this.stringifyDraftValue(discount) });
+  }
+
+  onDraftDiscountTypeChange(lineId: number, discountType: SaleDiscountType): void {
+    this.updateLineDraft(lineId, { discountType });
+  }
+
+  async saveLineEdit(lineId: number): Promise<void> {
+    const draft = this.getLineDraft(lineId);
+    if (!draft) {
+      return;
+    }
+
+    await this.commitLineEdit(lineId, {
+      productId: draft.productId,
+      quantity: this.parseDraftNumber(draft.quantity),
+      discount: this.parseDraftNumber(draft.discount),
+      discountType: draft.discountType,
+    });
+
+    this.clearLineDraft(lineId);
+    this.clearLineStockPreview(lineId);
   }
 
   onQuantityChange(lineId: number, rawValue: number | null): void {
@@ -544,6 +593,13 @@ export class SaleCreateStore {
   }
 
   private validateLine(line: SaleCreateLineDraft | SaleCreateLineView): string | null {
+    return this.validateLineAgainstLines(line, this.lines());
+  }
+
+  private validateLineAgainstLines(
+    line: SaleCreateLineDraft | SaleCreateLineView,
+    lines: SaleCreateLineDraft[],
+  ): string | null {
     if (!line.productId) {
       return 'Selecciona un producto.';
     }
@@ -553,7 +609,7 @@ export class SaleCreateStore {
       return 'Solo se pueden seleccionar productos activos.';
     }
 
-    if (this.hasDuplicateProduct(line.lineId, line.productId)) {
+    if (this.hasDuplicateProductInLines(lines, line.lineId, line.productId)) {
       return 'Este producto ya esta anadido en otra linea.';
     }
 
@@ -669,6 +725,26 @@ export class SaleCreateStore {
     return rawValue == null || Number.isNaN(rawValue) ? 0 : rawValue;
   }
 
+ private parseDraftNumber(rawValue: string): number | null {
+  const trimmedValue = rawValue.trim();
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const normalizedValue = trimmedValue.replace(',', '.');
+  const parsedValue = Number(normalizedValue);
+
+  return Number.isNaN(parsedValue) ? null : parsedValue;
+}
+
+  private stringifyDraftValue(value: string | number | null): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    return String(value);
+  }
+
   private findProduct(productId: number | null): Product | undefined {
     return this.products().find((product) => product.productId === productId);
   }
@@ -685,13 +761,101 @@ export class SaleCreateStore {
   }
 
   private hasDuplicateProduct(lineId: number, productId: number | null): boolean {
+    return this.hasDuplicateProductInLines(this.lines(), lineId, productId);
+  }
+
+  private hasDuplicateProductInLines(
+    lines: SaleCreateLineDraft[],
+    lineId: number,
+    productId: number | null,
+  ): boolean {
     if (productId === null) {
       return false;
     }
 
-    return this.lines().some(
+    return lines.some(
       (line) => line.lineId !== lineId && line.productId === productId,
     );
+  }
+
+  private updateLineDraft(lineId: number, changes: Partial<SaleCreateLineEditDraft>): void {
+    this.lineDraftsState.update((drafts) => {
+      const currentDraft = drafts[lineId];
+      if (!currentDraft) {
+        return drafts;
+      }
+
+      return {
+        ...drafts,
+        [lineId]: {
+          ...currentDraft,
+          ...changes,
+        },
+      };
+    });
+  }
+
+  private clearLineDraft(lineId: number): void {
+    this.lineDraftsState.update((drafts) => {
+      const nextDrafts = { ...drafts };
+      delete nextDrafts[lineId];
+      return nextDrafts;
+    });
+  }
+
+  private resolveEffectiveLine(line: SaleCreateLineDraft): SaleCreateLineDraft {
+    const draft = this.getLineDraft(line.lineId);
+    if (!draft) {
+      return line;
+    }
+
+    const productChanged = draft.productId !== line.productId;
+    const preview = this.getLineStockPreview(line.lineId);
+
+    return {
+      ...line,
+      productId: draft.productId,
+      quantity: this.normalizeQuantity(this.parseDraftNumber(draft.quantity)),
+      discount: this.normalizeDiscount(this.parseDraftNumber(draft.discount)),
+      discountType: draft.discountType,
+      ...(productChanged
+        ? {
+            availableStock: preview?.availableStock ?? null,
+            stockLoading: preview?.stockLoading ?? false,
+            stockError: preview?.stockError ?? null,
+          }
+        : {}),
+    };
+  }
+
+  private buildLineViews(lines: SaleCreateLineDraft[]): SaleCreateLineView[] {
+    return lines.map((line) => {
+      const product = this.findProduct(line.productId);
+      const unitPrice = product?.price ?? 0;
+      const vatRate = product?.vatRate ?? 0;
+      const grossAmount = unitPrice * line.quantity;
+      const discountAmount = this.calculateDiscountAmount(
+        grossAmount,
+        line.discount,
+        line.discountType,
+      );
+      const lineSubtotal = Math.max(grossAmount - discountAmount, 0);
+      const lineTax = lineSubtotal * vatRate;
+
+      return {
+        ...line,
+        productName: product?.name ?? '',
+        productCode: product?.code ?? '',
+        unitPrice,
+        vatRate,
+        grossAmount,
+        discountAmount,
+        lineSubtotal,
+        lineTax,
+        lineTotal: lineSubtotal + lineTax,
+        validationError: this.validateLineAgainstLines(line, lines),
+      };
+    });
   }
 
   private ensureAtLeastOneLine(): void {
