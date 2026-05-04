@@ -106,3 +106,10 @@ export interface ListSalesFilters {
   dateTo?: Date;
   search?: string;
 }
+
+export interface SalePagedResult {
+  data: Sale[];
+  total: number;
+  page: number;
+  pageSize: number;
+}

@@ -31,6 +31,8 @@ import { SupplierProductRepository } from '@domain/repositories/supplier-product
 import { HttpSupplierProductRepository } from '@infrastructure/repositories/http/supplier-product.repository.http';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
+import { SaleRepository } from '@domain/repositories/sale.repository';
+import { HttpSaleRepository } from '@infrastructure/repositories/http/sale.repository.http';
 import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
 import { HttpStockDistributionRepository } from '@infrastructure/repositories/http/stock-distribution.repository.http';
 import { HttpProductRepository } from '@infrastructure/repositories/http/product.repository.http';
@@ -56,6 +58,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
     { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
+    { provide: SaleRepository, useClass: HttpSaleRepository },
     { provide: StockDistributionRepository, useClass: HttpStockDistributionRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     { provide: SupplierRepository, useClass: HttpSupplierRepository },
