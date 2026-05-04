@@ -51,6 +51,7 @@ describe('SaleMapper', () => {
         quantity: 2,
         unit_price: 50,
         discount: 0,
+        discount_type: 'amount',
         line_subtotal: 100,
         vat_rate: 0.21,
         line_tax: 21,
@@ -128,6 +129,7 @@ describe('SaleMapper', () => {
       expect(result.lines[0].saleLineId).toBe(101);
       expect(result.lines[0].unitPrice).toBe(50);
       expect(result.lines[0].discount).toBe(0);
+      expect(result.lines[0].discountType).toBe('amount');
       expect(result.statusHistory).toHaveLength(1);
       expect(result.statusHistory[0].toStatus).toBe(SaleStatus.PENDING);
     });

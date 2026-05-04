@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
+import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client, ClientDetail, ClientQueryParams } from '@domain/models/client.model';
 import { Product, ProductQueryParams, ProductStockByWarehouse } from '@domain/models/product.model';
 import {
@@ -15,13 +16,15 @@ import {
   SaleUnauthorizedError,
   SaleValidationError,
 } from '@domain/models/sale-errors';
-import { CreateSale, SaleDiscountType } from '@domain/models/sale.model';
+import { CreateSale, SaleDetail, SaleDiscountType, UpdateSale } from '@domain/models/sale.model';
 import { Warehouse } from '@domain/models/warehouse.model';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
 import { GetProductStockByWarehousesUseCase } from '@domain/usecases/product/get-product-stock-by-warehouses.usecase';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { CreateSaleUseCase } from '@domain/usecases/sales/create-sale.usecase';
+import { GetSaleUseCase } from '@domain/usecases/sales/get-sale.usecase';
+import { UpdateSaleUseCase } from '@domain/usecases/sales/update-sale.usecase';
 import { GetWarehousesUseCase } from '@domain/usecases/warehouse/get-warehouses.usecase';
 
 export interface SaleCreateLineDraft {
@@ -78,6 +81,8 @@ export class SaleCreateStore {
   private readonly getProductsUseCase = inject(GetProductsUseCase);
   private readonly getProductStockByWarehousesUseCase = inject(GetProductStockByWarehousesUseCase);
   private readonly createSaleUseCase = inject(CreateSaleUseCase);
+  private readonly getSaleUseCase = inject(GetSaleUseCase);
+  private readonly updateSaleUseCase = inject(UpdateSaleUseCase);
 
   private lineSequence = 1;
 
@@ -87,10 +92,14 @@ export class SaleCreateStore {
   private readonly linesState = signal<SaleCreateLineDraft[]>([]);
   private readonly lineDraftsState = signal<Record<number, SaleCreateLineEditDraft>>({});
   private readonly lineStockPreviewsState = signal<Record<number, SaleCreateLineStockPreview>>({});
-
   private readonly selectedClientIdState = signal<number | null>(null);
   private readonly selectedWarehouseIdState = signal<number | null>(null);
   private readonly selectedClientDetailState = signal<ClientDetail | null>(null);
+  private readonly isEditModeState = signal(false);
+  private readonly editingSaleIdState = signal<number | null>(null);
+  private readonly editingSaleNumberState = signal<string | null>(null);
+  private readonly editingSaleStatusState = signal<SaleStatus | null>(null);
+  private readonly deliveryAddressOverrideState = signal('');
 
   private readonly loadingState = signal(false);
   private readonly loadingProductsState = signal(false);
@@ -109,6 +118,11 @@ export class SaleCreateStore {
   readonly selectedClientId = this.selectedClientIdState.asReadonly();
   readonly selectedWarehouseId = this.selectedWarehouseIdState.asReadonly();
   readonly selectedClientDetail = this.selectedClientDetailState.asReadonly();
+  readonly isEditMode = this.isEditModeState.asReadonly();
+  readonly editingSaleId = this.editingSaleIdState.asReadonly();
+  readonly editingSaleNumber = this.editingSaleNumberState.asReadonly();
+  readonly editingSaleStatus = this.editingSaleStatusState.asReadonly();
+  readonly deliveryAddressOverride = this.deliveryAddressOverrideState.asReadonly();
 
   readonly loading = this.loadingState.asReadonly();
   readonly loadingProducts = this.loadingProductsState.asReadonly();
@@ -122,6 +136,10 @@ export class SaleCreateStore {
   );
 
   readonly deliveryAddress = computed(() => {
+    if (this.isEditMode()) {
+      return this.deliveryAddressOverride().trim();
+    }
+
     const client = this.selectedClientDetail();
     if (!client) {
       return '';
@@ -161,6 +179,10 @@ export class SaleCreateStore {
       return false;
     }
 
+    if (this.isEditMode() && this.editingSaleStatus() !== SaleStatus.PENDING) {
+      return false;
+    }
+
     if (!this.selectedClientId() || !this.selectedWarehouseId() || !this.deliveryAddress()) {
       return false;
     }
@@ -180,6 +202,7 @@ export class SaleCreateStore {
   );
 
   async initialize(): Promise<void> {
+    this.resetFormState();
     this.errorState.set(null);
     this.successMessageState.set(null);
     this.ensureAtLeastOneLine();
@@ -195,6 +218,39 @@ export class SaleCreateStore {
       this.clientsState.set(clients);
       this.warehousesState.set(warehouses);
       this.productsState.set(products);
+    } catch (err) {
+      this.errorState.set(this.resolveLoadError(err));
+    } finally {
+      this.loadingState.set(false);
+    }
+  }
+
+  async initializeForEdit(saleId: number): Promise<void> {
+    this.resetFormState();
+    this.isEditModeState.set(true);
+    this.editingSaleIdState.set(saleId);
+    this.errorState.set(null);
+    this.successMessageState.set(null);
+    this.loadingState.set(true);
+
+    try {
+      const [clients, warehouses, products, sale] = await Promise.all([
+        this.loadAllActiveClients(),
+        firstValueFrom(this.getWarehousesUseCase.execute()),
+        this.loadAllActiveProducts(),
+        firstValueFrom(this.getSaleUseCase.execute(saleId)),
+      ]);
+
+      this.clientsState.set(clients);
+      this.warehousesState.set(warehouses);
+      this.productsState.set(products);
+      this.hydrateFromSale(sale);
+
+      if (sale.status !== SaleStatus.PENDING) {
+        this.errorState.set('Solo se pueden editar ventas en estado pendiente.');
+      }
+
+      await this.refreshAllLineStocks();
     } catch (err) {
       this.errorState.set(this.resolveLoadError(err));
     } finally {
@@ -244,6 +300,9 @@ export class SaleCreateStore {
     this.selectedClientIdState.set(clientId);
     this.selectedClientDetailState.set(null);
     this.errorState.set(null);
+    if (this.isEditMode() && !clientId) {
+      this.deliveryAddressOverrideState.set('');
+    }
 
     if (!clientId) {
       return;
@@ -254,6 +313,9 @@ export class SaleCreateStore {
     try {
       const client = await firstValueFrom(this.getClientByIdUseCase.execute(clientId));
       this.selectedClientDetailState.set(client);
+      if (this.isEditMode()) {
+        this.deliveryAddressOverrideState.set(this.formatClientDeliveryAddress(client));
+      }
     } catch (err) {
       this.errorState.set(this.resolveLoadError(err));
     } finally {
@@ -299,6 +361,14 @@ export class SaleCreateStore {
       discount: line.discount,
       discountType: line.discountType,
     });
+  }
+
+  onDeliveryAddressChange(address: string): void {
+    if (!this.isEditMode()) {
+      return;
+    }
+
+    this.deliveryAddressOverrideState.set(address);
   }
 
   onDraftProductChange(lineId: number, productId: number | null): void {
@@ -453,7 +523,7 @@ export class SaleCreateStore {
         [lineId]: {
           availableStock: null,
           stockLoading: false,
-          stockError: 'No se ha podido consultar el stock del almacen seleccionado.',
+          stockError: 'No se ha podido consultar el stock del almacén seleccionado.',
         },
       }));
     }
@@ -479,22 +549,49 @@ export class SaleCreateStore {
     this.errorState.set(null);
     this.successMessageState.set(null);
 
-    const payload = this.buildPayload();
-    if (!payload) {
+    const payload = this.isEditMode() ? this.buildUpdatePayload() : this.buildPayload();
+    const saleId = this.editingSaleId();
+    if (!payload || (this.isEditMode() && !saleId)) {
       return;
     }
 
     this.submittingState.set(true);
 
     try {
-      await firstValueFrom(this.createSaleUseCase.execute(payload));
-      this.successMessageState.set('La venta se ha creado correctamente.');
-      await this.router.navigate(['/sales']);
+      if (this.isEditMode()) {
+        const updatedSale = await firstValueFrom(
+          this.updateSaleUseCase.execute(saleId as number, payload as UpdateSale),
+        );
+        this.successMessageState.set('La venta se ha actualizado correctamente.');
+        await this.router.navigate(['/sales', updatedSale.saleId]);
+      } else {
+        await firstValueFrom(this.createSaleUseCase.execute(payload as CreateSale));
+        this.successMessageState.set('La venta se ha creado correctamente.');
+        await this.router.navigate(['/sales']);
+      }
     } catch (err) {
       this.errorState.set(this.resolveSubmitError(err));
     } finally {
       this.submittingState.set(false);
     }
+  }
+
+  private resetFormState(): void {
+    this.lineSequence = 1;
+    this.clientsState.set([]);
+    this.warehousesState.set([]);
+    this.productsState.set([]);
+    this.linesState.set([]);
+    this.lineDraftsState.set({});
+    this.lineStockPreviewsState.set({});
+    this.selectedClientIdState.set(null);
+    this.selectedWarehouseIdState.set(null);
+    this.selectedClientDetailState.set(null);
+    this.isEditModeState.set(false);
+    this.editingSaleIdState.set(null);
+    this.editingSaleNumberState.set(null);
+    this.editingSaleStatusState.set(null);
+    this.deliveryAddressOverrideState.set('');
   }
 
   private async refreshAllLineStocks(): Promise<void> {
@@ -549,7 +646,7 @@ export class SaleCreateStore {
                 ...item,
                 availableStock: null,
                 stockLoading: false,
-                stockError: 'No se ha podido consultar el stock del almacen seleccionado.',
+                stockError: 'No se ha podido consultar el stock del almacén seleccionado.',
               }
             : item,
         ),
@@ -610,15 +707,15 @@ export class SaleCreateStore {
     }
 
     if (this.hasDuplicateProductInLines(lines, line.lineId, line.productId)) {
-      return 'Este producto ya esta anadido en otra linea.';
+      return 'Este producto ya está añadido en otra línea.';
     }
 
     if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
-      return 'La cantidad debe ser un numero entero mayor que 0.';
+      return 'La cantidad debe ser un número entero mayor que 0.';
     }
 
     if (!this.selectedWarehouseId()) {
-      return 'Selecciona primero un almacen para validar el stock.';
+      return 'Selecciona primero un almacén para validar el stock.';
     }
 
     if (line.stockLoading) {
@@ -630,7 +727,7 @@ export class SaleCreateStore {
     }
 
     if (line.availableStock === null) {
-      return 'El stock aun no esta disponible para esta linea.';
+      return 'El stock aún no está disponible para esta línea.';
     }
 
     if (line.quantity > line.availableStock) {
@@ -653,7 +750,7 @@ export class SaleCreateStore {
     );
 
     if (discountAmount >= grossAmount && grossAmount > 0) {
-      return 'El descuento no puede dejar el subtotal de linea en negativo.';
+      return 'El descuento no puede dejar el subtotal de línea en negativo.';
     }
 
     return null;
@@ -666,18 +763,18 @@ export class SaleCreateStore {
     }
 
     if (!this.selectedWarehouseId()) {
-      this.errorState.set('Selecciona un almacen antes de guardar.');
+      this.errorState.set('Selecciona un almacén antes de guardar.');
       return null;
     }
 
     if (!this.lines().length) {
-      this.errorState.set('Anade al menos una linea antes de guardar.');
+      this.errorState.set('Añade al menos una línea antes de guardar.');
       return null;
     }
 
     const linesAreValid = this.validateAllLines();
     if (!linesAreValid) {
-      this.errorState.set('Revisa los datos de las lineas antes de guardar la venta.');
+      this.errorState.set('Revisa los datos de las líneas antes de guardar la venta.');
       return null;
     }
 
@@ -690,7 +787,7 @@ export class SaleCreateStore {
       }));
 
     if (!payloadLines.length) {
-      this.errorState.set('Anade al menos una linea valida antes de guardar.');
+      this.errorState.set('Añade al menos una línea válida antes de guardar.');
       return null;
     }
 
@@ -725,17 +822,81 @@ export class SaleCreateStore {
     return rawValue == null || Number.isNaN(rawValue) ? 0 : rawValue;
   }
 
- private parseDraftNumber(rawValue: string): number | null {
-  const trimmedValue = rawValue.trim();
-  if (!trimmedValue) {
-    return null;
+  private buildUpdatePayload(): UpdateSale | null {
+    if (!this.selectedClientId()) {
+      this.errorState.set('Selecciona un cliente antes de guardar.');
+      return null;
+    }
+
+    if (!this.deliveryAddress()) {
+      this.errorState.set('Indica una dirección de entrega antes de guardar.');
+      return null;
+    }
+
+    if (!this.lines().length) {
+      this.errorState.set('Añade al menos una línea antes de guardar.');
+      return null;
+    }
+
+    const linesAreValid = this.validateAllLines();
+    if (!linesAreValid) {
+      this.errorState.set('Revisa los datos de las líneas antes de guardar la venta.');
+      return null;
+    }
+
+    const payloadLines = this.lines()
+      .filter((line) => line.productId !== null)
+      .map((line) => ({
+        productId: line.productId as number,
+        quantity: line.quantity,
+        ...(line.discount > 0 ? { discount: line.discount, discountType: line.discountType } : {}),
+      }));
+
+    if (!payloadLines.length) {
+      this.errorState.set('Añade al menos una línea válida antes de guardar.');
+      return null;
+    }
+
+    return {
+      clientId: this.selectedClientId() as number,
+      deliveryAddress: this.deliveryAddress(),
+      lines: payloadLines,
+    };
   }
 
-  const normalizedValue = trimmedValue.replace(',', '.');
-  const parsedValue = Number(normalizedValue);
+  private hydrateFromSale(sale: SaleDetail): void {
+    this.editingSaleIdState.set(sale.saleId);
+    this.editingSaleNumberState.set(sale.saleNumber);
+    this.editingSaleStatusState.set(sale.status);
+    this.selectedClientIdState.set(sale.clientId);
+    this.selectedWarehouseIdState.set(sale.warehouseId);
+    this.deliveryAddressOverrideState.set(sale.deliveryAddress);
+    this.linesState.set(
+      sale.lines.map((line) => ({
+        lineId: this.lineSequence++,
+        productId: line.productId,
+        quantity: line.quantity,
+        ...this.mapSaleLineDiscountForEditing(line),
+        availableStock: null,
+        stockLoading: false,
+        stockError: null,
+        validationError: null,
+      })),
+    );
+    this.ensureAtLeastOneLine();
+  }
 
-  return Number.isNaN(parsedValue) ? null : parsedValue;
-}
+  private parseDraftNumber(rawValue: string): number | null {
+    const trimmedValue = rawValue.trim();
+    if (!trimmedValue) {
+      return null;
+    }
+
+    const normalizedValue = trimmedValue.replace(',', '.');
+    const parsedValue = Number(normalizedValue);
+
+    return Number.isNaN(parsedValue) ? null : parsedValue;
+  }
 
   private stringifyDraftValue(value: string | number | null): string {
     if (value === null || value === undefined) {
@@ -743,6 +904,30 @@ export class SaleCreateStore {
     }
 
     return String(value);
+  }
+
+  private mapSaleLineDiscountForEditing(
+    line: SaleDetail['lines'][number],
+  ): Pick<SaleCreateLineDraft, 'discount' | 'discountType'> {
+    if (line.discountType === 'percent') {
+      return {
+        discount: line.discount * 100,
+        discountType: 'percent',
+      };
+    }
+
+    const grossAmount = line.unitPrice * line.quantity;
+
+    return {
+      discount: grossAmount * line.discount,
+      discountType: 'amount',
+    };
+  }
+
+  private formatClientDeliveryAddress(client: ClientDetail): string {
+    return [client.address, client.city, client.province, client.postalCode]
+      .filter((part) => part.trim().length > 0)
+      .join(', ');
   }
 
   private findProduct(productId: number | null): Product | undefined {
@@ -936,15 +1121,15 @@ export class SaleCreateStore {
 
   private resolveSubmitError(err: unknown): string {
     if (err instanceof SaleInsufficientStockError) {
-      return 'Una o varias lineas no tienen stock suficiente.';
+      return 'Una o varias líneas no tienen stock suficiente.';
     }
 
     if (err instanceof SaleClientNotActiveError) {
-      return 'El cliente seleccionado esta inactivo.';
+      return 'El cliente seleccionado está inactivo.';
     }
 
     if (err instanceof SaleProductNotActiveError) {
-      return 'Uno o varios productos seleccionados estan inactivos.';
+      return 'Uno o varios productos seleccionados están inactivos.';
     }
 
     if (err instanceof SaleInvalidDiscountError) {
@@ -952,7 +1137,7 @@ export class SaleCreateStore {
     }
 
     if (err instanceof SaleEmptyLinesError) {
-      return 'Debes anadir al menos una linea antes de guardar.';
+      return 'Debes añadir al menos una línea antes de guardar.';
     }
 
     if (err instanceof SaleValidationError) {
@@ -960,7 +1145,7 @@ export class SaleCreateStore {
     }
 
     if (err instanceof SaleUnauthorizedError) {
-      return 'Tu sesion ha expirado. Vuelve a iniciar sesion.';
+      return 'Tu sesión ha expirado. Vuelve a iniciar sesión.';
     }
 
     if (err instanceof SaleForbiddenError) {

@@ -86,6 +86,15 @@ export class SalesPageComponent implements OnInit {
   onCreateSale(): void {
     void this.router.navigate(['/sales/new']);
   }
+
+  onEditSale(saleId: number): void {
+    void this.router.navigate(['/sales', saleId, 'edit']);
+  }
+
+  canEditSale(status: SaleStatus): boolean {
+    return status === SaleStatus.PENDING && this.canCreateSale();
+  }
+
   getStatusLabel(status: SaleStatus): string {
     switch (status) {
       case SaleStatus.PENDING:

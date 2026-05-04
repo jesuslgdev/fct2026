@@ -7,14 +7,18 @@ import { AuthService } from '@core/services/auth.service';
 import { Client, ClientDetail } from '@domain/models/client.model';
 import { Product, ProductStockByWarehouse } from '@domain/models/product.model';
 import { SaleInsufficientStockError } from '@domain/models/sale-errors';
+import { SaleDetail } from '@domain/models/sale.model';
 import { Warehouse } from '@domain/models/warehouse.model';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
 import { GetProductStockByWarehousesUseCase } from '@domain/usecases/product/get-product-stock-by-warehouses.usecase';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { CreateSaleUseCase } from '@domain/usecases/sales/create-sale.usecase';
+import { GetSaleUseCase } from '@domain/usecases/sales/get-sale.usecase';
+import { UpdateSaleUseCase } from '@domain/usecases/sales/update-sale.usecase';
 import { GetWarehousesUseCase } from '@domain/usecases/warehouse/get-warehouses.usecase';
 import { SaleCreateStore } from './sale-create.store';
+import { SaleStatus } from '@domain/enums/sale-status.enum';
 
 const CLIENTE_A: Client = {
   clientId: 1,
@@ -84,6 +88,39 @@ const STOCK_PRODUCTO_A: ProductStockByWarehouse[] = [
   },
 ];
 
+const SALE_DETAIL: SaleDetail = {
+  saleId: 77,
+  saleNumber: 'VEN-2026-0077',
+  clientId: 1,
+  warehouseId: 10,
+  clientName: 'Cliente A',
+  creatorName: 'Administrador',
+  status: SaleStatus.PENDING,
+  allowedTransitions: [SaleStatus.APPROVED],
+  deliveryAddress: 'Direccion editada',
+  saleDate: new Date('2026-04-01T10:00:00.000Z'),
+  createdAt: new Date('2026-04-01T10:01:00.000Z'),
+  updatedAt: new Date('2026-04-01T10:02:00.000Z'),
+  userId: 1,
+  subtotal: 9.5,
+  taxes: 1.995,
+  total: 11.495,
+  lines: [
+    {
+      saleLineId: 501,
+      saleId: 77,
+      productId: 100,
+      quantity: 1,
+      unitPrice: 10,
+      discount: 0.05,
+      lineSubtotal: 9.5,
+      vatRate: 0.21,
+      lineTax: 1.995,
+    },
+  ],
+  statusHistory: [],
+};
+
 class MockGetClientsUseCase {
   execute = vi.fn().mockReturnValue(
     of({
@@ -136,16 +173,28 @@ class MockCreateSaleUseCase {
   execute = vi.fn().mockReturnValue(of({ saleId: 99 }));
 }
 
+class MockGetSaleUseCase {
+  execute = vi.fn().mockReturnValue(of(SALE_DETAIL));
+}
+
+class MockUpdateSaleUseCase {
+  execute = vi.fn().mockReturnValue(of(SALE_DETAIL));
+}
+
 describe('SaleCreateStore', () => {
   let store: SaleCreateStore;
   let router: { navigate: ReturnType<typeof vi.fn> };
   let getClientByIdUseCase: MockGetClientByIdUseCase;
   let createSaleUseCase: MockCreateSaleUseCase;
+  let getSaleUseCase: MockGetSaleUseCase;
+  let updateSaleUseCase: MockUpdateSaleUseCase;
 
   beforeEach(() => {
     router = { navigate: vi.fn().mockResolvedValue(true) };
     getClientByIdUseCase = new MockGetClientByIdUseCase();
     createSaleUseCase = new MockCreateSaleUseCase();
+    getSaleUseCase = new MockGetSaleUseCase();
+    updateSaleUseCase = new MockUpdateSaleUseCase();
 
     TestBed.configureTestingModule({
       providers: [
@@ -175,6 +224,8 @@ describe('SaleCreateStore', () => {
           useValue: new MockGetProductStockByWarehousesUseCase(),
         },
         { provide: CreateSaleUseCase, useValue: createSaleUseCase },
+        { provide: GetSaleUseCase, useValue: getSaleUseCase },
+        { provide: UpdateSaleUseCase, useValue: updateSaleUseCase },
       ],
     });
 
@@ -430,9 +481,96 @@ describe('SaleCreateStore', () => {
 
     await store.submit();
 
-    expect(store.error()).toBe('Una o varias lineas no tienen stock suficiente.');
+    expect(store.error()).toBe('Una o varias líneas no tienen stock suficiente.');
+  });
+  it('loads a pending sale for editing in the create form', async () => {
+    await store.initializeForEdit(77);
+
+    expect(getSaleUseCase.execute).toHaveBeenCalledWith(77);
+    expect(store.isEditMode()).toBe(true);
+    expect(store.editingSaleId()).toBe(77);
+    expect(store.editingSaleNumber()).toBe('VEN-2026-0077');
+    expect(store.selectedClientId()).toBe(1);
+    expect(store.selectedWarehouseId()).toBe(10);
+    expect(store.deliveryAddress()).toBe('Direccion editada');
+    expect(store.lines()[0]).toMatchObject({
+      productId: 100,
+      quantity: 1,
+      discount: 0.5,
+      discountType: 'amount',
+    });
   });
 
+  it('preserves the effective discount when resubmitting an edited sale without a discount type in the detail', async () => {
+    await store.initializeForEdit(77);
+
+    await store.submit();
+
+    expect(updateSaleUseCase.execute).toHaveBeenCalledWith(77, {
+      clientId: 1,
+      deliveryAddress: 'Direccion editada',
+      lines: [
+        {
+          productId: 100,
+          quantity: 1,
+          discount: 0.5,
+          discountType: 'amount',
+        },
+      ],
+    });
+  });
+
+  it('rehydrates percentage discounts when the detail includes their type', async () => {
+    getSaleUseCase.execute.mockReturnValueOnce(
+      of({
+        ...SALE_DETAIL,
+        lines: [
+          {
+            ...SALE_DETAIL.lines[0],
+            discountType: 'percent',
+          },
+        ],
+      }),
+    );
+
+    await store.initializeForEdit(77);
+
+    expect(store.lines()[0]).toMatchObject({
+      productId: 100,
+      quantity: 1,
+      discount: 5,
+      discountType: 'percent',
+    });
+  });
+
+  it('submits the update payload and redirects to the detail page', async () => {
+    await store.initializeForEdit(77);
+    store.onDeliveryAddressChange('Nueva direccion');
+
+    const lineId = store.lines()[0].lineId;
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 2,
+      discount: 10,
+      discountType: 'percent',
+    });
+
+    await store.submit();
+
+    expect(updateSaleUseCase.execute).toHaveBeenCalledWith(77, {
+      clientId: 1,
+      deliveryAddress: 'Nueva direccion',
+      lines: [
+        {
+          productId: 100,
+          quantity: 2,
+          discount: 10,
+          discountType: 'percent',
+        },
+      ],
+    });
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 77]);
+  });
   it('marks the line as invalid when a duplicate product is confirmed', async () => {
     await store.initialize();
     await store.onWarehouseChange(10);
@@ -455,7 +593,7 @@ describe('SaleCreateStore', () => {
       discountType: 'percent',
     });
 
-    expect(store.lineViews()[1].validationError).toBe('Este producto ya esta anadido en otra linea.');
+    expect(store.lineViews()[1].validationError).toBe('Este producto ya está añadido en otra línea.');
     expect(store.canSubmit()).toBe(false);
   });
 });

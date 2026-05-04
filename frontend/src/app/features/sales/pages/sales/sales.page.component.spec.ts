@@ -227,6 +227,39 @@ describe('SalesPageComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
   });
 
+  it('navigates to the sale edit page', () => {
+    component.onEditSale(1);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 1, 'edit']);
+  });
+
+  it('renders the edit action as an icon-only button for pending sales with permissions', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-pencil');
+    expect(actionButton.attributes['variant']).toBe('ghost');
+  });
+
+  it('hides the edit action when the sale is not pending', () => {
+    store.salesView.set([
+      {
+        saleId: 1,
+        saleNumber: 'VEN-2026-0001',
+        clientName: 'Cliente A',
+        status: SaleStatus.APPROVED,
+        deliveryAddress: 'Calle Mayor 1, Madrid',
+        createdAt: SALE_A.createdAt,
+        total: 100,
+      },
+    ]);
+    fixture.detectChanges();
+
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
+
+    expect(actionButton).toBeNull();
+  });
+
   it('renders the filtered empty message when provided by the store', () => {
     store.salesView.set([]);
     store.emptyMessage.set('No se encontraron ventas con los filtros aplicados');

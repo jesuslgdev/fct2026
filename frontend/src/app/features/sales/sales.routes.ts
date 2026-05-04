@@ -19,4 +19,13 @@ export const SALES_ROUTES: Routes = [
     title: 'Nueva venta',
     canActivate: [salesDepartmentGuard],
   },
+  {
+    path: ':id/edit',
+    loadComponent: () =>
+      import('./pages/sale-create/sale-create.page.component').then(
+        (m) => m.SaleCreatePageComponent,
+      ),
+    title: 'Editar venta',
+    canActivate: [salesDepartmentGuard],
+  },
 ];

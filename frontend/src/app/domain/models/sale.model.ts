@@ -26,6 +26,7 @@ export interface SaleLine {
   quantity: number;
   unitPrice: number;
   discount: number;
+  discountType?: SaleDiscountType;
   lineSubtotal: number;
   vatRate: number;
   lineTax: number;
