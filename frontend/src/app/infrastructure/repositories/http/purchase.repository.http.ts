@@ -12,6 +12,7 @@ import {
   switchMap,
   throwError,
 } from 'rxjs';
+import { PURCHASE_STATUSES } from '@domain/enums/purchase-status.enum';
 import {
   PurchaseApiError,
   PurchaseBusinessRuleError,
@@ -86,6 +87,7 @@ const PURCHASE_NOT_FOUND_ERROR_CODES = new Set<number>([
   PURCHASE_ERROR_CODES.SUPPLIER_NOT_FOUND,
 ]);
 
+const DEFAULT_TRANSITION_STATUS = PURCHASE_STATUSES[0];
 @Injectable()
 export class HttpPurchaseRepository implements PurchaseRepository {
   private readonly http = inject(HttpClient);
@@ -402,8 +404,8 @@ export class HttpPurchaseRepository implements PurchaseRepository {
   ): Error {
     if (errorCode === PURCHASE_ERROR_CODES.INVALID_TRANSITION) {
       return new PurchaseInvalidStatusTransitionError(
-        'Pending',
-        'Pending',
+        DEFAULT_TRANSITION_STATUS,
+        DEFAULT_TRANSITION_STATUS,
         message ?? 'This status transition is not allowed.',
       );
     }

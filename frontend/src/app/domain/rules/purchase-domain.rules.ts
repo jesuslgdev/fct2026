@@ -1,5 +1,6 @@
 import { PurchaseStatus } from '@domain/enums/purchase-status.domain.enum';
 import { UserRole } from '@domain/enums/purchase-user-role.enum';
+import { PurchaseValidationError } from '@domain/models/purchase-errors';
 import {
   DiscountType,
   PurchaseLine,
@@ -38,11 +39,14 @@ export function isValidPurchaseNumberFormat(purchaseNumber: string): boolean {
  */
 export function generatePurchaseNumber(year: number, sequence: number): string {
   if (!Number.isInteger(year) || year < 1000 || year > 9999) {
-    throw new Error('Anio de compra invalido.');
+    throw new PurchaseValidationError({ field: 'year', value: year }, 'Anio de compra invalido.');
   }
 
   if (!Number.isInteger(sequence) || sequence <= 0 || sequence > MAX_SEQUENCE_PER_YEAR) {
-    throw new Error('Secuencia de compra invalida.');
+    throw new PurchaseValidationError(
+      { field: 'sequence', value: sequence },
+      'Secuencia de compra invalida.',
+    );
   }
 
   return `COM-${year}-${String(sequence).padStart(4, '0')}`;
@@ -57,7 +61,10 @@ export function getNextPurchaseNumber(lastPurchaseNumber: string | null, year: n
   }
 
   if (!isValidPurchaseNumberFormat(lastPurchaseNumber)) {
-    throw new Error('Formato de numero de compra invalido.');
+    throw new PurchaseValidationError(
+      { field: 'lastPurchaseNumber', value: lastPurchaseNumber },
+      'Formato de numero de compra invalido.',
+    );
   }
 
   const [, lastYearRaw, lastSequenceRaw] = lastPurchaseNumber.split('-');
@@ -65,7 +72,10 @@ export function getNextPurchaseNumber(lastPurchaseNumber: string | null, year: n
   const lastSequence = Number(lastSequenceRaw);
 
   if (!Number.isInteger(lastYear) || !Number.isInteger(lastSequence)) {
-    throw new Error('Numero de compra no parseable.');
+    throw new PurchaseValidationError(
+      { field: 'lastPurchaseNumber', value: lastPurchaseNumber },
+      'Numero de compra no parseable.',
+    );
   }
 
   if (lastYear !== year) {
@@ -81,12 +91,18 @@ function calculateDiscountAmount(
   discountValue: number,
 ): number {
   if (!Number.isFinite(discountValue) || discountValue < 0) {
-    throw new Error('Descuento invalido.');
+    throw new PurchaseValidationError(
+      { field: 'discountValue', value: discountValue },
+      'Descuento invalido.',
+    );
   }
 
   if (discountType === 'percentage') {
     if (discountValue > 100) {
-      throw new Error('Descuento porcentual invalido.');
+      throw new PurchaseValidationError(
+        { field: 'discountValue', value: discountValue },
+        'Descuento porcentual invalido.',
+      );
     }
 
     return roundTo2Decimals(grossAmount * (discountValue / 100));
@@ -100,11 +116,17 @@ function calculateDiscountAmount(
  */
 export function calculatePurchaseLine(line: PurchaseLineInput): PurchaseLine {
   if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
-    throw new Error('Cantidad invalida.');
+    throw new PurchaseValidationError(
+      { field: 'line.quantity', value: line.quantity },
+      'Cantidad invalida.',
+    );
   }
 
   if (!Number.isFinite(line.unitPrice) || line.unitPrice < 0) {
-    throw new Error('Precio unitario invalido.');
+    throw new PurchaseValidationError(
+      { field: 'line.unitPrice', value: line.unitPrice },
+      'Precio unitario invalido.',
+    );
   }
 
   const grossAmount = roundTo2Decimals(line.quantity * line.unitPrice);
@@ -134,7 +156,10 @@ export function hasAtLeastOneLine(lines: readonly PurchaseLineInput[]): boolean 
  */
 export function assertAtLeastOneLine(lines: readonly PurchaseLineInput[]): void {
   if (!hasAtLeastOneLine(lines)) {
-    throw new Error('Debe incluir al menos una linea');
+    throw new PurchaseValidationError(
+      { field: 'lines', value: lines },
+      'Debe incluir al menos una linea',
+    );
   }
 }
 
