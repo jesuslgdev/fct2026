@@ -1,0 +1,73 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Detalle de proveedor</h1>
+    <div class="flex items-center gap-2">
+      <ui-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        variant="outline"
+        (clicked)="goBack()"
+      />
+      @if (store.canEdit() && supplier()) {
+        <ui-button
+          label="Editar"
+          icon="pi pi-pencil"
+          (clicked)="openEditFromDetail()"
+        />
+      }
+    </div>
+  </div>
+
+  @if (detailLoading()) {
+    <p class="warning-text">Cargando detalle del proveedor...</p>
+  }
+
+  @if (detailError() || store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (supplier(); as supplierDetail) {
+    <ui-card>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <p class="text-sm text-surface-500">Nombre</p>
+          <p class="font-semibold">{{ supplierDetail.name }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">NIF/CIF</p>
+          <p class="font-semibold">{{ supplierDetail.taxId }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Email</p>
+          <p>{{ supplierDetail.email || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Telefono</p>
+          <p>{{ supplierDetail.phone || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Ciudad</p>
+          <p>{{ supplierDetail.city || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Provincia</p>
+          <p>{{ supplierDetail.province || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Codigo postal</p>
+          <p>{{ supplierDetail.postalCode || 'No disponible' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-surface-500">Estado</p>
+          <ui-supplier-status-badge [status]="supplierDetail.status" />
+        </div>
+        <div class="md:col-span-2">
+          <p class="text-sm text-surface-500">Direccion</p>
+          <p>{{ supplierDetail.address || 'No disponible' }}</p>
+        </div>
+      </div>
+    </ui-card>
+  }
+</section>
+
+<app-supplier-form-dialog />
