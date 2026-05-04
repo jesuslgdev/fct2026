@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from modules.suppliers.domain.entities.supplier_product import SupplierProduct
+from modules.suppliers.domain.dtos.supplier_product_detail import SupplierProductDetail
 from modules.suppliers.domain.exceptions import SupplierException, SupplierExceptionInfo
 from modules.suppliers.domain.interfaces.repositories.i_supplier_repository import (
     ISupplierRepository,
@@ -20,7 +20,7 @@ class AddProductToSupplierUseCase(IAddProductToSupplierUseCase):
 
     async def execute(
         self, supplier_id: int, product_id: int, price: Decimal
-    ) -> SupplierProduct:
+    ) -> SupplierProductDetail:
         if price <= 0:
             raise SupplierException(SupplierExceptionInfo.INVALID_SUPPLIER_PRICE)
 
@@ -43,4 +43,10 @@ class AddProductToSupplierUseCase(IAddProductToSupplierUseCase):
         if existing:
             raise SupplierException(SupplierExceptionInfo.ASSOCIATION_ALREADY_EXISTS)
 
-        return await self._repo.add_product(supplier_id, product_id, price)
+        await self._repo.add_product(supplier_id, product_id, price)
+        detail = await self._repo.get_product_by_supplier_detail(
+            supplier_id, product_id
+        )
+        if detail is None:
+            raise SupplierException(SupplierExceptionInfo.ASSOCIATION_NOT_FOUND)
+        return detail

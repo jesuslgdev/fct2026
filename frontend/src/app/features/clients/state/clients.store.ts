@@ -19,6 +19,7 @@ import {
   ClientApiError,
   ClientEmailAlreadyExistsError,
   ClientForbiddenError,
+  ClientInvalidPhoneError,
   ClientNotFoundError,
   ClientUnauthorizedError,
   ClientValidationError,
@@ -65,6 +66,10 @@ export class ClientsStore {
 
     if (err instanceof ClientEmailAlreadyExistsError) {
       return 'Ya existe un cliente con este email.';
+    }
+
+    if (err instanceof ClientInvalidPhoneError) {
+      return 'El teléfono debe contener exactamente 9 dígitos.';
     }
 
     if (err instanceof ClientValidationError) {

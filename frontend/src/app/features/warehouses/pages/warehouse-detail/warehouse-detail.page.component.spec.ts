@@ -48,7 +48,6 @@ class MockWarehouseDetailStore {
   readonly stockError = signal<string | null>(null);
   readonly adjustDialogError = signal<string | null>(null);
   readonly adjustDialogVisible = signal(false);
-  readonly availableStockItems = signal([]);
   readonly selectedProductLabel = signal('');
 
   readonly init = vi.fn();

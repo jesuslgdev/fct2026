@@ -39,6 +39,17 @@ class IWarehouseStockRepository(ABC):
         ...
 
     @abstractmethod
+    async def adjust_reserved_stock(
+        self, warehouse_id: int, product_id: int, delta: int
+    ) -> None:
+        """Add *delta* to reserved_stock for a warehouse-product pair.
+
+        Positive delta reserves units; negative releases them.
+        Result is clamped to [0, stock].
+        """
+        ...
+
+    @abstractmethod
     async def list_distribution(
         self,
         page: int,

@@ -4,6 +4,9 @@ from decimal import Decimal
 
 from modules.purchases.domain.entities.purchase import Purchase
 from modules.purchases.domain.entities.purchase_line import PurchaseLine
+from modules.purchases.domain.entities.purchase_status_history import (
+    PurchaseStatusHistory,
+)
 from shared.domain.dtos.paginated_result import PaginatedResult
 
 
@@ -54,6 +57,8 @@ class IPurchaseRepository(ABC):
         unit_price: Decimal,
         discount: Decimal,
         line_subtotal: Decimal,
+        vat_rate: Decimal,
+        line_tax: Decimal,
     ) -> PurchaseLine: ...
 
     @abstractmethod
@@ -64,6 +69,8 @@ class IPurchaseRepository(ABC):
         unit_price: Decimal,
         discount: Decimal,
         line_subtotal: Decimal,
+        vat_rate: Decimal,
+        line_tax: Decimal,
     ) -> PurchaseLine: ...
 
     @abstractmethod
@@ -96,4 +103,11 @@ class IPurchaseRepository(ABC):
     async def delete_purchase(self, purchase_id: int) -> None: ...
 
     @abstractmethod
-    async def advance_status(self, purchase_id: int, new_status: str) -> Purchase: ...
+    async def advance_status(
+        self,
+        purchase_id: int,
+        new_status: str,
+    ) -> Purchase: ...
+
+    @abstractmethod
+    async def add_status_history(self, history: PurchaseStatusHistory) -> None: ...

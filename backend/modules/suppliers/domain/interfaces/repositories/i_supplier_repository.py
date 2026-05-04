@@ -30,6 +30,9 @@ class ISupplierRepository(ABC):
     async def get_by_tax_id(self, tax_id: str) -> Supplier | None: ...
 
     @abstractmethod
+    async def get_by_email(self, email: str) -> Supplier | None: ...
+
+    @abstractmethod
     async def update(
         self,
         supplier_id: int,
@@ -90,6 +93,11 @@ class ISupplierRepository(ABC):
     async def get_products_by_supplier_detailed(
         self, supplier_id: int
     ) -> list[SupplierProductDetail]: ...
+
+    @abstractmethod
+    async def get_product_by_supplier_detail(
+        self, supplier_id: int, product_id: int
+    ) -> SupplierProductDetail | None: ...
 
     @abstractmethod
     async def get_products_by_supplier_paginated(

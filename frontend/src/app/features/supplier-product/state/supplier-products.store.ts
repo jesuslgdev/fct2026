@@ -10,13 +10,6 @@ import {
   SupplierProduct,
   SupplierProductQueryParams,
 } from '@domain/models/supplier-product.model';
-import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
-import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
-import { DownloadTemplateUseCase } from '@domain/usecases/supplier-product/download-template.usecase';
-import { GetSupplierProductsUseCase } from '@domain/usecases/supplier-product/get-supplier-products.usecase';
-import { ImportSupplierProductsUseCase } from '@domain/usecases/supplier-product/import-supplier-products.usecase';
-import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
-import { UpdateSupplierProductPriceUseCase } from '@domain/usecases/supplier-product/update-supplier-product-price.usecase';
 import {
   SupplierProductApiError,
   SupplierProductDuplicateError,
@@ -27,6 +20,13 @@ import {
   SupplierProductUnauthorizedError,
   SupplierProductValidationError,
 } from '@domain/models/supplier-product-errors';
+import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
+import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
+import { DownloadTemplateUseCase } from '@domain/usecases/supplier-product/download-template.usecase';
+import { GetSupplierProductsUseCase } from '@domain/usecases/supplier-product/get-supplier-products.usecase';
+import { ImportSupplierProductsUseCase } from '@domain/usecases/supplier-product/import-supplier-products.usecase';
+import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
+import { UpdateSupplierProductPriceUseCase } from '@domain/usecases/supplier-product/update-supplier-product-price.usecase';
 
 @Injectable()
 export class SupplierProductsStore {
@@ -156,15 +156,16 @@ export class SupplierProductsStore {
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof SupplierProductValidationError) {
       const map: Record<string, string> = {
-        'Invalid supplier ID.': 'ID de proveedor invalido.',
-        'Invalid product ID.': 'ID de producto invalido.',
-        'Supplier price must be greater than zero.': 'El precio del proveedor debe ser mayor que cero.',
-        'Excel file is required for import.': 'Se requiere archivo Excel para importar.',
-        'Page must be greater than 0.': 'La pagina debe ser mayor que 0.',
-        'Page size must be between 1 and 100.': 'El tamano de pagina debe estar entre 1 y 100.',
-        'Supplier price must have maximum 2 decimal places.': 'El precio del proveedor debe tener maximo 2 decimales.',
+        'Invalid supplier ID': 'ID de proveedor invalido.',
+        'Invalid product ID': 'ID de producto invalido.',
+        'Supplier price must be greater than zero': 'El precio del proveedor debe ser mayor que cero.',
+        'Excel file is required for import': 'Se requiere archivo Excel para importar.',
+        'Page must be greater than 0': 'La pagina debe ser mayor que 0.',
+        'Page size must be between 1 and 100': 'El tamano de pagina debe estar entre 1 y 100.',
+        'Supplier price must have maximum 2 decimal places': 'El precio del proveedor debe tener maximo 2 decimales.',
       };
-      return map[err.message] ?? 'Por favor, verifique los datos enviados.';
+      const normalizedMessage = err.message.trim().replace(/[.]$/, '');
+      return map[normalizedMessage] ?? 'Por favor, verifique los datos enviados.';
     }
     if (err instanceof SupplierProductUnauthorizedError) return 'Su sesion ha expirado. Por favor, inicie sesion nuevamente.';
     if (err instanceof SupplierProductForbiddenError) return 'No tiene permisos para realizar esta accion.';
@@ -241,6 +242,15 @@ export class SupplierProductsStore {
     const currentSupplierId = this.supplierId();
     if (!currentSupplierId) setError('No hay proveedor seleccionado.');
     return currentSupplierId;
+  }
+
+  private parseProductId(productId: number | string): number | null {
+    const normalized = typeof productId === 'number' ? productId : Number(productId);
+    if (!Number.isInteger(normalized) || normalized <= 0) {
+      this.error.set('ID de producto invalido.');
+      return null;
+    }
+    return normalized;
   }
 
   private parseSupplierPrice(
@@ -369,8 +379,10 @@ export class SupplierProductsStore {
 
   startInlinePriceEdit(supplierProduct: SupplierProduct): void {
     if (!this.ensureCanModify()) return;
-    this.editingProductId.set(supplierProduct.productId);
-    this.priceDraft.set(supplierProduct.supplierPrice.toString());
+    const productId = this.parseProductId(supplierProduct.productId);
+    if (!productId) return;
+    this.editingProductId.set(productId);
+    this.priceDraft.set((supplierProduct.supplierPrice ?? '').toString());
   }
 
   cancelInlinePriceEdit(): void {
@@ -386,12 +398,13 @@ export class SupplierProductsStore {
     this.error.set(null);
     if (!this.ensureCanModify()) return;
     const supplierId = this.requireSupplierId();
+    const productId = this.parseProductId(supplierProduct.productId);
     const supplierPrice = this.parseSupplierPrice(this.priceDraft());
-    if (!supplierId || supplierPrice === null) return;
-    this.savingProductIds.update((ids) => new Set(ids).add(supplierProduct.productId));
+    if (!supplierId || !productId || supplierPrice === null) return;
+    this.savingProductIds.update((ids) => new Set(ids).add(productId));
     try {
       await firstValueFrom(
-        this.updateSupplierProductPriceUseCase.execute(supplierId, supplierProduct.productId, { supplierPrice }),
+        this.updateSupplierProductPriceUseCase.execute(supplierId, productId, { supplierPrice }),
       );
       this.cancelInlinePriceEdit();
       await this.fetchSupplierProducts(supplierId);
@@ -400,7 +413,7 @@ export class SupplierProductsStore {
     } finally {
       this.savingProductIds.update((ids) => {
         const next = new Set(ids);
-        next.delete(supplierProduct.productId);
+        next.delete(productId);
         return next;
       });
     }
@@ -422,10 +435,11 @@ export class SupplierProductsStore {
     if (!this.ensureCanModify()) return;
     const supplierId = this.requireSupplierId();
     const supplierProduct = this.selectedSupplierProduct();
-    if (!supplierId || !supplierProduct) return;
+    const productId = supplierProduct ? this.parseProductId(supplierProduct.productId) : null;
+    if (!supplierId || !supplierProduct || !productId) return;
     this.loading.set(true);
     try {
-      await firstValueFrom(this.removeProductFromSupplierUseCase.execute(supplierId, supplierProduct.productId));
+      await firstValueFrom(this.removeProductFromSupplierUseCase.execute(supplierId, productId));
       this.cancelDeleteProduct();
       await this.fetchSupplierProducts(supplierId);
     } catch (err) {
@@ -563,5 +577,4 @@ export class SupplierProductsStore {
       this.templateDownloadLoading.set(false);
     }
   }
-
 }

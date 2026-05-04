@@ -345,10 +345,7 @@ async def add_product_to_supplier(
 ):
     """Associate a product with a supplier and set its price."""
     result = await use_case.execute(supplier_id, body.product_id, body.supplier_price)
-    return SupplierProductDTO(
-        product_id=result.product_id,
-        supplier_price=result.supplier_price,
-    )
+    return _to_supplier_product_dto(result)
 
 
 @router.get(
@@ -391,10 +388,7 @@ async def update_supplier_product_price(
 ):
     """Update the price of a product for a supplier."""
     result = await use_case.execute(supplier_id, product_id, body.supplier_price)
-    return SupplierProductDTO(
-        product_id=result.product_id,
-        supplier_price=result.supplier_price,
-    )
+    return _to_supplier_product_dto(result)
 
 
 @router.delete(
