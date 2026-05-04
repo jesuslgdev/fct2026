@@ -1,16 +1,17 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
+import { PageEvent } from '@domain/models/page-event.model';
 import { UserPermission } from '@domain/enums/user-permission.enum';
-import { ProviderStatus } from '@domain/enums/provider-status.enum';
-import { Provider } from '@domain/models/provider.model';
+import { SupplierStatus } from '@domain/enums/supplier-status.enum';
+import { Supplier } from '@domain/models/supplier.model';
 import {
   AddSupplierProductRequest,
   ProductSupplier,
   ProductSupplierQueryParams,
   UpdateSupplierProductPriceRequest,
 } from '@domain/models/supplier-product.model';
-import { GetProvidersUseCase } from '@domain/usecases/supplier/get-providers.usecase';
+import { GetSuppliersUseCase } from '@domain/usecases/supplier/get-suppliers.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
 import { GetProductSuppliersUseCase } from '@domain/usecases/supplier-product/get-product-suppliers.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
@@ -35,7 +36,7 @@ export class ProductSuppliersStore {
   private readonly addProductToSupplierUseCase = inject(AddProductToSupplierUseCase);
   private readonly updateSupplierProductPriceUseCase = inject(UpdateSupplierProductPriceUseCase);
   private readonly removeProductFromSupplierUseCase = inject(RemoveProductFromSupplierUseCase);
-  private readonly getProvidersUseCase = inject(GetProvidersUseCase);
+  private readonly getSuppliersUseCase = inject(GetSuppliersUseCase);
 
   readonly productSuppliers = signal<ProductSupplier[]>([]);
   readonly productId = signal<number | null>(null);
@@ -51,7 +52,7 @@ export class ProductSuppliersStore {
   readonly editSupplierPriceDialogVisible = signal(false);
   readonly confirmDeleteSupplierDialogVisible = signal(false);
   readonly selectedProductSupplier = signal<ProductSupplier | null>(null);
-  readonly activeSuppliers = signal<Provider[]>([]);
+  readonly activeSuppliers = signal<Supplier[]>([]);
   readonly selectedSupplierId = signal<string | null>(null);
   readonly addSupplierPriceDraft = signal('');
   readonly editingSupplierId = signal<number | null>(null);
@@ -198,19 +199,20 @@ export class ProductSuppliersStore {
     }
   }
 
-  private async fetchAllActiveSuppliers(): Promise<Provider[]> {
-    const suppliers: Provider[] = [];
+  private async fetchAllActiveSuppliers(): Promise<Supplier[]> {
+    const suppliers: Supplier[] = [];
     let page = 1;
     let total = 0;
 
     do {
-      const result = await this.getProvidersUseCase.execute({
+      const query: PageEvent = {
         page,
         rows: ProductSuppliersStore.PROVIDERS_PAGE_SIZE,
         first: (page - 1) * ProductSuppliersStore.PROVIDERS_PAGE_SIZE,
-        status: ProviderStatus.ACTIVE,
+        status: SupplierStatus.ACTIVE,
         isActive: true,
-      });
+      };
+      const result = await this.getSuppliersUseCase.execute(query);
 
       suppliers.push(...result.data);
       total = result.total;

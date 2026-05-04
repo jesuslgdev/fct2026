@@ -3,9 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
-import { ProviderStatus } from '@domain/enums/provider-status.enum';
+import { SupplierStatus } from '@domain/enums/supplier-status.enum';
 import { UserPermission } from '@domain/enums/user-permission.enum';
-import { Provider } from '@domain/models/provider.model';
+import { Supplier } from '@domain/models/supplier.model';
 import {
   PagedResult,
   ProductSupplier,
@@ -16,7 +16,7 @@ import {
   SupplierProductDuplicateError,
   SupplierProductItemInactiveError,
 } from '@domain/models/supplier-product-errors';
-import { GetProvidersUseCase } from '@domain/usecases/supplier/get-providers.usecase';
+import { GetSuppliersUseCase } from '@domain/usecases/supplier/get-suppliers.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
 import { GetProductSuppliersUseCase } from '@domain/usecases/supplier-product/get-product-suppliers.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
@@ -37,27 +37,27 @@ const PRODUCT_SUPPLIER_B: ProductSupplier = {
   supplierPrice: 90,
 };
 
-const ACTIVE_PROVIDER_A: Provider = {
+const ACTIVE_SUPPLIER_A: Supplier = {
   id: '1',
   name: 'Proveedor A',
   taxId: 'B12345678',
   email: 'a@example.com',
   isActive: true,
-  status: ProviderStatus.ACTIVE,
+  status: SupplierStatus.ACTIVE,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
 };
 
-const ACTIVE_PROVIDER_C: Provider = {
-  ...ACTIVE_PROVIDER_A,
+const ACTIVE_SUPPLIER_C: Supplier = {
+  ...ACTIVE_SUPPLIER_A,
   id: '3',
   name: 'Proveedor C',
   taxId: 'B11111111',
   email: 'c@example.com',
 };
 
-const ACTIVE_PROVIDER_D: Provider = {
-  ...ACTIVE_PROVIDER_A,
+const ACTIVE_SUPPLIER_D: Supplier = {
+  ...ACTIVE_SUPPLIER_A,
   id: '4',
   name: 'Proveedor D',
   taxId: 'B22222222',
@@ -98,7 +98,7 @@ class MockRemoveProductFromSupplierUseCase {
   execute = vi.fn();
 }
 
-class MockGetProvidersUseCase {
+class MockGetSuppliersUseCase {
   execute = vi.fn();
 }
 
@@ -108,14 +108,14 @@ describe('ProductSuppliersStore', () => {
   let addProductToSupplierUseCase: MockAddProductToSupplierUseCase;
   let updateSupplierProductPriceUseCase: MockUpdateSupplierProductPriceUseCase;
   let removeProductFromSupplierUseCase: MockRemoveProductFromSupplierUseCase;
-  let getProvidersUseCase: MockGetProvidersUseCase;
+  let getSuppliersUseCase: MockGetSuppliersUseCase;
 
   beforeEach(() => {
     getProductSuppliersUseCase = new MockGetProductSuppliersUseCase();
     addProductToSupplierUseCase = new MockAddProductToSupplierUseCase();
     updateSupplierProductPriceUseCase = new MockUpdateSupplierProductPriceUseCase();
     removeProductFromSupplierUseCase = new MockRemoveProductFromSupplierUseCase();
-    getProvidersUseCase = new MockGetProvidersUseCase();
+    getSuppliersUseCase = new MockGetSuppliersUseCase();
 
     TestBed.configureTestingModule({
       providers: [
@@ -125,7 +125,7 @@ describe('ProductSuppliersStore', () => {
         { provide: AddProductToSupplierUseCase, useValue: addProductToSupplierUseCase },
         { provide: UpdateSupplierProductPriceUseCase, useValue: updateSupplierProductPriceUseCase },
         { provide: RemoveProductFromSupplierUseCase, useValue: removeProductFromSupplierUseCase },
-        { provide: GetProvidersUseCase, useValue: getProvidersUseCase },
+        { provide: GetSuppliersUseCase, useValue: getSuppliersUseCase },
       ],
     });
 
@@ -282,33 +282,33 @@ describe('ProductSuppliersStore', () => {
 
   it('carga todos los proveedores activos paginados y excluye asociados', async () => {
     store.productSuppliers.set([PRODUCT_SUPPLIER_A]);
-    getProvidersUseCase.execute
+    getSuppliersUseCase.execute
       .mockResolvedValueOnce({
-        data: [ACTIVE_PROVIDER_A, ACTIVE_PROVIDER_C],
+        data: [ACTIVE_SUPPLIER_A, ACTIVE_SUPPLIER_C],
         total: 3,
       })
       .mockResolvedValueOnce({
-        data: [ACTIVE_PROVIDER_D],
+        data: [ACTIVE_SUPPLIER_D],
         total: 3,
       });
 
     await store.loadActiveSuppliersForAdd();
 
-    expect(getProvidersUseCase.execute).toHaveBeenNthCalledWith(1, {
+    expect(getSuppliersUseCase.execute).toHaveBeenNthCalledWith(1, {
       page: 1,
       rows: 100,
       first: 0,
-      status: ProviderStatus.ACTIVE,
+      status: SupplierStatus.ACTIVE,
       isActive: true,
     });
-    expect(getProvidersUseCase.execute).toHaveBeenNthCalledWith(2, {
+    expect(getSuppliersUseCase.execute).toHaveBeenNthCalledWith(2, {
       page: 2,
       rows: 100,
       first: 100,
-      status: ProviderStatus.ACTIVE,
+      status: SupplierStatus.ACTIVE,
       isActive: true,
     });
-    expect(store.activeSuppliersForAdd()).toEqual([ACTIVE_PROVIDER_C, ACTIVE_PROVIDER_D]);
+    expect(store.activeSuppliersForAdd()).toEqual([ACTIVE_SUPPLIER_C, ACTIVE_SUPPLIER_D]);
   });
 
   it('elimina proveedor y recarga lista', async () => {
