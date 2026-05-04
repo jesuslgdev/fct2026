@@ -89,6 +89,12 @@ export interface AddPurchaseLineRequestDto {
   discount: number;
 }
 
+export interface UpdatePurchaseLineRequestDto {
+  quantity: number;
+  unit_price: number;
+  discount: number;
+}
+
 export interface AdvancePurchaseStatusRequestDto {
   status: 'Approved' | 'InProcess' | 'In Process' | 'Sent' | 'Received';
 }
