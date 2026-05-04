@@ -1,4 +1,5 @@
 import { SaleStatus } from '@domain/enums/sale-status.enum';
+import { SaleValidationError } from '@domain/models/sale-errors';
 import {
   AddSaleLine,
   AdvanceSaleStatus,
@@ -34,8 +35,10 @@ export class SaleMapper {
       warehouseId: dto.warehouse_id,
       clientName: dto.client_name,
       creatorName: dto.creator_name,
-      status: dto.status as SaleStatus,
-      allowedTransitions: dto.allowed_transitions.map((status) => status as SaleStatus),
+      status: this.mapSaleStatus(dto.status, 'status'),
+      allowedTransitions: dto.allowed_transitions.map((status, index) =>
+        this.mapSaleStatus(status, `allowedTransitions[${index}]`)
+      ),
       deliveryAddress: dto.delivery_address,
       saleDate: new Date(dto.sale_date),
       createdAt: new Date(dto.created_at),
@@ -51,8 +54,10 @@ export class SaleMapper {
       warehouseId: dto.warehouse_id,
       clientName: dto.client_name,
       creatorName: dto.creator_name,
-      status: dto.status as SaleStatus,
-      allowedTransitions: dto.allowed_transitions.map((status) => status as SaleStatus),
+      status: this.mapSaleStatus(dto.status, 'status'),
+      allowedTransitions: dto.allowed_transitions.map((status, index) =>
+        this.mapSaleStatus(status, `allowedTransitions[${index}]`)
+      ),
       saleDate: new Date(dto.sale_date),
       total: Number(dto.total),
       deliveryAddress: dto.delivery_address,
@@ -173,11 +178,30 @@ export class SaleMapper {
 
   private static fromStatusHistoryDto(dto: SaleStatusHistoryDTO): SaleStatusHistory {
     return {
-      fromStatus: dto.from_status as SaleStatus | null,
-      toStatus: dto.to_status as SaleStatus,
+      fromStatus: this.mapNullableSaleStatus(dto.from_status, 'statusHistory.fromStatus'),
+      toStatus: this.mapSaleStatus(dto.to_status, 'statusHistory.toStatus'),
       changedAt: new Date(dto.changed_at),
       changedByUserId: dto.changed_by_user_id,
     };
+  }
+
+  private static mapSaleStatus(value: string, field: string): SaleStatus {
+    if (!Object.values(SaleStatus).includes(value as SaleStatus)) {
+      throw new SaleValidationError({ field, value }, 'Sale status is invalid.');
+    }
+
+    return value as SaleStatus;
+  }
+
+  private static mapNullableSaleStatus(
+    value: string | null,
+    field: string,
+  ): SaleStatus | null {
+    if (value === null) {
+      return null;
+    }
+
+    return this.mapSaleStatus(value, field);
   }
 
   private static toSaleLineDto(
