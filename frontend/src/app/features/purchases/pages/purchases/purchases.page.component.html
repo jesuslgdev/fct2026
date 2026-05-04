@@ -171,7 +171,8 @@
 <app-purchase-form-dialog />
 
 <ui-dialog
-  [(visible)]="store.deleteConfirmVisible"
+  [visible]="store.deleteConfirmVisible()"
+  (visibleChange)="onDeleteDialogVisibleChange($event)"
   header="Eliminar compra"
   variant="warning"
   size="sm"
@@ -189,7 +190,8 @@
 </ui-dialog>
 
 <ui-dialog
-  [(visible)]="store.cancelConfirmVisible"
+  [visible]="store.cancelConfirmVisible()"
+  (visibleChange)="onCancelDialogVisibleChange($event)"
   header="Cancelar compra"
   variant="warning"
   size="default"
@@ -216,7 +218,8 @@
 </ui-dialog>
 
 <ui-dialog
-  [(visible)]="store.statusConfirmVisible"
+  [visible]="store.statusConfirmVisible()"
+  (visibleChange)="onStatusDialogVisibleChange($event)"
   header="Cambiar estado"
   variant="info"
   size="sm"

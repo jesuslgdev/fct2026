@@ -179,6 +179,24 @@ export class PurchasesPageComponent implements OnInit {
     this.store.cancelCancelPurchase();
   }
 
+  onDeleteDialogVisibleChange(visible: boolean): void {
+    if (!visible) {
+      this.store.cancelDeletePurchase();
+    }
+  }
+
+  onCancelDialogVisibleChange(visible: boolean): void {
+    if (!visible) {
+      this.closeCancelDialog();
+    }
+  }
+
+  onStatusDialogVisibleChange(visible: boolean): void {
+    if (!visible) {
+      this.store.cancelStatusChange();
+    }
+  }
+
   statusLabel(status: PurchaseStatus): string {
     switch (status) {
       case 'Pending':
