@@ -10,13 +10,6 @@ import {
   SupplierProduct,
   SupplierProductQueryParams,
 } from '@domain/models/supplier-product.model';
-import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
-import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
-import { DownloadTemplateUseCase } from '@domain/usecases/supplier-product/download-template.usecase';
-import { GetSupplierProductsUseCase } from '@domain/usecases/supplier-product/get-supplier-products.usecase';
-import { ImportSupplierProductsUseCase } from '@domain/usecases/supplier-product/import-supplier-products.usecase';
-import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
-import { UpdateSupplierProductPriceUseCase } from '@domain/usecases/supplier-product/update-supplier-product-price.usecase';
 import {
   SupplierProductApiError,
   SupplierProductDuplicateError,
@@ -27,6 +20,13 @@ import {
   SupplierProductUnauthorizedError,
   SupplierProductValidationError,
 } from '@domain/models/supplier-product-errors';
+import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
+import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
+import { DownloadTemplateUseCase } from '@domain/usecases/supplier-product/download-template.usecase';
+import { GetSupplierProductsUseCase } from '@domain/usecases/supplier-product/get-supplier-products.usecase';
+import { ImportSupplierProductsUseCase } from '@domain/usecases/supplier-product/import-supplier-products.usecase';
+import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
+import { UpdateSupplierProductPriceUseCase } from '@domain/usecases/supplier-product/update-supplier-product-price.usecase';
 
 @Injectable()
 export class SupplierProductsStore {
@@ -417,17 +417,12 @@ export class SupplierProductsStore {
     }
     this.loading.set(true);
     try {
-      const addRequest: AddSupplierProductRequest = {
-        productId: request.productId,
-        supplierPrice,
-      };
+      const addRequest: AddSupplierProductRequest = { productId: request.productId, supplierPrice };
       await firstValueFrom(this.addProductToSupplierUseCase.execute(supplierId, addRequest));
       this.closeAddProductDialog();
       await this.fetchSupplierProducts(supplierId);
     } catch (err) {
-      this.setAddProductDialogError(
-        this.resolveErrorMessage(err, 'Error al agregar producto al proveedor.'),
-      );
+      this.setAddProductDialogError(this.resolveErrorMessage(err, 'Error al agregar producto al proveedor.'));
     } finally {
       this.loading.set(false);
     }
@@ -616,9 +611,7 @@ export class SupplierProductsStore {
         await this.loadTemplateProducts();
       }
     } catch (err) {
-      this.importDialogError.set(
-        this.resolveErrorMessage(err, 'Error al importar productos del proveedor.'),
-      );
+      this.importDialogError.set(this.resolveErrorMessage(err, 'Error al importar productos del proveedor.'));
     } finally {
       this.importLoading.set(false);
     }
