@@ -109,7 +109,7 @@ class MockAuthService {
     photoURL: null,
     role: UserRole.Manager,
     departmentId: 2,
-    permissions: [UserPermission.PurchasesManager],
+    permissions: [UserPermission.PurchasesManager, UserPermission.PurchasesDepartment],
   });
 
   hasPermission(permission: UserPermission | UserPermission[]): boolean {

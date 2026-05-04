@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, ViewChild } from 
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { SignOutUseCase } from '@domain/usecases/auth/sign-out.usecase';
 import { AuthService } from '@core/services/auth.service';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import { UserRole } from '@domain/enums/user-role.enum';
 import { PurchasePermissionContext } from '@domain/models/purchase.model';
 import { canManagePurchases } from '@domain/models/purchase-rules';
@@ -64,7 +65,6 @@ export class AppShellComponent {
   private readonly router = inject(Router);
   private readonly signOut = inject(SignOutUseCase);
   private readonly authService = inject(AuthService);
-  private readonly purchasesDepartmentId = 2;
 
   readonly user = this.authService.user;
 
@@ -102,10 +102,13 @@ export class AppShellComponent {
   readonly navSections = computed(() => {
     const isAdmin = this.authService.isAdmin();
     const user = this.authService.user();
+    const purchasesDepartmentId = this.authService.hasPermission(UserPermission.PurchasesDepartment)
+      ? (user?.departmentId ?? -1)
+      : -1;
     const purchasePermissionContext: PurchasePermissionContext = {
       role: user?.role,
       departmentId: user?.departmentId ?? null,
-      purchasesDepartmentId: this.purchasesDepartmentId,
+      purchasesDepartmentId,
     };
     const canAccessPurchases = canManagePurchases(purchasePermissionContext);
 

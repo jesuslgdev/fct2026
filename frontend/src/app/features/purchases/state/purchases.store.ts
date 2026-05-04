@@ -1,6 +1,7 @@
 ﻿import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
 import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import {
   PurchaseApiError,
   PurchaseBusinessRuleError,
@@ -56,8 +57,6 @@ export class PurchasesStore {
   private readonly getSupplierProductsForPurchaseUseCase = inject(
     GetSupplierProductsForPurchaseUseCase,
   );
-
-  private readonly purchasesDepartmentId = 2;
 
   private readonly _purchases = signal<PurchaseSummary[]>([]);
   readonly purchases = this._purchases.asReadonly();
@@ -568,11 +567,14 @@ export class PurchasesStore {
 
   private buildPermissionContext(): PurchasePermissionContext {
     const user = this.authService.user();
+    const purchasesDepartmentId = this.authService.hasPermission(UserPermission.PurchasesDepartment)
+      ? (user?.departmentId ?? -1)
+      : -1;
 
     return {
       role: user?.role,
       departmentId: user?.departmentId ?? null,
-      purchasesDepartmentId: this.purchasesDepartmentId,
+      purchasesDepartmentId,
     };
   }
 
