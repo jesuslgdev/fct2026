@@ -72,25 +72,28 @@ export class SupplierProductsStore {
   readonly selectedTemplateProductIds = signal<ReadonlySet<number>>(new Set<number>());
 
   readonly canModify = computed(() =>
-    this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager])
+    this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager]),
   );
   readonly supplierTotalPages = computed(() => Math.ceil(this.supplierTotal() / this.supplierPageSize()));
   readonly associatedSupplierProductIds = computed(() =>
-    new Set(this.supplierProducts().map((item) => item.productId))
+    new Set(this.supplierProducts().map((item) => Number(item.productId))),
   );
   readonly activeProductsForAdd = computed(() => {
     const associated = this.associatedSupplierProductIds();
     return this.activeProducts().filter((product) => product.isActive && !associated.has(product.productId));
   });
   readonly visibleSelectableTemplateProducts = computed(() =>
-    this.templateProducts().filter((product) => !this.associatedSupplierProductIds().has(product.productId))
+    this.templateProducts().filter((product) => !this.associatedSupplierProductIds().has(product.productId)),
   );
   readonly selectedTemplateProductCount = computed(() => this.selectedTemplateProductIds().size);
-  readonly hasSelectableTemplateProductsOnPage = computed(() => this.visibleSelectableTemplateProducts().length > 0);
+  readonly hasSelectableTemplateProductsOnPage = computed(
+    () => this.visibleSelectableTemplateProducts().length > 0,
+  );
   readonly allVisibleTemplateProductsSelected = computed(() => {
     const visibleProducts = this.visibleSelectableTemplateProducts();
-    return visibleProducts.length > 0 && visibleProducts.every((product) =>
-      this.selectedTemplateProductIds().has(product.productId)
+    return (
+      visibleProducts.length > 0 &&
+      visibleProducts.every((product) => this.selectedTemplateProductIds().has(product.productId))
     );
   });
   readonly someVisibleTemplateProductsSelected = computed(() => {
@@ -100,7 +103,7 @@ export class SupplierProductsStore {
     }
 
     const hasAnySelected = visibleProducts.some((product) =>
-      this.selectedTemplateProductIds().has(product.productId)
+      this.selectedTemplateProductIds().has(product.productId),
     );
 
     return hasAnySelected && !this.allVisibleTemplateProductsSelected();
@@ -160,20 +163,37 @@ export class SupplierProductsStore {
         'Invalid product ID': 'ID de producto invalido.',
         'Supplier price must be greater than zero': 'El precio del proveedor debe ser mayor que cero.',
         'Excel file is required for import': 'Se requiere archivo Excel para importar.',
+        'Only Excel files (.xls, .xlsx) are allowed for import':
+          'Solo se permiten archivos Excel (.xls, .xlsx) para importar.',
         'Page must be greater than 0': 'La pagina debe ser mayor que 0.',
         'Page size must be between 1 and 100': 'El tamano de pagina debe estar entre 1 y 100.',
-        'Supplier price must have maximum 2 decimal places': 'El precio del proveedor debe tener maximo 2 decimales.',
+        'Supplier price must have maximum 2 decimal places':
+          'El precio del proveedor debe tener maximo 2 decimales.',
       };
       const normalizedMessage = err.message.trim().replace(/[.]$/, '');
       return map[normalizedMessage] ?? 'Por favor, verifique los datos enviados.';
     }
-    if (err instanceof SupplierProductUnauthorizedError) return 'Su sesion ha expirado. Por favor, inicie sesion nuevamente.';
-    if (err instanceof SupplierProductForbiddenError) return 'No tiene permisos para realizar esta accion.';
-    if (err instanceof SupplierProductNotFoundError) return 'La asociacion seleccionada ya no existe.';
-    if (err instanceof SupplierProductDuplicateError) return 'El producto ya esta asociado con este proveedor.';
-    if (err instanceof SupplierProductSupplierInactiveError) return 'Solo se pueden asociar proveedores activos.';
-    if (err instanceof SupplierProductItemInactiveError) return 'Solo se pueden asociar productos activos.';
-    if (err instanceof SupplierProductApiError) return err.message || fallback;
+    if (err instanceof SupplierProductUnauthorizedError) {
+      return 'Su sesion ha expirado. Por favor, inicie sesion nuevamente.';
+    }
+    if (err instanceof SupplierProductForbiddenError) {
+      return 'No tiene permisos para realizar esta accion.';
+    }
+    if (err instanceof SupplierProductNotFoundError) {
+      return 'La asociacion seleccionada ya no existe.';
+    }
+    if (err instanceof SupplierProductDuplicateError) {
+      return 'El producto ya esta asociado con este proveedor.';
+    }
+    if (err instanceof SupplierProductSupplierInactiveError) {
+      return 'Solo se pueden asociar proveedores activos.';
+    }
+    if (err instanceof SupplierProductItemInactiveError) {
+      return 'Solo se pueden asociar productos activos.';
+    }
+    if (err instanceof SupplierProductApiError) {
+      return err.message || fallback;
+    }
     return fallback;
   }
 
@@ -232,25 +252,24 @@ export class SupplierProductsStore {
     this.addProductDialogVisible.set(true);
   }
 
-  private ensureCanModify(setError: (message: string) => void = (message) => this.error.set(message)): boolean {
-    if (this.canModify()) return true;
+  private ensureCanModify(
+    setError: (message: string) => void = (message) => this.error.set(message),
+  ): boolean {
+    if (this.canModify()) {
+      return true;
+    }
     setError('No tiene permisos para realizar esta accion.');
     return false;
   }
 
-  private requireSupplierId(setError: (message: string) => void = (message) => this.error.set(message)): number | null {
+  private requireSupplierId(
+    setError: (message: string) => void = (message) => this.error.set(message),
+  ): number | null {
     const currentSupplierId = this.supplierId();
-    if (!currentSupplierId) setError('No hay proveedor seleccionado.');
-    return currentSupplierId;
-  }
-
-  private parseProductId(productId: number | string): number | null {
-    const normalized = typeof productId === 'number' ? productId : Number(productId);
-    if (!Number.isInteger(normalized) || normalized <= 0) {
-      this.error.set('ID de producto invalido.');
-      return null;
+    if (!currentSupplierId) {
+      setError('No hay proveedor seleccionado.');
     }
-    return normalized;
+    return currentSupplierId;
   }
 
   private parseSupplierPrice(
@@ -270,8 +289,22 @@ export class SupplierProductsStore {
     return price;
   }
 
+  private parseProductId(
+    value: number | string,
+    setError: (message: string) => void = (message) => this.error.set(message),
+  ): number | null {
+    const productId = typeof value === 'number' ? value : Number(value);
+    if (!Number.isInteger(productId) || productId <= 0) {
+      setError('ID de producto invalido.');
+      return null;
+    }
+    return productId;
+  }
+
   private async fetchSupplierProducts(supplierId: number): Promise<void> {
-    const result = await firstValueFrom(this.getSupplierProductsUseCase.execute(supplierId, this.buildQueryParams()));
+    const result = await firstValueFrom(
+      this.getSupplierProductsUseCase.execute(supplierId, this.buildQueryParams()),
+    );
     this.supplierProducts.set(result.data);
     this.supplierTotal.set(result.total);
   }
@@ -293,13 +326,17 @@ export class SupplierProductsStore {
     this.supplierPage.set(Math.floor(event.first / event.rows) + 1);
     this.supplierPageSize.set(event.rows);
     const supplierId = this.supplierId();
-    if (supplierId) void this.loadSupplierProducts(supplierId);
+    if (supplierId) {
+      void this.loadSupplierProducts(supplierId);
+    }
   }
 
   async loadActiveProductsForAdd(): Promise<void> {
     this.productsLoading.set(true);
     try {
-      const result = await firstValueFrom(this.getProductsUseCase.execute({ page: 1, pageSize: 100, active: true }));
+      const result = await firstValueFrom(
+        this.getProductsUseCase.execute({ page: 1, pageSize: 100, active: true }),
+      );
       this.activeProducts.set(result.data.filter((product) => product.isActive));
     } catch (err) {
       this.setAddProductDialogError(this.resolveErrorMessage(err, 'Error al cargar productos activos.'));
@@ -312,7 +349,9 @@ export class SupplierProductsStore {
     this.templateProductsLoading.set(true);
     this.importDialogError.set(null);
     try {
-      const result = await firstValueFrom(this.getProductsUseCase.execute(this.buildTemplateProductsQueryParams()));
+      const result = await firstValueFrom(
+        this.getProductsUseCase.execute(this.buildTemplateProductsQueryParams()),
+      );
       this.templateProducts.set(result.data.filter((product) => product.isActive));
       this.templateProductsTotal.set(result.total);
       this.templateProductsPage.set(result.page);
@@ -325,7 +364,9 @@ export class SupplierProductsStore {
   }
 
   openAddProductDialog(): void {
-    if (!this.ensureCanModify()) return;
+    if (!this.ensureCanModify()) {
+      return;
+    }
     this.selectedProductId.set(null);
     this.addProductPriceDraft.set('');
     this.addProductDialogError.set(null);
@@ -348,6 +389,12 @@ export class SupplierProductsStore {
     this.addProductPriceDraft.set(value);
   }
 
+  setImportFile(file: File | null): void {
+    this.importDialogError.set(null);
+    this.importResult.set(null);
+    this.selectedImportFile.set(file);
+  }
+
   async addSelectedProductToSupplier(): Promise<void> {
     const productId = this.selectedProductId();
     if (!productId) {
@@ -360,10 +407,14 @@ export class SupplierProductsStore {
   async addProductToSupplier(request: { productId: number; supplierPrice: number | string }): Promise<void> {
     this.addProductDialogError.set(null);
     const setDialogError = (message: string) => this.setAddProductDialogError(message);
-    if (!this.ensureCanModify(setDialogError)) return;
+    if (!this.ensureCanModify(setDialogError)) {
+      return;
+    }
     const supplierId = this.requireSupplierId(setDialogError);
     const supplierPrice = this.parseSupplierPrice(request.supplierPrice, setDialogError);
-    if (!supplierId || supplierPrice === null) return;
+    if (!supplierId || supplierPrice === null) {
+      return;
+    }
     this.loading.set(true);
     try {
       const addRequest: AddSupplierProductRequest = { productId: request.productId, supplierPrice };
@@ -378,9 +429,13 @@ export class SupplierProductsStore {
   }
 
   startInlinePriceEdit(supplierProduct: SupplierProduct): void {
-    if (!this.ensureCanModify()) return;
+    if (!this.ensureCanModify()) {
+      return;
+    }
     const productId = this.parseProductId(supplierProduct.productId);
-    if (!productId) return;
+    if (productId === null) {
+      return;
+    }
     this.editingProductId.set(productId);
     this.priceDraft.set((supplierProduct.supplierPrice ?? '').toString());
   }
@@ -396,11 +451,15 @@ export class SupplierProductsStore {
 
   async saveInlinePrice(supplierProduct: SupplierProduct): Promise<void> {
     this.error.set(null);
-    if (!this.ensureCanModify()) return;
+    if (!this.ensureCanModify()) {
+      return;
+    }
     const supplierId = this.requireSupplierId();
     const productId = this.parseProductId(supplierProduct.productId);
     const supplierPrice = this.parseSupplierPrice(this.priceDraft());
-    if (!supplierId || !productId || supplierPrice === null) return;
+    if (!supplierId || productId === null || supplierPrice === null) {
+      return;
+    }
     this.savingProductIds.update((ids) => new Set(ids).add(productId));
     try {
       await firstValueFrom(
@@ -420,7 +479,9 @@ export class SupplierProductsStore {
   }
 
   requestDeleteProduct(supplierProduct: SupplierProduct): void {
-    if (!this.ensureCanModify()) return;
+    if (!this.ensureCanModify()) {
+      return;
+    }
     this.selectedSupplierProduct.set(supplierProduct);
     this.confirmDeleteProductDialogVisible.set(true);
   }
@@ -432,11 +493,15 @@ export class SupplierProductsStore {
 
   async confirmDeleteProduct(): Promise<void> {
     this.error.set(null);
-    if (!this.ensureCanModify()) return;
+    if (!this.ensureCanModify()) {
+      return;
+    }
     const supplierId = this.requireSupplierId();
     const supplierProduct = this.selectedSupplierProduct();
     const productId = supplierProduct ? this.parseProductId(supplierProduct.productId) : null;
-    if (!supplierId || !supplierProduct || !productId) return;
+    if (!supplierId || !supplierProduct || productId === null) {
+      return;
+    }
     this.loading.set(true);
     try {
       await firstValueFrom(this.removeProductFromSupplierUseCase.execute(supplierId, productId));
@@ -450,7 +515,9 @@ export class SupplierProductsStore {
   }
 
   openImportDialog(): void {
-    if (!this.ensureCanModify()) return;
+    if (!this.ensureCanModify()) {
+      return;
+    }
     this.importDialogVisible.set(true);
     this.resetImportDialogState();
     void this.loadTemplateProducts();
@@ -459,12 +526,6 @@ export class SupplierProductsStore {
   closeImportDialog(): void {
     this.importDialogVisible.set(false);
     this.resetImportDialogState();
-  }
-
-  setImportFile(file: File | null): void {
-    this.importDialogError.set(null);
-    this.importResult.set(null);
-    this.selectedImportFile.set(file);
   }
 
   onTemplateProductsSearch(query: string): void {
@@ -527,7 +588,9 @@ export class SupplierProductsStore {
 
   async importSupplierProducts(): Promise<void> {
     this.importDialogError.set(null);
-    if (!this.ensureCanModify((message) => this.importDialogError.set(message))) return;
+    if (!this.ensureCanModify((message) => this.importDialogError.set(message))) {
+      return;
+    }
     const supplierId = this.requireSupplierId((message) => this.importDialogError.set(message));
     const file = this.selectedImportFile();
     if (!supplierId || !file) {
@@ -556,14 +619,15 @@ export class SupplierProductsStore {
 
   async downloadTemplate(): Promise<Blob | null> {
     const supplierId = this.requireSupplierId((message) => this.importDialogError.set(message));
-    if (!supplierId) return null;
+    if (!supplierId) {
+      return null;
+    }
 
     const productIds = Array.from(this.selectedTemplateProductIds()).filter(
-      (productId) => !this.isProductAlreadyAssociated(productId)
+      (productId) => !this.isProductAlreadyAssociated(productId),
     );
-    const request: DownloadSupplierProductTemplateRequest | undefined = productIds.length > 0
-      ? { productIds }
-      : undefined;
+    const request: DownloadSupplierProductTemplateRequest | undefined =
+      productIds.length > 0 ? { productIds } : undefined;
 
     this.templateDownloadLoading.set(true);
     this.importDialogError.set(null);

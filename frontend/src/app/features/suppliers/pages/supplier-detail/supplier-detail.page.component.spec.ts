@@ -101,7 +101,7 @@ describe('SupplierDetailPageComponent', () => {
   });
 
   it.each(['abc', '1.5', '0'])(
-    'should set an error and not load the supplier when the route id is %s',
+    'should set an error and skip loading when the route id is %s',
     async (invalidId) => {
       routeId = invalidId;
 
@@ -115,8 +115,7 @@ describe('SupplierDetailPageComponent', () => {
   );
 
   it('should clear detailLoading even if loadSupplierById fails', async () => {
-    const error = new Error('boom');
-    store.loadSupplierById.mockRejectedValueOnce(error);
+    store.loadSupplierById.mockRejectedValueOnce(new Error('boom'));
 
     await expect(component.ngOnInit()).rejects.toThrow('boom');
 
@@ -134,5 +133,42 @@ describe('SupplierDetailPageComponent', () => {
     expect(store.loadSupplierById).toHaveBeenCalledWith('1');
     expect(supplierProductsStore.loadSupplierProducts).toHaveBeenCalledWith(1);
     expect(component.detailLoading()).toBe(false);
+  });
+
+  it('should open the edit dialog when the supplier exists and editing is allowed', async () => {
+    component.supplier.set(SUPPLIER);
+
+    await component.openEditFromDetail();
+
+    expect(store.openEditDialog).toHaveBeenCalledWith(SUPPLIER);
+  });
+
+  it('should not open the edit dialog when editing is not allowed', async () => {
+    component.supplier.set(SUPPLIER);
+    store.canEdit.mockReturnValue(false);
+
+    await component.openEditFromDetail();
+
+    expect(store.openEditDialog).not.toHaveBeenCalled();
+  });
+
+  it('should navigate back to suppliers list', () => {
+    component.goBack();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/suppliers']);
+  });
+
+  it('should forward supplier products page changes with fallback rows', () => {
+    component.onSupplierProductsPageChange({ first: 20 } as never);
+
+    expect(supplierProductsStore.onSupplierProductsPageChange).toHaveBeenCalledWith({ first: 20, rows: 10 });
+  });
+
+  it('should update inline and add price drafts from input events', () => {
+    component.onSupplierProductPriceInput({ target: { value: '12.50' } } as never);
+    component.onAddProductPriceInput({ target: { value: '18.00' } } as never);
+
+    expect(supplierProductsStore.setPriceDraft).toHaveBeenCalledWith('12.50');
+    expect(supplierProductsStore.setAddProductPriceDraft).toHaveBeenCalledWith('18.00');
   });
 });

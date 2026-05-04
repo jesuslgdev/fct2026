@@ -5,6 +5,7 @@ import { SupplierProductRepository } from '@domain/repositories/supplier-product
 import {
   SupplierProduct,
   AddSupplierProductRequest,
+  DownloadSupplierProductTemplateRequest,
   UpdateSupplierProductPriceRequest,
   ImportSupplierProductsRequest,
   ImportResult,
@@ -335,9 +336,28 @@ describe('Supplier Product Use Cases', () => {
       expect(result).toBe(mockBlob);
     });
 
+    it('should normalize, deduplicate and delegate selected product ids', async () => {
+      const supplierId = 1;
+      const request: DownloadSupplierProductTemplateRequest = {
+        productIds: [7, 3, 7, 4],
+      };
+      const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      repo.downloadTemplate.mockReturnValue(of(mockBlob));
+
+      const result = await firstValueFrom(downloadTemplateUseCase.execute(supplierId, request));
+
+      expect(repo.downloadTemplate).toHaveBeenCalledWith(supplierId, { productIds: [7, 3, 4] });
+      expect(result).toBe(mockBlob);
+    });
+
     it('should throw ValidationError if supplierId is invalid', () => {
       expect(() => downloadTemplateUseCase.execute(0)).toThrow(SupplierProductValidationError);
       expect(() => downloadTemplateUseCase.execute(-1)).toThrow(SupplierProductValidationError);
+    });
+
+    it('should throw ValidationError if any product id is invalid', () => {
+      expect(() => downloadTemplateUseCase.execute(1, { productIds: [1, 0] })).toThrow(SupplierProductValidationError);
+      expect(() => downloadTemplateUseCase.execute(1, { productIds: [1, -2] })).toThrow(SupplierProductValidationError);
     });
 
     it('should propagate repository errors', async () => {

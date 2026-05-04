@@ -75,7 +75,7 @@ export class SupplierDetailPageComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/suppliers']);
+    void this.router.navigate(['/suppliers']);
   }
 
   onSupplierProductsPageChange(event: TablePageEvent): void {

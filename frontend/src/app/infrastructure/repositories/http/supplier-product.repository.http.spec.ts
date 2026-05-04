@@ -184,6 +184,23 @@ describe('HttpSupplierProductRepository', () => {
     expect(result).toBe(mockBlob);
   });
 
+  it('downloads template with repeated product_ids query params when product ids are selected', async () => {
+    const promise = firstValueFrom(repository.downloadTemplate(1, { productIds: [4, 8] }));
+
+    const req = httpMock.expectOne((request) =>
+      request.method === 'GET'
+      && request.url.endsWith('/api/v1/suppliers/1/products/template')
+      && JSON.stringify(request.params.getAll('product_ids')) === JSON.stringify(['4', '8']),
+    );
+
+    const mockBlob = new Blob(['test'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    req.flush(mockBlob, { status: 200, statusText: 'OK' });
+
+    const result = await promise;
+
+    expect(result).toBe(mockBlob);
+  });
+
   it('gets product suppliers with pagination', async () => {
     const promise = firstValueFrom(repository.getProductSuppliers(2, { page: 1, pageSize: 10 }));
 
