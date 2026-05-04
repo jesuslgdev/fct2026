@@ -262,6 +262,64 @@ describe('SaleCreateStore', () => {
     expect(store.lines()[0].discount).toBe(0);
   });
 
+  it('accepts comma decimals while previewing a line edit draft', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftQuantityChange(lineId, '3,5');
+    store.onDraftDiscountChange(lineId, '5,5');
+    store.onDraftDiscountTypeChange(lineId, 'amount');
+
+    const line = store.getLineView(lineId);
+
+    expect(line?.lineSubtotal).toBe(24.5);
+    expect(line?.lineTax).toBeCloseTo(5.145);
+    expect(store.subtotal()).toBe(24.5);
+    expect(store.taxes()).toBeCloseTo(5.145);
+    expect(store.total()).toBeCloseTo(29.645);
+    expect(store.lines()[0].quantity).toBe(1);
+    expect(store.lines()[0].discount).toBe(0);
+  });
+
+  it('normalizes comma decimals when saving a line edit draft', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 100,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    store.startLineEdit(store.lines()[0]);
+    store.onDraftQuantityChange(lineId, '3,5');
+    store.onDraftDiscountChange(lineId, '5,5');
+    store.onDraftDiscountTypeChange(lineId, 'amount');
+
+    await store.saveLineEdit(lineId);
+
+    expect(store.lines()[0].quantity).toBe(3);
+    expect(store.lines()[0].discount).toBe(5.5);
+    expect(store.lines()[0].discountType).toBe('amount');
+    expect(store.getLineDraft(lineId)).toBeUndefined();
+    expect(store.subtotal()).toBe(24.5);
+    expect(store.taxes()).toBeCloseTo(5.145);
+    expect(store.total()).toBeCloseTo(29.645);
+  });
+
   it('reverts the preview when cancelling line editing', async () => {
     await store.initialize();
     await store.onWarehouseChange(10);

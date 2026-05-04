@@ -725,15 +725,17 @@ export class SaleCreateStore {
     return rawValue == null || Number.isNaN(rawValue) ? 0 : rawValue;
   }
 
-  private parseDraftNumber(rawValue: string): number | null {
-    const trimmedValue = rawValue.trim();
-    if (!trimmedValue) {
-      return null;
-    }
-
-    const parsedValue = Number(trimmedValue);
-    return Number.isNaN(parsedValue) ? null : parsedValue;
+ private parseDraftNumber(rawValue: string): number | null {
+  const trimmedValue = rawValue.trim();
+  if (!trimmedValue) {
+    return null;
   }
+
+  const normalizedValue = trimmedValue.replace(',', '.');
+  const parsedValue = Number(normalizedValue);
+
+  return Number.isNaN(parsedValue) ? null : parsedValue;
+}
 
   private stringifyDraftValue(value: string | number | null): string {
     if (value === null || value === undefined) {
