@@ -13,13 +13,16 @@ import {
   SupplierProductValidationError,
 } from '@domain/models/supplier-product-errors';
 import {
+  ImportResult,
   SupplierProduct,
   SupplierProductQueryParams,
   PagedResult,
 } from '@domain/models/supplier-product.model';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
+import { DownloadTemplateUseCase } from '@domain/usecases/supplier-product/download-template.usecase';
 import { GetSupplierProductsUseCase } from '@domain/usecases/supplier-product/get-supplier-products.usecase';
+import { ImportSupplierProductsUseCase } from '@domain/usecases/supplier-product/import-supplier-products.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
 import { UpdateSupplierProductPriceUseCase } from '@domain/usecases/supplier-product/update-supplier-product-price.usecase';
 import { SupplierProductsStore } from './supplier-products.store';
@@ -48,6 +51,14 @@ class MockRemoveProductFromSupplierUseCase {
 
 class MockGetProductsUseCase {
   execute = vi.fn<(params: { page: number; pageSize: number; active: boolean }) => Observable<PagedResult<Product>>>();
+}
+
+class MockImportSupplierProductsUseCase {
+  execute = vi.fn<(supplierId: number, request: { file: File }) => Observable<ImportResult>>();
+}
+
+class MockDownloadTemplateUseCase {
+  execute = vi.fn<(supplierId: number) => Observable<Blob>>();
 }
 
 const MOCK_SUPPLIER_PRODUCT: SupplierProduct = {
@@ -100,6 +111,8 @@ describe('SupplierProductsStore', () => {
   let updateSupplierProductPriceUseCase: MockUpdateSupplierProductPriceUseCase;
   let removeProductFromSupplierUseCase: MockRemoveProductFromSupplierUseCase;
   let getProductsUseCase: MockGetProductsUseCase;
+  let importSupplierProductsUseCase: MockImportSupplierProductsUseCase;
+  let downloadTemplateUseCase: MockDownloadTemplateUseCase;
 
   const supplierProductsResult: PagedResult<SupplierProduct> = {
     data: [MOCK_SUPPLIER_PRODUCT, MOCK_OTHER_SUPPLIER_PRODUCT],
@@ -123,6 +136,8 @@ describe('SupplierProductsStore', () => {
     updateSupplierProductPriceUseCase = new MockUpdateSupplierProductPriceUseCase();
     removeProductFromSupplierUseCase = new MockRemoveProductFromSupplierUseCase();
     getProductsUseCase = new MockGetProductsUseCase();
+    importSupplierProductsUseCase = new MockImportSupplierProductsUseCase();
+    downloadTemplateUseCase = new MockDownloadTemplateUseCase();
 
     TestBed.configureTestingModule({
       providers: [
@@ -133,6 +148,8 @@ describe('SupplierProductsStore', () => {
         { provide: UpdateSupplierProductPriceUseCase, useValue: updateSupplierProductPriceUseCase },
         { provide: RemoveProductFromSupplierUseCase, useValue: removeProductFromSupplierUseCase },
         { provide: GetProductsUseCase, useValue: getProductsUseCase },
+        { provide: ImportSupplierProductsUseCase, useValue: importSupplierProductsUseCase },
+        { provide: DownloadTemplateUseCase, useValue: downloadTemplateUseCase },
       ],
     });
 
@@ -153,6 +170,10 @@ describe('SupplierProductsStore', () => {
       expect(store.confirmDeleteProductDialogVisible()).toBe(false);
       expect(store.editingProductId()).toBeNull();
       expect(store.savingProductIds().size).toBe(0);
+      expect(store.selectedImportFile()).toBeNull();
+      expect(store.importResult()).toBeNull();
+      expect(store.importLoading()).toBe(false);
+      expect(store.templateDownloading()).toBe(false);
     });
 
     it('should calculate total pages and allow modifications when user has permissions', () => {
@@ -459,6 +480,69 @@ describe('SupplierProductsStore', () => {
 
       expect(store.error()).toBe('No tiene permisos para realizar esta accion.');
       expect(store.loading()).toBe(false);
+    });
+  });
+
+  describe('importing products', () => {
+    it('translates exact import validation errors before storing the result', async () => {
+      const importResult: ImportResult = {
+        total: 1,
+        created: 0,
+        errors: 1,
+        errorDetail: [{ row: 2, reason: 'Invalid price format' }],
+      };
+      importSupplierProductsUseCase.execute.mockReturnValueOnce(of(importResult));
+      getSupplierProductsUseCase.execute.mockReturnValue(of(supplierProductsResult));
+      store.supplierId.set(5);
+      store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
+
+      await store.importSupplierProducts();
+
+      expect(store.importResult()?.errorDetail).toEqual([
+        { row: 2, reason: 'Formato de precio invalido.' },
+      ]);
+    });
+
+    it('translates dynamic import validation errors before storing the result', async () => {
+      const importResult: ImportResult = {
+        total: 2,
+        created: 0,
+        errors: 2,
+        errorDetail: [
+          { row: 3, reason: 'Product with code PRD-404 not found' },
+          { row: 4, reason: 'Association already exists for product PRD-001' },
+        ],
+      };
+      importSupplierProductsUseCase.execute.mockReturnValueOnce(of(importResult));
+      getSupplierProductsUseCase.execute.mockReturnValue(of(supplierProductsResult));
+      store.supplierId.set(5);
+      store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
+
+      await store.importSupplierProducts();
+
+      expect(store.importResult()?.errorDetail).toEqual([
+        { row: 3, reason: 'Producto con codigo PRD-404 no encontrado.' },
+        { row: 4, reason: 'La asociacion ya existe para el producto PRD-001.' },
+      ]);
+    });
+
+    it('keeps unknown import validation errors unchanged', async () => {
+      const importResult: ImportResult = {
+        total: 1,
+        created: 0,
+        errors: 1,
+        errorDetail: [{ row: 2, reason: 'Unexpected import rule from API' }],
+      };
+      importSupplierProductsUseCase.execute.mockReturnValueOnce(of(importResult));
+      getSupplierProductsUseCase.execute.mockReturnValue(of(supplierProductsResult));
+      store.supplierId.set(5);
+      store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
+
+      await store.importSupplierProducts();
+
+      expect(store.importResult()?.errorDetail).toEqual([
+        { row: 2, reason: 'Unexpected import rule from API' },
+      ]);
     });
   });
 });

@@ -5,12 +5,15 @@ import { UserPermission } from '@domain/enums/user-permission.enum';
 import { Product } from '@domain/models/product.model';
 import {
   AddSupplierProductRequest,
+  ImportResult,
   SupplierProduct,
   SupplierProductQueryParams,
 } from '@domain/models/supplier-product.model';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { AddProductToSupplierUseCase } from '@domain/usecases/supplier-product/add-product-to-supplier.usecase';
+import { DownloadTemplateUseCase } from '@domain/usecases/supplier-product/download-template.usecase';
 import { GetSupplierProductsUseCase } from '@domain/usecases/supplier-product/get-supplier-products.usecase';
+import { ImportSupplierProductsUseCase } from '@domain/usecases/supplier-product/import-supplier-products.usecase';
 import { RemoveProductFromSupplierUseCase } from '@domain/usecases/supplier-product/remove-product-from-supplier.usecase';
 import { UpdateSupplierProductPriceUseCase } from '@domain/usecases/supplier-product/update-supplier-product-price.usecase';
 import {
@@ -32,6 +35,8 @@ export class SupplierProductsStore {
   private readonly updateSupplierProductPriceUseCase = inject(UpdateSupplierProductPriceUseCase);
   private readonly removeProductFromSupplierUseCase = inject(RemoveProductFromSupplierUseCase);
   private readonly getProductsUseCase = inject(GetProductsUseCase);
+  private readonly importSupplierProductsUseCase = inject(ImportSupplierProductsUseCase);
+  private readonly downloadTemplateUseCase = inject(DownloadTemplateUseCase);
 
   readonly supplierProducts = signal<SupplierProduct[]>([]);
   readonly supplierId = signal<number | null>(null);
@@ -51,6 +56,10 @@ export class SupplierProductsStore {
   readonly editingProductId = signal<number | null>(null);
   readonly priceDraft = signal('');
   readonly savingProductIds = signal<ReadonlySet<number>>(new Set<number>());
+  readonly selectedImportFile = signal<File | null>(null);
+  readonly importResult = signal<ImportResult | null>(null);
+  readonly importLoading = signal(false);
+  readonly templateDownloading = signal(false);
 
   readonly canModify = computed(() =>
     this.authService.hasPermission([UserPermission.Admin, UserPermission.PurchasesManager])
@@ -72,6 +81,7 @@ export class SupplierProductsStore {
         'Invalid product ID': 'ID de producto invalido.',
         'Supplier price must be greater than zero': 'El precio del proveedor debe ser mayor que cero.',
         'Excel file is required for import': 'Se requiere archivo Excel para importar.',
+        'Only Excel files (.xls, .xlsx) are allowed for import': 'Solo se permiten archivos Excel (.xls, .xlsx) para importar.',
         'Page must be greater than 0': 'La pagina debe ser mayor que 0.',
         'Page size must be between 1 and 100': 'El tamano de pagina debe estar entre 1 y 100.',
         'Supplier price must have maximum 2 decimal places': 'El precio del proveedor debe tener maximo 2 decimales.',
@@ -87,6 +97,36 @@ export class SupplierProductsStore {
     if (err instanceof SupplierProductItemInactiveError) return 'Solo se pueden asociar productos activos.';
     if (err instanceof SupplierProductApiError) return err.message || fallback;
     return fallback;
+  }
+
+  private translateImportErrorReason(reason: string): string {
+    const exactMap: Record<string, string> = {
+      'Invalid price format': 'Formato de precio invalido.',
+    };
+    const direct = exactMap[reason];
+    if (direct) return direct;
+
+    const productNotFound = reason.match(/^Product with code (.+) not found$/);
+    if (productNotFound) {
+      return `Producto con codigo ${productNotFound[1]} no encontrado.`;
+    }
+
+    const duplicateAssociation = reason.match(/^Association already exists for product (.+)$/);
+    if (duplicateAssociation) {
+      return `La asociacion ya existe para el producto ${duplicateAssociation[1]}.`;
+    }
+
+    return reason;
+  }
+
+  private normalizeImportResult(result: ImportResult): ImportResult {
+    return {
+      ...result,
+      errorDetail: result.errorDetail.map((error) => ({
+        ...error,
+        reason: this.translateImportErrorReason(error.reason),
+      })),
+    };
   }
 
   private setAddProductDialogError(message: string): void {
@@ -197,6 +237,11 @@ export class SupplierProductsStore {
     this.addProductPriceDraft.set(value);
   }
 
+  setSelectedImportFile(file: File | null): void {
+    this.selectedImportFile.set(file);
+    this.importResult.set(null);
+  }
+
   async addSelectedProductToSupplier(): Promise<void> {
     const productId = this.selectedProductId();
     if (!productId) {
@@ -295,6 +340,46 @@ export class SupplierProductsStore {
       this.error.set(this.resolveErrorMessage(err, 'Error al eliminar producto del proveedor.'));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async importSupplierProducts(): Promise<void> {
+    this.error.set(null);
+    this.importResult.set(null);
+    if (!this.ensureCanModify()) return;
+    const supplierId = this.requireSupplierId();
+    const file = this.selectedImportFile();
+    if (!supplierId || !file) {
+      this.error.set(file ? 'No hay proveedor seleccionado.' : 'Se requiere archivo Excel para importar.');
+      return;
+    }
+
+    this.importLoading.set(true);
+    try {
+      const result = await firstValueFrom(this.importSupplierProductsUseCase.execute(supplierId, { file }));
+      this.importResult.set(this.normalizeImportResult(result));
+      await this.fetchSupplierProducts(supplierId);
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Error al importar productos del proveedor.'));
+    } finally {
+      this.importLoading.set(false);
+    }
+  }
+
+  async downloadTemplate(): Promise<Blob | null> {
+    this.error.set(null);
+    if (!this.ensureCanModify()) return null;
+    const supplierId = this.requireSupplierId();
+    if (!supplierId) return null;
+
+    this.templateDownloading.set(true);
+    try {
+      return await firstValueFrom(this.downloadTemplateUseCase.execute(supplierId));
+    } catch (err) {
+      this.error.set(this.resolveErrorMessage(err, 'Error al descargar la plantilla.'));
+      return null;
+    } finally {
+      this.templateDownloading.set(false);
     }
   }
 
