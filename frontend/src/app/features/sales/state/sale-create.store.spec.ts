@@ -5,13 +5,13 @@ import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '@core/services/auth.service';
 import { Client, ClientDetail } from '@domain/models/client.model';
-import { Product, ProductStockByWarehouse } from '@domain/models/product.model';
+import { Product } from '@domain/models/product.model';
 import { SaleInsufficientStockError } from '@domain/models/sale-errors';
 import { SaleDetail } from '@domain/models/sale.model';
+import { GetStockDistributionUseCase } from '@domain/usecases/stock-distribution/get-stock-distribution.usecase';
 import { Warehouse } from '@domain/models/warehouse.model';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
-import { GetProductStockByWarehousesUseCase } from '@domain/usecases/product/get-product-stock-by-warehouses.usecase';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { CreateSaleUseCase } from '@domain/usecases/sales/create-sale.usecase';
 import { GetSaleUseCase } from '@domain/usecases/sales/get-sale.usecase';
@@ -50,6 +50,19 @@ const ALMACEN_A: Warehouse = {
   totalStock: 100,
 };
 
+const ALMACEN_B: Warehouse = {
+  warehouseId: 20,
+  name: 'Almacen secundario',
+  address: 'Calle Almacen 2',
+  addressData: {
+    street: 'Calle Almacen 2',
+    city: 'Madrid',
+    province: 'Madrid',
+    postalCode: '28003',
+  },
+  totalStock: 60,
+};
+
 const PRODUCTO_A: Product = {
   productId: 100,
   code: 'P-100',
@@ -77,16 +90,6 @@ const PRODUCTO_B: Product = {
   minStock: 5,
   isActive: true,
 };
-
-const STOCK_PRODUCTO_A: ProductStockByWarehouse[] = [
-  {
-    warehouseId: 10,
-    warehouseName: 'Almacen principal',
-    currentStock: 8,
-    minStock: 5,
-    status: 'normal',
-  },
-];
 
 const SALE_DETAIL: SaleDetail = {
   saleId: 77,
@@ -137,7 +140,7 @@ class MockGetClientByIdUseCase {
 }
 
 class MockGetWarehousesUseCase {
-  execute = vi.fn().mockReturnValue(of([ALMACEN_A]));
+  execute = vi.fn().mockReturnValue(of([ALMACEN_A, ALMACEN_B]));
 }
 
 class MockGetProductsUseCase {
@@ -151,21 +154,45 @@ class MockGetProductsUseCase {
   );
 }
 
-class MockGetProductStockByWarehousesUseCase {
-  execute = vi.fn().mockImplementation((productId: number) => {
-    if (productId === PRODUCTO_A.productId) {
-      return of(STOCK_PRODUCTO_A);
+class MockGetStockDistributionUseCase {
+  execute = vi.fn().mockImplementation((filters?: { warehouseId?: number; page?: number; pageSize?: number }) => {
+    if (filters?.warehouseId === 20) {
+      return of({
+        data: [
+          {
+            warehouseId: 20,
+            warehouseName: 'Almacen secundario',
+            productId: 200,
+            productCode: 'P-200',
+            productName: 'Producto B',
+            stock: 12,
+            reservedStock: 0,
+            availableStock: 12,
+          },
+        ],
+        total: 1,
+        page: filters?.page ?? 1,
+        pageSize: filters?.pageSize ?? 100,
+      });
     }
 
-    return of([
-      {
-        warehouseId: 10,
-        warehouseName: 'Almacen principal',
-        currentStock: 15,
-        minStock: 5,
-        status: 'normal',
-      },
-    ] satisfies ProductStockByWarehouse[]);
+    return of({
+      data: [
+        {
+          warehouseId: 10,
+          warehouseName: 'Almacen principal',
+          productId: 100,
+          productCode: 'P-100',
+          productName: 'Producto A',
+          stock: 8,
+          reservedStock: 0,
+          availableStock: 8,
+        },
+      ],
+      total: 1,
+      page: filters?.page ?? 1,
+      pageSize: filters?.pageSize ?? 100,
+    });
   });
 }
 
@@ -187,6 +214,7 @@ describe('SaleCreateStore', () => {
   let getClientByIdUseCase: MockGetClientByIdUseCase;
   let createSaleUseCase: MockCreateSaleUseCase;
   let getSaleUseCase: MockGetSaleUseCase;
+  let getStockDistributionUseCase: MockGetStockDistributionUseCase;
   let updateSaleUseCase: MockUpdateSaleUseCase;
 
   beforeEach(() => {
@@ -194,6 +222,7 @@ describe('SaleCreateStore', () => {
     getClientByIdUseCase = new MockGetClientByIdUseCase();
     createSaleUseCase = new MockCreateSaleUseCase();
     getSaleUseCase = new MockGetSaleUseCase();
+    getStockDistributionUseCase = new MockGetStockDistributionUseCase();
     updateSaleUseCase = new MockUpdateSaleUseCase();
 
     TestBed.configureTestingModule({
@@ -219,10 +248,7 @@ describe('SaleCreateStore', () => {
         { provide: GetClientByIdUseCase, useValue: getClientByIdUseCase },
         { provide: GetWarehousesUseCase, useValue: new MockGetWarehousesUseCase() },
         { provide: GetProductsUseCase, useValue: new MockGetProductsUseCase() },
-        {
-          provide: GetProductStockByWarehousesUseCase,
-          useValue: new MockGetProductStockByWarehousesUseCase(),
-        },
+        { provide: GetStockDistributionUseCase, useValue: getStockDistributionUseCase },
         { provide: CreateSaleUseCase, useValue: createSaleUseCase },
         { provide: GetSaleUseCase, useValue: getSaleUseCase },
         { provide: UpdateSaleUseCase, useValue: updateSaleUseCase },
@@ -236,7 +262,7 @@ describe('SaleCreateStore', () => {
     await store.initialize();
 
     expect(store.clients()).toEqual([CLIENTE_A]);
-    expect(store.warehouses()).toEqual([ALMACEN_A]);
+    expect(store.warehouses()).toEqual([ALMACEN_A, ALMACEN_B]);
     expect(store.products()).toEqual([PRODUCTO_A, PRODUCTO_B]);
     expect(store.lines()).toHaveLength(1);
   });
@@ -260,6 +286,26 @@ describe('SaleCreateStore', () => {
 
     await store.onWarehouseChange(10);
     expect(store.canEditLines()).toBe(true);
+  });
+
+  it('filters the selectable products by available stock in the selected warehouse', async () => {
+    await store.initialize();
+
+    expect(store.getAvailableProductsForLine(store.lines()[0].lineId)).toEqual([]);
+
+    await store.onWarehouseChange(10);
+
+    expect(store.getAvailableProductsForLine(store.lines()[0].lineId)).toEqual([PRODUCTO_A]);
+  });
+
+  it('reloads the selectable products when the warehouse changes', async () => {
+    await store.initialize();
+
+    await store.onWarehouseChange(10);
+    expect(store.getAvailableProductsForLine(store.lines()[0].lineId)).toEqual([PRODUCTO_A]);
+
+    await store.onWarehouseChange(20);
+    expect(store.getAvailableProductsForLine(store.lines()[0].lineId)).toEqual([PRODUCTO_B]);
   });
 
   it('recalculates subtotal, VAT, and total when a line changes', async () => {
@@ -414,6 +460,25 @@ describe('SaleCreateStore', () => {
     expect(store.canSubmit()).toBe(false);
   });
 
+  it('marks the line as invalid when the selected product has no available stock in the warehouse', async () => {
+    await store.initialize();
+    await store.onWarehouseChange(10);
+
+    const lineId = store.lines()[0].lineId;
+
+    await store.commitLineEdit(lineId, {
+      productId: 200,
+      quantity: 1,
+      discount: 0,
+      discountType: 'percent',
+    });
+
+    expect(store.lineViews()[0].availableStock).toBe(0);
+    expect(store.lineViews()[0].validationError).toBe(
+      'El producto seleccionado no tiene stock disponible en el almacÃ©n elegido.',
+    );
+  });
+
   it('submits the correct payload and redirects to the list', async () => {
     await store.initialize();
     await store.onClientChange(1);
@@ -499,6 +564,41 @@ describe('SaleCreateStore', () => {
       discount: 0.5,
       discountType: 'amount',
     });
+  });
+
+  it('keeps the assigned product visible when editing a line whose product has no stock left', async () => {
+    getSaleUseCase.execute.mockReturnValueOnce(
+      of({
+        ...SALE_DETAIL,
+        lines: [
+          {
+            ...SALE_DETAIL.lines[0],
+            productId: 200,
+          },
+        ],
+      }),
+    );
+
+    await store.initializeForEdit(77);
+
+    expect(store.getAvailableProductsForLine(store.lines()[0].lineId)).toEqual([
+      PRODUCTO_A,
+      PRODUCTO_B,
+    ]);
+  });
+
+  it('blocks line editing when the edited sale is not pending', async () => {
+    getSaleUseCase.execute.mockReturnValueOnce(
+      of({
+        ...SALE_DETAIL,
+        status: SaleStatus.APPROVED,
+      }),
+    );
+
+    await store.initializeForEdit(77);
+
+    expect(store.canEditLines()).toBe(false);
+    expect(store.error()).toBe('Solo se pueden editar ventas en estado pendiente.');
   });
 
   it('preserves the effective discount when resubmitting an edited sale without a discount type in the detail', async () => {
