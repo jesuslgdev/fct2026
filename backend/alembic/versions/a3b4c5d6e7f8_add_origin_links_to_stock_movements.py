@@ -1,7 +1,7 @@
 """add origin links (purchase_id, sale_id) to stock_movements
 
 Revision ID: a3b4c5d6e7f8
-Revises: 31eeae62e2f3
+Revises: a1b2c3d4e5f8
 Create Date: 2026-04-29
 
 Adds nullable foreign keys to purchases and sales so each movement can
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "a3b4c5d6e7f8"
-down_revision: str | Sequence[str] | None = "31eeae62e2f3"
+down_revision: str | Sequence[str] | None = "a1b2c3d4e5f8"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
