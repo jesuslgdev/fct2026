@@ -11,6 +11,7 @@ import {
 import { SaleDetail, SaleDiscountType } from '@domain/models/sale.model';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { GetSaleUseCase } from '@domain/usecases/sales/get-sale.usecase';
+import { getSaleStatusLabel } from '@features/sales/sales-status.presentation';
 
 export interface SaleDetailLineView {
   lineId: number;
@@ -97,22 +98,7 @@ export class SaleDetailStore {
   }
 
   getStatusLabel(status: SaleStatus): string {
-    switch (status) {
-      case SaleStatus.PENDING:
-        return 'Pendiente';
-      case SaleStatus.APPROVED:
-        return 'Aprobada';
-      case SaleStatus.IN_PROCESS:
-        return 'En proceso';
-      case SaleStatus.SHIPPED:
-        return 'Enviada';
-      case SaleStatus.DELIVERED:
-        return 'Entregada';
-      case SaleStatus.CANCELLED:
-        return 'Cancelada';
-      default:
-        return status;
-    }
+    return getSaleStatusLabel(status);
   }
 
   private async loadProducts(): Promise<void> {

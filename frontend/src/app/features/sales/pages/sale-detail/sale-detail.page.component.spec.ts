@@ -166,8 +166,8 @@ describe('SaleDetailPageComponent', () => {
   it('maps distinct badge variants for the sale lifecycle', () => {
     expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.PENDING)).toBe('warning');
     expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.APPROVED)).toBe('info');
-    expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.IN_PROCESS)).toBe('contrast');
-    expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.SHIPPED)).toBe('secondary');
+    expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.IN_PROCESS)).toBe('secondary');
+    expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.SHIPPED)).toBe('contrast');
     expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.DELIVERED)).toBe('success');
     expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.CANCELLED)).toBe('danger');
   });

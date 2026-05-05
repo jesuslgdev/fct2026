@@ -5,6 +5,10 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { SaleDetailStore } from '@features/sales/state/sale-detail.store';
 import {
+  getSaleStatusBadgeIcon,
+  getSaleStatusBadgeVariant,
+} from '@features/sales/sales-status.presentation';
+import {
   BadgeComponent,
   BadgeVariant,
   ButtonComponent,
@@ -48,34 +52,10 @@ export class SaleDetailPageComponent implements OnInit {
   }
 
   getStatusBadgeVariant(status: SaleStatus): BadgeVariant {
-    switch (status) {
-      case SaleStatus.PENDING:
-        return 'warning';
-      case SaleStatus.APPROVED:
-        return 'info';
-      case SaleStatus.IN_PROCESS:
-        return 'contrast';
-      case SaleStatus.SHIPPED:
-        return 'secondary';
-      case SaleStatus.DELIVERED:
-        return 'success';
-      case SaleStatus.CANCELLED:
-        return 'danger';
-      default:
-        return 'secondary';
-    }
+    return getSaleStatusBadgeVariant(status);
   }
 
   getStatusBadgeIcon(status: SaleStatus): string {
-    switch (status) {
-      case SaleStatus.PENDING:
-        return 'pi pi-clock';
-      case SaleStatus.CANCELLED:
-        return 'pi pi-times-circle';
-      case SaleStatus.DELIVERED:
-        return 'pi pi-check-circle';
-      default:
-        return 'pi pi-check';
-    }
+    return getSaleStatusBadgeIcon(status);
   }
 }

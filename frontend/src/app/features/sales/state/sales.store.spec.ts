@@ -161,6 +161,7 @@ describe('SalesStore', () => {
       status: undefined,
       clientId: undefined,
       dateFrom: undefined,
+      dateTo: undefined,
     });
     expect(store.sales()).toEqual([SALE_A, SALE_B]);
     expect(store.total()).toBe(2);
@@ -176,7 +177,9 @@ describe('SalesStore', () => {
 
     await store.onStatusFilterChange(SaleStatus.APPROVED);
     await store.onClientFilterChange(7);
+    const dateTo = new Date('2026-04-30T23:59:59.000Z');
     await store.onDateFromFilterChange(dateFrom);
+    await store.onDateToFilterChange(dateTo);
 
     await store.loadSales();
 
@@ -188,6 +191,7 @@ describe('SalesStore', () => {
       status: SaleStatus.APPROVED,
       clientId: 7,
       dateFrom,
+      dateTo,
     });
   });
 
@@ -366,12 +370,26 @@ describe('SalesStore', () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 
+  it('date to filter change resets page and triggers load', () => {
+    const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
+    const dateTo = new Date('2026-04-30T23:59:59.000Z');
+    store.onPageChange({ first: 40, rows: 20 });
+    spy.mockClear();
+
+    store.onDateToFilterChange(dateTo);
+
+    expect(store.dateToFilter()).toEqual(dateTo);
+    expect(store.page()).toBe(1);
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
   it('clear filters resets all filters and reloads first page', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
     store.onPageChange({ first: 40, rows: 20 });
     store.onStatusFilterChange(SaleStatus.PENDING);
     store.onClientFilterChange(2);
     store.onDateFromFilterChange(new Date('2026-04-01T00:00:00.000Z'));
+    store.onDateToFilterChange(new Date('2026-04-30T23:59:59.000Z'));
     spy.mockClear();
 
     store.clearFilters();
@@ -379,6 +397,7 @@ describe('SalesStore', () => {
     expect(store.statusFilter()).toBeNull();
     expect(store.clientFilter()).toBeNull();
     expect(store.dateFromFilter()).toBeNull();
+    expect(store.dateToFilter()).toBeNull();
     expect(store.page()).toBe(1);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -410,9 +429,15 @@ describe('SalesStore', () => {
     expect(store.canEditSale(1)).toBe(true);
     expect(store.canEditSale(2)).toBe(false);
     expect(store.canChangeStatus(1)).toBe(true);
+    expect(store.canAdvanceSaleStatus(1)).toBe(true);
+    expect(store.canCancelSale(1)).toBe(true);
     expect(store.canDeleteSale(1)).toBe(true);
     expect(store.canChangeStatus(2)).toBe(true);
+    expect(store.canAdvanceSaleStatus(2)).toBe(true);
+    expect(store.canCancelSale(2)).toBe(true);
     expect(store.canDeleteSale(2)).toBe(false);
+    expect(store.getNextLifecycleStatus(1)).toBe(SaleStatus.APPROVED);
+    expect(store.getNextLifecycleStatus(2)).toBe(SaleStatus.IN_PROCESS);
   });
 
   it('blocks management actions when the user lacks permission', async () => {
@@ -422,6 +447,8 @@ describe('SalesStore', () => {
     expect(store.canManageSales()).toBe(false);
     expect(store.canEditSale(1)).toBe(false);
     expect(store.canChangeStatus(1)).toBe(false);
+    expect(store.canAdvanceSaleStatus(1)).toBe(false);
+    expect(store.canCancelSale(1)).toBe(false);
     expect(store.canDeleteSale(1)).toBe(false);
 
     await store.changeSaleStatus(1, SaleStatus.CANCELLED);
@@ -442,6 +469,14 @@ describe('SalesStore', () => {
     });
     expect(store.successMessage()).toBe('La venta se ha cancelado correctamente.');
     expect(loadSpy).toHaveBeenCalledOnce();
+  });
+
+  it('blocks unsupported status changes even when the sale is loaded', async () => {
+    setSalesState([SALE_A]);
+
+    await store.changeSaleStatus(1, SaleStatus.DELIVERED);
+
+    expect(advanceSaleStatusUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('maps status-specific success messages', async () => {
