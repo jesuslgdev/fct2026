@@ -6,6 +6,13 @@ import type { TablePageEvent } from 'primeng/table';
 import { DatePicker } from 'primeng/datepicker';
 import { Select } from 'primeng/select';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
+import {
+  getSaleAdvanceActionLabel,
+  getSaleStatusBadgeIcon,
+  getSaleStatusBadgeVariant,
+  getSaleStatusImpactMessage,
+  getSaleStatusLabel,
+} from '@features/sales/sales-status.presentation';
 import { BadgeComponent, BadgeVariant } from '@shared/ui';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
@@ -42,10 +49,10 @@ interface ClientOption {
 })
 export class SalesPageComponent implements OnInit {
   readonly store = inject(SalesStore);
-  readonly changeStatusDialogVisible = signal(false);
+  readonly advanceStatusDialogVisible = signal(false);
+  readonly cancelDialogVisible = signal(false);
   readonly deleteDialogVisible = signal(false);
   readonly selectedSaleId = signal<number | null>(null);
-  readonly selectedNextStatus = signal<SaleStatus | null>(null);
   private readonly router = inject(Router);
 
   readonly statusOptions: StatusOption[] = [
@@ -83,6 +90,10 @@ export class SalesPageComponent implements OnInit {
     this.store.onDateFromFilterChange(dateFrom);
   }
 
+  onDateToChange(dateTo: Date | null): void {
+    this.store.onDateToFilterChange(dateTo);
+  }
+
   onClearFilters(): void {
     this.store.clearFilters();
   }
@@ -106,10 +117,14 @@ export class SalesPageComponent implements OnInit {
     void this.router.navigate(['/sales', saleId, 'edit']);
   }
 
-  onRequestChangeStatus(saleId: number): void {
+  onRequestAdvanceStatus(saleId: number): void {
     this.selectedSaleId.set(saleId);
-    this.selectedNextStatus.set(null);
-    this.changeStatusDialogVisible.set(true);
+    this.advanceStatusDialogVisible.set(true);
+  }
+
+  onRequestCancelSale(saleId: number): void {
+    this.selectedSaleId.set(saleId);
+    this.cancelDialogVisible.set(true);
   }
 
   onRequestDeleteSale(saleId: number): void {
@@ -117,19 +132,25 @@ export class SalesPageComponent implements OnInit {
     this.deleteDialogVisible.set(true);
   }
 
-  onTransitionSelectionChange(status: SaleStatus | null): void {
-    this.selectedNextStatus.set(status);
-  }
-
-  onConfirmChangeStatus(): void {
+  onConfirmAdvanceStatus(): void {
     const saleId = this.selectedSaleId();
-    const nextStatus = this.selectedNextStatus();
+    const nextStatus = saleId === null ? null : this.store.getNextLifecycleStatus(saleId);
     if (saleId === null || nextStatus === null) {
       return;
     }
 
-    this.changeStatusDialogVisible.set(false);
+    this.advanceStatusDialogVisible.set(false);
     void this.store.changeSaleStatus(saleId, nextStatus);
+  }
+
+  onConfirmCancelSale(): void {
+    const saleId = this.selectedSaleId();
+    if (saleId === null) {
+      return;
+    }
+
+    this.cancelDialogVisible.set(false);
+    void this.store.changeSaleStatus(saleId, SaleStatus.CANCELLED);
   }
 
   onConfirmDeleteSale(): void {
@@ -143,47 +164,16 @@ export class SalesPageComponent implements OnInit {
   }
 
   getStatusBadgeVariant(status: SaleStatus): BadgeVariant {
-    switch (status) {
-      case SaleStatus.PENDING:
-        return 'warning';
-      case SaleStatus.APPROVED:
-        return 'info';
-      case SaleStatus.IN_PROCESS:
-        return 'contrast';
-      case SaleStatus.SHIPPED:
-        return 'secondary';
-      case SaleStatus.DELIVERED:
-        return 'success';
-      case SaleStatus.CANCELLED:
-        return 'danger';
-      default:
-        return 'secondary';
-    }
+    return getSaleStatusBadgeVariant(status);
   }
 
   getStatusBadgeIcon(status: SaleStatus): string {
-    switch (status) {
-      case SaleStatus.PENDING:
-        return 'pi pi-clock';
-      case SaleStatus.CANCELLED:
-        return 'pi pi-times-circle';
-      case SaleStatus.DELIVERED:
-        return 'pi pi-check-circle';
-      default:
-        return 'pi pi-check';
-    }
+    return getSaleStatusBadgeIcon(status);
   }
 
-  getAvailableTransitions(saleId: number): StatusOption[] {
-    const sale = this.store.sales().find((item) => item.saleId === saleId);
-    if (!sale) {
-      return [];
-    }
-
-    return sale.allowedTransitions.map((status) => ({
-      label: this.getTransitionLabel(status),
-      value: status,
-    }));
+  getAdvanceActionLabel(saleId: number): string {
+    const nextStatus = this.store.getNextLifecycleStatus(saleId);
+    return nextStatus ? getSaleAdvanceActionLabel(nextStatus) : '';
   }
 
   getCurrentSaleStatusLabel(): string {
@@ -195,56 +185,34 @@ export class SalesPageComponent implements OnInit {
     return sale ? this.getStatusLabel(sale.status) : '-';
   }
 
-  getSelectedTransitionImpact(): string {
-    switch (this.selectedNextStatus()) {
-      case SaleStatus.APPROVED:
-        return 'Se congelaran las lineas y se reservara el stock.';
-      case SaleStatus.CANCELLED:
-        return 'La venta quedara cancelada y, si habia stock reservado, se liberara.';
-      case SaleStatus.IN_PROCESS:
-        return 'La venta pasara a en proceso.';
-      case SaleStatus.SHIPPED:
-        return 'La venta pasara a enviada.';
-      case SaleStatus.DELIVERED:
-        return 'La venta se marcara como entregada y se generara la salida de stock automatica.';
-      default:
-        return 'Selecciona una transicion para continuar.';
-    }
+  getSelectedSaleNumber(): string {
+    const saleId = this.selectedSaleId();
+    const sale = saleId === null
+      ? null
+      : this.store.sales().find((item) => item.saleId === saleId) ?? null;
+
+    return sale?.saleNumber ?? '-';
   }
 
-  private getTransitionLabel(status: SaleStatus): string {
-    switch (status) {
-      case SaleStatus.APPROVED:
-        return 'Aprobar';
-      case SaleStatus.CANCELLED:
-        return 'Cancelar';
-      case SaleStatus.IN_PROCESS:
-        return 'Pasar a En proceso';
-      case SaleStatus.SHIPPED:
-        return 'Marcar como enviada';
-      case SaleStatus.DELIVERED:
-        return 'Marcar como entregada';
-      default:
-        return this.getStatusLabel(status);
-    }
+  getAdvanceStatusLabel(): string {
+    const saleId = this.selectedSaleId();
+    const nextStatus = saleId === null ? null : this.store.getNextLifecycleStatus(saleId);
+
+    return nextStatus ? this.getStatusLabel(nextStatus) : '-';
+  }
+
+  getAdvanceStatusImpact(): string {
+    const saleId = this.selectedSaleId();
+    const nextStatus = saleId === null ? null : this.store.getNextLifecycleStatus(saleId);
+
+    return nextStatus ? getSaleStatusImpactMessage(nextStatus) : 'Se actualizara el estado de la venta.';
+  }
+
+  getCancelStatusImpact(): string {
+    return getSaleStatusImpactMessage(SaleStatus.CANCELLED);
   }
 
   getStatusLabel(status: SaleStatus): string {
-    switch (status) {
-      case SaleStatus.PENDING:
-        return 'Pendiente';
-      case SaleStatus.APPROVED:
-        return 'Aprobada';
-      case SaleStatus.IN_PROCESS:
-        return 'En proceso';
-      case SaleStatus.SHIPPED:
-        return 'Enviada';
-      case SaleStatus.DELIVERED:
-        return 'Entregada';
-      case SaleStatus.CANCELLED:
-        return 'Cancelada';
-      default:
-        return status;
-    }
+    return getSaleStatusLabel(status);
   }
 }

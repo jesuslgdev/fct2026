@@ -53,6 +53,15 @@
       (ngModelChange)="onDateFromChange($event)"
     />
 
+    <p-datepicker
+      inputId="sales-date-to"
+      placeholder="Creada hasta"
+      dateFormat="dd/mm/yy"
+      [showIcon]="true"
+      [ngModel]="store.dateToFilter()"
+      (ngModelChange)="onDateToChange($event)"
+    />
+
     <ui-button
       label="Limpiar filtros"
       variant="outline"
@@ -81,7 +90,7 @@
         <th>Dirección de entrega</th>
         <th>Fecha de creación</th>
         <th>Total</th>
-        <th class="text-right">Acciones</th>
+        <th>Acciones</th>
       </tr>
     </ng-template>
 
@@ -99,8 +108,8 @@
         <td>{{ sale.deliveryAddress }}</td>
         <td>{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
         <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>
-        <td class="text-right">
-          <div class="table-actions flex items-center justify-end">
+        <td>
+          <div class="flex flex-wrap gap-2">
             <ui-button
               icon="pi pi-eye"
               ariaLabel="Ver detalle de venta"
@@ -117,15 +126,27 @@
                 (clicked)="onEditSale(sale.saleId); $event.stopPropagation()"
               />
             }
-            @if (store.canChangeStatus(sale.saleId)) {
+            @if (store.canCancelSale(sale.saleId)) {
               <ui-button
-                icon="pi pi-sync"
-                ariaLabel="Cambiar estado de venta"
-                variant="ghost"
+                icon="pi pi-times-circle"
+                ariaLabel="Cancelar venta"
+                variant="outline"
                 size="sm"
                 [loading]="store.isChangingStatusSale(sale.saleId)"
                 [disabled]="store.isDeletingSale(sale.saleId)"
-                (clicked)="onRequestChangeStatus(sale.saleId); $event.stopPropagation()"
+                (clicked)="onRequestCancelSale(sale.saleId); $event.stopPropagation()"
+              />
+            }
+            @if (store.canAdvanceSaleStatus(sale.saleId)) {
+              <ui-button
+                icon="pi pi-arrow-right"
+                ariaLabel="Avanzar estado de venta"
+                variant="secondary"
+                size="sm"
+                [title]="getAdvanceActionLabel(sale.saleId)"
+                [loading]="store.isChangingStatusSale(sale.saleId)"
+                [disabled]="store.isDeletingSale(sale.saleId)"
+                (clicked)="onRequestAdvanceStatus(sale.saleId); $event.stopPropagation()"
               />
             }
             @if (store.canDeleteSale(sale.saleId)) {
@@ -154,36 +175,45 @@
   </ui-table>
 
   <ui-dialog
-    header="Cambiar estado de venta"
-    variant="warning"
+    header="Cambiar estado"
+    variant="info"
     size="sm"
-    [(visible)]="changeStatusDialogVisible"
-    confirmLabel="Confirmar cambio"
+    [(visible)]="advanceStatusDialogVisible"
+    confirmLabel="Confirmar"
+    cancelLabel="Cancelar"
+    [confirmLoading]="selectedSaleId() !== null && store.isChangingStatusSale(selectedSaleId()!)"
+    [confirmDisabled]="selectedSaleId() === null || getAdvanceStatusLabel() === '-'"
+    [closeOnConfirm]="false"
+    (confirmed)="onConfirmAdvanceStatus()"
+  >
+    @if (selectedSaleId()) {
+      <p class="warning-text">
+        Cambiar estado de <strong>{{ getSelectedSaleNumber() }}</strong>
+        de <strong>{{ getCurrentSaleStatusLabel() }}</strong>
+        a <strong>{{ getAdvanceStatusLabel() }}</strong>.
+      </p>
+    }
+  </ui-dialog>
+
+  <ui-dialog
+    header="Cancelar venta"
+    variant="warning"
+    size="default"
+    [(visible)]="cancelDialogVisible"
+    confirmLabel="Cancelar venta"
     cancelLabel="Volver"
     [confirmLoading]="selectedSaleId() !== null && store.isChangingStatusSale(selectedSaleId()!)"
-    [confirmDisabled]="selectedSaleId() === null || selectedNextStatus() === null"
+    [confirmDisabled]="selectedSaleId() === null"
     [closeOnConfirm]="false"
-    (confirmed)="onConfirmChangeStatus()"
+    (confirmed)="onConfirmCancelSale()"
   >
-    <div class="flex flex-col gap-4">
-      <p class="text-sm leading-6 text-surface-700">
-        Estado actual: <span class="font-medium text-surface-900">{{ getCurrentSaleStatusLabel() }}</span>
-      </p>
-
-      <p-select
-        [options]="selectedSaleId() !== null ? getAvailableTransitions(selectedSaleId()!) : []"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Selecciona la siguiente transicion"
-        appendTo="body"
-        [ngModel]="selectedNextStatus()"
-        (ngModelChange)="onTransitionSelectionChange($event)"
-      />
-
-      <p class="text-sm leading-6 text-surface-700">
-        {{ getSelectedTransitionImpact() }}
-      </p>
-    </div>
+    @if (selectedSaleId()) {
+      <div class="dialog-field">
+        <p class="warning-text">
+          Va a cancelar la venta <strong>{{ getSelectedSaleNumber() }}</strong>.
+        </p>
+      </div>
+    }
   </ui-dialog>
 
   <ui-dialog

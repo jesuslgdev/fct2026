@@ -16,6 +16,7 @@ import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
 import { AdvanceSaleStatusUseCase } from '@domain/usecases/sales/advance-sale-status.usecase';
 import { DeleteSaleUseCase } from '@domain/usecases/sales/delete-sale.usecase';
 import { ListSalesUseCase } from '@domain/usecases/sales/list-sales.usecase';
+import { getNextLifecycleSaleStatus } from '@features/sales/sales-status.presentation';
 
 export interface SaleListItemView {
   saleId: number;
@@ -50,6 +51,7 @@ export class SalesStore {
   private readonly statusFilterState = signal<SaleStatus | null>(null);
   private readonly clientFilterState = signal<number | null>(null);
   private readonly dateFromFilterState = signal<Date | null>(null);
+  private readonly dateToFilterState = signal<Date | null>(null);
   private readonly sortFieldState = signal<SaleSortField>('created_at');
   private readonly sortOrderState = signal<'asc' | 'desc'>('desc');
 
@@ -68,6 +70,7 @@ export class SalesStore {
   readonly statusFilter = this.statusFilterState.asReadonly();
   readonly clientFilter = this.clientFilterState.asReadonly();
   readonly dateFromFilter = this.dateFromFilterState.asReadonly();
+  readonly dateToFilter = this.dateToFilterState.asReadonly();
   readonly sortField = this.sortFieldState.asReadonly();
   readonly sortOrder = this.sortOrderState.asReadonly();
 
@@ -85,7 +88,8 @@ export class SalesStore {
     () =>
       this.statusFilter() !== null
       || this.clientFilter() !== null
-      || this.dateFromFilter() !== null,
+      || this.dateFromFilter() !== null
+      || this.dateToFilter() !== null,
   );
 
   readonly salesView = computed<SaleListItemView[]>(() =>
@@ -141,6 +145,7 @@ export class SalesStore {
         status: this.statusFilter() ?? undefined,
         clientId: this.clientFilter() ?? undefined,
         dateFrom: this.dateFromFilter() ?? undefined,
+        dateTo: this.dateToFilter() ?? undefined,
       };
 
       const result = await firstValueFrom(this.listSalesUseCase.execute(filters));
@@ -201,10 +206,17 @@ export class SalesStore {
     void this.loadSales();
   }
 
+  onDateToFilterChange(dateTo: Date | null): void {
+    this.dateToFilterState.set(dateTo);
+    this.pageState.set(1);
+    void this.loadSales();
+  }
+
   clearFilters(): void {
     this.statusFilterState.set(null);
     this.clientFilterState.set(null);
     this.dateFromFilterState.set(null);
+    this.dateToFilterState.set(null);
     this.pageState.set(1);
     void this.loadSales();
   }
@@ -221,8 +233,19 @@ export class SalesStore {
   }
 
   canChangeStatus(saleId: number): boolean {
+    return this.canAdvanceSaleStatus(saleId) || this.canCancelSale(saleId);
+  }
+
+  canAdvanceSaleStatus(saleId: number): boolean {
     const sale = this.findSale(saleId);
-    return this.canManageSales() && (sale?.allowedTransitions.length ?? 0) > 0;
+    return this.canManageSales() && sale !== undefined && this.getNextLifecycleStatus(saleId) !== null;
+  }
+
+  canCancelSale(saleId: number): boolean {
+    const sale = this.findSale(saleId);
+    return this.canManageSales()
+      && sale !== undefined
+      && sale.allowedTransitions.includes(SaleStatus.CANCELLED);
   }
 
   canDeleteSale(saleId: number): boolean {
@@ -239,7 +262,10 @@ export class SalesStore {
   }
 
   async changeSaleStatus(saleId: number, newStatus: SaleStatus): Promise<void> {
-    if (!this.canChangeStatus(saleId) || this.isChangingStatusSale(saleId)) {
+    const canAdvance = newStatus === this.getNextLifecycleStatus(saleId);
+    const canCancel = newStatus === SaleStatus.CANCELLED && this.canCancelSale(saleId);
+
+    if ((!canAdvance && !canCancel) || this.isChangingStatusSale(saleId)) {
       return;
     }
 
@@ -283,6 +309,16 @@ export class SalesStore {
 
   private findSale(saleId: number): Sale | undefined {
     return this.sales().find((sale) => sale.saleId === saleId);
+  }
+
+  getNextLifecycleStatus(saleId: number): SaleStatus | null {
+    const sale = this.findSale(saleId);
+
+    if (!sale) {
+      return null;
+    }
+
+    return getNextLifecycleSaleStatus(sale.allowedTransitions);
   }
 
   private async loadSalesKeepingFeedback(): Promise<void> {
