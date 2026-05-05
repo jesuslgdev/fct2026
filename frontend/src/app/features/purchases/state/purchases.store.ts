@@ -292,11 +292,15 @@ export class PurchasesStore {
   }
 
   openEditDialog(purchase: PurchaseSummary | PurchaseDetail): void {
+    this.openEditDialogById(purchase.purchaseId);
+  }
+
+  openEditDialogById(purchaseId: number): void {
     this._dialogMode.set('edit');
     this._dialogError.set(null);
     this._dialogVisible.set(true);
     this.loadFormOptions();
-    this.loadPurchaseById(purchase.purchaseId);
+    this.loadPurchaseById(purchaseId);
   }
 
   openViewDialog(purchase: PurchaseSummary | PurchaseDetail): void {

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
 import { PurchaseSortField, PurchaseSummary } from '@domain/models/purchase.model';
 import { getAllowedNextPurchaseStatuses } from '@domain/models/purchase-rules';
@@ -49,6 +50,7 @@ interface SortOption {
 })
 export class PurchasesPageComponent implements OnInit {
   readonly store = inject(PurchasesStore);
+  private readonly router = inject(Router);
 
   readonly cancellationReason = signal('');
 
@@ -133,8 +135,8 @@ export class PurchasesPageComponent implements OnInit {
     this.store.onPageChange(event);
   }
 
-  canEditPurchase(purchase: PurchaseSummary): boolean {
-    return this.store.canManage() && purchase.status === 'Pending';
+  onViewPurchase(purchaseId: number): void {
+    void this.router.navigate(['/purchases', purchaseId]);
   }
 
   canDeletePurchase(purchase: PurchaseSummary): boolean {

@@ -55,21 +55,25 @@
   </div>
 
   <div class="filters-row">
-    <ui-input
-      type="date"
-      placeholder="Desde"
-      styleClass="min-w-52"
-      [ngModel]="fromDate()"
-      (valueChange)="onFromDateChange($event)"
-    />
+    <div class="flex min-w-52 flex-col gap-1">
+      <span class="text-xs font-medium text-surface-600">Creado desde</span>
+      <ui-input
+        type="date"
+        placeholder="Fecha inicial"
+        [ngModel]="fromDate()"
+        (valueChange)="onFromDateChange($event)"
+      />
+    </div>
 
-    <ui-input
-      type="date"
-      placeholder="Hasta"
-      styleClass="min-w-52"
-      [ngModel]="toDate()"
-      (valueChange)="onToDateChange($event)"
-    />
+    <div class="flex min-w-52 flex-col gap-1">
+      <span class="text-xs font-medium text-surface-600">Creado hasta</span>
+      <ui-input
+        type="date"
+        placeholder="Fecha final"
+        [ngModel]="toDate()"
+        (valueChange)="onToDateChange($event)"
+      />
+    </div>
   </div>
 
   <ui-table
@@ -114,17 +118,8 @@
               variant="ghost"
               size="sm"
               ariaLabel="Ver compra"
-              (clicked)="store.openViewDialog(purchase)"
+              (clicked)="onViewPurchase(purchase.purchaseId)"
             />
-            @if (canEditPurchase(purchase)) {
-              <ui-button
-                icon="pi pi-pencil"
-                variant="ghost"
-                size="sm"
-                ariaLabel="Editar compra"
-                (clicked)="store.openEditDialog(purchase)"
-              />
-            }
             @if (canDeletePurchase(purchase)) {
               <ui-button
                 icon="pi pi-trash"
