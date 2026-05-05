@@ -42,10 +42,30 @@ describe('SupplierProductsImportDialogComponent', () => {
 
   it('stores the selected import file from the input event', () => {
     const file = new File(['data'], 'supplier-products.xlsx');
+    const input = { files: [file], value: 'C:\\fakepath\\supplier-products.xlsx' };
 
-    component.onImportFileInput({ target: { files: [file] } } as never);
+    component.onImportFileInput({ target: input } as never);
 
     expect(mockStore.setImportFile).toHaveBeenCalledWith(file);
+    expect(input.value).toBe('');
+  });
+
+  it('clears the input before reopening the file selector', () => {
+    const click = vi.fn();
+    const input = {
+      value: 'C:\\fakepath\\supplier-products.xlsx',
+      click,
+    } as unknown as HTMLInputElement;
+    const getImportInputElementSpy = vi.spyOn(
+      component as unknown as { getImportInputElement: () => HTMLInputElement | null },
+      'getImportInputElement',
+    );
+    getImportInputElementSpy.mockReturnValue(input);
+
+    component.openImportFileSelector();
+
+    expect(input.value).toBe('');
+    expect(click).toHaveBeenCalledOnce();
   });
 
   it('forwards template product page changes with fallback rows', () => {

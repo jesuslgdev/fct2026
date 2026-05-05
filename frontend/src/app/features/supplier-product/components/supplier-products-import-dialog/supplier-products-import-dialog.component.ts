@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { TablePageEvent } from 'primeng/table';
 import {
@@ -28,10 +28,26 @@ import { SupplierProductsStore } from '@features/supplier-product/state/supplier
 })
 export class SupplierProductsImportDialogComponent {
   readonly store = inject(SupplierProductsStore);
+  private readonly importInput = viewChild<ElementRef<HTMLInputElement>>('supplierProductsImportInput');
+
+  private getImportInputElement(): HTMLInputElement | null {
+    return this.importInput()?.nativeElement ?? null;
+  }
+
+  openImportFileSelector(): void {
+    const input = this.getImportInputElement();
+    if (!input) {
+      return;
+    }
+
+    input.value = '';
+    input.click();
+  }
 
   onImportFileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.store.setImportFile(input.files?.[0] ?? null);
+    input.value = '';
   }
 
   onTemplateProductsPageChange(event: TablePageEvent): void {
