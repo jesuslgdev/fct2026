@@ -45,7 +45,7 @@ export class PurchaseDetailPageComponent implements OnInit {
       if (this.wasDialogVisible && !dialogVisible) {
         const purchaseId = this.store.purchase()?.purchaseId;
         if (purchaseId) {
-          void this.store.load(purchaseId);
+          this.store.load(purchaseId);
         }
       }
 
@@ -60,7 +60,7 @@ export class PurchaseDetailPageComponent implements OnInit {
       return;
     }
 
-    void this.store.load(purchaseId);
+    this.store.load(purchaseId);
   }
 
   onBack(): void {

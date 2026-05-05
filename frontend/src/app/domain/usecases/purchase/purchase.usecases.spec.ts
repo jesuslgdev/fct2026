@@ -19,7 +19,6 @@ import {
 import {
   PurchaseBusinessRuleError,
   PurchaseForbiddenError,
-  PurchaseInvalidStatusTransitionError,
   PurchaseValidationError,
 } from '@domain/models/purchase-errors';
 import { PurchaseRepository } from '@domain/repositories/purchase.repository';
@@ -101,6 +100,16 @@ const BASE_SUMMARY: PurchaseSummary = {
   total: BASE_PURCHASE.total,
 };
 
+const BASE_SUPPLIER_PRODUCTS: PurchaseSupplierProductOption[] = [
+  {
+    productId: 100,
+    productName: 'Tornillo M8',
+    supplierId: 10,
+    unitPrice: 50,
+    vatRate: 21,
+  },
+];
+
 class MockPurchaseRepository implements PurchaseRepository {
   getPurchases = vi.fn<
     (params: PurchaseQueryParams) => Observable<PagedResult<PurchaseSummary>>
@@ -143,6 +152,7 @@ describe('Purchase Use Cases', () => {
 
   beforeEach(() => {
     repo = new MockPurchaseRepository();
+    repo.getSupplierProducts.mockReturnValue(of(BASE_SUPPLIER_PRODUCTS));
 
     TestBed.configureTestingModule({
       providers: [
@@ -222,8 +232,26 @@ describe('Purchase Use Cases', () => {
 
     const result = await firstValueFrom(useCase.execute(payload, ALLOWED_CONTEXT));
 
+    expect(repo.getSupplierProducts).toHaveBeenCalledWith(10);
     expect(repo.createPurchase).toHaveBeenCalledWith(payload);
     expect(result).toEqual(BASE_PURCHASE);
+  });
+
+  it('CreatePurchaseUseCase rejects unit price below supplier purchase price', async () => {
+    const useCase = TestBed.inject(CreatePurchaseUseCase);
+
+    const payload: CreatePurchasePayload = {
+      supplierId: 10,
+      deliveryWarehouseId: 2,
+      lines: [{ productId: 100, quantity: 2, unitPrice: 49.99, vatRate: 21 }],
+    };
+
+    await expect(
+      firstValueFrom(useCase.execute(payload, ALLOWED_CONTEXT)),
+    ).rejects.toBeInstanceOf(PurchaseValidationError);
+
+    expect(repo.getSupplierProducts).toHaveBeenCalledWith(10);
+    expect(repo.createPurchase).not.toHaveBeenCalled();
   });
 
   it('CreatePurchaseUseCase throws validation error for invalid payload', async () => {
@@ -261,8 +289,26 @@ describe('Purchase Use Cases', () => {
     const result = await firstValueFrom(useCase.execute(1, payload, ALLOWED_CONTEXT));
 
     expect(repo.getPurchaseById).toHaveBeenCalledWith(1);
+    expect(repo.getSupplierProducts).not.toHaveBeenCalled();
     expect(repo.updatePurchase).toHaveBeenCalledWith(1, payload);
     expect(result).toEqual(updated);
+  });
+
+  it('UpdatePurchaseUseCase rejects line price below supplier purchase price', async () => {
+    const useCase = TestBed.inject(UpdatePurchaseUseCase);
+
+    const payload: UpdatePurchasePayload = {
+      lines: [{ productId: 100, quantity: 1, unitPrice: 49, vatRate: 21 }],
+    };
+
+    repo.getPurchaseById.mockReturnValueOnce(of(BASE_PURCHASE));
+
+    await expect(
+      firstValueFrom(useCase.execute(1, payload, ALLOWED_CONTEXT)),
+    ).rejects.toBeInstanceOf(PurchaseValidationError);
+
+    expect(repo.getSupplierProducts).toHaveBeenCalledWith(10);
+    expect(repo.updatePurchase).not.toHaveBeenCalled();
   });
 
   it('UpdatePurchaseUseCase rejects supplier change without lines', async () => {
@@ -344,9 +390,34 @@ describe('Purchase Use Cases', () => {
 
     expect(repo.changePurchaseStatus).toHaveBeenCalledWith(1, payload);
     expect(result.status).toBe('Approved');
+    expect(repo.getPurchaseById).not.toHaveBeenCalled();
   });
 
-  it('ChangePurchaseStatusUseCase rejects invalid transitions', async () => {
+  it('ChangePurchaseStatusUseCase delegates to backend allowed transitions', async () => {
+    const useCase = TestBed.inject(ChangePurchaseStatusUseCase);
+
+    const payload: ChangePurchaseStatusPayload = {
+      toStatus: 'Received',
+      changedByUserId: 2,
+      changedByName: 'Manager',
+    };
+
+    const receivedPurchase: PurchaseDetail = {
+      ...BASE_PURCHASE,
+      status: 'Received',
+      allowedTransitions: [],
+    };
+
+    repo.changePurchaseStatus.mockReturnValueOnce(of(receivedPurchase));
+
+    const result = await firstValueFrom(useCase.execute(1, payload, ALLOWED_CONTEXT));
+
+    expect(repo.changePurchaseStatus).toHaveBeenCalledWith(1, payload);
+    expect(result.status).toBe('Received');
+    expect(repo.getPurchaseById).not.toHaveBeenCalled();
+  });
+
+  it('ChangePurchaseStatusUseCase does not reject transitions on frontend', async () => {
     const useCase = TestBed.inject(ChangePurchaseStatusUseCase);
 
     const payload: ChangePurchaseStatusPayload = {
@@ -355,13 +426,18 @@ describe('Purchase Use Cases', () => {
       changedByName: 'Manager',
     };
 
-    repo.getPurchaseById.mockReturnValueOnce(of({ ...BASE_PURCHASE, status: 'Received' }));
+    const unchanged: PurchaseDetail = {
+      ...BASE_PURCHASE,
+      status: 'Pending',
+    };
 
-    await expect(
-      firstValueFrom(useCase.execute(1, payload, ALLOWED_CONTEXT)),
-    ).rejects.toBeInstanceOf(PurchaseInvalidStatusTransitionError);
+    repo.changePurchaseStatus.mockReturnValueOnce(of(unchanged));
 
-    expect(repo.changePurchaseStatus).not.toHaveBeenCalled();
+    const result = await firstValueFrom(useCase.execute(1, payload, ALLOWED_CONTEXT));
+
+    expect(result.status).toBe('Pending');
+    expect(repo.changePurchaseStatus).toHaveBeenCalledWith(1, payload);
+    expect(repo.getPurchaseById).not.toHaveBeenCalled();
   });
 
   it('GetActivePurchaseSuppliersUseCase delegates to repository', async () => {

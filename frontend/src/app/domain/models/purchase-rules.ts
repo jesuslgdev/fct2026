@@ -14,6 +14,7 @@ import {
   PurchaseQueryParams,
   PurchaseSortField,
   PurchaseStatusTransitionEffect,
+  PurchaseSupplierProductOption,
   PurchaseTotals,
   UpdatePurchasePayload,
 } from '@domain/models/purchase.model';
@@ -29,8 +30,8 @@ import {
 const PURCHASE_STATUS_TRANSITIONS: Record<PurchaseStatus, readonly PurchaseStatus[]> = {
   Pending: ['Approved', 'Cancelled'],
   Approved: ['InProcess', 'Cancelled'],
-  InProcess: ['Shipped'],
-  Shipped: ['Received'],
+  InProcess: ['Sent'],
+  Sent: ['Received'],
   Received: [],
   Cancelled: [],
 };
@@ -126,7 +127,7 @@ export function getPurchaseStatusTransitionEffect(
     return 'final_state';
   }
 
-  if (fromStatus === 'Shipped' && toStatus === 'Received') {
+  if (fromStatus === 'Sent' && toStatus === 'Received') {
     return 'generate_stock_entry';
   }
 
@@ -332,6 +333,49 @@ export function validateChangePurchaseStatusPayload(
 
   assertPositiveInteger(payload.changedByUserId, 'changedByUserId');
   assertNonEmptyString(payload.changedByName, 'changedByName');
+}
+
+export function validateLineUnitPricesAgainstSupplierCatalog(
+  lines: PurchaseLineInput[],
+  supplierProducts: PurchaseSupplierProductOption[],
+): void {
+  const minPriceByProductId = new Map<number, number>();
+
+  for (const supplierProduct of supplierProducts) {
+    if (!Number.isFinite(supplierProduct.unitPrice) || supplierProduct.unitPrice < 0) {
+      continue;
+    }
+
+    if (!minPriceByProductId.has(supplierProduct.productId)) {
+      minPriceByProductId.set(supplierProduct.productId, supplierProduct.unitPrice);
+      continue;
+    }
+
+    const currentMinPrice = minPriceByProductId.get(supplierProduct.productId)!;
+    if (supplierProduct.unitPrice < currentMinPrice) {
+      minPriceByProductId.set(supplierProduct.productId, supplierProduct.unitPrice);
+    }
+  }
+
+  lines.forEach((line, index) => {
+    const minAllowedPrice = minPriceByProductId.get(line.productId);
+
+    if (minAllowedPrice === undefined) {
+      return;
+    }
+
+    if (line.unitPrice + Number.EPSILON < minAllowedPrice) {
+      throw new PurchaseValidationError(
+        {
+          field: `lines[${index}].unitPrice`,
+          value: line.unitPrice,
+          minAllowedPrice,
+          productId: line.productId,
+        },
+        `lines[${index}].unitPrice cannot be lower than supplier purchase price.`,
+      );
+    }
+  });
 }
 
 export function normalizePurchaseQueryParams(params: PurchaseQueryParams): PurchaseQueryParams {

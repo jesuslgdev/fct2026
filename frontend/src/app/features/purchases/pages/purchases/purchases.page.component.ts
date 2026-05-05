@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
 import { PurchaseSortField, PurchaseSummary } from '@domain/models/purchase.model';
-import { getAllowedNextPurchaseStatuses } from '@domain/models/purchase-rules';
 import { PurchaseFormDialogComponent } from '@features/purchases/components/purchase-form-dialog/purchase-form-dialog.component';
 import { PurchaseStatusBadgeComponent } from '@features/purchases/components/purchase-status-badge/purchase-status-badge.component';
 import { PurchasesStore } from '@features/purchases/state/purchases.store';
@@ -59,7 +58,7 @@ export class PurchasesPageComponent implements OnInit {
     { label: 'Pendiente', value: 'Pending' },
     { label: 'Aprobada', value: 'Approved' },
     { label: 'En proceso', value: 'InProcess' },
-    { label: 'Enviada', value: 'Shipped' },
+    { label: 'Enviada', value: 'Sent' },
     { label: 'Recibida', value: 'Received' },
     { label: 'Cancelada', value: 'Cancelled' },
   ];
@@ -148,16 +147,16 @@ export class PurchasesPageComponent implements OnInit {
   }
 
   canAdvanceStatus(purchase: PurchaseSummary): boolean {
-    return this.store.canManage() && this.getNextLifecycleStatus(purchase.status) !== null;
+    return this.store.canManage() && this.getNextLifecycleStatus(purchase) !== null;
   }
 
   nextStatusLabel(purchase: PurchaseSummary): string {
-    const status = this.getNextLifecycleStatus(purchase.status);
+    const status = this.getNextLifecycleStatus(purchase);
     return status ? this.statusLabel(status) : '';
   }
 
   requestStatusChange(purchase: PurchaseSummary): void {
-    const nextStatus = this.getNextLifecycleStatus(purchase.status);
+    const nextStatus = this.getNextLifecycleStatus(purchase);
     if (!nextStatus) {
       return;
     }
@@ -207,7 +206,7 @@ export class PurchasesPageComponent implements OnInit {
         return 'Aprobada';
       case 'InProcess':
         return 'En proceso';
-      case 'Shipped':
+      case 'Sent':
         return 'Enviada';
       case 'Received':
         return 'Recibida';
@@ -218,8 +217,8 @@ export class PurchasesPageComponent implements OnInit {
     }
   }
 
-  private getNextLifecycleStatus(status: PurchaseStatus): PurchaseStatus | null {
-    const allowedStatuses = getAllowedNextPurchaseStatuses(status);
+  private getNextLifecycleStatus(purchase: PurchaseSummary): PurchaseStatus | null {
+    const allowedStatuses = purchase.allowedTransitions ?? [];
 
     for (const allowedStatus of allowedStatuses) {
       if (allowedStatus !== 'Cancelled') {

@@ -5,6 +5,7 @@ export type BackendPurchaseStatus =
   | 'Approved'
   | 'In Process'
   | 'InProcess'
+  | 'Shipped'
   | 'Sent'
   | 'Received'
   | 'Cancelled';
@@ -14,6 +15,7 @@ export interface PurchaseListItemDto {
   purchase_number: string;
   supplier_name: string | null;
   status: BackendPurchaseStatus | string;
+  allowed_transitions?: string[];
   warehouse_id: number;
   created_at: string;
   total: number | string | null;

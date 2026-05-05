@@ -2,7 +2,7 @@ export const PURCHASE_STATUSES = [
   'Pending',
   'Approved',
   'InProcess',
-  'Shipped',
+  'Sent',
   'Received',
   'Cancelled',
 ] as const;

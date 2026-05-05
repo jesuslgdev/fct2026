@@ -74,6 +74,7 @@ export interface PurchaseSummary {
   deliveryWarehouseId: number;
   deliveryAddress: string;
   status: PurchaseStatus;
+  allowedTransitions?: PurchaseStatus[];
   createdAt: string;
   total: number;
 }

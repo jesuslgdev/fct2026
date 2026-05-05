@@ -16,7 +16,7 @@ import {
   PurchaseValidationError,
 } from '@domain/models/purchase-errors';
 import { GetPurchaseByIdUseCase } from '@domain/usecases/purchase/get-purchase-by-id.usecase';
-import { firstValueFrom } from 'rxjs';
+import { finalize, take } from 'rxjs';
 
 @Injectable()
 export class PurchaseDetailStore {
@@ -41,21 +41,23 @@ export class PurchaseDetailStore {
     this.errorState.set('El identificador de compra no es valido.');
   }
 
-  async load(purchaseId: number): Promise<void> {
+  load(purchaseId: number): void {
     this.loadingState.set(true);
     this.errorState.set(null);
 
-    try {
-      const purchase = await firstValueFrom(
-        this.getPurchaseByIdUseCase.execute(purchaseId, this.buildPermissionContext()),
-      );
-      this.purchaseState.set(purchase);
-    } catch (err) {
-      this.purchaseState.set(null);
-      this.errorState.set(this.resolveLoadError(err));
-    } finally {
-      this.loadingState.set(false);
-    }
+    this.getPurchaseByIdUseCase
+      .execute(purchaseId, this.buildPermissionContext())
+      .pipe(
+        take(1),
+        finalize(() => this.loadingState.set(false)),
+      )
+      .subscribe({
+        next: (purchase) => this.purchaseState.set(purchase),
+        error: (err: unknown) => {
+          this.purchaseState.set(null);
+          this.errorState.set(this.resolveLoadError(err));
+        },
+      });
   }
 
   getStatusLabel(status: PurchaseStatus | null): string {
@@ -70,7 +72,7 @@ export class PurchaseDetailStore {
         return 'Aprobada';
       case 'InProcess':
         return 'En proceso';
-      case 'Shipped':
+      case 'Sent':
         return 'Enviada';
       case 'Received':
         return 'Recibida';
