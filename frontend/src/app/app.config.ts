@@ -35,6 +35,8 @@ import { SaleRepository } from '@domain/repositories/sale.repository';
 import { HttpSaleRepository } from '@infrastructure/repositories/http/sale.repository.http';
 import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
 import { HttpStockDistributionRepository } from '@infrastructure/repositories/http/stock-distribution.repository.http';
+import { StockMovementRepository } from '@domain/repositories/stock-movement.repository';
+import { HttpStockMovementRepository } from '@infrastructure/repositories/http/stock-movement.repository.http';
 import { HttpProductRepository } from '@infrastructure/repositories/http/product.repository.http';
 import { HttpProductCategoryRepository } from '@infrastructure/repositories/http/product-category.repository.http';
 import { AuthService } from '@core/services/auth.service';
@@ -60,6 +62,7 @@ export const appConfig: ApplicationConfig = {
     { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
     { provide: SaleRepository, useClass: HttpSaleRepository },
     { provide: StockDistributionRepository, useClass: HttpStockDistributionRepository },
+    { provide: StockMovementRepository, useClass: HttpStockMovementRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     { provide: SupplierRepository, useClass: HttpSupplierRepository },
     {
