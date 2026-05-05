@@ -161,7 +161,6 @@ describe('SalesStore', () => {
       status: undefined,
       clientId: undefined,
       dateFrom: undefined,
-      dateTo: undefined,
     });
     expect(store.sales()).toEqual([SALE_A, SALE_B]);
     expect(store.total()).toBe(2);
@@ -171,7 +170,6 @@ describe('SalesStore', () => {
 
   it('loads sales with combinable filters', async () => {
     const dateFrom = new Date('2026-04-01T00:00:00.000Z');
-    const dateTo = new Date('2026-04-30T23:59:59.000Z');
     listSalesUseCase.execute.mockReturnValue(
       of({ data: [SALE_A], total: 1, page: 1, pageSize: 20 }),
     );
@@ -179,7 +177,6 @@ describe('SalesStore', () => {
     await store.onStatusFilterChange(SaleStatus.APPROVED);
     await store.onClientFilterChange(7);
     await store.onDateFromFilterChange(dateFrom);
-    await store.onDateToFilterChange(dateTo);
 
     await store.loadSales();
 
@@ -191,7 +188,6 @@ describe('SalesStore', () => {
       status: SaleStatus.APPROVED,
       clientId: 7,
       dateFrom,
-      dateTo,
     });
   });
 
@@ -345,6 +341,18 @@ describe('SalesStore', () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 
+  it('client filter accepts null to represent all clients', () => {
+    const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
+    store.onClientFilterChange(2);
+    spy.mockClear();
+
+    store.onClientFilterChange(null);
+
+    expect(store.clientFilter()).toBeNull();
+    expect(store.page()).toBe(1);
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
   it('date from filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
     const dateFrom = new Date('2026-04-01T00:00:00.000Z');
@@ -358,26 +366,12 @@ describe('SalesStore', () => {
     expect(spy).toHaveBeenCalledOnce();
   });
 
-  it('date to filter change resets page and triggers load', () => {
-    const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
-    const dateTo = new Date('2026-04-30T23:59:59.000Z');
-    store.onPageChange({ first: 40, rows: 20 });
-    spy.mockClear();
-
-    store.onDateToFilterChange(dateTo);
-
-    expect(store.dateToFilter()).toEqual(dateTo);
-    expect(store.page()).toBe(1);
-    expect(spy).toHaveBeenCalledOnce();
-  });
-
   it('clear filters resets all filters and reloads first page', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
     store.onPageChange({ first: 40, rows: 20 });
     store.onStatusFilterChange(SaleStatus.PENDING);
     store.onClientFilterChange(2);
     store.onDateFromFilterChange(new Date('2026-04-01T00:00:00.000Z'));
-    store.onDateToFilterChange(new Date('2026-04-30T23:59:59.000Z'));
     spy.mockClear();
 
     store.clearFilters();
@@ -385,7 +379,6 @@ describe('SalesStore', () => {
     expect(store.statusFilter()).toBeNull();
     expect(store.clientFilter()).toBeNull();
     expect(store.dateFromFilter()).toBeNull();
-    expect(store.dateToFilter()).toBeNull();
     expect(store.page()).toBe(1);
     expect(spy).toHaveBeenCalledOnce();
   });

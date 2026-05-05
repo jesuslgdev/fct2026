@@ -34,9 +34,9 @@
     />
 
     <p-select
-      [options]="store.clients()"
-      optionLabel="name"
-      optionValue="clientId"
+      [options]="clientOptions()"
+      optionLabel="label"
+      optionValue="value"
       placeholder="Todos los clientes"
       class="min-w-56"
       [loading]="store.clientsLoading()"
@@ -51,15 +51,6 @@
       [showIcon]="true"
       [ngModel]="store.dateFromFilter()"
       (ngModelChange)="onDateFromChange($event)"
-    />
-
-    <p-datepicker
-      inputId="sales-date-to"
-      placeholder="Creada hasta"
-      dateFormat="dd/mm/yy"
-      [showIcon]="true"
-      [ngModel]="store.dateToFilter()"
-      (ngModelChange)="onDateToChange($event)"
     />
 
     <ui-button

@@ -35,14 +35,12 @@ interface MockSalesStore {
   statusFilter: WritableSignal<SaleStatus | null>;
   clientFilter: WritableSignal<number | null>;
   dateFromFilter: WritableSignal<Date | null>;
-  dateToFilter: WritableSignal<Date | null>;
   emptyMessage: WritableSignal<string | null>;
   loadSales: Mock<() => Promise<void>>;
   loadClientsForFilter: Mock<() => Promise<void>>;
   onStatusFilterChange: Mock<(status: SaleStatus | null) => void>;
   onClientFilterChange: Mock<(clientId: number | null) => void>;
   onDateFromFilterChange: Mock<(dateFrom: Date | null) => void>;
-  onDateToFilterChange: Mock<(dateTo: Date | null) => void>;
   clearFilters: Mock<() => void>;
   onPageChange: Mock<(event: { first: number; rows: number }) => void>;
   canManageSales: WritableSignal<boolean>;
@@ -116,14 +114,12 @@ describe('SalesPageComponent', () => {
       statusFilter: signal<SaleStatus | null>(null),
       clientFilter: signal<number | null>(null),
       dateFromFilter: signal<Date | null>(null),
-      dateToFilter: signal<Date | null>(null),
       emptyMessage: signal<string | null>(null),
       loadSales: vi.fn().mockResolvedValue(undefined),
       loadClientsForFilter: vi.fn().mockResolvedValue(undefined),
       onStatusFilterChange: vi.fn(),
       onClientFilterChange: vi.fn(),
       onDateFromFilterChange: vi.fn(),
-      onDateToFilterChange: vi.fn(),
       clearFilters: vi.fn(),
       onPageChange: vi.fn(),
       canManageSales: signal(true),
@@ -186,6 +182,12 @@ describe('SalesPageComponent', () => {
     expect(store.onClientFilterChange).toHaveBeenCalledWith(1);
   });
 
+  it('forwards null client filter changes to the store for all clients', () => {
+    component.onClientChange(null);
+
+    expect(store.onClientFilterChange).toHaveBeenCalledWith(null);
+  });
+
   it('forwards date from changes to the store', () => {
     const dateFrom = new Date('2026-04-01T00:00:00.000Z');
 
@@ -194,12 +196,11 @@ describe('SalesPageComponent', () => {
     expect(store.onDateFromFilterChange).toHaveBeenCalledWith(dateFrom);
   });
 
-  it('forwards date to changes to the store', () => {
-    const dateTo = new Date('2026-04-30T23:59:59.000Z');
-
-    component.onDateToChange(dateTo);
-
-    expect(store.onDateToFilterChange).toHaveBeenCalledWith(dateTo);
+  it('builds client options with an all-clients entry first', () => {
+    expect(component.clientOptions()).toEqual([
+      { label: 'Todos los clientes', value: null },
+      { label: 'Cliente A', value: 1 },
+    ]);
   });
 
   it('clears filters through the store', () => {
@@ -224,6 +225,10 @@ describe('SalesPageComponent', () => {
     const title = fixture.debugElement.query(By.css('h1'));
 
     expect(title.nativeElement.textContent.trim()).toBe('Ventas');
+  });
+
+  it('does not render the created-to date filter', () => {
+    expect(fixture.debugElement.query(By.css('#sales-date-to'))).toBeNull();
   });
 
   it('shows the new sale action when sales can be managed', () => {

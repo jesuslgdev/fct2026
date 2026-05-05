@@ -50,7 +50,6 @@ export class SalesStore {
   private readonly statusFilterState = signal<SaleStatus | null>(null);
   private readonly clientFilterState = signal<number | null>(null);
   private readonly dateFromFilterState = signal<Date | null>(null);
-  private readonly dateToFilterState = signal<Date | null>(null);
   private readonly sortFieldState = signal<SaleSortField>('created_at');
   private readonly sortOrderState = signal<'asc' | 'desc'>('desc');
 
@@ -69,7 +68,6 @@ export class SalesStore {
   readonly statusFilter = this.statusFilterState.asReadonly();
   readonly clientFilter = this.clientFilterState.asReadonly();
   readonly dateFromFilter = this.dateFromFilterState.asReadonly();
-  readonly dateToFilter = this.dateToFilterState.asReadonly();
   readonly sortField = this.sortFieldState.asReadonly();
   readonly sortOrder = this.sortOrderState.asReadonly();
 
@@ -87,8 +85,7 @@ export class SalesStore {
     () =>
       this.statusFilter() !== null
       || this.clientFilter() !== null
-      || this.dateFromFilter() !== null
-      || this.dateToFilter() !== null,
+      || this.dateFromFilter() !== null,
   );
 
   readonly salesView = computed<SaleListItemView[]>(() =>
@@ -144,7 +141,6 @@ export class SalesStore {
         status: this.statusFilter() ?? undefined,
         clientId: this.clientFilter() ?? undefined,
         dateFrom: this.dateFromFilter() ?? undefined,
-        dateTo: this.dateToFilter() ?? undefined,
       };
 
       const result = await firstValueFrom(this.listSalesUseCase.execute(filters));
@@ -205,17 +201,10 @@ export class SalesStore {
     void this.loadSales();
   }
 
-  onDateToFilterChange(dateTo: Date | null): void {
-    this.dateToFilterState.set(dateTo);
-    this.pageState.set(1);
-    void this.loadSales();
-  }
-
   clearFilters(): void {
     this.statusFilterState.set(null);
     this.clientFilterState.set(null);
     this.dateFromFilterState.set(null);
-    this.dateToFilterState.set(null);
     this.pageState.set(1);
     void this.loadSales();
   }
