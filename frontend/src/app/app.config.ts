@@ -31,6 +31,8 @@ import { SupplierProductRepository } from '@domain/repositories/supplier-product
 import { HttpSupplierProductRepository } from '@infrastructure/repositories/http/supplier-product.repository.http';
 import { WarehouseRepository } from '@domain/repositories/warehouse.repository';
 import { HttpWarehouseRepository } from '@infrastructure/repositories/http/warehouse.repository.http';
+import { SaleRepository } from '@domain/repositories/sale.repository';
+import { HttpSaleRepository } from '@infrastructure/repositories/http/sale.repository.http';
 import { StockDistributionRepository } from '@domain/repositories/stock-distribution.repository';
 import { HttpStockDistributionRepository } from '@infrastructure/repositories/http/stock-distribution.repository.http';
 import { HttpProductRepository } from '@infrastructure/repositories/http/product.repository.http';
@@ -40,6 +42,8 @@ import { ProductRepository } from '@domain/repositories/product.repository';
 import { ProductCategoryRepository } from '@domain/repositories/product-category.repository';
 import { DashboardRepository } from '@domain/repositories/dashboard.repository';
 import { HttpDashboardRepository } from '@infrastructure/repositories/http/dashboard.repository.http';
+import { PurchaseRepository } from '@domain/repositories/purchase.repository';
+import { HttpPurchaseRepository } from '@infrastructure/repositories/http/purchase.repository.http';
 
 const firebaseApp = initializeApp(environment.firebase);
 const firebaseAuth = getAuth(firebaseApp);
@@ -56,6 +60,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ClientRepository, useClass: HttpClientRepository },
     { provide: UserRepository, useClass: HttpUserRepository },
     { provide: WarehouseRepository, useClass: HttpWarehouseRepository },
+    { provide: SaleRepository, useClass: HttpSaleRepository },
     { provide: StockDistributionRepository, useClass: HttpStockDistributionRepository },
     { provide: DepartmentRepository, useClass: HttpDepartmentRepository },
     { provide: SupplierRepository, useClass: HttpSupplierRepository },
@@ -70,6 +75,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ProductCategoryRepository, useClass: HttpProductCategoryRepository },
     { provide: SupplierProductRepository, useClass: HttpSupplierProductRepository },
     { provide: DashboardRepository, useClass: HttpDashboardRepository },
+    { provide: PurchaseRepository, useClass: HttpPurchaseRepository },
     providePrimeNG({
       ripple: true,
       theme: {

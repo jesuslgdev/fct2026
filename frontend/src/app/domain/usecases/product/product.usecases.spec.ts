@@ -31,6 +31,7 @@ const PRODUCT_MOCK: Product = {
   categoryId: 1,
   categoryName: 'Categoría general',
   price: 10,
+  vatRate: 0.21,
   stock: 5,
   minStock: 2,
   isActive: true,
@@ -133,7 +134,6 @@ describe('Product Use Cases', () => {
   it('CreateProductUseCase delegates to repository', async () => {
     const useCase = TestBed.inject(CreateProductUseCase);
     const payload: CreateProductPayload = {
-      code: 'P-0001',
       name: 'Producto ejemplo',
       description: 'Descripción ejemplo',
       categoryId: 1,

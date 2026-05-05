@@ -62,7 +62,7 @@ class MockAuthService {
 
   readonly permissions = signal([UserPermission.Admin]);
 
-  hasPermission(permission: UserPermission | UserPermission[]): boolean {
+  hasPermission(permission: UserPermission | readonly UserPermission[]): boolean {
     const p = Array.isArray(permission) ? permission : [permission];
     return p.some((perm) => (this.permissions() as UserPermission[]).includes(perm));
   }

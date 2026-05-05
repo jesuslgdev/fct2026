@@ -19,6 +19,7 @@ const PRODUCT: Product = {
   categoryId: 1,
   categoryName: 'General',
   price: 10,
+  vatRate: 0.21,
   stock: 0,
   minStock: 0,
   isActive: true,

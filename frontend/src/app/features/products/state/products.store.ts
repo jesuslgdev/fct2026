@@ -16,7 +16,6 @@ import { CreateProductUseCase } from '@domain/usecases/product/create-product.us
 import { UpdateProductUseCase } from '@domain/usecases/product/update-product.usecase';
 import { ToggleProductStatusUseCase } from '@domain/usecases/product/toggle-product-status.usecase';
 import { GetProductByIdUseCase } from '@domain/usecases/product/get-product-by-id.usecase';
-import { CheckProductCodeUseCase } from '@domain/usecases/product/check-product-code.usecase';
 import { GetLowStockProductsUseCase } from '@domain/usecases/product/get-low-stock-products.usecase';
 import { GetProductCategoriesUseCase } from '@domain/usecases/product/get-product-categories.usecase';
 import { GetProductSuppliersUseCase } from '@domain/usecases/product/get-product-suppliers.usecase';
@@ -39,7 +38,6 @@ export class ProductsStore {
   private readonly updateProductUseCase = inject(UpdateProductUseCase);
   private readonly toggleProductStatusUseCase = inject(ToggleProductStatusUseCase);
   private readonly getProductByIdUseCase = inject(GetProductByIdUseCase);
-  private readonly checkProductCodeUseCase = inject(CheckProductCodeUseCase);
   private readonly getLowStockProductsUseCase = inject(GetLowStockProductsUseCase);
   private readonly getProductCategoriesUseCase = inject(GetProductCategoriesUseCase);
   private readonly getProductSuppliersUseCase = inject(GetProductSuppliersUseCase);
@@ -66,8 +64,7 @@ export class ProductsStore {
   readonly productStockByWarehouses = signal<ProductStockByWarehouse[]>([]);
   readonly detailLoading = signal(false);
   readonly detailError = signal<string | null>(null);
-  readonly codeValidationLoading = signal(false);
-  readonly codeValidationError = signal<string | null>(null);
+  readonly dialogError = signal<string | null>(null);
 
   // ── Computed ───────────────────────────────────────────────────────────────
   readonly canEdit = computed(() => {
@@ -193,14 +190,15 @@ export class ProductsStore {
   createProduct(payload: CreateProductPayload): void {
     this.loading.set(true);
     this.error.set(null);
+    this.dialogError.set(null);
 
     this.createProductUseCase.execute(payload).pipe(
       tap(() => {
         this.loadProducts(); // Reload to get updated list
         this.closeDialog();
       }),
-      catchError(() => {
-        this.error.set('Failed to create product.');
+      catchError((err) => {
+        this.dialogError.set(this.resolveErrorMessage(err, 'Failed to create product.'));
         return of();
       }),
       finalize(() => this.loading.set(false))
@@ -210,14 +208,15 @@ export class ProductsStore {
   updateProduct(productId: number, payload: UpdateProductPayload): void {
     this.loading.set(true);
     this.error.set(null);
+    this.dialogError.set(null);
 
     this.updateProductUseCase.execute(productId, payload).pipe(
       tap(() => {
         this.loadProducts(); // Reload to get updated list
         this.closeDialog();
       }),
-      catchError(() => {
-        this.error.set('Failed to update product.');
+      catchError((err) => {
+        this.dialogError.set(this.resolveErrorMessage(err, 'Failed to update product.'));
         return of();
       }),
       finalize(() => this.loading.set(false))
@@ -291,55 +290,32 @@ export class ProductsStore {
     ).subscribe();
   }
 
-  // ── Validation ─────────────────────────────────────────────────────────────
-  validateProductCode(code: string): void {
-    if (!code || code.trim().length === 0) {
-      this.codeValidationError.set(null);
-      return;
-    }
-
-    this.codeValidationLoading.set(true);
-    this.codeValidationError.set(null);
-
-    this.checkProductCodeUseCase.execute(code.trim()).pipe(
-      tap(exists => {
-        if (exists) {
-          this.codeValidationError.set('Product code already exists');
-        }
-      }),
-      catchError(() => {
-        this.codeValidationError.set('Failed to validate product code');
-        return of();
-      }),
-      finalize(() => this.codeValidationLoading.set(false))
-    ).subscribe();
-  }
-
   // ── Dialog Actions ──────────────────────────────────────────────────────────
   openCreateDialog(): void {
     this.selectedProduct.set(null);
     this.dialogMode.set('create');
+    this.dialogError.set(null);
     this.dialogVisible.set(true);
-    this.codeValidationError.set(null);
   }
 
   openEditDialog(productId: number): void {
     this.loadProductById(productId);
     this.dialogMode.set('edit');
+    this.dialogError.set(null);
     this.dialogVisible.set(true);
-    this.codeValidationError.set(null);
   }
 
   openViewDialog(productId: number): void {
     this.loadProductById(productId);
     this.dialogMode.set('view');
+    this.dialogError.set(null);
     this.dialogVisible.set(true);
   }
 
   closeDialog(): void {
     this.dialogVisible.set(false);
     this.selectedProduct.set(null);
-    this.codeValidationError.set(null);
+    this.dialogError.set(null);
   }
 
   openConfirmDialog(product: Product): void {

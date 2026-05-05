@@ -64,8 +64,6 @@ export interface ProductsPageDto {
 }
 
 export interface CreateProductDto {
-  product_code?: string;
-  code?: string;
   name: string;
   description?: string | null;
   category_id: number;

@@ -89,6 +89,7 @@ export class ProductMapper {
       categoryId: dto.category_id,
       categoryName: dto.category_name ?? '',
       price: ProductMapper.toNumber(dto.price),
+      vatRate: dto.vat_rate != null ? ProductMapper.toNumber(dto.vat_rate) : 0,
       stock,
       minStock,
       isActive: dto.is_active,
@@ -100,8 +101,6 @@ export class ProductMapper {
 
   static toCreateDto(payload: CreateProductPayload): CreateProductDto {
     return {
-      product_code: payload.code,
-      code: payload.code,
       name: payload.name,
       description: payload.description,
       category_id: payload.categoryId,

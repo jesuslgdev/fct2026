@@ -21,6 +21,7 @@ const INITIAL_MOCK_PRODUCTS: Product[] = [
     categoryId: 1,
     categoryName: 'Categoría general',
     price: 12.5,
+    vatRate: 0.21,
     stock: 20,
     minStock: 5,
     isActive: true,
@@ -102,19 +103,18 @@ export class MockProductRepository implements ProductRepository {
   }
 
   createProduct(payload: CreateProductPayload): Observable<Product> {
-    const exists = this.products.some((p) => p.code === payload.code);
-    if (exists) {
-      return throwError(() => new Error('Product code already exists'));
-    }
+    const productId = this.nextId++;
+    const generatedCode = `P-${productId.toString().padStart(4, '0')}`;
 
     const newProduct: Product = {
-      productId: this.nextId++,
-      code: payload.code,
+      productId,
+      code: generatedCode,
       name: payload.name,
       description: payload.description,
       categoryId: payload.categoryId,
       categoryName: 'Categoría general',
       price: payload.price,
+      vatRate: 0.21,
       stock: 0,
       minStock: payload.minStock,
       isActive: true,

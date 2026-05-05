@@ -50,6 +50,10 @@ export const routes: Routes = [
 				loadChildren: () => import('@features/clients/clients.routes').then(m => m.CLIENTS_ROUTES),
 			},
 			{
+				path: 'sales',
+				loadChildren: () => import('@features/sales/sales.routes').then(m => m.SALES_ROUTES),
+			},
+			{
 				path: 'users',
 				loadChildren: () => import('@features/users/users.routes').then(m => m.USERS_ROUTES),
 			},
@@ -60,6 +64,15 @@ export const routes: Routes = [
 			{
 				path: 'suppliers',
 				loadChildren: () => import('@features/suppliers/suppliers.routes').then(m => m.SUPPLIERS_ROUTES),
+			},
+			{
+				path: 'purchases',
+				loadChildren: () => import('@features/purchases/purchases.routes').then(m => m.PURCHASES_ROUTES),
+			},
+			{
+				path: '',
+				redirectTo: 'legal',
+				pathMatch: 'full',
 			},
 			{
 				path: '**',

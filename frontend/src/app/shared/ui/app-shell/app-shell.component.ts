@@ -2,7 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, ViewChild } from 
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { SignOutUseCase } from '@domain/usecases/auth/sign-out.usecase';
 import { AuthService } from '@core/services/auth.service';
+import { UserPermission } from '@domain/enums/user-permission.enum';
 import { UserRole } from '@domain/enums/user-role.enum';
+import { PurchasePermissionContext } from '@domain/models/purchase.model';
+import { canManagePurchases } from '@domain/models/purchase-rules';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
@@ -35,7 +38,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/clients': 'Clientes',
   '/suppliers': 'Proveedores',
   '/warehouses': 'Almacenes',
-  '/stock-by-warehouse': 'Stock por almacén',
   '/movements': 'Movimientos',
   '/departments': 'Departamentos',
   '/users': 'Usuarios',
@@ -99,6 +101,17 @@ export class AppShellComponent {
 
   readonly navSections = computed(() => {
     const isAdmin = this.authService.isAdmin();
+    const user = this.authService.user();
+    const purchasesDepartmentId = this.authService.hasPermission(UserPermission.PurchasesDepartment)
+      ? (user?.departmentId ?? -1)
+      : -1;
+    const purchasePermissionContext: PurchasePermissionContext = {
+      role: user?.role,
+      departmentId: user?.departmentId ?? null,
+      purchasesDepartmentId,
+      permissions: user?.permissions ?? [],
+    };
+    const canAccessPurchases = canManagePurchases(purchasePermissionContext);
 
     const allSections: NavSection[] = [
       {
@@ -110,7 +123,9 @@ export class AppShellComponent {
       {
         title: 'Operaciones',
         items: [
-          { label: 'Compras', icon: 'pi pi-shopping-cart', route: '/purchases' },
+          ...(canAccessPurchases
+            ? [{ label: 'Compras', icon: 'pi pi-shopping-cart', route: '/purchases' }]
+            : []),
           { label: 'Ventas', icon: 'pi pi-credit-card', route: '/sales' },
         ],
       },
@@ -132,7 +147,6 @@ export class AppShellComponent {
         title: 'Inventario',
         items: [
           { label: 'Almacenes', icon: 'pi pi-building', route: '/warehouses' },
-          { label: 'Stock por almacén', icon: 'pi pi-database', route: '/stock-by-warehouse' },
           { label: 'Movimientos', icon: 'pi pi-refresh', route: '/movements' },
         ],
       },

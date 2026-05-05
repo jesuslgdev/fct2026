@@ -27,6 +27,10 @@ export interface ImportSupplierProductsRequest {
   file: File;
 }
 
+export interface DownloadSupplierProductTemplateRequest {
+  productIds?: number[];
+}
+
 // Response DTOs
 export interface ImportResult {
   total: number;

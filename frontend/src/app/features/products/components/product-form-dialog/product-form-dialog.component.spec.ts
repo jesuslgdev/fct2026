@@ -13,6 +13,7 @@ const PRODUCT_MOCK: Product = {
   categoryId: 1,
   categoryName: 'Categoria',
   price: 10,
+  vatRate: 0.21,
   stock: 5,
   minStock: 2,
   isActive: true,
@@ -22,10 +23,8 @@ class MockProductsStore {
   readonly selectedProduct = signal<Product | null>(null);
   readonly dialogMode = signal<'create' | 'edit' | 'view'>('create');
   readonly categories = signal([{ categoryId: 1, name: 'Cat 1', description: '' }]);
-  readonly codeValidationError = signal<string | null>(null);
   readonly loading = signal(false);
 
-  readonly validateProductCode = vi.fn();
   readonly createProduct = vi.fn();
   readonly updateProduct = vi.fn();
   readonly closeDialog = vi.fn();
@@ -54,7 +53,6 @@ describe('ProductFormDialogComponent', () => {
     fixture.detectChanges();
 
     component.form.setValue({
-      code: 'P-0002',
       name: 'Nombre',
       description: 'Desc',
       categoryId: 1,
@@ -64,13 +62,36 @@ describe('ProductFormDialogComponent', () => {
 
     await component.onConfirm();
 
-    expect(store.validateProductCode).toHaveBeenCalledWith('P-0002');
     expect(store.createProduct).toHaveBeenCalledWith({
-      code: 'P-0002',
       name: 'Nombre',
       description: 'Desc',
       categoryId: 1,
       price: 5,
+      minStock: 2,
+    });
+  });
+
+  it('submits decimal price in create mode', async () => {
+    const fixture = TestBed.createComponent(ProductFormDialogComponent);
+    const component = fixture.componentInstance;
+    store.dialogMode.set('create');
+    fixture.detectChanges();
+
+    component.form.setValue({
+      name: 'Producto decimal',
+      description: 'Desc',
+      categoryId: 1,
+      price: 12.34,
+      minStock: 2,
+    });
+
+    await component.onConfirm();
+
+    expect(store.createProduct).toHaveBeenCalledWith({
+      name: 'Producto decimal',
+      description: 'Desc',
+      categoryId: 1,
+      price: 12.34,
       minStock: 2,
     });
   });
@@ -82,34 +103,10 @@ describe('ProductFormDialogComponent', () => {
     fixture.detectChanges();
 
     component.form.setValue({
-      code: 'P-0003',
       name: 'Producto gratis',
       description: 'Desc',
       categoryId: 1,
       price: 0,
-      minStock: 2,
-    });
-
-    await component.onConfirm();
-
-    expect(store.validateProductCode).not.toHaveBeenCalled();
-    expect(store.createProduct).not.toHaveBeenCalled();
-  });
-
-  it('does not create if code validation fails', async () => {
-    store.dialogMode.set('create');
-    store.codeValidationError.set('Code exists');
-
-    const fixture = TestBed.createComponent(ProductFormDialogComponent);
-    const component = fixture.componentInstance;
-    fixture.detectChanges();
-
-    component.form.setValue({
-      code: 'P-0002',
-      name: 'Nombre',
-      description: 'Desc',
-      categoryId: 1,
-      price: 5,
       minStock: 2,
     });
 
@@ -141,6 +138,33 @@ describe('ProductFormDialogComponent', () => {
       description: 'Desc',
       categoryId: 1,
       price: 20,
+      minStock: 1,
+    });
+  });
+
+  it('submits decimal price in edit mode', async () => {
+    store.dialogMode.set('edit');
+    store.selectedProduct.set(PRODUCT_MOCK);
+
+    const fixture = TestBed.createComponent(ProductFormDialogComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    component.form.patchValue({
+      name: 'Producto editado',
+      description: 'Desc',
+      categoryId: 1,
+      price: 20.75,
+      minStock: 1,
+    });
+
+    await component.onConfirm();
+
+    expect(store.updateProduct).toHaveBeenCalledWith(PRODUCT_MOCK.productId, {
+      name: 'Producto editado',
+      description: 'Desc',
+      categoryId: 1,
+      price: 20.75,
       minStock: 1,
     });
   });

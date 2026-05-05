@@ -18,10 +18,8 @@ export class AuthService {
     this._session.set(session);
   }
 
-  hasPermission(permission: UserPermission | UserPermission[]): boolean {
-    if (Array.isArray(permission)) {
-      return permission.some((p) => this.permissions().includes(p));
-    }
-    return this.permissions().includes(permission);
+  hasPermission(permission: UserPermission | readonly UserPermission[]): boolean {
+    const permissionsToCheck = Array.isArray(permission) ? permission : [permission];
+    return permissionsToCheck.some((item) => this.permissions().includes(item));
   }
 }
