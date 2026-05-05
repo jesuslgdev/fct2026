@@ -153,7 +153,7 @@ describe('ProductSuppliersStore', () => {
     await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 50 });
 
     expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
-    expect(store.error()).toBe('No hay producto seleccionado.');
+    expect(store.addSupplierDialogError()).toBe('No hay producto seleccionado.');
   });
 
   it('bloquea precio con mas de dos decimales antes del use case', async () => {
@@ -161,7 +161,7 @@ describe('ProductSuppliersStore', () => {
 
     await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 10.123 });
 
-    expect(store.error()).toBe('El precio del proveedor debe tener maximo 2 decimales.');
+    expect(store.addSupplierDialogError()).toBe('El precio del proveedor debe tener maximo 2 decimales.');
     expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
   });
 
@@ -209,7 +209,7 @@ describe('ProductSuppliersStore', () => {
     await store.addSelectedSupplierToProduct();
 
     expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
-    expect(store.error()).toBe('Proveedor seleccionado invalido.');
+    expect(store.addSupplierDialogError()).toBe('Proveedor seleccionado invalido.');
   });
 
   it('mapea asociacion duplicada al agregar proveedor', async () => {
@@ -220,7 +220,7 @@ describe('ProductSuppliersStore', () => {
 
     await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 90 });
 
-    expect(store.error()).toBe('El producto ya esta asociado con este proveedor.');
+    expect(store.addSupplierDialogError()).toBe('El producto ya esta asociado con este proveedor.');
   });
 
   it('mapea producto inactivo al agregar proveedor', async () => {
@@ -231,7 +231,7 @@ describe('ProductSuppliersStore', () => {
 
     await store.addSupplierToProduct({ supplierId: 2, supplierPrice: 90 });
 
-    expect(store.error()).toBe('Solo se pueden asociar productos activos.');
+    expect(store.addSupplierDialogError()).toBe('Solo se pueden asociar productos activos.');
   });
 
   it('actualiza precio y recarga lista', async () => {
@@ -352,6 +352,6 @@ describe('ProductSuppliersStore', () => {
 
     expect(store.canModify()).toBe(false);
     expect(addProductToSupplierUseCase.execute).not.toHaveBeenCalled();
-    expect(store.error()).toBe('No tiene permisos para realizar esta accion.');
+    expect(store.addSupplierDialogError()).toBe('No tiene permisos para realizar esta accion.');
   });
 });
