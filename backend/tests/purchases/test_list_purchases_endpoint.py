@@ -78,25 +78,35 @@ async def test_list_purchases_empty(auth_client: AsyncClient):
 
 async def test_list_purchases_returns_data(auth_client: AsyncClient):
     purchase = _make_purchase()
-    row = (purchase, "Proveedor Test S.L.")
+    received_purchase = _make_purchase(
+        purchase_id=2,
+        purchase_number="PO-00002",
+        status="Received",
+    )
+    rows = [
+        (purchase, "Proveedor Test S.L."),
+        (received_purchase, "Proveedor Test S.L."),
+    ]
     mock = MagicMock()
     mock.execute = AsyncMock(
-        return_value=PaginatedResult(items=[row], total=1, page=1, page_size=20)
+        return_value=PaginatedResult(items=rows, total=2, page=1, page_size=20)
     )
     app.dependency_overrides[get_list_purchases_use_case] = lambda: mock
     response = await auth_client.get("/api/v1/purchases")
     del app.dependency_overrides[get_list_purchases_use_case]
     assert response.status_code == 200
     body = response.json()
-    assert body["total"] == 1
-    assert len(body["items"]) == 1
+    assert body["total"] == 2
+    assert len(body["items"]) == 2
     item = body["items"][0]
     assert item["purchase_id"] == 1
     assert item["purchase_number"] == "PO-00001"
     assert item["supplier_name"] == "Proveedor Test S.L."
     assert item["status"] == "Pending"
+    assert item["allowed_transitions"] == ["Approved", "Cancelled"]
     assert item["warehouse_id"] == 1
     assert float(item["total"]) == 121.00
+    assert body["items"][1]["allowed_transitions"] == []
 
 
 async def test_list_purchases_pagination_params(auth_client: AsyncClient):
