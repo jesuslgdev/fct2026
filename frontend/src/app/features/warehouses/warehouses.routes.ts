@@ -10,6 +10,13 @@ export const WAREHOUSES_ROUTES: Routes = [
     title: 'Gestion de almacenes',
   },
   {
+    path: 'movements',
+    loadChildren: () =>
+      import('@features/stock-movements/stock-movements.routes').then(
+        (m) => m.STOCK_MOVEMENTS_ROUTES,
+      ),
+  },
+  {
     path: ':warehouseId',
     loadComponent: () =>
       import('./pages/warehouse-detail/warehouse-detail.page.component').then(

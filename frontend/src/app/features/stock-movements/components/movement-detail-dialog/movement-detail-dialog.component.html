@@ -1,0 +1,101 @@
+<ui-dialog
+  [(visible)]="store.detailDialogVisible"
+  header="Detalle del movimiento"
+  size="lg"
+  (closed)="store.closeDetailDialog()"
+>
+  @if (store.detailLoading()) {
+    <div class="flex justify-center py-8">
+      <i class="pi pi-spin pi-spinner text-2xl text-surface-400"></i>
+    </div>
+  } @else if (store.selectedMovementDetail(); as detail) {
+    <div class="dialog-form">
+
+      <div class="dialog-form-grid">
+        <div class="dialog-field">
+          <span class="dialog-field-label">ID movimiento</span>
+          <p class="text-sm text-surface-900"># {{ detail.movementId }}</p>
+        </div>
+        <div class="dialog-field">
+          <span class="dialog-field-label">Tipo</span>
+          <div>
+            <ui-movement-type-badge [movementType]="detail.movementType" />
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-form-grid">
+        <div class="dialog-field">
+          <span class="dialog-field-label">Producto</span>
+          <p class="text-sm text-surface-900">{{ detail.productName }}</p>
+        </div>
+        <div class="dialog-field">
+          <span class="dialog-field-label">Almacén</span>
+          <p class="text-sm text-surface-900">{{ detail.warehouseName }}</p>
+        </div>
+      </div>
+
+      <div class="dialog-form-grid">
+        <div class="dialog-field">
+          <span class="dialog-field-label">Cantidad anterior</span>
+          <p class="text-sm text-surface-900">{{ detail.previousQuantity }}</p>
+        </div>
+        <div class="dialog-field">
+          <span class="dialog-field-label">Cantidad nueva</span>
+          <p class="text-sm text-surface-900">{{ detail.newQuantity }}</p>
+        </div>
+      </div>
+
+      <div class="dialog-form-grid">
+        <div class="dialog-field">
+          <span class="dialog-field-label">Diferencia</span>
+          <p class="text-sm font-semibold"
+            [class.text-green-600]="detail.difference > 0"
+            [class.text-red-600]="detail.difference < 0"
+          >
+            {{ detail.difference > 0 ? '+' : '' }}{{ detail.difference }}
+          </p>
+        </div>
+        <div class="dialog-field">
+          <span class="dialog-field-label">Usuario</span>
+          <p class="text-sm text-surface-900">{{ detail.userEmail }}</p>
+        </div>
+      </div>
+
+      <div class="dialog-field">
+        <span class="dialog-field-label">Referencia</span>
+        <p class="text-sm text-surface-900">{{ detail.reason ?? '—' }}</p>
+      </div>
+
+      <div class="dialog-field">
+        <span class="dialog-field-label">Documento de origen</span>
+        @if (detail.purchaseId) {
+          <a
+            [routerLink]="['/purchases']"
+            [queryParams]="{ openId: detail.purchaseId }"
+            class="text-primary-600 hover:underline inline-flex items-center gap-1 text-sm"
+          >
+            <i class="pi pi-shopping-cart text-xs"></i>
+            Compra #{{ detail.purchaseId }}
+          </a>
+        } @else if (detail.saleId) {
+          <a
+            (click)="navigateToSale(detail.saleId)"
+            class="text-primary-600 hover:underline inline-flex items-center gap-1 text-sm cursor-pointer"
+          >
+            <i class="pi pi-credit-card text-xs"></i>
+            Venta #{{ detail.saleId }}
+          </a>
+        } @else {
+          <span class="text-sm text-surface-400">—</span>
+        }
+      </div>
+
+      <div class="dialog-field">
+        <span class="dialog-field-label">Fecha</span>
+        <p class="text-sm text-surface-900">{{ detail.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+      </div>
+
+    </div>
+  }
+</ui-dialog>

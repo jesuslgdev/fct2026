@@ -38,7 +38,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/clients': 'Clientes',
   '/suppliers': 'Proveedores',
   '/warehouses': 'Almacenes',
-  '/movements': 'Movimientos',
+  '/warehouses/movements': 'Movimientos de stock',
   '/departments': 'Departamentos',
   '/users': 'Usuarios',
   '/legal/terms': 'Términos y Condiciones',
@@ -83,6 +83,9 @@ export class AppShellComponent {
     }
     if (url.startsWith('/products/')) {
       return 'Detalle de producto';
+    }
+    if (url.startsWith('/warehouses/movements')) {
+      return 'Movimientos de stock';
     }
     return 'ERP System';
   });
@@ -147,7 +150,7 @@ export class AppShellComponent {
         title: 'Inventario',
         items: [
           { label: 'Almacenes', icon: 'pi pi-building', route: '/warehouses' },
-          { label: 'Movimientos', icon: 'pi pi-refresh', route: '/movements' },
+          { label: 'Movimientos', icon: 'pi pi-history', route: '/warehouses/movements' },
         ],
       },
       {

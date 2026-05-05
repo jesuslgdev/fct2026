@@ -310,6 +310,13 @@ export class PurchasesStore {
     this.loadPurchaseById(purchase.purchaseId);
   }
 
+  openViewDialogById(purchaseId: number): void {
+    this._dialogMode.set('view');
+    this._dialogError.set(null);
+    this._dialogVisible.set(true);
+    this.loadPurchaseById(purchaseId);
+  }
+
   closeDialog(): void {
     this._dialogVisible.set(false);
     this._dialogError.set(null);
