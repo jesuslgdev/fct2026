@@ -164,6 +164,7 @@ async def list_purchases(
                 purchase_number=purchase.purchase_number,
                 supplier_name=supplier_name,
                 status=purchase.status,
+                allowed_transitions=allowed_next(purchase.status),
                 warehouse_id=purchase.warehouse_id,
                 created_at=purchase.created_at,
                 total=purchase.total,

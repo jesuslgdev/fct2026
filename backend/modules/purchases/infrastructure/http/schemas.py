@@ -10,6 +10,7 @@ class PurchaseDTO(BaseModel):
     purchase_number: str
     supplier_name: str | None
     status: str
+    allowed_transitions: list[str] = Field(default_factory=list)
     warehouse_id: int
     created_at: datetime
     total: Decimal | None
