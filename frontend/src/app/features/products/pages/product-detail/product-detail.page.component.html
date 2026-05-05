@@ -231,10 +231,15 @@
   cancelLabel="Cancelar"
   [confirmLoading]="supplierStore.loading()"
   [confirmDisabled]="!supplierStore.selectedSupplierId() || !supplierStore.addSupplierPriceDraft()"
+  [closeOnConfirm]="false"
   (confirmed)="supplierStore.addSelectedSupplierToProduct()"
   (cancelled)="supplierStore.closeAddSupplierDialog()"
 >
   <div class="dialog-form">
+    @if (supplierStore.addSupplierDialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
     <label class="dialog-field">
       <span class="dialog-field-label">Proveedor</span>
       <p-select

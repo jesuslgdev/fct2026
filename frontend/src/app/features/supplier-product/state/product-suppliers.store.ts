@@ -47,6 +47,7 @@ export class ProductSuppliersStore {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly suppliersLoading = signal(false);
+  readonly addSupplierDialogError = signal<string | null>(null);
 
   readonly addSupplierDialogVisible = signal(false);
   readonly editSupplierPriceDialogVisible = signal(false);
@@ -128,10 +129,13 @@ export class ProductSuppliersStore {
     return fallback;
   }
 
-  private requireProductId(message: string): number | null {
+  private requireProductId(
+    message: string,
+    setError: (message: string) => void = (value) => this.error.set(value),
+  ): number | null {
     const currentProductId = this.productId();
     if (!currentProductId) {
-      this.error.set(message);
+      setError(message);
       return null;
     }
 
@@ -148,37 +152,43 @@ export class ProductSuppliersStore {
     return currentProductSupplier;
   }
 
-  private ensureCanModify(): boolean {
+  private ensureCanModify(setError: (message: string) => void = (value) => this.error.set(value)): boolean {
     if (this.canModify()) {
       return true;
     }
 
-    this.error.set('No tiene permisos para realizar esta accion.');
+    setError('No tiene permisos para realizar esta accion.');
     return false;
   }
 
-  private parseSupplierPrice(value: number | string): number | null {
+  private parseSupplierPrice(
+    value: number | string,
+    setError: (message: string) => void = (message) => this.error.set(message),
+  ): number | null {
     const normalized = value.toString().trim().replace(',', '.');
     const price = Number(normalized);
 
     if (!Number.isFinite(price) || price <= 0) {
-      this.error.set('El precio del proveedor debe ser mayor que cero.');
+      setError('El precio del proveedor debe ser mayor que cero.');
       return null;
     }
 
     if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
-      this.error.set('El precio del proveedor debe tener maximo 2 decimales.');
+      setError('El precio del proveedor debe tener maximo 2 decimales.');
       return null;
     }
 
     return price;
   }
 
-  private parseSupplierId(value: string | null): number | null {
+  private parseSupplierId(
+    value: string | null,
+    setError: (message: string) => void = (message) => this.error.set(message),
+  ): number | null {
     const supplierId = Number(value);
 
     if (!Number.isInteger(supplierId) || supplierId <= 0) {
-      this.error.set('Proveedor seleccionado invalido.');
+      setError('Proveedor seleccionado invalido.');
       return null;
     }
 
@@ -253,6 +263,8 @@ export class ProductSuppliersStore {
       return;
     }
 
+    this.error.set(null);
+    this.addSupplierDialogError.set(null);
     this.selectedProductSupplier.set(null);
     this.selectedSupplierId.set(null);
     this.addSupplierPriceDraft.set('');
@@ -261,6 +273,8 @@ export class ProductSuppliersStore {
   }
 
   closeAddSupplierDialog(): void {
+    this.error.set(null);
+    this.addSupplierDialogError.set(null);
     this.addSupplierDialogVisible.set(false);
     this.selectedProductSupplier.set(null);
     this.selectedSupplierId.set(null);
@@ -276,13 +290,14 @@ export class ProductSuppliersStore {
   }
 
   async addSelectedSupplierToProduct(): Promise<void> {
-    this.error.set(null);
+    this.addSupplierDialogError.set(null);
+    const setDialogError = (message: string) => this.addSupplierDialogError.set(message);
 
-    if (!this.ensureCanModify()) {
+    if (!this.ensureCanModify(setDialogError)) {
       return;
     }
 
-    const supplierId = this.parseSupplierId(this.selectedSupplierId());
+    const supplierId = this.parseSupplierId(this.selectedSupplierId(), setDialogError);
     if (supplierId === null) {
       return;
     }
@@ -294,18 +309,19 @@ export class ProductSuppliersStore {
   }
 
   async addSupplierToProduct(request: { supplierId: number; supplierPrice: number | string }): Promise<void> {
-    this.error.set(null);
+    this.addSupplierDialogError.set(null);
+    const setDialogError = (message: string) => this.addSupplierDialogError.set(message);
 
-    if (!this.ensureCanModify()) {
+    if (!this.ensureCanModify(setDialogError)) {
       return;
     }
 
-    const currentProductId = this.requireProductId('No hay producto seleccionado.');
+    const currentProductId = this.requireProductId('No hay producto seleccionado.', setDialogError);
     if (!currentProductId) {
       return;
     }
 
-    const supplierPrice = this.parseSupplierPrice(request.supplierPrice);
+    const supplierPrice = this.parseSupplierPrice(request.supplierPrice, setDialogError);
     if (supplierPrice === null) {
       return;
     }
@@ -325,7 +341,7 @@ export class ProductSuppliersStore {
         'Se agrego la asociacion, pero no se pudo recargar la lista.',
       );
     } catch (err) {
-      this.error.set(this.resolveErrorMessage(err, 'Error al agregar proveedor al producto.'));
+      this.addSupplierDialogError.set(this.resolveErrorMessage(err, 'Error al agregar proveedor al producto.'));
     } finally {
       this.loading.set(false);
     }
