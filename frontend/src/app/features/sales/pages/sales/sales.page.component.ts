@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,6 +15,11 @@ import { SalesStore } from '@features/sales/state/sales.store';
 interface StatusOption {
   label: string;
   value: SaleStatus | null;
+}
+
+interface ClientOption {
+  label: string;
+  value: number | null;
 }
 
 @Component({
@@ -53,6 +58,14 @@ export class SalesPageComponent implements OnInit {
     { label: 'Cancelada', value: SaleStatus.CANCELLED },
   ];
 
+  readonly clientOptions = computed<ClientOption[]>(() => [
+    { label: 'Todos los clientes', value: null },
+    ...this.store.clients().map((client) => ({
+      label: client.name,
+      value: client.clientId,
+    })),
+  ]);
+
   ngOnInit(): void {
     void this.store.loadSales();
     void this.store.loadClientsForFilter();
@@ -68,10 +81,6 @@ export class SalesPageComponent implements OnInit {
 
   onDateFromChange(dateFrom: Date | null): void {
     this.store.onDateFromFilterChange(dateFrom);
-  }
-
-  onDateToChange(dateTo: Date | null): void {
-    this.store.onDateToFilterChange(dateTo);
   }
 
   onClearFilters(): void {
