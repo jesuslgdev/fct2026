@@ -14,7 +14,7 @@ from composition.dependencies import (
     get_update_sale_line_use_case,
     get_update_sale_use_case,
 )
-from composition.security import require_sales_department_or_admin
+from composition.security import get_current_user, require_sales_department_or_admin
 from modules.sales.domain.exceptions import InsufficientStockForLineError
 from modules.sales.domain.interfaces.use_cases.i_add_sale_line_use_case import (
     IAddSaleLineUseCase,
@@ -113,7 +113,7 @@ async def list_sales(
     search: str | None = Query(
         None, max_length=255, description="Search by sale number or client name"
     ),
-    _: UserSession = Depends(require_sales_department_or_admin),
+    _: UserSession = Depends(get_current_user),
     use_case: IListSalesUseCase = Depends(get_list_sales_use_case),
 ):
     """Return a paginated list of sales with optional filters."""
@@ -160,7 +160,7 @@ async def list_sales(
 @router.get("/{sale_id}", response_model=SaleDetailDTO, tags=["Sales"])
 async def get_sale(
     sale_id: int,
-    _: UserSession = Depends(require_sales_department_or_admin),
+    _: UserSession = Depends(get_current_user),
     use_case: IGetSaleUseCase = Depends(get_get_sale_use_case),
 ):
     """Return the full detail of a single sale."""
