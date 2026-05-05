@@ -376,6 +376,26 @@ describe('SupplierProductsStore', () => {
     ]);
   });
 
+  it('should clear previous import validation state when selecting a new file', () => {
+    const previousResult: ImportResult = {
+      total: 1,
+      created: 0,
+      errors: 1,
+      errorDetail: [{ row: 2, reason: 'Product code is required' }],
+    };
+    const replacementFile = new File(['updated'], 'supplier-products.xlsx');
+
+    store.importDialogError.set('Error previo');
+    store.importResult.set(previousResult);
+    store.selectedImportFile.set(new File(['old'], 'old-supplier-products.xlsx'));
+
+    store.setImportFile(replacementFile);
+
+    expect(store.selectedImportFile()).toBe(replacementFile);
+    expect(store.importDialogError()).toBeNull();
+    expect(store.importResult()).toBeNull();
+  });
+
   it('should clear template selection and refresh data after a successful import', async () => {
     store.supplierId.set(1);
     store.selectedImportFile.set(new File(['data'], 'supplier-products.xlsx'));
