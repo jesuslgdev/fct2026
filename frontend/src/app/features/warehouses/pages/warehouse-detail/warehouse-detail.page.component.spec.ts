@@ -12,7 +12,11 @@ class ResizeObserverMock {
   disconnect = vi.fn();
 }
 
-globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
+Object.defineProperty(globalThis, 'ResizeObserver', {
+  configurable: true,
+  writable: true,
+  value: ResizeObserverMock,
+});
 
 const WAREHOUSE: Warehouse = {
   warehouseId: 1,
