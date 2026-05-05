@@ -145,7 +145,7 @@
             <p-cellEditor>
               <ng-template #input>
                 <p-select
-                  [options]="store.availableProducts()"
+                  [options]="store.getAvailableProductsForLine(line.lineId)"
                   optionLabel="name"
                   optionValue="productId"
                   placeholder="Selecciona un producto"
@@ -299,6 +299,7 @@
                 ariaLabel="Eliminar línea"
                 variant="destructive"
                 size="sm"
+                [disabled]="!store.canEditLines()"
                 (clicked)="onRemoveLine(line.lineId)"
               />
             </div>

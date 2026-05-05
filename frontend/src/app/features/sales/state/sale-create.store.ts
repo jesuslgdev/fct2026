@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { Client, ClientDetail, ClientQueryParams } from '@domain/models/client.model';
-import { Product, ProductQueryParams, ProductStockByWarehouse } from '@domain/models/product.model';
+import { Product, ProductQueryParams } from '@domain/models/product.model';
 import {
   SaleApiError,
   SaleClientNotActiveError,
@@ -20,10 +20,10 @@ import { CreateSale, SaleDetail, SaleDiscountType, UpdateSale } from '@domain/mo
 import { Warehouse } from '@domain/models/warehouse.model';
 import { GetClientByIdUseCase } from '@domain/usecases/client/get-client-by-id.usecase';
 import { GetClientsUseCase } from '@domain/usecases/client/get-clients.usecase';
-import { GetProductStockByWarehousesUseCase } from '@domain/usecases/product/get-product-stock-by-warehouses.usecase';
 import { GetProductsUseCase } from '@domain/usecases/product/get-products.usecase';
 import { CreateSaleUseCase } from '@domain/usecases/sales/create-sale.usecase';
 import { GetSaleUseCase } from '@domain/usecases/sales/get-sale.usecase';
+import { GetStockDistributionUseCase } from '@domain/usecases/stock-distribution/get-stock-distribution.usecase';
 import { UpdateSaleUseCase } from '@domain/usecases/sales/update-sale.usecase';
 import { GetWarehousesUseCase } from '@domain/usecases/warehouse/get-warehouses.usecase';
 
@@ -79,7 +79,7 @@ export class SaleCreateStore {
   private readonly getClientByIdUseCase = inject(GetClientByIdUseCase);
   private readonly getWarehousesUseCase = inject(GetWarehousesUseCase);
   private readonly getProductsUseCase = inject(GetProductsUseCase);
-  private readonly getProductStockByWarehousesUseCase = inject(GetProductStockByWarehousesUseCase);
+  private readonly getStockDistributionUseCase = inject(GetStockDistributionUseCase);
   private readonly createSaleUseCase = inject(CreateSaleUseCase);
   private readonly getSaleUseCase = inject(GetSaleUseCase);
   private readonly updateSaleUseCase = inject(UpdateSaleUseCase);
@@ -89,6 +89,7 @@ export class SaleCreateStore {
   private readonly clientsState = signal<Client[]>([]);
   private readonly warehousesState = signal<Warehouse[]>([]);
   private readonly productsState = signal<Product[]>([]);
+  private readonly availableProductsByWarehouseState = signal<Record<number, number>>({});
   private readonly linesState = signal<SaleCreateLineDraft[]>([]);
   private readonly lineDraftsState = signal<Record<number, SaleCreateLineEditDraft>>({});
   private readonly lineStockPreviewsState = signal<Record<number, SaleCreateLineStockPreview>>({});
@@ -103,6 +104,7 @@ export class SaleCreateStore {
 
   private readonly loadingState = signal(false);
   private readonly loadingProductsState = signal(false);
+  private readonly loadingAvailableProductsState = signal(false);
   private readonly loadingClientDetailState = signal(false);
   private readonly submittingState = signal(false);
   private readonly errorState = signal<string | null>(null);
@@ -111,6 +113,7 @@ export class SaleCreateStore {
   readonly clients = this.clientsState.asReadonly();
   readonly warehouses = this.warehousesState.asReadonly();
   readonly products = this.productsState.asReadonly();
+  readonly availableProductsByWarehouse = this.availableProductsByWarehouseState.asReadonly();
   readonly lines = this.linesState.asReadonly();
   readonly lineDrafts = this.lineDraftsState.asReadonly();
   readonly lineStockPreviews = this.lineStockPreviewsState.asReadonly();
@@ -126,14 +129,23 @@ export class SaleCreateStore {
 
   readonly loading = this.loadingState.asReadonly();
   readonly loadingProducts = this.loadingProductsState.asReadonly();
+  readonly loadingAvailableProducts = this.loadingAvailableProductsState.asReadonly();
   readonly loadingClientDetail = this.loadingClientDetailState.asReadonly();
   readonly submitting = this.submittingState.asReadonly();
   readonly error = this.errorState.asReadonly();
   readonly successMessage = this.successMessageState.asReadonly();
 
-  readonly canEditLines = computed(() =>
-    this.selectedClientId() !== null && this.selectedWarehouseId() !== null,
-  );
+  readonly canEditLines = computed(() => {
+    if (this.selectedClientId() === null || this.selectedWarehouseId() === null) {
+      return false;
+    }
+
+    if (this.isEditMode()) {
+      return this.editingSaleStatus() === SaleStatus.PENDING;
+    }
+
+    return true;
+  });
 
   readonly deliveryAddress = computed(() => {
     if (this.isEditMode()) {
@@ -195,12 +207,6 @@ export class SaleCreateStore {
     return views.length > 0 && views.every((line) => this.validateLine(line) === null);
   });
 
-  readonly availableProducts = computed(() =>
-    this.products()
-      .filter((product) => product.isActive)
-      .sort((left, right) => left.name.localeCompare(right.name)),
-  );
-
   async initialize(): Promise<void> {
     this.resetFormState();
     this.errorState.set(null);
@@ -250,6 +256,7 @@ export class SaleCreateStore {
         this.errorState.set('Solo se pueden editar ventas en estado pendiente.');
       }
 
+      await this.loadAvailableProductsForWarehouse(sale.warehouseId);
       await this.refreshAllLineStocks();
     } catch (err) {
       this.errorState.set(this.resolveLoadError(err));
@@ -329,6 +336,7 @@ export class SaleCreateStore {
     this.clearAllLineStockPreviews();
 
     if (!warehouseId) {
+      this.availableProductsByWarehouseState.set({});
       this.linesState.update((lines) =>
         lines.map((line) => ({
           ...line,
@@ -346,6 +354,7 @@ export class SaleCreateStore {
       return;
     }
 
+    await this.loadAvailableProductsForWarehouse(warehouseId);
     await this.refreshAllLineStocks();
   }
 
@@ -487,9 +496,7 @@ export class SaleCreateStore {
   }
 
   async previewLineStock(lineId: number, productId: number | null): Promise<void> {
-    const warehouseId = this.selectedWarehouseId();
-
-    if (!productId || !warehouseId) {
+    if (!productId || !this.selectedWarehouseId()) {
       this.clearLineStockPreview(lineId);
       return;
     }
@@ -504,15 +511,10 @@ export class SaleCreateStore {
     }));
 
     try {
-      const stocks = await firstValueFrom(
-        this.getProductStockByWarehousesUseCase.execute(productId),
-      );
-      const stockForWarehouse = this.findStockForWarehouse(stocks, warehouseId);
-
       this.lineStockPreviewsState.update((previews) => ({
         ...previews,
         [lineId]: {
-          availableStock: stockForWarehouse?.currentStock ?? 0,
+          availableStock: this.getWarehouseAvailableStock(productId),
           stockLoading: false,
           stockError: null,
         },
@@ -531,6 +533,32 @@ export class SaleCreateStore {
 
   getLineStockPreview(lineId: number): SaleCreateLineStockPreview | undefined {
     return this.lineStockPreviews()[lineId];
+  }
+
+  getAvailableProductsForLine(lineId: number): Product[] {
+    const line = this.lines().find((item) => item.lineId === lineId);
+    const draftProductId = this.getLineDraft(lineId)?.productId ?? null;
+    const selectedProductId = draftProductId ?? line?.productId ?? null;
+    const availabilityByProduct = this.availableProductsByWarehouse();
+    const warehouseSelected = this.selectedWarehouseId() !== null;
+
+    return this.products()
+      .filter((product) => {
+        if (!product.isActive) {
+          return false;
+        }
+
+        if (!warehouseSelected) {
+          return selectedProductId === product.productId;
+        }
+
+        if (selectedProductId === product.productId) {
+          return true;
+        }
+
+        return (availabilityByProduct[product.productId] ?? 0) > 0;
+      })
+      .sort((left, right) => left.name.localeCompare(right.name));
   }
 
   clearLineStockPreview(lineId: number): void {
@@ -581,6 +609,7 @@ export class SaleCreateStore {
     this.clientsState.set([]);
     this.warehousesState.set([]);
     this.productsState.set([]);
+    this.availableProductsByWarehouseState.set({});
     this.linesState.set([]);
     this.lineDraftsState.set({});
     this.lineStockPreviewsState.set({});
@@ -601,9 +630,8 @@ export class SaleCreateStore {
 
   private async refreshLineStock(lineId: number): Promise<void> {
     const line = this.lines().find((item) => item.lineId === lineId);
-    const warehouseId = this.selectedWarehouseId();
 
-    if (!line || !line.productId || !warehouseId) {
+    if (!line || !line.productId || !this.selectedWarehouseId()) {
       this.revalidateLine(lineId);
       return;
     }
@@ -621,17 +649,12 @@ export class SaleCreateStore {
     );
 
     try {
-      const stocks = await firstValueFrom(
-        this.getProductStockByWarehousesUseCase.execute(line.productId),
-      );
-      const stockForWarehouse = this.findStockForWarehouse(stocks, warehouseId);
-
       this.linesState.update((lines) =>
         lines.map((item) =>
           item.lineId === lineId
             ? {
                 ...item,
-                availableStock: stockForWarehouse?.currentStock ?? 0,
+                availableStock: this.getWarehouseAvailableStock(line.productId as number),
                 stockLoading: false,
                 stockError: null,
               }
@@ -728,6 +751,10 @@ export class SaleCreateStore {
 
     if (line.availableStock === null) {
       return 'El stock aún no está disponible para esta línea.';
+    }
+
+    if (line.availableStock <= 0) {
+      return 'El producto seleccionado no tiene stock disponible en el almacÃ©n elegido.';
     }
 
     if (line.quantity > line.availableStock) {
@@ -938,13 +965,6 @@ export class SaleCreateStore {
     return this.lineViewMap().get(lineId);
   }
 
-  private findStockForWarehouse(
-    stocks: ProductStockByWarehouse[],
-    warehouseId: number,
-  ): ProductStockByWarehouse | undefined {
-    return stocks.find((stock) => stock.warehouseId === warehouseId);
-  }
-
   private hasDuplicateProduct(lineId: number, productId: number | null): boolean {
     return this.hasDuplicateProductInLines(this.lines(), lineId, productId);
   }
@@ -1109,6 +1129,46 @@ export class SaleCreateStore {
     }
 
     return products;
+  }
+
+  private async loadAvailableProductsForWarehouse(warehouseId: number): Promise<void> {
+    const pageSize = 100;
+    const availabilityByProduct: Record<number, number> = {};
+    let loadedItems = 0;
+    let page = 1;
+    let total = 0;
+
+    this.loadingAvailableProductsState.set(true);
+
+    try {
+      do {
+        const result = await firstValueFrom(
+          this.getStockDistributionUseCase.execute({
+            page,
+            pageSize,
+            warehouseId,
+          }),
+        );
+
+        for (const item of result.data) {
+          availabilityByProduct[item.productId] = item.availableStock;
+        }
+
+        loadedItems += result.data.length;
+        total = result.total;
+        page += 1;
+      } while (loadedItems < total);
+
+      this.availableProductsByWarehouseState.set(availabilityByProduct);
+    } catch {
+      this.availableProductsByWarehouseState.set({});
+    } finally {
+      this.loadingAvailableProductsState.set(false);
+    }
+  }
+
+  private getWarehouseAvailableStock(productId: number): number {
+    return this.availableProductsByWarehouse()[productId] ?? 0;
   }
 
   private resolveLoadError(err: unknown): string {

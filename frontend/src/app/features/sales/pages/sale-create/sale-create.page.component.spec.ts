@@ -34,7 +34,7 @@ interface MockSaleCreateStore {
   canEditLines: Mock<() => boolean>;
   canSubmit: Mock<() => boolean>;
   deliveryAddress: Mock<() => string>;
-  availableProducts: Mock<() => Product[]>;
+  getAvailableProductsForLine: Mock<(lineId: number) => Product[]>;
   getLineDraft: Mock<(lineId: number) => SaleCreateLineEditDraft | undefined>;
   getLineView: Mock<(lineId: number) => SaleCreateLineView | undefined>;
   subtotal: Mock<() => number>;
@@ -140,7 +140,7 @@ describe('SaleCreatePageComponent', () => {
       canEditLines: vi.fn(() => false),
       canSubmit: vi.fn(() => false),
       deliveryAddress: vi.fn(() => ''),
-      availableProducts: vi.fn(() => [PRODUCT_A]),
+      getAvailableProductsForLine: vi.fn(() => [PRODUCT_A]),
       getLineDraft: vi.fn(() => undefined),
       getLineView: vi.fn((lineId: number) => {
         const line = store.lines().find((item) => item.lineId === lineId);
@@ -246,6 +246,12 @@ describe('SaleCreatePageComponent', () => {
     component.onDraftProductChange(LINE_A.lineId, PRODUCT_A.productId);
 
     expect(store.onDraftProductChange).toHaveBeenCalledWith(LINE_A.lineId, PRODUCT_A.productId);
+  });
+
+  it('uses the per-line product source for the selector', () => {
+    store.getAvailableProductsForLine(LINE_A.lineId);
+
+    expect(store.getAvailableProductsForLine).toHaveBeenCalledWith(LINE_A.lineId);
   });
 
   it('returns to the sales list when in edit mode', () => {
