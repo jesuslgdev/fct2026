@@ -87,6 +87,8 @@ async def test_list_movements_item_fields(
     assert "movement_type" in item
     assert "difference" in item
     assert "reason" in item
+    assert "purchase_id" in item
+    assert "sale_id" in item
     assert "created_at" in item
 
 
@@ -265,6 +267,7 @@ async def test_get_detail_returns_full_data(
     data = response.json()
     assert data["movement_id"] == movement_id
     assert data["warehouse_id"] == warehouse_a.warehouse_id
+    assert data["warehouse_name"] == warehouse_a.name
     assert data["product_id"] == sample_product.product_id
     assert data["product_name"] == sample_product.name
     assert data["movement_type"] == "adjustment"
@@ -272,6 +275,8 @@ async def test_get_detail_returns_full_data(
     assert data["new_quantity"] == 42
     assert data["difference"] == 42
     assert data["reason"] == "Detail test"
+    assert data["purchase_id"] is None
+    assert data["sale_id"] is None
     assert "user_email" in data
     assert "created_at" in data
 

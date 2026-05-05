@@ -13,6 +13,8 @@ class StockMovementItem:
         movement_type: Kind of movement: inbound, outbound, or adjustment.
         difference: Net quantity change (positive = stock in, negative = stock out).
         reason: Optional free-text reference (e.g. purchase number, sale number).
+        purchase_id: Originating purchase ID, if the movement came from a purchase.
+        sale_id: Originating sale ID, if the movement came from a sale.
         created_at: Timestamp of the movement.
     """
 
@@ -22,4 +24,6 @@ class StockMovementItem:
     movement_type: str
     difference: int
     reason: str | None
+    purchase_id: int | None
+    sale_id: int | None
     created_at: datetime

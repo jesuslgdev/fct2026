@@ -16,4 +16,5 @@ class IStockEntryRecorder(ABC):
         quantity: int,
         user_email: str,
         reason: str,
+        purchase_id: int | None = None,
     ) -> None: ...

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.catalog.domain.entities.product import Product
 from modules.warehouse.domain.entities.stock_movement import StockMovement
+from modules.warehouse.domain.entities.warehouse import Warehouse
 from modules.warehouse.domain.interfaces.repositories.i_stock_movement_repository import (
     IStockMovementRepository,
 )
@@ -23,18 +24,25 @@ class StockMovementRepository(IStockMovementRepository):
         await self._db.refresh(movement)
         return movement
 
-    async def get_by_id(self, movement_id: int) -> tuple[StockMovement, str] | None:
-        """Return a single movement with its product name, or None if not found."""
+    async def get_by_id(
+        self, movement_id: int
+    ) -> tuple[StockMovement, str, str] | None:
+        """Return a single movement with product and warehouse names, or None."""
         stmt = (
-            select(StockMovement, Product.name.label("product_name"))
+            select(
+                StockMovement,
+                Product.name.label("product_name"),
+                Warehouse.name.label("warehouse_name"),
+            )
             .join(Product, StockMovement.product_id == Product.product_id)
+            .join(Warehouse, StockMovement.warehouse_id == Warehouse.warehouse_id)
             .where(StockMovement.movement_id == movement_id)
         )
         result = await self._db.execute(stmt)
         row = result.first()
         if row is None:
             return None
-        return row.StockMovement, row.product_name
+        return row.StockMovement, row.product_name, row.warehouse_name
 
     async def list_by_filters(
         self,

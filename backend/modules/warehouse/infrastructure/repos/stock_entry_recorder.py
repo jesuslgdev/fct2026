@@ -31,6 +31,7 @@ class StockEntryRecorder(IStockEntryRecorder):
         quantity: int,
         user_email: str,
         reason: str,
+        purchase_id: int | None = None,
     ) -> None:
         current = await self._stock_repo.get_by_warehouse_and_product(
             warehouse_id, product_id
@@ -48,6 +49,7 @@ class StockEntryRecorder(IStockEntryRecorder):
             new_quantity=new_qty,
             difference=quantity,
             reason=reason,
+            purchase_id=purchase_id,
             user_email=user_email,
         )
         await self._movement_repo.create(movement)

@@ -13,8 +13,14 @@ class IStockMovementRepository(ABC):
         ...
 
     @abstractmethod
-    async def get_by_id(self, movement_id: int) -> tuple[StockMovement, str] | None:
-        """Return a single movement with its product name, or None if not found."""
+    async def get_by_id(
+        self, movement_id: int
+    ) -> tuple[StockMovement, str, str] | None:
+        """Return a movement with its product and warehouse names, or None.
+
+        Returns:
+            A tuple of (movement, product_name, warehouse_name), or None.
+        """
         ...
 
     @abstractmethod

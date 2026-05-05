@@ -122,6 +122,7 @@ class AdvanceSaleStatusUseCase(IAdvanceSaleStatusUseCase):
                 quantity=line.quantity,
                 user_email=user_email,
                 reason=f"Sale {sale.sale_number} delivered",
+                sale_id=sale.sale_id,
             )
             await self._stock_reservation_recorder.release(
                 warehouse_id=sale.warehouse_id,

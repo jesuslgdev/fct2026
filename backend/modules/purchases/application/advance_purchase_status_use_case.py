@@ -57,6 +57,7 @@ class AdvancePurchaseStatusUseCase(IAdvancePurchaseStatusUseCase):
                     quantity=line.quantity,
                     user_email=actor.email,
                     reason=reason,
+                    purchase_id=purchase.purchase_id,
                 )
 
         purchase = await self._purchase_repo.advance_status(

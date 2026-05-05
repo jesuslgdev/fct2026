@@ -16,4 +16,5 @@ class IStockOutputRecorder(ABC):
         quantity: int,
         user_email: str,
         reason: str,
+        sale_id: int | None = None,
     ) -> None: ...

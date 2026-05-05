@@ -21,10 +21,11 @@ class GetStockMovementUseCase(IGetStockMovementUseCase):
         row = await self._movement_repo.get_by_id(movement_id)
         if row is None:
             raise WarehouseException(WarehouseExceptionInfo.MOVEMENT_NOT_FOUND)
-        movement, product_name = row
+        movement, product_name, warehouse_name = row
         return StockMovementDetail(
             movement_id=movement.movement_id,
             warehouse_id=movement.warehouse_id,
+            warehouse_name=warehouse_name,
             product_id=movement.product_id,
             product_name=product_name,
             movement_type=movement.movement_type,
@@ -32,6 +33,8 @@ class GetStockMovementUseCase(IGetStockMovementUseCase):
             new_quantity=movement.new_quantity,
             difference=movement.difference,
             reason=movement.reason,
+            purchase_id=movement.purchase_id,
+            sale_id=movement.sale_id,
             user_email=movement.user_email,
             created_at=movement.created_at,
         )

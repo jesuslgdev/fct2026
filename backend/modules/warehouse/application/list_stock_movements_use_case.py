@@ -43,6 +43,8 @@ class ListStockMovementsUseCase(IListStockMovementsUseCase):
                 movement_type=movement.movement_type,
                 difference=movement.difference,
                 reason=movement.reason,
+                purchase_id=movement.purchase_id,
+                sale_id=movement.sale_id,
                 created_at=movement.created_at,
             )
             for movement, product_name in rows

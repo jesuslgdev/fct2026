@@ -20,6 +20,8 @@ class StockMovement(Base):
         new_quantity: Stock after the adjustment.
         difference: new_quantity - previous_quantity.
         reason: Optional free-text justification (max 300 chars).
+        purchase_id: Optional FK to the originating purchase, if any.
+        sale_id: Optional FK to the originating sale, if any.
         user_email: Email of the user who performed the adjustment.
         created_at: Timestamp of the movement, set by the database.
     """
@@ -40,6 +42,12 @@ class StockMovement(Base):
     new_quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     difference: Mapped[int] = mapped_column(Integer, nullable=False)
     reason: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    purchase_id: Mapped[int | None] = mapped_column(
+        ForeignKey("purchases.purchase_id"), nullable=True
+    )
+    sale_id: Mapped[int | None] = mapped_column(
+        ForeignKey("sales.sale_id"), nullable=True
+    )
     user_email: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

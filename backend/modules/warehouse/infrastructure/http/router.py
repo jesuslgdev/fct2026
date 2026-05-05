@@ -282,6 +282,8 @@ async def list_stock_movements(
                 movement_type=item.movement_type,
                 difference=item.difference,
                 reason=item.reason,
+                purchase_id=item.purchase_id,
+                sale_id=item.sale_id,
                 created_at=item.created_at,
             )
             for item in result.items
@@ -303,6 +305,7 @@ async def get_stock_movement(
     return StockMovementDetailDTO(
         movement_id=result.movement_id,
         warehouse_id=result.warehouse_id,
+        warehouse_name=result.warehouse_name,
         product_id=result.product_id,
         product_name=result.product_name,
         movement_type=result.movement_type,
@@ -310,6 +313,8 @@ async def get_stock_movement(
         new_quantity=result.new_quantity,
         difference=result.difference,
         reason=result.reason,
+        purchase_id=result.purchase_id,
+        sale_id=result.sale_id,
         user_email=result.user_email,
         created_at=result.created_at,
     )

@@ -79,6 +79,8 @@ class StockMovementItemDTO(BaseModel):
     movement_type: str
     difference: int
     reason: str | None
+    purchase_id: int | None
+    sale_id: int | None
     created_at: datetime
 
 
@@ -87,6 +89,7 @@ class StockMovementDetailDTO(BaseModel):
 
     movement_id: int
     warehouse_id: int
+    warehouse_name: str
     product_id: int
     product_name: str
     movement_type: str
@@ -94,6 +97,8 @@ class StockMovementDetailDTO(BaseModel):
     new_quantity: int
     difference: int
     reason: str | None
+    purchase_id: int | None
+    sale_id: int | None
     user_email: str
     created_at: datetime
 
