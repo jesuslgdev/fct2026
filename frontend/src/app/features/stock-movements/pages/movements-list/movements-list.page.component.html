@@ -14,8 +14,9 @@
 
       <!-- Product -->
       <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-surface-700">Producto</label>
+        <label for="product-filter" class="text-sm font-medium text-surface-700">Producto</label>
         <p-select
+          inputId="product-filter"
           [options]="store.productOptions()"
           [ngModel]="store.selectedProductId()"
           (ngModelChange)="store.selectedProductId.set($event)"
@@ -31,8 +32,9 @@
 
       <!-- Movement type -->
       <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-surface-700">Tipo de movimiento</label>
+        <label for="movement-type-filter" class="text-sm font-medium text-surface-700">Tipo de movimiento</label>
         <p-select
+          inputId="movement-type-filter"
           [options]="movementTypeOptions"
           [ngModel]="store.movementTypeFilter()"
           (ngModelChange)="store.movementTypeFilter.set($event)"
@@ -45,20 +47,23 @@
 
       <!-- Reason search -->
       <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-surface-700">Referencia</label>
-        <ui-input
-          type="text"
-          placeholder="Buscar por referencia..."
-          styleClass="w-full"
-          [ngModel]="store.reasonSearch()"
-          (valueChange)="store.reasonSearch.set($event)"
-        />
+        <label class="text-sm font-medium text-surface-700">
+          Referencia
+          <ui-input
+            type="text"
+            placeholder="Buscar por referencia..."
+            styleClass="w-full"
+            [ngModel]="store.reasonSearch()"
+            (valueChange)="store.reasonSearch.set($event)"
+          />
+        </label>
       </div>
 
       <!-- Date from -->
       <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-surface-700">Fecha desde</label>
+        <label for="date-from-filter" class="text-sm font-medium text-surface-700">Fecha desde</label>
         <p-datepicker
+          inputId="date-from-filter"
           [ngModel]="store.dateFrom()"
           (ngModelChange)="store.dateFrom.set($event)"
           [maxDate]="store.dateTo() ?? null"
@@ -71,8 +76,9 @@
 
       <!-- Date to -->
       <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-surface-700">Fecha hasta</label>
+        <label for="date-to-filter" class="text-sm font-medium text-surface-700">Fecha hasta</label>
         <p-datepicker
+          inputId="date-to-filter"
           [ngModel]="store.dateTo()"
           (ngModelChange)="store.dateTo.set($event)"
           [minDate]="store.dateFrom() ?? null"
