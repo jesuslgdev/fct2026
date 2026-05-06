@@ -59,7 +59,7 @@ describe('HttpStockMovementRepository', () => {
     expect(req.request.params.get('movement_type')).toBe('inbound');
     expect(req.request.params.get('reason_search')).toBe('restock');
     expect(req.request.params.get('date_from')).toBe('2026-01-01T00:00:00.000Z');
-    expect(req.request.params.get('date_to')).toBe('2026-01-31T23:59:59.000Z');
+    expect(req.request.params.get('date_to')).toBe('2026-01-31T23:59:59.999Z');
 
     req.flush({
       items: [
