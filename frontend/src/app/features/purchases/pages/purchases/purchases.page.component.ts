@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -50,8 +50,6 @@ interface SortOption {
 export class PurchasesPageComponent implements OnInit {
   readonly store = inject(PurchasesStore);
   private readonly router = inject(Router);
-
-  readonly cancellationReason = signal('');
 
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos los estados', value: null },
@@ -165,18 +163,14 @@ export class PurchasesPageComponent implements OnInit {
   }
 
   openCancelDialog(purchase: PurchaseSummary): void {
-    this.cancellationReason.set('');
     this.store.requestCancelPurchase(purchase);
   }
 
   confirmCancelPurchase(): void {
-    const reason = this.cancellationReason().trim();
-    this.store.confirmCancelPurchase(reason || undefined);
-    this.cancellationReason.set('');
+    this.store.confirmCancelPurchase();
   }
 
   closeCancelDialog(): void {
-    this.cancellationReason.set('');
     this.store.cancelCancelPurchase();
   }
 
@@ -218,6 +212,10 @@ export class PurchasesPageComponent implements OnInit {
   }
 
   private getNextLifecycleStatus(purchase: PurchaseSummary): PurchaseStatus | null {
+    if (purchase.status === 'Received') {
+      return null;
+    }
+
     const allowedStatuses = purchase.allowedTransitions ?? [];
 
     for (const allowedStatus of allowedStatuses) {

@@ -201,7 +201,6 @@
                 <th>A</th>
                 <th>Fecha</th>
                 <th>Usuario</th>
-                <th>Efecto</th>
               </tr>
             </ng-template>
 
@@ -211,13 +210,12 @@
                 <td>{{ getStatusLabel(item.toStatus) }}</td>
                 <td>{{ item.changedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
                 <td>{{ item.changedByName }}</td>
-                <td>{{ store.getEffectLabel(item.effect) }}</td>
               </tr>
             </ng-template>
 
             <ng-template #emptymessage>
               <tr>
-                <td colspan="5" class="empty-state">
+                <td colspan="4" class="empty-state">
                   No hay cambios de estado registrados.
                 </td>
               </tr>

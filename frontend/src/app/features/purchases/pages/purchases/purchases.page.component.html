@@ -203,13 +203,6 @@
       <p class="warning-text">
         Va a cancelar la compra <strong>{{ purchase.purchaseNumber }}</strong>.
       </p>
-      <span class="dialog-field-label">Motivo (opcional)</span>
-      <ui-input
-        type="text"
-        placeholder="Motivo de cancelación"
-        [ngModel]="cancellationReason()"
-        (valueChange)="cancellationReason.set($event)"
-      />
     </div>
   }
 </ui-dialog>
