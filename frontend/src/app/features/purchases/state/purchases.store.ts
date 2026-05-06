@@ -177,7 +177,7 @@ export class PurchasesStore {
       });
   }
 
-  loadFormOptions(): void {
+  loadFormOptions(preloadSupplierCatalog = false): void {
     this._loadingOptions.set(true);
     this._dialogError.set(null);
 
@@ -195,7 +195,7 @@ export class PurchasesStore {
           this._suppliers.set(suppliers);
           this._warehouses.set(warehouses);
 
-          if (this.dialogMode() === 'create') {
+          if (preloadSupplierCatalog && this.dialogMode() === 'create') {
             this.loadSupplierProductsCatalog();
           }
         },
@@ -288,7 +288,7 @@ export class PurchasesStore {
     this._dialogMode.set('create');
     this._dialogError.set(null);
     this._dialogVisible.set(true);
-    this.loadFormOptions();
+    this.loadFormOptions(true);
   }
 
   openEditDialog(purchase: PurchaseSummary | PurchaseDetail): void {
@@ -299,7 +299,7 @@ export class PurchasesStore {
     this._dialogMode.set('edit');
     this._dialogError.set(null);
     this._dialogVisible.set(true);
-    this.loadFormOptions();
+    this.loadFormOptions(true);
     this.loadPurchaseById(purchaseId);
   }
 

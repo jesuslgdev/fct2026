@@ -214,10 +214,10 @@ export function assertCanManagePurchases(context: PurchasePermissionContext): vo
 export function validatePurchaseLineInput(line: PurchaseLineInput, index: number): void {
   assertPositiveInteger(line.productId, `lines[${index}].productId`);
 
-  if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
+  if (!Number.isFinite(line.quantity) || !Number.isInteger(line.quantity) || line.quantity <= 0) {
     throw new PurchaseValidationError(
       { field: `lines[${index}].quantity`, value: line.quantity },
-      `lines[${index}].quantity must be greater than zero.`,
+      `lines[${index}].quantity must be an integer greater than zero.`,
     );
   }
 

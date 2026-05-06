@@ -13,6 +13,7 @@ export type BackendPurchaseStatus =
 export interface PurchaseListItemDto {
   purchase_id: number;
   purchase_number: string;
+  supplier_id?: number;
   supplier_name: string | null;
   status: BackendPurchaseStatus | string;
   allowed_transitions?: string[];

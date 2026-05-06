@@ -41,7 +41,7 @@ describe('HttpPurchaseRepository', () => {
     controller.verify();
   });
 
-  it('getPurchases maps query params and enriches supplierId and deliveryAddress', async () => {
+  it('getPurchases maps query params and enriches deliveryAddress', async () => {
     const promise = firstValueFrom(
       repo.getPurchases({
         page: 2,
@@ -72,6 +72,7 @@ describe('HttpPurchaseRepository', () => {
         {
           purchase_id: 7,
           purchase_number: 'COM-2026-0007',
+          supplier_id: 10,
           supplier_name: 'Supplier North',
           status: 'In Process',
           allowed_transitions: ['Sent', 'Cancelled'],
@@ -83,27 +84,6 @@ describe('HttpPurchaseRepository', () => {
       total: 1,
       page: 2,
       page_size: 20,
-    });
-
-    controller.expectOne(`${PURCHASES_URL}/7`).flush({
-      purchase_id: 7,
-      purchase_number: 'COM-2026-0007',
-      supplier_id: 10,
-      supplier_name: 'Supplier North',
-      user_id: 5,
-      user_name: 'Buyer User',
-      warehouse_id: 2,
-      warehouse_name: 'Central',
-      purchase_date: '2026-04-10T10:00:00.000Z',
-      status: 'In Process',
-      subtotal: 100,
-      taxes: 21,
-      total: 121,
-      cancelled_at: null,
-      cancelled_by_user_id: null,
-      created_at: '2026-04-10T10:00:00.000Z',
-      updated_at: '2026-04-10T10:00:00.000Z',
-      lines: [],
     });
 
     controller.expectOne(WAREHOUSES_URL).flush([
@@ -453,9 +433,7 @@ describe('HttpPurchaseRepository', () => {
       lines: [],
     });
 
-    controller.expectOne(WAREHOUSES_URL).flush([
-      { warehouse_id: 3, name: 'North', address: 'North 3', total_stock: 0 },
-    ]);
+    controller.expectNone(WAREHOUSES_URL);
 
     const result = await promise;
     expect(result.supplierId).toBe(15);
@@ -582,9 +560,7 @@ describe('HttpPurchaseRepository', () => {
       lines: [],
     });
 
-    controller.expectOne(WAREHOUSES_URL).flush([
-      { warehouse_id: 1, name: 'Main', address: 'Road 1', total_stock: 0 },
-    ]);
+    controller.expectNone(WAREHOUSES_URL);
 
     const result = await promise;
     expect(result.purchaseId).toBe(12);
