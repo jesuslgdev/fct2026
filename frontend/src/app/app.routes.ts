@@ -70,11 +70,6 @@ export const routes: Routes = [
 				loadChildren: () => import('@features/purchases/purchases.routes').then(m => m.PURCHASES_ROUTES),
 			},
 			{
-				path: '',
-				redirectTo: 'legal',
-				pathMatch: 'full',
-			},
-			{
 				path: '**',
 				redirectTo: '',
 			},

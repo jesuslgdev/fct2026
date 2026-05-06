@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DashboardPageComponent } from './dashboard.page.component';
 import { DashboardStore } from '@features/dashboard/state/dashboard.store';
-import { signal, type Signal, type WritableSignal } from '@angular/core';
+import { signal, type WritableSignal } from '@angular/core';
 import { DashboardData } from '@domain/models/dashboard.model';
 
 describe('DashboardPageComponent', () => {
