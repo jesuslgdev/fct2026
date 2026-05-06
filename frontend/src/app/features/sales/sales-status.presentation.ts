@@ -1,19 +1,27 @@
 import { SaleStatus } from '@domain/enums/sale-status.enum';
 import { BadgeVariant } from '@shared/ui';
 
-export function getSaleStatusLabel(status: SaleStatus): string {
+export function getSaleStatusLabel(status: SaleStatus | string): string {
   switch (status) {
     case SaleStatus.PENDING:
+    case 'pending':
       return 'Pendiente';
     case SaleStatus.APPROVED:
+    case 'approved':
       return 'Aprobada';
     case SaleStatus.IN_PROCESS:
+    case 'inprocess':
+    case 'in process':
+    case 'in_process':
       return 'En proceso';
     case SaleStatus.SHIPPED:
+    case 'shipped':
       return 'Enviada';
     case SaleStatus.DELIVERED:
+    case 'delivered':
       return 'Entregada';
     case SaleStatus.CANCELLED:
+    case 'cancelled':
       return 'Cancelada';
     default:
       return status;
