@@ -71,8 +71,7 @@
         <span class="dialog-field-label">Documento de origen</span>
         @if (detail.purchaseId) {
           <a
-            [routerLink]="['/purchases']"
-            [queryParams]="{ openId: detail.purchaseId }"
+            [routerLink]="['/purchases', detail.purchaseId]"
             class="text-primary-600 hover:underline inline-flex items-center gap-1 text-sm"
           >
             <i class="pi pi-shopping-cart text-xs"></i>
@@ -80,8 +79,9 @@
           </a>
         } @else if (detail.saleId) {
           <a
-            (click)="navigateToSale(detail.saleId)"
-            class="text-primary-600 hover:underline inline-flex items-center gap-1 text-sm cursor-pointer"
+            [routerLink]="['/sales', detail.saleId]"
+            (click)="store.closeDetailDialog()"
+            class="text-primary-600 hover:underline inline-flex items-center gap-1 text-sm"
           >
             <i class="pi pi-credit-card text-xs"></i>
             Venta #{{ detail.saleId }}
