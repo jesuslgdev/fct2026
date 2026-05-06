@@ -322,7 +322,7 @@ async def test_dashboard_admin_returns_full_payload(
 
 
 @pytest.mark.asyncio
-async def test_dashboard_purchases_department_visibility(
+async def test_dashboard_purchases_department_returns_full_payload(
     dashboard_client, seeded_dashboard_data
 ):
     client, user_box = dashboard_client
@@ -339,14 +339,14 @@ async def test_dashboard_purchases_department_visibility(
     assert body["latest_purchases"]
     assert body["stale_purchases"]
     assert body["purchase_spend_comparison"] is not None
-    assert body["sales_status_summary"] == []
-    assert body["latest_sales"] == []
-    assert body["stale_sales"] == []
+    assert body["sales_status_summary"]
+    assert body["latest_sales"]
+    assert body["stale_sales"]
     assert body["low_stock_products"]
 
 
 @pytest.mark.asyncio
-async def test_dashboard_sales_department_visibility(
+async def test_dashboard_sales_department_returns_full_payload(
     dashboard_client, seeded_dashboard_data
 ):
     client, user_box = dashboard_client
@@ -362,10 +362,10 @@ async def test_dashboard_sales_department_visibility(
     assert body["sales_status_summary"]
     assert body["latest_sales"]
     assert body["stale_sales"]
-    assert body["purchase_status_summary"] == []
-    assert body["latest_purchases"] == []
-    assert body["stale_purchases"] == []
-    assert body["purchase_spend_comparison"] is None
+    assert body["purchase_status_summary"]
+    assert body["latest_purchases"]
+    assert body["stale_purchases"]
+    assert body["purchase_spend_comparison"] is not None
     assert body["low_stock_products"]
 
 
