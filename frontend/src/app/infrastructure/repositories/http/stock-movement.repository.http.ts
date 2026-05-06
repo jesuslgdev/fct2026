@@ -35,8 +35,13 @@ export class HttpStockMovementRepository implements StockMovementRepository {
 
     switch (err.status) {
       case 400:
-      case 422:
-        return new StockMovementValidationError(err.error, message ?? 'Validation failed.');
+      case 422: {
+        const field =
+          typeof err.error === 'object' && err.error !== null
+            ? ((err.error as Record<string, unknown>)['field'] as string) ?? 'validation'
+            : 'validation';
+        return new StockMovementValidationError(field, message ?? 'Validation failed.');
+      }
       case 401:
         return new StockMovementUnauthorizedError(message ?? 'Authentication required.');
       case 403:
