@@ -29,4 +29,10 @@ class GetSaleUseCase(IGetSaleUseCase):
         client_name = await self._client_reader.get_name_by_id(sale.client_id)
         setattr(sale, "creator_name", creator_name)
         setattr(sale, "client_name", client_name)
+        unique_user_ids = {h.changed_by_user_id for h in sale.status_history or []}
+        user_names: dict[int, str | None] = {
+            uid: await self._user_reader.get_name_by_id(uid) for uid in unique_user_ids
+        }
+        for h in sale.status_history or []:
+            setattr(h, "changed_by_user_name", user_names.get(h.changed_by_user_id))
         return sale

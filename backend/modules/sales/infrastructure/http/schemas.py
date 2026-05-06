@@ -80,6 +80,7 @@ class SaleStatusHistoryDTO(BaseModel):
     to_status: str
     changed_at: datetime
     changed_by_user_id: int
+    changed_by_user_name: str | None
 
 
 class SaleDTO(BaseModel):
@@ -127,6 +128,7 @@ class SaleDetailDTO(BaseModel):
                     to_status=h.to_status,
                     changed_at=h.changed_at,
                     changed_by_user_id=h.changed_by_user_id,
+                    changed_by_user_name=getattr(h, "changed_by_user_name", None),
                 )
                 for h in sale.status_history
             ]
