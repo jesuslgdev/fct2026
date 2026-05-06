@@ -20,7 +20,7 @@
     [class]="inputClass()"
     [value]="value()"
     (input)="onInput($event)"
-    (blur)="onTouched()"
+    (blur)="onBlur()"
     [attr.aria-invalid]="state() === 'error' ? 'true' : null"
     [attr.aria-disabled]="isDisabled() ? 'true' : null"
   />

@@ -108,9 +108,16 @@ export class InputComponent implements ControlValueAccessor {
     if (this.type() === 'number') {
       if (rawValue === '') {
         this.onChange(null);
-      } else {
-        const parsed = Number(rawValue);
-        this.onChange(Number.isFinite(parsed) ? parsed : null);
+        this.valueChange.emit(rawValue);
+        return;
+      }
+
+      const parsed = this.parseLocalizedNumber(rawValue);
+
+      if (parsed.kind === 'valid') {
+        this.onChange(parsed.value);
+      } else if (parsed.kind === 'invalid') {
+        this.onChange(null);
       }
 
       this.valueChange.emit(rawValue);
@@ -119,6 +126,66 @@ export class InputComponent implements ControlValueAccessor {
 
     this.onChange(rawValue);
     this.valueChange.emit(rawValue);
+  }
+
+  onBlur(): void {
+    if (this.type() === 'number') {
+      const rawValue = this.value();
+      if (rawValue !== '') {
+        const parsed = this.parseLocalizedNumber(rawValue);
+
+        if (parsed.kind === 'incomplete') {
+          const normalized = rawValue.trim().slice(0, -1);
+          const finalized = this.parseLocalizedNumber(normalized);
+
+          if (finalized.kind === 'valid') {
+            this.value.set(String(finalized.value));
+            this.onChange(finalized.value);
+          }
+        }
+      }
+    }
+
+    this.onTouched();
+  }
+
+  private parseLocalizedNumber(
+    rawValue: string,
+  ): { kind: 'valid'; value: number } | { kind: 'invalid' | 'incomplete' } {
+    const compactValue = rawValue.trim().replace(/\s+/g, '');
+
+    if (compactValue === '') {
+      return { kind: 'invalid' };
+    }
+
+    if (compactValue.endsWith('.') || compactValue.endsWith(',')) {
+      return { kind: 'incomplete' };
+    }
+
+    const hasComma = compactValue.includes(',');
+    const hasDot = compactValue.includes('.');
+    let normalizedValue = compactValue;
+
+    if (hasComma && hasDot) {
+      if (compactValue.lastIndexOf(',') > compactValue.lastIndexOf('.')) {
+        normalizedValue = compactValue.replace(/\./g, '').replace(',', '.');
+      } else {
+        normalizedValue = compactValue.replace(/,/g, '');
+      }
+    } else if (hasComma) {
+      normalizedValue = compactValue.replace(',', '.');
+    }
+
+    const parsed = Number(normalizedValue);
+
+    if (!Number.isFinite(parsed)) {
+      return { kind: 'invalid' };
+    }
+
+    return {
+      kind: 'valid',
+      value: parsed,
+    };
   }
 
   // ControlValueAccessor methods
