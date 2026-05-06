@@ -158,6 +158,7 @@ async def test_advance_status_response_includes_status_history(
         2026, 4, 14, tzinfo=__import__("datetime").timezone.utc
     )
     history_entry.changed_by_user_id = 1
+    history_entry.changed_by_user_name = None
     sale = make_sale(status="Approved", status_history=[history_entry])
     mock = MagicMock()
     mock.execute = AsyncMock(return_value=sale)
