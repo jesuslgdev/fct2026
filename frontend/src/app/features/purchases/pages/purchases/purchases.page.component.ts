@@ -86,7 +86,10 @@ export class PurchasesPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.loadPurchases();
-    this.store.loadFormOptions();
+
+    if (this.store.canManage()) {
+      this.store.loadFormOptions();
+    }
   }
 
   onSearchSupplier(value: string): void {

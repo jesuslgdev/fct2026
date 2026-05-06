@@ -205,6 +205,24 @@ export function canManagePurchases(context: PurchasePermissionContext): boolean 
   return isPurchasesDepartment && isAllowedRole;
 }
 
+export function canViewPurchases(context: PurchasePermissionContext): boolean {
+  if (context.role != null) {
+    return true;
+  }
+
+  if (context.departmentId != null) {
+    return true;
+  }
+
+  return (context.permissions ?? []).length > 0;
+}
+
+export function assertCanViewPurchases(context: PurchasePermissionContext): void {
+  if (!canViewPurchases(context)) {
+    throw new PurchaseForbiddenError();
+  }
+}
+
 export function assertCanManagePurchases(context: PurchasePermissionContext): void {
   if (!canManagePurchases(context)) {
     throw new PurchaseForbiddenError();

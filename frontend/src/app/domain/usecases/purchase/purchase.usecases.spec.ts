@@ -45,6 +45,13 @@ const FORBIDDEN_CONTEXT: PurchasePermissionContext = {
   purchasesDepartmentId: 2,
 };
 
+const UNAUTHENTICATED_CONTEXT: PurchasePermissionContext = {
+  role: null,
+  departmentId: null,
+  purchasesDepartmentId: -1,
+  permissions: [],
+};
+
 const BASE_PURCHASE: PurchaseDetail = {
   purchaseId: 1,
   purchaseNumber: 'COM-2026-0001',
@@ -198,11 +205,31 @@ describe('Purchase Use Cases', () => {
     expect(result).toEqual(repositoryResponse);
   });
 
-  it('GetPurchasesUseCase rejects forbidden context', async () => {
+  it('GetPurchasesUseCase allows viewing for non-managing users', async () => {
+    const useCase = TestBed.inject(GetPurchasesUseCase);
+
+    const repositoryResponse: PagedResult<PurchaseSummary> = {
+      data: [BASE_SUMMARY],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    };
+
+    repo.getPurchases.mockReturnValueOnce(of(repositoryResponse));
+
+    const result = await firstValueFrom(
+      useCase.execute({ page: 1, pageSize: 20 }, FORBIDDEN_CONTEXT),
+    );
+
+    expect(result).toEqual(repositoryResponse);
+    expect(repo.getPurchases).toHaveBeenCalledOnce();
+  });
+
+  it('GetPurchasesUseCase rejects unauthenticated context', async () => {
     const useCase = TestBed.inject(GetPurchasesUseCase);
 
     await expect(
-      firstValueFrom(useCase.execute({ page: 1, pageSize: 20 }, FORBIDDEN_CONTEXT)),
+      firstValueFrom(useCase.execute({ page: 1, pageSize: 20 }, UNAUTHENTICATED_CONTEXT)),
     ).rejects.toBeInstanceOf(PurchaseForbiddenError);
 
     expect(repo.getPurchases).not.toHaveBeenCalled();

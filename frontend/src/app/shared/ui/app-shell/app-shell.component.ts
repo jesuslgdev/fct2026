@@ -5,7 +5,7 @@ import { AuthService } from '@core/services/auth.service';
 import { UserPermission } from '@domain/enums/user-permission.enum';
 import { UserRole } from '@domain/enums/user-role.enum';
 import { PurchasePermissionContext } from '@domain/models/purchase.model';
-import { canManagePurchases } from '@domain/models/purchase-rules';
+import { canViewPurchases } from '@domain/models/purchase-rules';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { AvatarModule } from 'primeng/avatar';
@@ -114,7 +114,7 @@ export class AppShellComponent {
       purchasesDepartmentId,
       permissions: user?.permissions ?? [],
     };
-    const canAccessPurchases = canManagePurchases(purchasePermissionContext);
+    const canAccessPurchases = canViewPurchases(purchasePermissionContext);
 
     const allSections: NavSection[] = [
       {
