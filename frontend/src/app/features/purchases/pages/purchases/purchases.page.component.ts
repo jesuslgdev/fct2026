@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -47,9 +54,10 @@ interface SortOption {
   ],
   templateUrl: './purchases.page.component.html',
 })
-export class PurchasesPageComponent implements OnInit {
+export class PurchasesPageComponent implements OnInit, OnDestroy {
   readonly store = inject(PurchasesStore);
   private readonly router = inject(Router);
+  private supplierSearchDebounceHandle: ReturnType<typeof setTimeout> | null = null;
 
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos los estados', value: null },
@@ -88,12 +96,26 @@ export class PurchasesPageComponent implements OnInit {
     this.store.loadPurchases();
 
     if (this.store.canManage()) {
-      this.store.loadFormOptions();
+      this.store.loadFormOptions(false);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.supplierSearchDebounceHandle !== null) {
+      clearTimeout(this.supplierSearchDebounceHandle);
+      this.supplierSearchDebounceHandle = null;
     }
   }
 
   onSearchSupplier(value: string): void {
-    this.store.onSupplierSearch(value);
+    if (this.supplierSearchDebounceHandle !== null) {
+      clearTimeout(this.supplierSearchDebounceHandle);
+    }
+
+    this.supplierSearchDebounceHandle = setTimeout(() => {
+      this.store.onSupplierSearch(value);
+      this.supplierSearchDebounceHandle = null;
+    }, 300);
   }
 
   onStatusChange(status: PurchaseStatus | null): void {

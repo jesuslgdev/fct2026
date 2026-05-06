@@ -54,10 +54,16 @@ describe('PurchaseFormDialogComponent', () => {
     ]);
   });
 
-  it('parses decimal values with comma separators', () => {
+  it('rejects decimal values with comma separators for quantity', () => {
     component.onLineQuantityChange(0, '10,5');
 
-    expect(component.lines()[0].quantity).toBe(10.5);
+    expect(component.lines()[0].quantity).toBeNull();
+  });
+
+  it('accepts integer quantity values', () => {
+    component.onLineQuantityChange(0, '10');
+
+    expect(component.lines()[0].quantity).toBe(10);
   });
 
   it('parses localized values with thousand separator and decimal comma', () => {

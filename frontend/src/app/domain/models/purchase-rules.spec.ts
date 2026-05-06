@@ -109,6 +109,14 @@ describe('purchase-rules', () => {
         lines: [{ productId: 10, quantity: 1, unitPrice: 20, vatRate: 21 }],
       }),
     ).toThrow(PurchaseValidationError);
+
+    expect(() =>
+      validateCreatePurchasePayload({
+        supplierId: 1,
+        deliveryWarehouseId: 2,
+        lines: [{ productId: 10, quantity: 1.5, unitPrice: 20, vatRate: 21 }],
+      }),
+    ).toThrow(PurchaseValidationError);
   });
 
   it('validates update payload cannot be empty', () => {

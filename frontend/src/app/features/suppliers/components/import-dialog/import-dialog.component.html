@@ -4,8 +4,6 @@
   size="lg"
   variant="info"
   [closable]="true"
-  [confirmLoading]="loading()"
-  (confirmed)="currentStep() === 'validation' && canImport() ? importSuppliers() : null"
   (cancelled)="close()"
 >
 
@@ -18,7 +16,8 @@
           <h3 class="text-lg font-semibold text-info">Importación masiva de proveedores</h3>
           <p class="text-neutral-muted">
             Importa múltiples proveedores desde un archivo Excel o CSV.
-            El sistema valida todos los datos antes de importar y muestra un resumen.
+            Primero comprobaremos todos los datos en un resumen y,
+            cuando todo esté correcto, podras lanzar la importacion masiva.
           </p>
           
           <div class="bg-info-subtle border border-info-subtle rounded-lg p-4">
@@ -77,6 +76,10 @@
             </div>
           </div>
 
+          @if (inlineError(); as inlineMessage) {
+            <p class="dialog-error-banner" role="alert">{{ inlineMessage }}</p>
+          }
+
           <!-- Selected file -->
           @if (selectedFile()) {
             <div class="bg-success-subtle border border-success-subtle rounded-lg p-4">
@@ -89,7 +92,7 @@
                   </div>
                 </div>
                 <ui-button
-                  label="Validar Archivo"
+                  label="Comprobar archivo"
                   variant="default"
                   [loading]="loading()"
                   [disabled]="!canValidate()"
@@ -107,45 +110,47 @@
   @if (currentStep() === 'validation') {
     @if (importResult(); as result) {
       <div class="space-y-6">
-        <!-- Resumen de validación -->
+        @if (inlineError(); as inlineMessage) {
+          <p class="dialog-error-banner" role="alert">{{ inlineMessage }}</p>
+        }
+
         <ui-card class="border-success-subtle bg-success-subtle">
           <div class="space-y-4">
-            <h4 class="font-semibold text-lg">Resumen de validación</h4>
-            
+            <h4 class="font-semibold text-lg">Resumen de validacion</h4>
+
             <div class="grid grid-cols-3 gap-4 text-center">
               <div class="bg-neutral-subtle rounded-lg p-4">
                 <div class="text-2xl font-bold text-neutral-strong">{{ result.totalRecords }}</div>
-                <div class="text-sm text-neutral-muted">Total Registros</div>
+                <div class="text-sm text-neutral-muted">Total registros</div>
               </div>
               <div class="bg-success-subtle rounded-lg p-4">
                 <div class="text-2xl font-bold text-success">{{ result.validRecords }}</div>
-                <div class="text-sm text-success">Válidos</div>
+                <div class="text-sm text-success">Validos</div>
               </div>
               <div class="bg-danger-subtle rounded-lg p-4">
                 <div class="text-2xl font-bold text-danger">{{ result.invalidRecords }}</div>
-                <div class="text-sm text-danger">Con Errores</div>
+                <div class="text-sm text-danger">Con errores</div>
               </div>
             </div>
 
             <div class="text-center">
               <div class="text-lg font-medium">{{ getValidationSummary() }}</div>
               @if (result.success === true) {
-                <p class="text-success mt-2">Todos los datos son válidos y pueden ser importados</p>
+                <p class="text-success mt-2">Todo correcto. Ya puedes pulsar Importar proveedores.</p>
               } @else {
-                <p class="text-warning mt-2">Hay errores que deben corregirse antes de importar</p>
+                <p class="text-warning mt-2">Hay errores que debes corregir antes de importar.</p>
               }
             </div>
           </div>
         </ui-card>
 
-        <!-- Validation errors -->
         @if (result.errors.length > 0) {
           <ui-card class="border-danger-subtle bg-danger-subtle">
             <div class="space-y-4">
-              <h4 class="font-semibold text-danger">Errores Encontrados</h4>
-              
+              <h4 class="font-semibold text-danger">Errores encontrados</h4>
+
               <div class="max-h-64 overflow-y-auto space-y-2">
-                @for (error of result.errors; track error.row) {
+                @for (error of result.errors; track $index) {
                   <div class="bg-danger-subtle border border-danger-subtle rounded p-3 text-sm">
                     <div class="font-medium text-danger">
                       {{ getErrorMessage(error) }}
@@ -156,14 +161,13 @@
 
               <div class="bg-warning-subtle border border-warning-subtle rounded p-4">
                 <p class="text-warning">
-                  <strong>Nota:</strong> Para continuar, corrige los errores en tu archivo y vuelve a subirlo. No se importará ningún registro mientras existan errores.
+                  Corrige estos datos en el archivo y vuelve a ejecutar la comprobacion.
                 </p>
               </div>
             </div>
           </ui-card>
         }
 
-        <!-- Actions -->
         <div class="flex justify-between">
           <ui-button
             label="Volver"
@@ -171,7 +175,7 @@
             (clicked)="goBack()"
           />
           <ui-button
-            label="Importar Proveedores"
+            label="Importar proveedores"
             variant="default"
             [loading]="loading()"
             [disabled]="!canImport()"
