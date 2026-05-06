@@ -63,6 +63,7 @@ describe('SaleMapper', () => {
         to_status: 'Pending',
         changed_at: '2024-01-01T09:00:00Z',
         changed_by_user_id: 5,
+        changed_by_user_name: 'Seller A',
       },
     ],
   };
@@ -132,6 +133,7 @@ describe('SaleMapper', () => {
       expect(result.lines[0].discountType).toBe('amount');
       expect(result.statusHistory).toHaveLength(1);
       expect(result.statusHistory[0].toStatus).toBe(SaleStatus.PENDING);
+      expect(result.statusHistory[0].changedByName).toBe('Seller A');
     });
 
     it('should throw SaleValidationError when status is invalid', () => {

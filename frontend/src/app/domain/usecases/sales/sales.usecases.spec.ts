@@ -80,6 +80,7 @@ const SALE_DETAIL_MOCK: SaleDetail = {
       toStatus: SaleStatus.PENDING,
       changedAt: CHANGED_AT,
       changedByUserId: 1,
+      changedByName: 'Sales User',
     },
   ],
 };

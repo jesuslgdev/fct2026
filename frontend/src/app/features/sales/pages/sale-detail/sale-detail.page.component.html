@@ -118,6 +118,25 @@
               </div>
             </ui-card>
           </div>
+
+          @if (sale.statusHistory.length > 0) {
+            <div class="mt-4 border-t border-surface-200 pt-3">
+              <h4 class="mb-2 text-sm font-semibold text-surface-700">Historial de estados</h4>
+              <div class="space-y-2">
+                @for (entry of sale.statusHistory; track $index) {
+                  <div class="rounded-md bg-surface-50 px-3 py-2 text-sm text-surface-700">
+                    <span class="font-medium">
+                      {{ entry.fromStatus ? store.getStatusLabel(entry.fromStatus) : 'Creación' }}
+                      ->
+                      {{ store.getStatusLabel(entry.toStatus) }}
+                    </span>
+                    <span class="ml-2 text-surface-500">{{ entry.changedAt | date: 'short' }}</span>
+                    <div class="text-surface-500">Por {{ entry.changedByName ?? '-' }}</div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
         </p-tabpanel>
 
         <p-tabpanel value="lines">

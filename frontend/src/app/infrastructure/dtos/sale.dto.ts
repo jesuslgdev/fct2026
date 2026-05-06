@@ -33,6 +33,7 @@ export interface SaleStatusHistoryDTO {
   to_status: string;
   changed_at: string;
   changed_by_user_id: number;
+  changed_by_user_name: string | null;
 }
 
 export interface SaleDetailDTO {

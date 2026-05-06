@@ -37,6 +37,7 @@ export interface SaleStatusHistory {
   toStatus: SaleStatus;
   changedAt: Date;
   changedByUserId: number;
+  changedByName: string | null;
 }
 
 export interface SaleDetail extends Sale {

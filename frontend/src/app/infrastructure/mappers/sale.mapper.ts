@@ -185,6 +185,7 @@ export class SaleMapper {
       toStatus: this.mapSaleStatus(dto.to_status, 'statusHistory.toStatus'),
       changedAt: new Date(dto.changed_at),
       changedByUserId: dto.changed_by_user_id,
+      changedByName: dto.changed_by_user_name,
     };
   }
 
