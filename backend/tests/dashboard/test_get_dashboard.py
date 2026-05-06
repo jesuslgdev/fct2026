@@ -319,6 +319,12 @@ async def test_dashboard_admin_returns_full_payload(
     }
     assert all(x["days_in_status"] >= 7 for x in body["stale_purchases"])
     assert all(x["days_in_status"] >= 7 for x in body["stale_sales"])
+    assert {x["status"] for x in body["stale_purchases"]}.isdisjoint(
+        {"Received", "Cancelled"}
+    )
+    assert {x["status"] for x in body["stale_sales"]}.isdisjoint(
+        {"Delivered", "Cancelled"}
+    )
 
 
 @pytest.mark.asyncio

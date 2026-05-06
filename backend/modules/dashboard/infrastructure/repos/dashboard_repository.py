@@ -28,6 +28,9 @@ from shared.infrastructure.database.read_tables import (
 
 
 class DashboardRepository(IDashboardRepository):
+    _FINAL_PURCHASE_STATUSES = {"Received", "Cancelled"}
+    _FINAL_SALE_STATUSES = {"Delivered", "Cancelled"}
+
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
@@ -232,6 +235,7 @@ class DashboardRepository(IDashboardRepository):
                 purchases_table.c.created_at,
             )
             .where(purchases_table.c.status_changed_at <= stale_cutoff)
+            .where(purchases_table.c.status.not_in(self._FINAL_PURCHASE_STATUSES))
             .order_by(purchases_table.c.status_changed_at.asc())
         )
         return self._map_stale_rows(result.all(), generated_at)
@@ -249,6 +253,7 @@ class DashboardRepository(IDashboardRepository):
                 sales_table.c.created_at,
             )
             .where(sales_table.c.status_changed_at <= stale_cutoff)
+            .where(sales_table.c.status.not_in(self._FINAL_SALE_STATUSES))
             .order_by(sales_table.c.status_changed_at.asc())
         )
         return self._map_stale_rows(result.all(), generated_at)
