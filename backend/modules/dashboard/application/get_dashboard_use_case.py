@@ -9,7 +9,6 @@ from modules.dashboard.domain.interfaces.repositories.i_dashboard_repository imp
 from modules.dashboard.domain.interfaces.use_cases.i_get_dashboard_use_case import (
     IGetDashboardUseCase,
 )
-from shared.domain.dtos.user_session import UserSession
 
 
 class GetDashboardUseCase(IGetDashboardUseCase):
@@ -23,7 +22,7 @@ class GetDashboardUseCase(IGetDashboardUseCase):
         self._stale_days = max(stale_days, 1)
         self._recent_limit = min(max(recent_limit, 5), 10)
 
-    async def execute(self, current_user: UserSession) -> DashboardData:
+    async def execute(self) -> DashboardData:
         generated_at = datetime.now(UTC)
         snapshot = await self._dashboard_repo.get_dashboard_data(
             generated_at=generated_at,
