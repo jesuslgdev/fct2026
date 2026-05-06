@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertCanViewPurchases,
   assertCanManagePurchases,
   assertPurchaseCanBeDeleted,
   assertPurchaseCanBeEdited,
@@ -7,6 +8,7 @@ import {
   calculatePurchaseLineTotals,
   calculatePurchaseTotals,
   canManagePurchases,
+  canViewPurchases,
   canTransitionPurchaseStatus,
   getAllowedNextPurchaseStatuses,
   getPurchaseStatusTransitionEffect,
@@ -214,5 +216,29 @@ describe('purchase-rules', () => {
 
     expect(canManagePurchases(permissionContext)).toBe(true);
     expect(() => assertCanManagePurchases(permissionContext)).not.toThrow();
+  });
+
+  it('allows viewing purchases for authenticated contexts', () => {
+    const authenticatedContext: PurchasePermissionContext = {
+      role: UserRole.Employee,
+      departmentId: 7,
+      purchasesDepartmentId: -1,
+      permissions: [],
+    };
+
+    expect(canViewPurchases(authenticatedContext)).toBe(true);
+    expect(() => assertCanViewPurchases(authenticatedContext)).not.toThrow();
+  });
+
+  it('blocks viewing purchases for unauthenticated contexts', () => {
+    const unauthenticatedContext: PurchasePermissionContext = {
+      role: null,
+      departmentId: null,
+      purchasesDepartmentId: -1,
+      permissions: [],
+    };
+
+    expect(canViewPurchases(unauthenticatedContext)).toBe(false);
+    expect(() => assertCanViewPurchases(unauthenticatedContext)).toThrow(PurchaseForbiddenError);
   });
 });

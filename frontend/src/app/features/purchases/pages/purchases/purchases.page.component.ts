@@ -94,7 +94,10 @@ export class PurchasesPageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.store.loadPurchases();
-    this.store.loadFormOptions(false);
+
+    if (this.store.canManage()) {
+      this.store.loadFormOptions(false);
+    }
   }
 
   ngOnDestroy(): void {

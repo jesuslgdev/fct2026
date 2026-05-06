@@ -6,7 +6,7 @@ import {
   PurchaseSummary,
 } from '@domain/models/purchase.model';
 import {
-  assertCanManagePurchases,
+  assertCanViewPurchases,
   normalizePurchaseQueryParams,
 } from '@domain/models/purchase-rules';
 import { PurchaseRepository } from '@domain/repositories/purchase.repository';
@@ -23,7 +23,7 @@ export class GetPurchasesUseCase {
     permissionContext: PurchasePermissionContext,
   ): Observable<PagedResult<PurchaseSummary>> {
     return defer(() => {
-      assertCanManagePurchases(permissionContext);
+      assertCanViewPurchases(permissionContext);
       const normalizedParams = normalizePurchaseQueryParams(params);
       return this.purchaseRepository.getPurchases(normalizedParams);
     });

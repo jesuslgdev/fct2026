@@ -4,7 +4,7 @@ import {
   PurchasePermissionContext,
 } from '@domain/models/purchase.model';
 import {
-  assertCanManagePurchases,
+  assertCanViewPurchases,
   assertPositivePurchaseId,
 } from '@domain/models/purchase-rules';
 import { PurchaseRepository } from '@domain/repositories/purchase.repository';
@@ -21,7 +21,7 @@ export class GetPurchaseByIdUseCase {
     permissionContext: PurchasePermissionContext,
   ): Observable<PurchaseDetail> {
     return defer(() => {
-      assertCanManagePurchases(permissionContext);
+      assertCanViewPurchases(permissionContext);
       assertPositivePurchaseId(purchaseId);
       return this.purchaseRepository.getPurchaseById(purchaseId);
     });
