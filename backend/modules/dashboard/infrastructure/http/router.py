@@ -16,6 +16,6 @@ async def get_dashboard(
     current_user: UserSession = Depends(get_current_user),
     use_case: IGetDashboardUseCase = Depends(get_dashboard_use_case),
 ):
-    """Return dashboard aggregates filtered by the caller role/department."""
+    """Return full dashboard aggregates for the authenticated user."""
     result = await use_case.execute(current_user)
     return DashboardResponseDTO.from_domain(result)

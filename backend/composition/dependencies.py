@@ -642,7 +642,6 @@ async def get_dashboard_use_case(
 ) -> IGetDashboardUseCase:
     return GetDashboardUseCase(
         dashboard_repo=DashboardRepository(db),
-        department_reader=DepartmentRepository(db),
         stale_days=settings.dashboard_stale_days,
         recent_limit=settings.dashboard_recent_limit,
     )

@@ -9,5 +9,5 @@ from shared.domain.dtos.user_session import UserSession
 class IGetDashboardUseCase(ABC):
     @abstractmethod
     async def execute(self, current_user: UserSession) -> DashboardData:
-        """Return role-filtered dashboard data for the authenticated user."""
+        """Return full dashboard data for the authenticated user."""
         ...
