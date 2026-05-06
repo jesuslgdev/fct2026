@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { GetDashboardUseCase } from './get-dashboard.usecase';
@@ -7,7 +7,7 @@ import { DashboardData } from '@domain/models/dashboard.model';
 
 describe('GetDashboardUseCase', () => {
   let useCase: GetDashboardUseCase;
-  let repository: { getDashboard: any };
+  let repository: { getDashboard: Mock };
 
   const mockDashboardData: DashboardData = {
     purchaseStatusSummary: [],

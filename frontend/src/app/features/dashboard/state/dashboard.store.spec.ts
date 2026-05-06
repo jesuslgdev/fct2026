@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { DashboardStore } from './dashboard.store';
@@ -8,7 +8,7 @@ import { DashboardForbiddenError, DashboardUnauthorizedError } from '@domain/mod
 
 describe('DashboardStore', () => {
   let store: DashboardStore;
-  let getDashboardUseCase: { execute: any };
+  let getDashboardUseCase: { execute: Mock };
 
   const mockDashboardData: DashboardData = {
     purchaseStatusSummary: [{ status: 'PENDING', count: 5 }],

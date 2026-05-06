@@ -1,14 +1,29 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DashboardPageComponent } from './dashboard.page.component';
 import { DashboardStore } from '@features/dashboard/state/dashboard.store';
-import { signal } from '@angular/core';
+import { signal, type Signal, type WritableSignal } from '@angular/core';
 import { DashboardData } from '@domain/models/dashboard.model';
 
 describe('DashboardPageComponent', () => {
   let component: DashboardPageComponent;
   let fixture: ComponentFixture<DashboardPageComponent>;
-  let mockStore: any;
+  let mockStore: {
+    data: WritableSignal<DashboardData | null>;
+    loading: WritableSignal<boolean>;
+    error: WritableSignal<string | null>;
+    purchaseStatusSummary: WritableSignal<unknown[]>;
+    salesStatusSummary: WritableSignal<unknown[]>;
+    latestPurchases: WritableSignal<unknown[]>;
+    latestSales: WritableSignal<unknown[]>;
+    spendComparison: WritableSignal<unknown>;
+    lowStockProducts: WritableSignal<unknown[]>;
+    stalePurchases: WritableSignal<unknown[]>;
+    staleSales: WritableSignal<unknown[]>;
+    meta: WritableSignal<unknown>;
+    hasAnyData: WritableSignal<boolean>;
+    loadDashboard: Mock;
+  };
 
   const mockDashboardData: DashboardData = {
     purchaseStatusSummary: [{ status: 'PENDING', count: 5 }],
