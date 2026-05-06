@@ -392,7 +392,7 @@ export class PurchaseFormDialogComponent {
   }
 
   onLineQuantityChange(index: number, value: string): void {
-    this.updateLine(index, { quantity: this.toNonNegativeNumber(value) });
+    this.updateLine(index, { quantity: this.toNonNegativeInteger(value) });
   }
 
   onLineUnitPriceChange(index: number, value: string): void {
@@ -576,7 +576,7 @@ export class PurchaseFormDialogComponent {
       return false;
     }
 
-    if (line.quantity === null || line.quantity <= 0) {
+    if (line.quantity === null || line.quantity <= 0 || !Number.isInteger(line.quantity)) {
       return false;
     }
 
@@ -675,6 +675,16 @@ export class PurchaseFormDialogComponent {
     const parsedValue = this.toNullableNumber(value);
 
     if (parsedValue === null) {
+      return null;
+    }
+
+    return Math.max(0, parsedValue);
+  }
+
+  private toNonNegativeInteger(value: number | string | null | undefined): number | null {
+    const parsedValue = this.toNullableNumber(value);
+
+    if (parsedValue === null || !Number.isInteger(parsedValue)) {
       return null;
     }
 

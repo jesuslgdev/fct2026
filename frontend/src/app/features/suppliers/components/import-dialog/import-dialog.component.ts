@@ -26,6 +26,7 @@ export class ImportDialogComponent {
   readonly selectedFile = signal<File | null>(null);
   readonly importResult = signal<ExcelImportResult | null>(null);
   readonly currentStep = signal<'upload' | 'validation' | 'success'>('upload');
+  readonly inlineError = signal<string | null>(null);
 
   // Output to notify the main page when import completes
   @Output() importCompleted = new EventEmitter<void>();
@@ -36,6 +37,7 @@ export class ImportDialogComponent {
     this.currentStep.set('upload');
     this.selectedFile.set(null);
     this.importResult.set(null);
+    this.inlineError.set(null);
   }
 
   close(): void {
@@ -48,31 +50,28 @@ export class ImportDialogComponent {
     this.importResult.set(null);
     this.currentStep.set('upload');
     this.loading.set(false);
+    this.inlineError.set(null);
   }
 
   // File handling
   onFileSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    
-    if (file) {
-      // Validate file type
-      const validTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'application/vnd.ms-excel', // .xls
-        'text/csv', // .csv
-        'application/csv' // .csv (alternative)
-      ];
 
-      if (!validTypes.includes(file.type)) {
-        alert('Por favor, selecciona un archivo Excel (.xlsx, .xls) o CSV (.csv)');
-        input.value = '';
-        return;
-      }
-
-      this.selectedFile.set(file);
-      this.importResult.set(null);
+    if (!file) {
+      return;
     }
+
+    const validationError = this.validateFileType(file);
+    if (validationError) {
+      this.inlineError.set(validationError);
+      input.value = '';
+      return;
+    }
+
+    this.inlineError.set(null);
+    this.selectedFile.set(file);
+    this.importResult.set(null);
   }
 
   // Drag and drop
@@ -89,128 +88,137 @@ export class ImportDialogComponent {
   onDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    
+
     const files = event.dataTransfer?.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      
-      // Validate file type
-      const validTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'application/vnd.ms-excel', // .xls
-        'text/csv', // .csv
-        'application/csv' // .csv (alternative)
-      ];
-
-      if (!validTypes.includes(file.type)) {
-        alert('Por favor, selecciona un archivo Excel (.xlsx, .xls) o CSV (.csv)');
-        return;
-      }
-
-      this.selectedFile.set(file);
-      this.importResult.set(null);
+    if (!files || files.length === 0) {
+      return;
     }
+
+    const file = files[0];
+    const validationError = this.validateFileType(file);
+    if (validationError) {
+      this.inlineError.set(validationError);
+      return;
+    }
+
+    this.inlineError.set(null);
+    this.selectedFile.set(file);
+    this.importResult.set(null);
   }
 
   // Download template
   async downloadTemplate(): Promise<void> {
     try {
       this.loading.set(true);
+      this.inlineError.set(null);
       const template = await this.excelImportService.downloadTemplate();
       this.excelImportService.downloadFile(template.data, template.filename);
     } catch (error) {
       console.error('Error al descargar plantilla:', error);
-      alert('Error al descargar la plantilla. Por favor, inténtalo de nuevo.');
+      this.inlineError.set('No hemos podido descargar la plantilla. Intentalo de nuevo en unos segundos.');
     } finally {
       this.loading.set(false);
     }
   }
 
-  // Validate file
+  // Validate file and move to validation step
   async validateFile(): Promise<void> {
     const file = this.selectedFile();
     if (!file) {
-      alert('Por favor, selecciona un archivo');
+      this.inlineError.set('Selecciona un archivo para continuar.');
       return;
     }
 
     try {
       this.loading.set(true);
-      
-      // Parse file
+      this.inlineError.set(null);
+      this.importResult.set(null);
+
+      // 1) Parse and validate locally
       const suppliers = await this.excelImportService.parseFile(file);
-      
-      // Validate data
+      if (suppliers.length === 0) {
+        this.inlineError.set('El archivo no contiene proveedores para importar.');
+        return;
+      }
+
       const result = this.excelImportService.validateSuppliers(suppliers);
-      
       this.importResult.set(result);
       this.currentStep.set('validation');
-      
+
+      if (!result.success) {
+        this.inlineError.set('Hemos encontrado errores en el archivo. Revisa el detalle y corrigelos antes de importar.');
+      }
     } catch (error) {
       console.error('Error al validar archivo:', error);
-      alert(error instanceof Error ? error.message : 'Error al procesar el archivo');
+      this.inlineError.set(error instanceof Error ? error.message : 'No hemos podido comprobar el archivo. Intentalo de nuevo.');
     } finally {
       this.loading.set(false);
     }
   }
 
-  // Import suppliers
   async importSuppliers(): Promise<void> {
     const file = this.selectedFile();
+    const currentValidation = this.importResult();
+
     if (!file) {
-      alert('Por favor, selecciona un archivo para importar');
+      this.inlineError.set('Selecciona un archivo para continuar.');
+      return;
+    }
+
+    if (!currentValidation?.success) {
+      this.inlineError.set('Corrige los errores del archivo antes de importar.');
       return;
     }
 
     try {
       this.loading.set(true);
-      
+      this.inlineError.set(null);
+
       const importResult = await this.excelImportService.importSuppliers(file);
-      
-      if (importResult.success) {
-        this.currentStep.set('success');
-        // Update result for success step
-        this.importResult.set({
-          success: true,
-          totalRecords: importResult.importedCount,
-          validRecords: importResult.importedCount,
-          invalidRecords: 0,
-          errors: [],
-        });
-        
-        // Emit event so the main page can refresh data
-        this.importCompleted.emit();
-      } else {
-        // Show backend errors
+      if (!importResult.success) {
         this.importResult.set({
           success: false,
-          totalRecords: 0,
+          totalRecords: currentValidation.totalRecords,
           validRecords: 0,
-          invalidRecords: importResult.errors?.length || 0,
-          errors: importResult.errors || [],
-          importedSuppliers: []
+          invalidRecords: importResult.errors?.length ?? 0,
+          errors: importResult.errors ?? [],
+          importedSuppliers: [],
         });
+        this.inlineError.set(importResult.message);
         this.currentStep.set('validation');
+        return;
       }
-      
+
+      this.currentStep.set('success');
+      this.importResult.set({
+        success: true,
+        totalRecords: currentValidation.totalRecords,
+        validRecords: importResult.importedCount,
+        invalidRecords: 0,
+        errors: [],
+      });
+      this.importCompleted.emit();
     } catch (error) {
       console.error('Error al importar proveedores:', error);
-      alert('Error durante la importación. Por favor, inténtalo de nuevo.');
+      this.inlineError.set(error instanceof Error ? error.message : 'No hemos podido completar la importacion. Intentalo de nuevo.');
+      this.currentStep.set('validation');
     } finally {
       this.loading.set(false);
     }
   }
 
-  // Navigation actions
   goBack(): void {
-    if (this.currentStep() === 'validation') {
-      this.currentStep.set('upload');
-      this.importResult.set(null);
-    }
+    this.currentStep.set('upload');
+    this.importResult.set(null);
+    this.inlineError.set(null);
   }
 
   // Utilities
   getErrorMessage(error: ImportError): string {
+    if (error.field.toLowerCase() === 'general') {
+      return `Fila ${error.row}: ${error.message}`;
+    }
+
     return `Fila ${error.row} - ${error.field}: ${error.message}`;
   }
 
@@ -245,7 +253,7 @@ export class ImportDialogComponent {
   getStepTitle(): string {
     switch (this.currentStep()) {
       case 'upload': return 'Importar Proveedores';
-      case 'validation': return 'Validación de datos';
+      case 'validation': return 'Validacion de datos';
       case 'success': return 'Importación completada';
       default: return 'Importar Proveedores';
     }
@@ -263,6 +271,25 @@ export class ImportDialogComponent {
     if (size < 1024) return `${size} bytes`;
     if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  private validateFileType(file: File): string | null {
+    const validMimeTypes = new Set([
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+      'application/csv',
+    ]);
+
+    const lowerName = file.name.toLowerCase();
+    const hasValidExtension = lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv');
+    const hasValidMime = file.type.length === 0 || validMimeTypes.has(file.type);
+
+    if (!hasValidExtension || !hasValidMime) {
+      return 'Formato no compatible. Usa un archivo .xlsx, .xls o .csv.';
+    }
+
+    return null;
   }
 }
 

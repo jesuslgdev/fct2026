@@ -184,9 +184,9 @@
                   <td class="px-3 py-2">
                     <ui-input
                       type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0"
+                      min="1"
+                      step="1"
+                      placeholder="1"
                       styleClass="text-right"
                       [disabled]="isViewMode()"
                       [ngModel]="displayNumericValue(line.quantity)"
@@ -237,7 +237,7 @@
                   <tr class="border-t border-surface-100">
                     <td class="px-3 py-2" [attr.colspan]="isViewMode() ? 7 : 8">
                       <span class="dialog-field-error">
-                        Complete la línea {{ i + 1 }}: producto, cantidad mayor que cero, precio no negativo (y no inferior al precio de compra del proveedor) e IVA entre 0 y 100.
+                        Complete la línea {{ i + 1 }}: producto, cantidad entera mayor que cero, precio no negativo (y no inferior al precio de compra del proveedor) e IVA entre 0 y 100.
                       </span>
                     </td>
                   </tr>
