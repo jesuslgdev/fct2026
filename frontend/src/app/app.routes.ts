@@ -30,6 +30,11 @@ export const routes: Routes = [
 				loadChildren: () => import('@features/departments/departments.routes').then(m => m.DEPARTMENTS_ROUTES),
 			},
 			{
+				path: 'dashboard',
+				redirectTo: 'departments',
+				pathMatch: 'full',
+			},
+			{
 				path: 'legal',
 				loadChildren: () => import('@features/legal/legal.routes').then(m => m.LEGAL_ROUTES),
 			},
