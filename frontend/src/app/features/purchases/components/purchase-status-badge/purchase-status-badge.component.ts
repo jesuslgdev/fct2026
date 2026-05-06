@@ -20,7 +20,7 @@ export class PurchaseStatusBadgeComponent {
         return 'Aprobada';
       case 'InProcess':
         return 'En proceso';
-      case 'Shipped':
+      case 'Sent':
         return 'Enviada';
       case 'Received':
         return 'Recibida';
@@ -39,7 +39,7 @@ export class PurchaseStatusBadgeComponent {
         return 'info';
       case 'InProcess':
         return 'secondary';
-      case 'Shipped':
+      case 'Sent':
         return 'contrast';
       case 'Received':
         return 'success';

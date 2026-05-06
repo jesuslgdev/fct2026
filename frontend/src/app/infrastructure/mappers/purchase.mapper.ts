@@ -1,4 +1,5 @@
 import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
+import { PurchaseApiError, PurchaseValidationError } from '@domain/models/purchase-errors';
 import { getPurchaseStatusTransitionEffect } from '@domain/models/purchase-rules';
 import {
   AddPurchaseLineRequestDto,
@@ -91,6 +92,9 @@ export class PurchaseMapper {
     supplierId: number,
     deliveryAddress: string,
   ): PurchaseSummary {
+    const status = this.toDomainStatus(dto.status);
+    const allowedTransitions = this.toAllowedTransitions(dto.allowed_transitions);
+
     return {
       purchaseId: dto.purchase_id,
       purchaseNumber: dto.purchase_number,
@@ -98,7 +102,8 @@ export class PurchaseMapper {
       supplierName: dto.supplier_name ?? '',
       deliveryWarehouseId: dto.warehouse_id,
       deliveryAddress,
-      status: this.toDomainStatus(dto.status),
+      status,
+      ...(allowedTransitions.length > 0 ? { allowedTransitions } : {}),
       createdAt: dto.created_at,
       total: this.toNumber(dto.total),
     };
@@ -117,6 +122,9 @@ export class PurchaseMapper {
   }
 
   static fromDetailDto(dto: PurchaseDetailDto, deliveryAddress: string): PurchaseDetail {
+    const status = this.toDomainStatus(dto.status);
+    const allowedTransitions = this.toAllowedTransitions(dto.allowed_transitions);
+
     return {
       purchaseId: dto.purchase_id,
       purchaseNumber: dto.purchase_number,
@@ -124,7 +132,8 @@ export class PurchaseMapper {
       supplierName: dto.supplier_name ?? '',
       deliveryWarehouseId: dto.warehouse_id,
       deliveryAddress,
-      status: this.toDomainStatus(dto.status),
+      status,
+      ...(allowedTransitions.length > 0 ? { allowedTransitions } : {}),
       createdAt: dto.created_at,
       total: this.toNumber(dto.total),
       subtotal: this.toNumber(dto.subtotal),
@@ -171,7 +180,10 @@ export class PurchaseMapper {
     const backendStatus = this.toBackendStatus(status);
 
     if (backendStatus === 'Pending' || backendStatus === 'Cancelled') {
-      throw new Error('Invalid purchase transition target for backend status endpoint.');
+      throw new PurchaseValidationError(
+        { field: 'status', value: status },
+        'Invalid purchase transition target for backend status endpoint.',
+      );
     }
 
     return { status: backendStatus };
@@ -251,17 +263,19 @@ export class PurchaseMapper {
         return 'InProcess';
       case 'Sent':
       case 'Shipped':
-        return 'Shipped';
+        return 'Sent';
       case 'Received':
         return 'Received';
       case 'Cancelled':
         return 'Cancelled';
       default:
-        throw new Error(`Unsupported purchase status received from backend: ${status}`);
+        throw new PurchaseApiError(`Unsupported purchase status received from backend: ${status}`);
     }
   }
 
-  static toBackendStatus(status: PurchaseStatus): Exclude<BackendPurchaseStatus, 'In Process'> {
+  static toBackendStatus(
+    status: PurchaseStatus,
+  ): Exclude<BackendPurchaseStatus, 'In Process' | 'Shipped'> {
     switch (status) {
       case 'Pending':
         return 'Pending';
@@ -269,7 +283,7 @@ export class PurchaseMapper {
         return 'Approved';
       case 'InProcess':
         return 'InProcess';
-      case 'Shipped':
+      case 'Sent':
         return 'Sent';
       case 'Received':
         return 'Received';
@@ -372,5 +386,24 @@ export class PurchaseMapper {
     }
 
     return `User #${changedByUserId}`;
+  }
+
+  private static toAllowedTransitions(allowedTransitions: string[] | undefined): PurchaseStatus[] {
+    const sourceTransitions = Array.isArray(allowedTransitions) ? allowedTransitions : [];
+
+    const normalizedTransitions: PurchaseStatus[] = [];
+
+    for (const transition of sourceTransitions) {
+      try {
+        const mappedStatus = this.toDomainStatus(transition);
+        if (!normalizedTransitions.includes(mappedStatus)) {
+          normalizedTransitions.push(mappedStatus);
+        }
+      } catch {
+        // Ignore unknown transition values to avoid breaking list/detail rendering.
+      }
+    }
+
+    return normalizedTransitions;
   }
 }

@@ -133,7 +133,21 @@ export class PurchaseFormDialogComponent {
       }));
     }
 
+    const supplierId = this.supplierId();
     const byProductId = new Map<number, PurchaseSupplierProductOption>();
+
+    if (supplierId !== null) {
+      this.getProductsForSupplier(supplierId).forEach((product) => {
+        byProductId.set(product.productId, product);
+      });
+
+      return [...byProductId.values()]
+        .sort((left, right) => left.productName.localeCompare(right.productName))
+        .map((product) => ({
+          label: product.productName,
+          value: product.productId,
+        }));
+    }
 
     Object.values(this.store.supplierProductsBySupplier()).forEach((supplierProducts) => {
       supplierProducts.forEach((product) => {
@@ -303,6 +317,11 @@ export class PurchaseFormDialogComponent {
       return;
     }
 
+    const shouldAssociateSupplier =
+      this.isCreateMode() &&
+      this.supplierId() === null &&
+      this.selectedProductIds().length === 0;
+
     const selectedProduct = this.resolveProductOption(productId, this.supplierId());
     if (!selectedProduct) {
       return;
@@ -320,6 +339,10 @@ export class PurchaseFormDialogComponent {
     ]);
 
     if (this.isCreateMode()) {
+      if (shouldAssociateSupplier) {
+        this.associateSupplierFromProduct(productId);
+      }
+
       this.ensureSupplierMatchesSelectedProducts();
 
       const supplierId = this.supplierId();
@@ -369,15 +392,23 @@ export class PurchaseFormDialogComponent {
   }
 
   onLineQuantityChange(index: number, value: string): void {
-    this.updateLine(index, { quantity: this.toNullableNumber(value) });
+    this.updateLine(index, { quantity: this.toNonNegativeNumber(value) });
   }
 
   onLineUnitPriceChange(index: number, value: string): void {
-    this.updateLine(index, { unitPrice: this.toNullableNumber(value) });
+    const parsedPrice = this.toNonNegativeNumber(value);
+    const minimumPrice = this.getLineMinimumUnitPrice(index);
+
+    this.updateLine(index, {
+      unitPrice:
+        parsedPrice === null
+          ? null
+          : Math.max(parsedPrice, minimumPrice ?? 0),
+    });
   }
 
   onLineVatRateChange(index: number, value: string): void {
-    this.updateLine(index, { vatRate: this.toNullableNumber(value) });
+    this.updateLine(index, { vatRate: this.clampNullableNumber(this.toNullableNumber(value), 0, 100) });
   }
 
   onConfirm(): void {
@@ -477,7 +508,7 @@ export class PurchaseFormDialogComponent {
         return 'Aprobada';
       case 'InProcess':
         return 'En proceso';
-      case 'Shipped':
+      case 'Sent':
         return 'Enviada';
       case 'Received':
         return 'Recibida';
@@ -553,11 +584,46 @@ export class PurchaseFormDialogComponent {
       return false;
     }
 
+    const minimumUnitPrice = this.getLineMinimumUnitPriceByProduct(line.productId);
+    if (minimumUnitPrice !== null && line.unitPrice + Number.EPSILON < minimumUnitPrice) {
+      return false;
+    }
+
     if (line.vatRate === null || line.vatRate < 0 || line.vatRate > 100) {
       return false;
     }
 
     return true;
+  }
+
+  private getLineMinimumUnitPrice(index: number): number | null {
+    const line = this.lines()[index];
+    if (!line) {
+      return null;
+    }
+
+    return this.getLineMinimumUnitPriceByProduct(line.productId);
+  }
+
+  private getLineMinimumUnitPriceByProduct(productId: number | null): number | null {
+    if (productId === null) {
+      return null;
+    }
+
+    const supplierId = this.supplierId();
+    if (supplierId === null) {
+      return null;
+    }
+
+    const supplierProduct = this
+      .getProductsForSupplier(supplierId)
+      .find((product) => product.productId === productId);
+
+    if (!supplierProduct || !Number.isFinite(supplierProduct.unitPrice)) {
+      return null;
+    }
+
+    return this.toNonNegativeNumber(supplierProduct.unitPrice);
   }
 
   private updateLine(index: number, patch: Partial<PurchaseLineDraft>): void {
@@ -605,6 +671,24 @@ export class PurchaseFormDialogComponent {
     return Number.isFinite(parsed) ? parsed : null;
   }
 
+  private toNonNegativeNumber(value: number | string | null | undefined): number | null {
+    const parsedValue = this.toNullableNumber(value);
+
+    if (parsedValue === null) {
+      return null;
+    }
+
+    return Math.max(0, parsedValue);
+  }
+
+  private clampNullableNumber(value: number | null, min: number, max: number): number | null {
+    if (value === null) {
+      return null;
+    }
+
+    return Math.min(max, Math.max(min, value));
+  }
+
   private roundCurrency(value: number): number {
     return Math.round((value + Number.EPSILON) * 100) / 100;
   }
@@ -619,6 +703,24 @@ export class PurchaseFormDialogComponent {
     );
 
     return selectedProductIds.every((productId) => productIdsForSupplier.has(productId));
+  }
+
+  private associateSupplierFromProduct(productId: number): void {
+    const matchingSupplier = this.store
+      .suppliers()
+      .find((supplier) =>
+        this.getProductsForSupplier(supplier.supplierId).some(
+          (product) => product.productId === productId,
+        ),
+      );
+
+    if (!matchingSupplier) {
+      return;
+    }
+
+    this.supplierId.set(matchingSupplier.supplierId);
+    this.previousSupplierId.set(matchingSupplier.supplierId);
+    this.store.setSupplierProducts(this.getProductsForSupplier(matchingSupplier.supplierId));
   }
 
   private ensureSupplierMatchesSelectedProducts(): void {

@@ -61,6 +61,8 @@ export class InputComponent implements ControlValueAccessor {
   // Inputs
   type = input<string>('text'); // Input type
   step = input<string | null>(null); // Step for number-like inputs
+  min = input<string | number | null>(null); // Min value for number-like inputs
+  max = input<string | number | null>(null); // Max value for number-like inputs
   placeholder = input<string>(''); // Placeholder text
   disabled = input<boolean>(false); // Disabled state (external)
   variant = input<InputVariant>('default'); // Input variant

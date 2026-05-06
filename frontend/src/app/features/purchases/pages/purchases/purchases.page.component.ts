@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
 import { PurchaseSortField, PurchaseSummary } from '@domain/models/purchase.model';
-import { getAllowedNextPurchaseStatuses } from '@domain/models/purchase-rules';
 import { PurchaseFormDialogComponent } from '@features/purchases/components/purchase-form-dialog/purchase-form-dialog.component';
 import { PurchaseStatusBadgeComponent } from '@features/purchases/components/purchase-status-badge/purchase-status-badge.component';
 import { PurchasesStore } from '@features/purchases/state/purchases.store';
@@ -49,15 +49,14 @@ interface SortOption {
 })
 export class PurchasesPageComponent implements OnInit {
   readonly store = inject(PurchasesStore);
-
-  readonly cancellationReason = signal('');
+  private readonly router = inject(Router);
 
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos los estados', value: null },
     { label: 'Pendiente', value: 'Pending' },
     { label: 'Aprobada', value: 'Approved' },
     { label: 'En proceso', value: 'InProcess' },
-    { label: 'Enviada', value: 'Shipped' },
+    { label: 'Enviada', value: 'Sent' },
     { label: 'Recibida', value: 'Received' },
     { label: 'Cancelada', value: 'Cancelled' },
   ];
@@ -133,8 +132,8 @@ export class PurchasesPageComponent implements OnInit {
     this.store.onPageChange(event);
   }
 
-  canEditPurchase(purchase: PurchaseSummary): boolean {
-    return this.store.canManage() && purchase.status === 'Pending';
+  onViewPurchase(purchaseId: number): void {
+    void this.router.navigate(['/purchases', purchaseId]);
   }
 
   canDeletePurchase(purchase: PurchaseSummary): boolean {
@@ -146,16 +145,16 @@ export class PurchasesPageComponent implements OnInit {
   }
 
   canAdvanceStatus(purchase: PurchaseSummary): boolean {
-    return this.store.canManage() && this.getNextLifecycleStatus(purchase.status) !== null;
+    return this.store.canManage() && this.getNextLifecycleStatus(purchase) !== null;
   }
 
   nextStatusLabel(purchase: PurchaseSummary): string {
-    const status = this.getNextLifecycleStatus(purchase.status);
+    const status = this.getNextLifecycleStatus(purchase);
     return status ? this.statusLabel(status) : '';
   }
 
   requestStatusChange(purchase: PurchaseSummary): void {
-    const nextStatus = this.getNextLifecycleStatus(purchase.status);
+    const nextStatus = this.getNextLifecycleStatus(purchase);
     if (!nextStatus) {
       return;
     }
@@ -164,18 +163,14 @@ export class PurchasesPageComponent implements OnInit {
   }
 
   openCancelDialog(purchase: PurchaseSummary): void {
-    this.cancellationReason.set('');
     this.store.requestCancelPurchase(purchase);
   }
 
   confirmCancelPurchase(): void {
-    const reason = this.cancellationReason().trim();
-    this.store.confirmCancelPurchase(reason || undefined);
-    this.cancellationReason.set('');
+    this.store.confirmCancelPurchase();
   }
 
   closeCancelDialog(): void {
-    this.cancellationReason.set('');
     this.store.cancelCancelPurchase();
   }
 
@@ -205,7 +200,7 @@ export class PurchasesPageComponent implements OnInit {
         return 'Aprobada';
       case 'InProcess':
         return 'En proceso';
-      case 'Shipped':
+      case 'Sent':
         return 'Enviada';
       case 'Received':
         return 'Recibida';
@@ -216,8 +211,12 @@ export class PurchasesPageComponent implements OnInit {
     }
   }
 
-  private getNextLifecycleStatus(status: PurchaseStatus): PurchaseStatus | null {
-    const allowedStatuses = getAllowedNextPurchaseStatuses(status);
+  private getNextLifecycleStatus(purchase: PurchaseSummary): PurchaseStatus | null {
+    if (purchase.status === 'Received') {
+      return null;
+    }
+
+    const allowedStatuses = purchase.allowedTransitions ?? [];
 
     for (const allowedStatus of allowedStatuses) {
       if (allowedStatus !== 'Cancelled') {

@@ -13,6 +13,7 @@ import {
   normalizePurchaseQueryParams,
   validateChangePurchaseStatusPayload,
   validateCreatePurchasePayload,
+  validateLineUnitPricesAgainstSupplierCatalog,
   validateUpdatePurchasePayload,
 } from '@domain/models/purchase-rules';
 import {
@@ -49,7 +50,7 @@ describe('purchase-rules', () => {
 
   it('returns expected transition effects', () => {
     expect(getPurchaseStatusTransitionEffect('Pending', 'Approved')).toBe('freeze_lines');
-    expect(getPurchaseStatusTransitionEffect('Shipped', 'Received')).toBe(
+    expect(getPurchaseStatusTransitionEffect('Sent', 'Received')).toBe(
       'generate_stock_entry',
     );
     expect(getPurchaseStatusTransitionEffect('Approved', 'Cancelled')).toBe('final_state');
@@ -130,6 +131,22 @@ describe('purchase-rules', () => {
     expect(() => validateChangePurchaseStatusPayload(invalidPayload)).toThrow(
       PurchaseValidationError,
     );
+  });
+
+  it('validates line unit price is not lower than supplier purchase price', () => {
+    expect(() =>
+      validateLineUnitPricesAgainstSupplierCatalog(
+        [{ productId: 10, quantity: 1, unitPrice: 20, vatRate: 21 }],
+        [{ productId: 10, productName: 'Paper', supplierId: 1, unitPrice: 20, vatRate: 21 }],
+      ),
+    ).not.toThrow();
+
+    expect(() =>
+      validateLineUnitPricesAgainstSupplierCatalog(
+        [{ productId: 10, quantity: 1, unitPrice: 19.99, vatRate: 21 }],
+        [{ productId: 10, productName: 'Paper', supplierId: 1, unitPrice: 20, vatRate: 21 }],
+      ),
+    ).toThrow(PurchaseValidationError);
   });
 
   it('normalizes query params and validates date ranges', () => {

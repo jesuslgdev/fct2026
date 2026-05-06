@@ -292,11 +292,15 @@ export class PurchasesStore {
   }
 
   openEditDialog(purchase: PurchaseSummary | PurchaseDetail): void {
+    this.openEditDialogById(purchase.purchaseId);
+  }
+
+  openEditDialogById(purchaseId: number): void {
     this._dialogMode.set('edit');
     this._dialogError.set(null);
     this._dialogVisible.set(true);
     this.loadFormOptions();
-    this.loadPurchaseById(purchase.purchaseId);
+    this.loadPurchaseById(purchaseId);
   }
 
   openViewDialog(purchase: PurchaseSummary | PurchaseDetail): void {
@@ -412,11 +416,13 @@ export class PurchasesStore {
       return;
     }
 
+    const actorId = this.resolveActorId();
+
     this._loading.set(true);
     this._error.set(null);
 
     const payload: CancelPurchasePayload = {
-      cancelledByUserId: this.resolveActorId(),
+      cancelledByUserId: actorId,
       cancelledByName: this.resolveActorName(),
       cancelledAt: new Date().toISOString(),
       reason: reason ?? null,
@@ -436,6 +442,8 @@ export class PurchasesStore {
                 ? {
                     ...item,
                     status: updatedPurchase.status,
+                    allowedTransitions:
+                      updatedPurchase.allowedTransitions ?? item.allowedTransitions,
                     total: updatedPurchase.total,
                   }
                 : item,
@@ -474,12 +482,14 @@ export class PurchasesStore {
       return;
     }
 
+    const actorId = this.resolveActorId();
+
     this._loading.set(true);
     this._error.set(null);
 
     const payload: ChangePurchaseStatusPayload = {
       toStatus: nextStatus,
-      changedByUserId: this.resolveActorId(),
+      changedByUserId: actorId,
       changedByName: this.resolveActorName(),
       changedAt: new Date().toISOString(),
     };
@@ -498,6 +508,8 @@ export class PurchasesStore {
                 ? {
                     ...item,
                     status: updatedPurchase.status,
+                    allowedTransitions:
+                      updatedPurchase.allowedTransitions ?? item.allowedTransitions,
                     total: updatedPurchase.total,
                   }
                 : item,
@@ -580,15 +592,58 @@ export class PurchasesStore {
   }
 
   private resolveActorId(): number {
-    const rawUid = this.authService.user()?.uid ?? '';
-    const digitsOnly = rawUid.replace(/\D/g, '');
-    const numericUid = Number.parseInt(digitsOnly, 10);
+    const user = this.authService.user();
+    const uidAsNumber = this.extractPositiveInteger(user?.uid);
 
-    if (Number.isInteger(numericUid) && numericUid > 0) {
-      return numericUid;
+    if (uidAsNumber !== null) {
+      return uidAsNumber;
     }
 
-    return 1;
+    const emailAsNumber = this.extractPositiveInteger(user?.email);
+
+    if (emailAsNumber !== null) {
+      return emailAsNumber;
+    }
+
+    const stableSource = (user?.uid ?? '').trim() || (user?.email ?? '').trim();
+
+    if (stableSource.length > 0) {
+      return this.toStablePositiveId(stableSource);
+    }
+
+    throw new PurchaseValidationError(
+      { field: 'actorId' },
+      'Unable to resolve actor identifier for purchase action.',
+    );
+  }
+
+  private extractPositiveInteger(value: string | null | undefined): number | null {
+    if (!value) {
+      return null;
+    }
+
+    const digitsOnly = value.replace(/\D/g, '');
+    if (!digitsOnly) {
+      return null;
+    }
+
+    const parsedValue = Number.parseInt(digitsOnly, 10);
+
+    if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+      return null;
+    }
+
+    return parsedValue;
+  }
+
+  private toStablePositiveId(source: string): number {
+    let hash = 0;
+
+    for (let index = 0; index < source.length; index += 1) {
+      hash = (hash * 31 + source.charCodeAt(index)) % 2147483647;
+    }
+
+    return hash > 0 ? hash : source.length;
   }
 
   private resolveActorName(): string {

@@ -10,10 +10,11 @@ import {
   assertPositivePurchaseId,
   assertPurchaseCanBeEdited,
   shouldResetLinesWhenSupplierChanges,
+  validateLineUnitPricesAgainstSupplierCatalog,
   validateUpdatePurchasePayload,
 } from '@domain/models/purchase-rules';
 import { PurchaseRepository } from '@domain/repositories/purchase.repository';
-import { defer, Observable, switchMap, take, tap } from 'rxjs';
+import { defer, Observable, switchMap, take } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -33,7 +34,7 @@ export class UpdatePurchaseUseCase {
 
       return this.purchaseRepository.getPurchaseById(purchaseId).pipe(
         take(1),
-        tap((currentPurchase) => {
+        switchMap((currentPurchase) => {
           assertPurchaseCanBeEdited(currentPurchase.status);
 
           const supplierWasChanged = shouldResetLinesWhenSupplierChanges(
@@ -51,8 +52,21 @@ export class UpdatePurchaseUseCase {
               'When supplier changes, at least one new line must be provided.',
             );
           }
+
+          if (!payload.lines) {
+            return this.purchaseRepository.updatePurchase(purchaseId, payload);
+          }
+
+          const supplierIdForValidation = payload.supplierId ?? currentPurchase.supplierId;
+
+          return this.purchaseRepository.getSupplierProducts(supplierIdForValidation).pipe(
+            take(1),
+            switchMap((supplierProducts) => {
+              validateLineUnitPricesAgainstSupplierCatalog(payload.lines!, supplierProducts);
+              return this.purchaseRepository.updatePurchase(purchaseId, payload);
+            }),
+          );
         }),
-        switchMap(() => this.purchaseRepository.updatePurchase(purchaseId, payload)),
       );
     });
   }

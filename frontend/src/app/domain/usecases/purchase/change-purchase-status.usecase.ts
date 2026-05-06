@@ -7,11 +7,10 @@ import {
 import {
   assertCanManagePurchases,
   assertPositivePurchaseId,
-  assertValidPurchaseStatusTransition,
   validateChangePurchaseStatusPayload,
 } from '@domain/models/purchase-rules';
 import { PurchaseRepository } from '@domain/repositories/purchase.repository';
-import { defer, Observable, switchMap, take, tap } from 'rxjs';
+import { defer, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -29,13 +28,8 @@ export class ChangePurchaseStatusUseCase {
       assertPositivePurchaseId(purchaseId);
       validateChangePurchaseStatusPayload(payload);
 
-      return this.purchaseRepository.getPurchaseById(purchaseId).pipe(
-        take(1),
-        tap((currentPurchase) =>
-          assertValidPurchaseStatusTransition(currentPurchase.status, payload.toStatus),
-        ),
-        switchMap(() => this.purchaseRepository.changePurchaseStatus(purchaseId, payload)),
-      );
+      // Transition validity is enforced exclusively by backend.
+      return this.purchaseRepository.changePurchaseStatus(purchaseId, payload);
     });
   }
 }

@@ -74,6 +74,7 @@ describe('HttpPurchaseRepository', () => {
           purchase_number: 'COM-2026-0007',
           supplier_name: 'Supplier North',
           status: 'In Process',
+          allowed_transitions: ['Sent', 'Cancelled'],
           warehouse_id: 2,
           created_at: '2026-04-10T10:00:00.000Z',
           total: 121,
@@ -122,6 +123,7 @@ describe('HttpPurchaseRepository', () => {
       deliveryWarehouseId: 2,
       deliveryAddress: 'Main Street 1',
       status: 'InProcess',
+      allowedTransitions: ['Sent', 'Cancelled'],
       createdAt: '2026-04-10T10:00:00.000Z',
       total: 121,
     });
@@ -141,6 +143,7 @@ describe('HttpPurchaseRepository', () => {
       warehouse_name: 'Main',
       purchase_date: '2026-04-11T08:00:00.000Z',
       status: 'Sent',
+      allowed_transitions: ['Received'],
       subtotal: 50,
       taxes: 10.5,
       total: 60.5,
@@ -196,7 +199,8 @@ describe('HttpPurchaseRepository', () => {
 
     const result = await promise;
 
-    expect(result.status).toBe('Shipped');
+    expect(result.status).toBe('Sent');
+    expect(result.allowedTransitions).toEqual(['Received']);
     expect(result.deliveryAddress).toBe('Warehouse Ave 5');
     expect(result.lines[0].vatRate).toBe(21);
     expect(result.lines[0].total).toBe(60.5);
@@ -227,7 +231,7 @@ describe('HttpPurchaseRepository', () => {
       },
       {
         fromStatus: 'InProcess',
-        toStatus: 'Shipped',
+        toStatus: 'Sent',
         changedAt: '2026-04-11T08:30:00.000Z',
         changedByUserId: 15,
         changedByName: 'User #15',
@@ -915,7 +919,7 @@ describe('HttpPurchaseRepository', () => {
 
     const forbiddenPromise = firstValueFrom(
       repo.changePurchaseStatus(16, {
-        toStatus: 'Approved',
+        toStatus: 'Sent',
         changedByUserId: 9,
         changedByName: 'Manager',
       }),
