@@ -89,7 +89,6 @@ export class PurchaseMapper {
 
   static fromSummaryDto(
     dto: PurchaseListItemDto,
-    supplierId: number,
     deliveryAddress: string,
   ): PurchaseSummary {
     const status = this.toDomainStatus(dto.status);
@@ -98,7 +97,7 @@ export class PurchaseMapper {
     return {
       purchaseId: dto.purchase_id,
       purchaseNumber: dto.purchase_number,
-      supplierId,
+      supplierId: dto.supplier_id ?? 0,
       supplierName: dto.supplier_name ?? '',
       deliveryWarehouseId: dto.warehouse_id,
       deliveryAddress,

@@ -7,12 +7,15 @@ import {
   concatMap,
   defaultIfEmpty,
   expand,
+  finalize,
   forkJoin,
   from,
   map,
   of,
   reduce,
+  shareReplay,
   switchMap,
+  tap,
   throwError,
 } from 'rxjs';
 import { PURCHASE_STATUSES } from '@domain/enums/purchase-status.enum';
@@ -96,6 +99,8 @@ const DEFAULT_TRANSITION_STATUS = PURCHASE_STATUSES[0];
 @Injectable()
 export class HttpPurchaseRepository implements PurchaseRepository {
   private readonly http = inject(HttpClient);
+  private warehousesById: Map<number, string> | null = null;
+  private warehousesByIdRequest$: Observable<Map<number, string>> | null = null;
 
   getPurchases(params: PurchaseQueryParams): Observable<PagedResult<PurchaseSummary>> {
     const query = PurchaseMapper.toQueryParams(params);
@@ -107,35 +112,11 @@ export class HttpPurchaseRepository implements PurchaseRepository {
             return of(PurchaseMapper.toPagedResult(pageDto, []));
           }
 
-          const supplierRefs$ = forkJoin(
-            pageDto.items.map((item) =>
-              this.http.get<PurchaseDetailDto>(`${PURCHASES_URL}/${item.purchase_id}`).pipe(
-                map((detail) => ({ purchaseId: item.purchase_id, supplierId: detail.supplier_id })),
-              ),
-            ),
-          );
-
-          const warehouses$ = this.http.get<PurchaseWarehouseDto[]>(WAREHOUSES_URL).pipe(
-            map((warehouses) =>
-              new Map(
-                warehouses.map((warehouse) => [
-                  warehouse.warehouse_id,
-                  PurchaseMapper.formatWarehouseAddress(warehouse.address),
-                ]),
-              ),
-            ),
-          );
-
-          return forkJoin({ supplierRefs: supplierRefs$, warehouses: warehouses$ }).pipe(
-            map(({ supplierRefs, warehouses }) => {
-              const supplierIds = new Map(
-                supplierRefs.map((reference) => [reference.purchaseId, reference.supplierId]),
-              );
-
+          return this.getWarehouseAddressMap().pipe(
+            map((warehouses) => {
               const data = pageDto.items.map((item) =>
                 PurchaseMapper.fromSummaryDto(
                   item,
-                  supplierIds.get(item.purchase_id) ?? 0,
                   warehouses.get(item.warehouse_id) ?? '',
                 ),
               );
@@ -462,12 +443,39 @@ export class HttpPurchaseRepository implements PurchaseRepository {
   }
 
   private resolveWarehouseAddress(warehouseId: number): Observable<string> {
-    return this.http.get<PurchaseWarehouseDto[]>(WAREHOUSES_URL).pipe(
-      map((warehouses) => {
-        const warehouse = warehouses.find((item) => item.warehouse_id === warehouseId);
-        return PurchaseMapper.formatWarehouseAddress(warehouse?.address ?? null);
-      }),
+    return this.getWarehouseAddressMap().pipe(
+      map((warehouses) => warehouses.get(warehouseId) ?? ''),
     );
+  }
+
+  private getWarehouseAddressMap(): Observable<Map<number, string>> {
+    if (this.warehousesById !== null) {
+      return of(this.warehousesById);
+    }
+
+    if (this.warehousesByIdRequest$ !== null) {
+      return this.warehousesByIdRequest$;
+    }
+
+    this.warehousesByIdRequest$ = this.http.get<PurchaseWarehouseDto[]>(WAREHOUSES_URL).pipe(
+      map((warehouses) =>
+        new Map(
+          warehouses.map((warehouse) => [
+            warehouse.warehouse_id,
+            PurchaseMapper.formatWarehouseAddress(warehouse.address),
+          ]),
+        ),
+      ),
+      tap((warehouseMap) => {
+        this.warehousesById = warehouseMap;
+      }),
+      finalize(() => {
+        this.warehousesByIdRequest$ = null;
+      }),
+      shareReplay(1),
+    );
+
+    return this.warehousesByIdRequest$;
   }
 
   private withErrorMapping<T>(operation: () => Observable<T>): Observable<T> {
