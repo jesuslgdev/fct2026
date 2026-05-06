@@ -118,6 +118,7 @@ const INITIAL_SALES: SaleDetail[] = [
         toStatus: SaleStatus.PENDING,
         changedAt: new Date('2026-04-01T10:00:00.000Z'),
         changedByUserId: 1,
+        changedByName: 'Sales User',
       },
     ],
   },
@@ -157,12 +158,14 @@ const INITIAL_SALES: SaleDetail[] = [
         toStatus: SaleStatus.PENDING,
         changedAt: new Date('2026-04-05T15:00:00.000Z'),
         changedByUserId: 2,
+        changedByName: 'Sales Manager',
       },
       {
         fromStatus: SaleStatus.PENDING,
         toStatus: SaleStatus.APPROVED,
         changedAt: new Date('2026-04-06T09:00:00.000Z'),
         changedByUserId: 2,
+        changedByName: 'Sales Manager',
       },
     ],
   },
@@ -255,6 +258,7 @@ export class MockSaleRepository implements SaleRepository {
           toStatus: SaleStatus.PENDING,
           changedAt: now,
           changedByUserId: 1,
+          changedByName: 'Sales User',
         },
       ],
     });
@@ -391,6 +395,7 @@ export class MockSaleRepository implements SaleRepository {
           toStatus: data.newStatus,
           changedAt,
           changedByUserId: sale.userId,
+          changedByName: sale.creatorName,
         },
       ],
     });

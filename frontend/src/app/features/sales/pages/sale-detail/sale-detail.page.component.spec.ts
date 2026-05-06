@@ -63,7 +63,22 @@ const SALE_DETAIL: SaleDetail = {
   taxes: 21,
   total: 121,
   lines: [],
-  statusHistory: [],
+  statusHistory: [
+    {
+      fromStatus: null,
+      toStatus: SaleStatus.PENDING,
+      changedAt: new Date('2026-04-01T10:01:00.000Z'),
+      changedByUserId: 7,
+      changedByName: 'Sales Employee',
+    },
+    {
+      fromStatus: SaleStatus.PENDING,
+      toStatus: SaleStatus.APPROVED,
+      changedAt: new Date('2026-04-01T10:05:00.000Z'),
+      changedByUserId: 9,
+      changedByName: 'Manager User',
+    },
+  ],
 };
 
 const LINE_VIEW: SaleDetailLineView = {
@@ -102,9 +117,17 @@ describe('SaleDetailPageComponent', () => {
       taxes: signal(21),
       total: signal(121),
       load: vi.fn().mockResolvedValue(undefined),
-      getStatusLabel: vi.fn((status: SaleStatus) =>
-        status === SaleStatus.PENDING ? 'Pendiente' : status,
-      ),
+      getStatusLabel: vi.fn((status: SaleStatus) => {
+        if (status === SaleStatus.PENDING) {
+          return 'Pendiente';
+        }
+
+        if (status === SaleStatus.APPROVED) {
+          return 'Aprobado';
+        }
+
+        return status;
+      }),
     };
 
     await TestBed.configureTestingModule({
@@ -150,6 +173,17 @@ describe('SaleDetailPageComponent', () => {
     expect(text).toContain('Producto A');
   });
 
+  it('renders the status history with the purchase-style layout content', () => {
+    const text = fixture.nativeElement.textContent as string;
+
+    expect(text).toContain('Historial de estados');
+    expect(text).toContain('Creación');
+    expect(text).toContain('Pendiente');
+    expect(text).toContain('Aprobado');
+    expect(text).toContain('Por Sales Employee');
+    expect(text).toContain('Por Manager User');
+  });
+
   it('does not show edit action in the detail view', () => {
     const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
 
@@ -176,5 +210,16 @@ describe('SaleDetailPageComponent', () => {
     fixture.componentInstance.onBack();
 
     expect(router.navigate).toHaveBeenCalledWith(['/sales']);
+  });
+
+  it('does not render the status history section when there are no entries', () => {
+    store.sale.set({
+      ...SALE_DETAIL,
+      statusHistory: [],
+    });
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Historial de estados');
   });
 });
