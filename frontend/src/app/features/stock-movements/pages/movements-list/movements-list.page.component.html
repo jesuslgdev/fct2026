@@ -150,8 +150,7 @@
         <td>
           @if (movement.purchaseId) {
             <a
-              [routerLink]="['/purchases']"
-              [queryParams]="{ openId: movement.purchaseId }"
+              [routerLink]="['/purchases', movement.purchaseId]"
               class="text-primary-600 hover:underline inline-flex items-center gap-1"
             >
               <i class="pi pi-shopping-cart text-xs"></i>
@@ -159,8 +158,8 @@
             </a>
           } @else if (movement.saleId) {
             <a
-              (click)="navigateToSale(movement.saleId)"
-              class="text-primary-600 hover:underline inline-flex items-center gap-1 cursor-pointer"
+              [routerLink]="['/sales', movement.saleId]"
+              class="text-primary-600 hover:underline inline-flex items-center gap-1"
             >
               <i class="pi pi-credit-card text-xs"></i>
               Venta #{{ movement.saleId }}

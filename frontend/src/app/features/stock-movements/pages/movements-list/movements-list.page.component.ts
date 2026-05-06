@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { TableComponent } from '@shared/ui/table/table.component';
 import { ButtonComponent } from '@shared/ui/button/button.component';
 import { CardComponent } from '@shared/ui/card/card.component';
@@ -35,7 +35,6 @@ import { StockMovement, MovementType } from '@domain/models/stock-movement.model
 })
 export class MovementsListPageComponent implements OnInit {
   readonly store = inject(MovementsStore);
-  private readonly router = inject(Router);
 
   readonly movementTypeOptions = [
     { label: 'Todos', value: undefined },
@@ -57,7 +56,5 @@ export class MovementsListPageComponent implements OnInit {
     this.store.openDetailDialog(movement);
   }
 
-  navigateToSale(saleId: number): void {
-    void this.router.navigate(['/sales', saleId]);
-  }
+
 }
