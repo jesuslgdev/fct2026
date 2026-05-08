@@ -201,13 +201,25 @@ export class SalesStore {
   }
 
   onDateFromFilterChange(dateFrom: Date | null): void {
-    this.dateFromFilterState.set(dateFrom);
+    if (dateFrom) {
+      const startOfDay = new Date(dateFrom);
+      startOfDay.setHours(0, 0, 0, 0);
+      this.dateFromFilterState.set(startOfDay);
+    } else {
+      this.dateFromFilterState.set(null);
+    }
     this.pageState.set(1);
     void this.loadSales();
   }
 
   onDateToFilterChange(dateTo: Date | null): void {
-    this.dateToFilterState.set(dateTo);
+    if (dateTo) {
+      const endOfDay = new Date(dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      this.dateToFilterState.set(endOfDay);
+    } else {
+      this.dateToFilterState.set(null);
+    }
     this.pageState.set(1);
     void this.loadSales();
   }
