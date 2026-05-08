@@ -177,9 +177,11 @@ describe('SalesStore', () => {
 
     await store.onStatusFilterChange(SaleStatus.APPROVED);
     await store.onClientFilterChange(7);
-    const dateTo = new Date('2026-04-30T23:59:59.000Z');
+    const dateToInput = new Date('2026-04-30');
+    const expectedDateTo = new Date(dateToInput);
+    expectedDateTo.setHours(23, 59, 59, 999);
     await store.onDateFromFilterChange(dateFrom);
-    await store.onDateToFilterChange(dateTo);
+    await store.onDateToFilterChange(dateToInput);
 
     await store.loadSales();
 
@@ -191,7 +193,7 @@ describe('SalesStore', () => {
       status: SaleStatus.APPROVED,
       clientId: 7,
       dateFrom,
-      dateTo,
+      dateTo: expectedDateTo,
     });
   });
 
@@ -372,13 +374,15 @@ describe('SalesStore', () => {
 
   it('date to filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
-    const dateTo = new Date('2026-04-30T23:59:59.000Z');
+    const dateTo = new Date('2026-04-30');
+    const expectedDateTo = new Date(dateTo);
+    expectedDateTo.setHours(23, 59, 59, 999);
     store.onPageChange({ first: 40, rows: 20 });
     spy.mockClear();
 
     store.onDateToFilterChange(dateTo);
 
-    expect(store.dateToFilter()).toEqual(dateTo);
+    expect(store.dateToFilter()).toEqual(expectedDateTo);
     expect(store.page()).toBe(1);
     expect(spy).toHaveBeenCalledOnce();
   });
