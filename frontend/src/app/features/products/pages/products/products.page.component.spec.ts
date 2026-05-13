@@ -16,6 +16,10 @@ class MockProductsStore {
   readonly confirmDialogVisible = signal(false);
   readonly productToToggle = signal(null);
   readonly lowStockProducts = signal([]);
+  readonly categories = signal([
+    { categoryId: 1, name: 'Categoria 1', description: '' },
+    { categoryId: 2, name: 'Categoria 2', description: '' },
+  ]);
 
   readonly canEdit = signal(true);
 
@@ -67,6 +71,27 @@ describe('ProductsPageComponent', () => {
     component.onSearch('foo');
 
     expect(store.setSearchQuery).toHaveBeenCalledWith('foo');
+    expect(store.loadProducts).toHaveBeenCalled();
+  });
+
+  it('includes an all categories option in the category filter', () => {
+    const fixture = TestBed.createComponent(ProductsPageComponent);
+    const component = fixture.componentInstance;
+
+    expect(component.categoryFilterOptions()).toEqual([
+      { categoryId: null, name: 'Todas las categorias', description: '' },
+      { categoryId: 1, name: 'Categoria 1', description: '' },
+      { categoryId: 2, name: 'Categoria 2', description: '' },
+    ]);
+  });
+
+  it('clears the category filter and reloads products', () => {
+    const fixture = TestBed.createComponent(ProductsPageComponent);
+    const component = fixture.componentInstance;
+
+    component.onCategoryChange(null);
+
+    expect(store.setCategoryFilter).toHaveBeenCalledWith(null);
     expect(store.loadProducts).toHaveBeenCalled();
   });
 

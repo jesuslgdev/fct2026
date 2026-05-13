@@ -110,6 +110,18 @@ describe('SalesStore', () => {
   let deleteSaleUseCase: MockDeleteSaleUseCase;
   let authService: MockAuthService;
 
+  const startOfLocalDay = (date: Date): Date => {
+    const result = new Date(date);
+    result.setHours(0, 0, 0, 0);
+    return result;
+  };
+
+  const endOfLocalDay = (date: Date): Date => {
+    const result = new Date(date);
+    result.setHours(23, 59, 59, 999);
+    return result;
+  };
+
   const setSalesState = (sales: Sale[]): void => {
     (
       store as unknown as {
@@ -171,6 +183,7 @@ describe('SalesStore', () => {
 
   it('loads sales with combinable filters', async () => {
     const dateFrom = new Date('2026-04-01T00:00:00.000Z');
+    const expectedDateFrom = startOfLocalDay(dateFrom);
     listSalesUseCase.execute.mockReturnValue(
       of({ data: [SALE_A], total: 1, page: 1, pageSize: 20 }),
     );
@@ -178,8 +191,7 @@ describe('SalesStore', () => {
     await store.onStatusFilterChange(SaleStatus.APPROVED);
     await store.onClientFilterChange(7);
     const dateToInput = new Date('2026-04-30');
-    const expectedDateTo = new Date(dateToInput);
-    expectedDateTo.setHours(23, 59, 59, 999);
+    const expectedDateTo = endOfLocalDay(dateToInput);
     await store.onDateFromFilterChange(dateFrom);
     await store.onDateToFilterChange(dateToInput);
 
@@ -192,7 +204,7 @@ describe('SalesStore', () => {
       sortOrder: 'desc',
       status: SaleStatus.APPROVED,
       clientId: 7,
-      dateFrom,
+      dateFrom: expectedDateFrom,
       dateTo: expectedDateTo,
     });
   });
@@ -367,7 +379,7 @@ describe('SalesStore', () => {
 
     store.onDateFromFilterChange(dateFrom);
 
-    expect(store.dateFromFilter()).toEqual(dateFrom);
+    expect(store.dateFromFilter()).toEqual(startOfLocalDay(dateFrom));
     expect(store.page()).toBe(1);
     expect(spy).toHaveBeenCalledOnce();
   });
@@ -375,8 +387,7 @@ describe('SalesStore', () => {
   it('date to filter change resets page and triggers load', () => {
     const spy = vi.spyOn(store, 'loadSales').mockResolvedValue();
     const dateTo = new Date('2026-04-30');
-    const expectedDateTo = new Date(dateTo);
-    expectedDateTo.setHours(23, 59, 59, 999);
+    const expectedDateTo = endOfLocalDay(dateTo);
     store.onPageChange({ first: 40, rows: 20 });
     spy.mockClear();
 

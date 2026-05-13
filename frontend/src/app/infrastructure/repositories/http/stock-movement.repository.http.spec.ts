@@ -22,6 +22,18 @@ describe('HttpStockMovementRepository', () => {
   let repo: HttpStockMovementRepository;
   let controller: HttpTestingController;
 
+  const startOfLocalDayIso = (date: Date): string => {
+    const result = new Date(date);
+    result.setHours(0, 0, 0, 0);
+    return result.toISOString();
+  };
+
+  const endOfLocalDayIso = (date: Date): string => {
+    const result = new Date(date);
+    result.setHours(23, 59, 59, 999);
+    return result.toISOString();
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
@@ -37,14 +49,16 @@ describe('HttpStockMovementRepository', () => {
   });
 
   it('should map list response and query params', async () => {
+    const dateFrom = new Date('2026-01-01T00:00:00Z');
+    const dateTo = new Date('2026-01-31T23:59:59Z');
     const promise = firstValueFrom(
       repo.listMovements(
         {
           productId: 7,
           movementType: 'inbound',
           reasonSearch: '  restock  ',
-          dateFrom: new Date('2026-01-01T00:00:00Z'),
-          dateTo: new Date('2026-01-31T23:59:59Z'),
+          dateFrom,
+          dateTo,
         },
         2,
         10,
@@ -58,8 +72,8 @@ describe('HttpStockMovementRepository', () => {
     expect(req.request.params.get('product_id')).toBe('7');
     expect(req.request.params.get('movement_type')).toBe('inbound');
     expect(req.request.params.get('reason_search')).toBe('restock');
-    expect(req.request.params.get('date_from')).toBe('2026-01-01T00:00:00.000Z');
-    expect(req.request.params.get('date_to')).toBe('2026-01-31T23:59:59.999Z');
+    expect(req.request.params.get('date_from')).toBe(startOfLocalDayIso(dateFrom));
+    expect(req.request.params.get('date_to')).toBe(endOfLocalDayIso(dateTo));
 
     req.flush({
       items: [

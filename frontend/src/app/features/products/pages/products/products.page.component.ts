@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,7 +9,7 @@ import { ButtonComponent } from '@shared/ui/button/button.component';
 import { TableComponent } from '@shared/ui/table/table.component';
 import { DialogComponent } from '@shared/ui/dialog/dialog.component';
 import { ProductsStore } from '@features/products/state/products.store';
-import { Product } from '@domain/models/product.model';
+import { Product, ProductCategory } from '@domain/models/product.model';
 import { ProductStatusBadgeComponent } from '@features/products/components/product-status-badge/product-status-badge.component';
 import { ProductFormDialogComponent } from '@features/products/components/product-form-dialog/product-form-dialog.component';
 
@@ -17,6 +17,10 @@ interface StatusOption {
   label: string;
   value: boolean | null;
 }
+
+type CategoryFilterOption = Omit<ProductCategory, 'categoryId'> & {
+  categoryId: number | null;
+};
 
 @Component({
   selector: 'app-products-page',
@@ -45,6 +49,11 @@ export class ProductsPageComponent implements OnInit {
     { label: 'Activo', value: true },
     { label: 'Inactivo', value: false },
   ];
+
+  readonly categoryFilterOptions = computed<CategoryFilterOption[]>(() => [
+    { categoryId: null, name: 'Todas las categorias', description: '' },
+    ...this.store.categories(),
+  ]);
 
   ngOnInit(): void {
     this.store.loadProducts();
