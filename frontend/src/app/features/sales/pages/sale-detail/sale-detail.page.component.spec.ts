@@ -207,7 +207,7 @@ describe('SaleDetailPageComponent', () => {
   });
 
   it('navigates back in browser history', () => {
-    const historySpy = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    const historySpy = vi.spyOn(window.history, 'back').mockReturnValue(undefined);
 
     fixture.componentInstance.onBack();
 
