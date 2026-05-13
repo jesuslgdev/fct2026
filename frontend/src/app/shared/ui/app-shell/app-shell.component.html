@@ -77,6 +77,7 @@
                       pRipple
                       [routerLink]="item.route"
                       routerLinkActive="active"
+                      [routerLinkActiveOptions]="{exact: true}"
                       class="nav-link p-ripple"
                     >
                       <i [class]="item.icon + ' text-surface-500 w-4 text-center' "></i>
@@ -109,6 +110,7 @@
                               pRipple
                               [routerLink]="child.route"
                               routerLinkActive="active"
+                              [routerLinkActiveOptions]="{exact: true}"
                               class="nav-link p-ripple"
                             >
                               <i [class]="child.icon + ' text-surface-400 w-4 text-center text-[0.8125rem]' "></i>
