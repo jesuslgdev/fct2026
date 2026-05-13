@@ -15,7 +15,7 @@
       <p class="dialog-error-banner" role="alert">{{ err }}</p>
     }
 
-    <!-- Nombre + Tax ID -->
+    <!-- Nombre + NIF/NIE/CIF -->
     <div class="dialog-form-grid">
       <div class="dialog-field">
         <span class="dialog-field-label">Nombre</span>
@@ -33,7 +33,7 @@
         }
       </div>
       <div class="dialog-field">
-        <span class="dialog-field-label">Tax ID</span>
+        <span class="dialog-field-label">NIF/NIE/CIF</span>
         <ui-input
           formControlName="taxId"
           placeholder="Ej: 12345678A"
@@ -42,8 +42,8 @@
         />
         @if (!isViewMode() && taxId.invalid && taxId.touched) {
           <span class="dialog-field-error">
-            @if (taxId.hasError('required')) { El Tax ID es obligatorio. }
-            @else { Formato de Tax ID inválido. }
+            @if (taxId.hasError('required')) { El NIF/NIE/CIF es obligatorio. }
+            @else { Formato de NIF/NIE/CIF inválido. }
           </span>
         }
       </div>

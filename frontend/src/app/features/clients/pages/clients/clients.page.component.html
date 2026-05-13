@@ -21,7 +21,7 @@
   <div class="filters-row">
     <ui-input
       type="text"
-      placeholder="Buscar por nombre o tax ID…"
+      placeholder="Buscar por nombre o NIF/NIE/CIF…"
       styleClass="flex-1 min-w-64"
       [ngModel]="store.searchQuery()"
       (valueChange)="store.onSearch($event)"
@@ -53,7 +53,7 @@
     <ng-template #header>
       <tr>
         <th>Nombre</th>
-        <th>Tax ID</th>
+        <th>NIF/NIE/CIF</th>
         <th>Ciudad</th>
         <th>Estado</th>
         <th>Acciones</th>

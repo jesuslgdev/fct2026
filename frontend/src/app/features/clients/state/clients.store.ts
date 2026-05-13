@@ -61,7 +61,7 @@ export class ClientsStore {
 
   private resolveErrorMessage(err: unknown, fallback: string): string {
     if (err instanceof ClientAlreadyExistsError) {
-      return 'Ya existe un cliente con este Tax ID.';
+      return 'Ya existe un cliente con este NIF/NIE/CIF.';
     }
 
     if (err instanceof ClientEmailAlreadyExistsError) {
