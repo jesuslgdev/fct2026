@@ -206,10 +206,12 @@ describe('SaleDetailPageComponent', () => {
     expect(fixture.componentInstance.getStatusBadgeVariant(SaleStatus.CANCELLED)).toBe('danger');
   });
 
-  it('navigates back to the sales list', () => {
+  it('navigates back in browser history', () => {
+    const historySpy = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+
     fixture.componentInstance.onBack();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/sales']);
+    expect(historySpy).toHaveBeenCalled();
   });
 
   it('does not render the status history section when there are no entries', () => {

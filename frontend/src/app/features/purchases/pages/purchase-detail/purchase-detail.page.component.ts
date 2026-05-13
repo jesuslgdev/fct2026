@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe, Location } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { PurchaseStatus } from '@domain/enums/purchase-status.enum';
@@ -35,7 +35,6 @@ export class PurchaseDetailPageComponent implements OnInit {
   readonly store = inject(PurchaseDetailStore);
   readonly purchasesStore = inject(PurchasesStore);
   private readonly route = inject(ActivatedRoute);
-  private readonly location = inject(Location);
   private wasDialogVisible = false;
 
   constructor() {
@@ -64,7 +63,7 @@ export class PurchaseDetailPageComponent implements OnInit {
   }
 
   onBack(): void {
-    this.location.back();
+    history.back();
   }
 
   canEditPurchase(status: PurchaseStatus): boolean {

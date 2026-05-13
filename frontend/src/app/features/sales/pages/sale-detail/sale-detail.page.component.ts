@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe, Location } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
@@ -40,7 +40,6 @@ import {
 export class SaleDetailPageComponent implements OnInit {
   readonly store = inject(SaleDetailStore);
   private readonly route = inject(ActivatedRoute);
-  private readonly location = inject(Location);
 
   ngOnInit(): void {
     const saleId = Number(this.route.snapshot.paramMap.get('id'));
@@ -48,7 +47,7 @@ export class SaleDetailPageComponent implements OnInit {
   }
 
   onBack(): void {
-    this.location.back();
+    history.back();
   }
 
   getStatusBadgeVariant(status: SaleStatus): BadgeVariant {
