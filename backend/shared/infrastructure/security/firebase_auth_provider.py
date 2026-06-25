@@ -12,6 +12,8 @@ from shared.config import settings
 logger = logging.getLogger(__name__)
 
 _FIREBASE_CERTS_URLS = (
+    "https://www.googleapis.com/service_accounts/v1/jwk/"
+    "securetoken%40system.gserviceaccount.com",
     "https://www.googleapis.com/service_accounts/v1/metadata/x509/"
     "securetoken%40system.gserviceaccount.com",
     "https://www.googleapis.com/robot/v1/metadata/x509/"
