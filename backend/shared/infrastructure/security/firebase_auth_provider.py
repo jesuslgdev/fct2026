@@ -34,12 +34,19 @@ class _LoggingGoogleRequest:
         timeout: float | None = None,
         **kwargs: Any,
     ):
+        request_headers = dict(headers or {})
+        request_headers.setdefault(
+            "User-Agent",
+            "fct2026-backend/0.1 (+https://fct2026-api-prod.onrender.com)",
+        )
+        request_headers.setdefault("Accept", "application/json")
+
         try:
             response = self._request(
                 url=url,
                 method=method,
                 body=body,
-                headers=headers,
+                headers=request_headers,
                 timeout=timeout,
                 **kwargs,
             )
@@ -53,6 +60,11 @@ class _LoggingGoogleRequest:
             url,
             len(response.data or b""),
         )
+        if response.status != 200:
+            body_preview = (response.data or b"")[:500].decode(
+                "utf-8", errors="replace"
+            )
+            logger.warning("Google certificate request body preview: %s", body_preview)
         return response
 
 
