@@ -1,0 +1,200 @@
+<section class="page">
+
+  <div class="page-header">
+    <h1 class="text-style-title">Historial de movimientos de stock</h1>
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  <!-- ── Filters ──────────────────────────────────────────────────────── -->
+  <ui-card styleClass="mb-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+
+      <!-- Product -->
+      <div class="flex flex-col gap-1">
+        <label for="product-filter" class="text-sm font-medium text-surface-700">Producto</label>
+        <p-select
+          inputId="product-filter"
+          [options]="store.productOptions()"
+          [ngModel]="store.selectedProductId()"
+          (ngModelChange)="store.selectedProductId.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todos los productos"
+          [showClear]="true"
+          [filter]="true"
+          filterBy="label"
+          styleClass="w-full"
+        />
+      </div>
+
+      <!-- Movement type -->
+      <div class="flex flex-col gap-1">
+        <label for="movement-type-filter" class="text-sm font-medium text-surface-700">Tipo de movimiento</label>
+        <p-select
+          inputId="movement-type-filter"
+          [options]="movementTypeOptions"
+          [ngModel]="store.movementTypeFilter()"
+          (ngModelChange)="store.movementTypeFilter.set($event)"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todos los tipos"
+          styleClass="w-full"
+        />
+      </div>
+
+      <!-- Reason search -->
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-medium text-surface-700">
+          Referencia
+          <ui-input
+            type="text"
+            placeholder="Buscar por referencia..."
+            styleClass="w-full"
+            [ngModel]="store.reasonSearch()"
+            (valueChange)="store.reasonSearch.set($event)"
+          />
+        </label>
+      </div>
+
+      <!-- Date from -->
+      <div class="flex flex-col gap-1">
+        <label for="date-from-filter" class="text-sm font-medium text-surface-700">Fecha desde</label>
+        <p-datepicker
+          inputId="date-from-filter"
+          [ngModel]="store.dateFrom()"
+          (ngModelChange)="store.dateFrom.set($event)"
+          [maxDate]="store.dateTo() ?? null"
+          placeholder="dd/mm/yyyy"
+          dateFormat="dd/mm/yy"
+          [showClear]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+      <!-- Date to -->
+      <div class="flex flex-col gap-1">
+        <label for="date-to-filter" class="text-sm font-medium text-surface-700">Fecha hasta</label>
+        <p-datepicker
+          inputId="date-to-filter"
+          [ngModel]="store.dateTo()"
+          (ngModelChange)="store.dateTo.set($event)"
+          [minDate]="store.dateFrom() ?? null"
+          placeholder="dd/mm/yyyy"
+          dateFormat="dd/mm/yy"
+          [showClear]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-end gap-2">
+        <ui-button
+          label="Aplicar filtros"
+          icon="pi pi-search"
+          styleClass="flex-1"
+          (clicked)="store.applyFilters()"
+        />
+        <ui-button
+          label="Limpiar"
+          icon="pi pi-times"
+          variant="secondary"
+          (clicked)="store.clearFilters()"
+        />
+      </div>
+
+    </div>
+
+    @if (store.dateRangeError(); as dateError) {
+      <p class="warning-text px-4 pb-4" role="alert">{{ dateError }}</p>
+    }
+  </ui-card>
+
+  <!-- ── Table ─────────────────────────────────────────────────────────── -->
+  <ui-table
+    [value]="store.movements()"
+    [loading]="store.loading()"
+    [paginator]="true"
+    [lazy]="true"
+    [first]="store.firstRecord()"
+    [rows]="store.pageSize()"
+    [totalRecords]="store.total()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="movementId"
+    (page)="store.onPageChange($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Producto</th>
+        <th>Tipo</th>
+        <th>Cantidad</th>
+        <th>Fecha</th>
+        <th>Referencia</th>
+        <th>Compra/Venta</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-movement>
+      <tr>
+        <td>{{ movement.productName }}</td>
+        <td>
+          <ui-movement-type-badge [movementType]="movement.movementType" />
+        </td>
+        <td
+          class="font-semibold"
+          [class.text-green-600]="movement.difference > 0"
+          [class.text-red-600]="movement.difference < 0"
+        >
+          {{ formatDifference(movement.difference) }}
+        </td>
+        <td>{{ movement.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+        <td class="text-surface-500">{{ movement.reason ?? '—' }}</td>
+        <td>
+          @if (movement.purchaseId) {
+            <a
+              [routerLink]="['/purchases', movement.purchaseId]"
+              class="text-primary-600 hover:underline inline-flex items-center gap-1"
+            >
+              <i class="pi pi-shopping-cart text-xs"></i>
+              Compra #{{ movement.purchaseId }}
+            </a>
+          } @else if (movement.saleId) {
+            <a
+              [routerLink]="['/sales', movement.saleId]"
+              class="text-primary-600 hover:underline inline-flex items-center gap-1"
+            >
+              <i class="pi pi-credit-card text-xs"></i>
+              Venta #{{ movement.saleId }}
+            </a>
+          } @else {
+            <span class="text-surface-400">—</span>
+          }
+        </td>
+        <td>
+          <ui-button
+            icon="pi pi-eye"
+            ariaLabel="Ver detalle del movimiento"
+            variant="ghost"
+            size="sm"
+            (clicked)="openDetail(movement)"
+          />
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="7" class="empty-state">
+          No se encontraron movimientos de stock.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+
+</section>
+
+<app-movement-detail-dialog />

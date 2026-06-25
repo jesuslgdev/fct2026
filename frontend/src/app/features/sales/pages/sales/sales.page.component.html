@@ -1,0 +1,235 @@
+<section class="page">
+  <div class="page-header flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-style-title">Ventas</h1>
+    @if (store.canManageSales()) {
+      <ui-button
+        label="Nueva venta"
+        icon="pi pi-plus"
+        (clicked)="onCreateSale()"
+      />
+    }
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (store.successMessage(); as successMessage) {
+    <p class="text-sm font-medium text-success" role="status">{{ successMessage }}</p>
+  }
+
+  @if (store.clientsError(); as clientsErrorMessage) {
+    <p class="warning-text" role="alert">{{ clientsErrorMessage }}</p>
+  }
+
+  <div class="filters-row">
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los estados"
+      class="min-w-44"
+      [ngModel]="store.statusFilter()"
+      (ngModelChange)="onStatusChange($event)"
+    />
+
+    <p-select
+      [options]="clientOptions()"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los clientes"
+      class="min-w-56"
+      [loading]="store.clientsLoading()"
+      [ngModel]="store.clientFilter()"
+      (ngModelChange)="onClientChange($event)"
+    />
+
+    <p-datepicker
+      inputId="sales-date-from"
+      placeholder="Creada desde"
+      dateFormat="dd/mm/yy"
+      [showIcon]="true"
+      [ngModel]="store.dateFromFilter()"
+      (ngModelChange)="onDateFromChange($event)"
+    />
+
+    <p-datepicker
+      inputId="sales-date-to"
+      placeholder="Creada hasta"
+      dateFormat="dd/mm/yy"
+      [showIcon]="true"
+      [ngModel]="store.dateToFilter()"
+      (ngModelChange)="onDateToChange($event)"
+    />
+
+    <ui-button
+      label="Limpiar filtros"
+      variant="outline"
+      (clicked)="onClearFilters()"
+    />
+  </div>
+
+  <ui-table
+    [value]="store.salesView()"
+    [loading]="store.loading()"
+    [paginator]="true"
+    [lazy]="true"
+    [first]="(store.page() - 1) * store.pageSize()"
+    [rows]="store.pageSize()"
+    [totalRecords]="store.total()"
+    [rowsPerPageOptions]="[20, 50, 100]"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="saleId"
+    (page)="onPageChange($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Nº Venta</th>
+        <th>Cliente</th>
+        <th>Estado</th>
+        <th>Dirección de entrega</th>
+        <th>Fecha de creación</th>
+        <th>Total</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-sale>
+      <tr class="cursor-pointer" (click)="onViewSale(sale.saleId)">
+        <td>{{ sale.saleNumber }}</td>
+        <td>{{ sale.clientName }}</td>
+        <td>
+          <ui-badge
+            [label]="getStatusLabel(sale.status)"
+            [variant]="getStatusBadgeVariant(sale.status)"
+            [icon]="getStatusBadgeIcon(sale.status)"
+          />
+        </td>
+        <td>{{ sale.deliveryAddress }}</td>
+        <td>{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+        <td>{{ sale.total | currency: 'EUR':'symbol':'1.2-2' }}</td>
+        <td>
+          <div class="flex flex-wrap gap-2">
+            <ui-button
+              icon="pi pi-eye"
+              ariaLabel="Ver detalle de venta"
+              variant="ghost"
+              size="sm"
+              (clicked)="onViewSale(sale.saleId); $event.stopPropagation()"
+            />
+            @if (store.canEditSale(sale.saleId)) {
+              <ui-button
+                icon="pi pi-pencil"
+                ariaLabel="Editar venta"
+                variant="ghost"
+                size="sm"
+                (clicked)="onEditSale(sale.saleId); $event.stopPropagation()"
+              />
+            }
+            @if (store.canCancelSale(sale.saleId)) {
+              <ui-button
+                icon="pi pi-times-circle"
+                ariaLabel="Cancelar venta"
+                variant="outline"
+                size="sm"
+                [loading]="store.isChangingStatusSale(sale.saleId)"
+                [disabled]="store.isDeletingSale(sale.saleId)"
+                (clicked)="onRequestCancelSale(sale.saleId); $event.stopPropagation()"
+              />
+            }
+            @if (store.canAdvanceSaleStatus(sale.saleId)) {
+              <ui-button
+                icon="pi pi-arrow-right"
+                ariaLabel="Avanzar estado de venta"
+                variant="secondary"
+                size="sm"
+                [title]="getAdvanceActionLabel(sale.saleId)"
+                [loading]="store.isChangingStatusSale(sale.saleId)"
+                [disabled]="store.isDeletingSale(sale.saleId)"
+                (clicked)="onRequestAdvanceStatus(sale.saleId); $event.stopPropagation()"
+              />
+            }
+            @if (store.canDeleteSale(sale.saleId)) {
+              <ui-button
+                icon="pi pi-trash"
+                ariaLabel="Eliminar venta"
+                variant="destructive"
+                size="sm"
+                [loading]="store.isDeletingSale(sale.saleId)"
+                [disabled]="store.isChangingStatusSale(sale.saleId)"
+                (clicked)="onRequestDeleteSale(sale.saleId); $event.stopPropagation()"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="7" class="empty-state">
+          {{ store.emptyMessage() ?? 'No hay ventas registradas.' }}
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+
+  <ui-dialog
+    header="Cambiar estado"
+    variant="info"
+    size="sm"
+    [(visible)]="advanceStatusDialogVisible"
+    confirmLabel="Confirmar"
+    cancelLabel="Cancelar"
+    [confirmLoading]="selectedSaleId() !== null && store.isChangingStatusSale(selectedSaleId()!)"
+    [confirmDisabled]="selectedSaleId() === null || getAdvanceStatusLabel() === '-'"
+    [closeOnConfirm]="false"
+    (confirmed)="onConfirmAdvanceStatus()"
+  >
+    @if (selectedSaleId()) {
+      <p class="warning-text">
+        Cambiar estado de <strong>{{ getSelectedSaleNumber() }}</strong>
+        de <strong>{{ getCurrentSaleStatusLabel() }}</strong>
+        a <strong>{{ getAdvanceStatusLabel() }}</strong>.
+      </p>
+    }
+  </ui-dialog>
+
+  <ui-dialog
+    header="Cancelar venta"
+    variant="warning"
+    size="default"
+    [(visible)]="cancelDialogVisible"
+    confirmLabel="Cancelar venta"
+    cancelLabel="Volver"
+    [confirmLoading]="selectedSaleId() !== null && store.isChangingStatusSale(selectedSaleId()!)"
+    [confirmDisabled]="selectedSaleId() === null"
+    [closeOnConfirm]="false"
+    (confirmed)="onConfirmCancelSale()"
+  >
+    @if (selectedSaleId()) {
+      <div class="dialog-field">
+        <p class="warning-text">
+          Va a cancelar la venta <strong>{{ getSelectedSaleNumber() }}</strong>.
+        </p>
+      </div>
+    }
+  </ui-dialog>
+
+  <ui-dialog
+    header="Eliminar venta"
+    variant="danger"
+    size="sm"
+    [(visible)]="deleteDialogVisible"
+    confirmLabel="Confirmar eliminacion"
+    cancelLabel="Volver"
+    [confirmLoading]="selectedSaleId() !== null && store.isDeletingSale(selectedSaleId()!)"
+    [confirmDisabled]="selectedSaleId() === null"
+    [closeOnConfirm]="false"
+    (confirmed)="onConfirmDeleteSale()"
+  >
+    <p class="text-sm leading-6 text-surface-700">
+      La venta pendiente se eliminara de forma permanente.
+    </p>
+  </ui-dialog>
+</section>

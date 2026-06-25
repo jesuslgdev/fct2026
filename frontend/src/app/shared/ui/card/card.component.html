@@ -1,0 +1,50 @@
+<p-card
+  [header]="header()"
+  [subheader]="subheader()"
+  [style]="style()"
+  [styleClass]="styleClass()"
+>
+  <!-- Custom header template -->
+  @if (headerTemplate()) {
+    <ng-template pTemplate="header">
+      <ng-container
+        [ngTemplateOutlet]="headerTemplate()!"
+        [ngTemplateOutletInjector]="injector"
+      />
+    </ng-template>
+  }
+
+  <!-- Custom title template -->
+  @if (titleTemplate()) {
+    <ng-template pTemplate="title">
+      <ng-container
+        [ngTemplateOutlet]="titleTemplate()!"
+        [ngTemplateOutletInjector]="injector"
+      />
+    </ng-template>
+  }
+
+  <!-- Custom subtitle template -->
+  @if (subtitleTemplate()) {
+    <ng-template pTemplate="subtitle">
+      <ng-container
+        [ngTemplateOutlet]="subtitleTemplate()!"
+        [ngTemplateOutletInjector]="injector"
+      />
+    </ng-template>
+  }
+
+  <!-- Main projected content -->
+  <ng-content></ng-content>
+
+  <!-- Custom footer template -->
+  @if (footerTemplate()) {
+    <ng-template pTemplate="footer">
+      <ng-container
+        [ngTemplateOutlet]="footerTemplate()!"
+        [ngTemplateOutletInjector]="injector"
+      />
+    </ng-template>
+  }
+</p-card>
+

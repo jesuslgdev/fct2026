@@ -1,0 +1,234 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Detalle de venta</h1>
+    <ui-button
+      label="Volver"
+      icon="pi pi-arrow-left"
+      variant="outline"
+      (clicked)="onBack()"
+    />
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (store.successMessage(); as successMessage) {
+    <p class="text-sm font-medium text-success" role="status">{{ successMessage }}</p>
+  }
+
+  @if (store.sale(); as sale) {
+    <ui-card styleClass="shadow-sm">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div class="flex gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-surface-100 text-surface-700">
+              <i class="pi pi-shopping-cart text-xl" aria-hidden="true"></i>
+            </div>
+
+            <div class="min-w-0">
+              <h2 class="text-xl font-semibold text-surface-900">{{ sale.saleNumber }}</h2>
+              <p class="mt-1 text-sm leading-6 text-surface-600">
+                {{ sale.clientName ?? '-' }} · {{ sale.deliveryAddress }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <ui-badge
+              [label]="store.getStatusLabel(sale.status)"
+              [variant]="getStatusBadgeVariant(sale.status)"
+              [icon]="getStatusBadgeIcon(sale.status)"
+            />
+
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Cliente</span>
+            <p class="mt-2 font-medium text-surface-900">{{ sale.clientName ?? '-' }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Fecha de creación</span>
+            <p class="mt-2 font-medium text-surface-900">{{ sale.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Usuario creador</span>
+            <p class="mt-2 font-medium text-surface-900">{{ sale.creatorName ?? '-' }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4 md:col-span-2">
+            <span class="dialog-field-label">Dirección de entrega</span>
+            <p class="mt-2 leading-6 text-surface-800">{{ sale.deliveryAddress }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Total</span>
+            <p class="mt-2 text-2xl font-semibold text-surface-900">
+              {{ store.total() | currency: 'EUR':'symbol':'1.2-2' }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </ui-card>
+
+    <p-tabs value="detail">
+      <p-tablist>
+        <p-tab value="detail">Detalle</p-tab>
+        <p-tab value="lines">Líneas</p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <p-tabpanel value="detail">
+          <div class="grid gap-4 md:grid-cols-2">
+            <ui-card header="Datos de la venta">
+              <div class="grid gap-3 text-sm">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Nº de venta</span>
+                  <span class="font-medium text-surface-900">{{ sale.saleNumber }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Estado</span>
+                  <span class="font-medium text-surface-900">{{ store.getStatusLabel(sale.status) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Última actualización</span>
+                  <span class="font-medium text-surface-900">{{ sale.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              </div>
+            </ui-card>
+
+            <ui-card header="Resumen económico">
+              <div class="grid gap-3 text-sm">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Subtotal</span>
+                  <span class="font-medium">{{ store.subtotal() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">IVA</span>
+                  <span class="font-medium">{{ store.taxes() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 border-t border-surface-200 pt-3 text-base">
+                  <span class="font-semibold">Total</span>
+                  <span class="font-semibold">{{ store.total() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+                </div>
+              </div>
+            </ui-card>
+          </div>
+
+          @if (sale.statusHistory.length > 0) {
+            <div class="mt-4 border-t border-surface-200 pt-3">
+              <h4 class="mb-2 text-sm font-semibold text-surface-700">Historial de estados</h4>
+              <div class="space-y-2">
+                @for (entry of sale.statusHistory; track $index) {
+                  <div class="rounded-md bg-surface-50 px-3 py-2 text-sm text-surface-700">
+                    <span class="font-medium">
+                      {{ entry.fromStatus ? store.getStatusLabel(entry.fromStatus) : 'Creación' }}
+                      ->
+                      {{ store.getStatusLabel(entry.toStatus) }}
+                    </span>
+                    <span class="ml-2 text-surface-500">{{ entry.changedAt | date: 'short' }}</span>
+                    <div class="text-surface-500">Por {{ entry.changedByName ?? '-' }}</div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </p-tabpanel>
+
+        <p-tabpanel value="lines">
+          <ui-table
+            [value]="store.lineViews()"
+            [loading]="store.loading() || store.loadingCatalogs()"
+            tableClass="ui-table-base ui-table-compact ui-table-bordered mt-4"
+            dataKey="lineId"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th class="text-center">Cant.</th>
+                <th class="text-right">Precio</th>
+                <th class="text-center">Desc.</th>
+                <th class="text-center">Tipo</th>
+                <th class="text-right">Subtotal</th>
+                <th class="text-right">IVA</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </ng-template>
+
+            <ng-template #body let-line>
+              <tr>
+                <td class="w-1 whitespace-nowrap pr-3">
+                  <span class="text-sm text-surface-500">{{ line.productCode }}</span>
+                </td>
+
+                <td class="min-w-56 pl-2">
+                  <span class="text-sm text-surface-700">{{ line.productName || '-' }}</span>
+                </td>
+
+                <td class="min-w-20 text-center">
+                  <span class="inline-block min-w-12 text-center">{{ line.quantity }}</span>
+                </td>
+
+                <td class="whitespace-nowrap text-right text-surface-700">
+                  {{ line.unitPrice | currency: 'EUR':'symbol':'1.2-2' }}
+                </td>
+
+                <td class="min-w-24 text-center">
+                  <span class="inline-block min-w-16 text-center">
+                    {{ line.discount | number: '1.0-2' }}
+                  </span>
+                </td>
+
+                <td class="min-w-20 text-center">
+                  <span class="inline-block min-w-10 text-center">
+                    @if (line.discountType === 'percent') {
+                      %
+                    } @else {
+                      EUR
+                    }
+                  </span>
+                </td>
+
+                <td class="whitespace-nowrap text-right text-surface-700">
+                  {{ line.lineSubtotal | currency: 'EUR':'symbol':'1.2-2' }}
+                </td>
+                <td class="whitespace-nowrap text-right text-surface-700">
+                  {{ line.lineTax | currency: 'EUR':'symbol':'1.2-2' }}
+                </td>
+                <td class="whitespace-nowrap text-right font-medium text-surface-900">
+                  {{ line.lineTotal | currency: 'EUR':'symbol':'1.2-2' }}
+                </td>
+
+              </tr>
+
+              @if (line.validationError) {
+                <tr>
+                  <td colspan="9" class="pt-0">
+                    <div class="flex justify-end">
+                      <span class="text-sm text-danger">{{ line.validationError }}</span>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </ng-template>
+
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="9" class="empty-state">
+                  No hay líneas registradas.
+                </td>
+              </tr>
+            </ng-template>
+          </ui-table>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  } @else if (!store.loading()) {
+    <p class="empty-state">No se ha podido mostrar la venta solicitada.</p>
+  }
+</section>

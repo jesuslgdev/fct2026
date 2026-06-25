@@ -1,0 +1,152 @@
+<main class="min-h-screen bg-surface-50 py-10 px-4">
+  <div class="page-max-width mx-auto">
+
+    <!-- Back button -->
+    <div class="mb-6">
+      <ui-button
+        label="Volver"
+        variant="ghost"
+        icon="pi pi-arrow-left"
+        iconPos="left"
+        (clicked)="goBack()"
+      />
+    </div>
+
+    <!-- Card container -->
+    <article class="bg-surface-0 rounded-2xl shadow-sm border border-surface-200 px-6 py-10 sm:px-12">
+
+      <!-- Header -->
+      <header class="mb-10 text-center">
+        <p class="text-style-subtitle font-medium mb-2 uppercase tracking-widest">Legal</p>
+        <h1 class="text-style-hero mb-3">Términos y Condiciones</h1>
+        <p class="text-info text-sm">
+          Última actualización: <time datetime="2026-03-06">6 de marzo de 2026</time>
+        </p>
+      </header>
+
+      <!-- Intro -->
+      <section class="mb-8">
+        <p class="text-surface-700 leading-relaxed">
+          Por favor, lea estos Términos y Condiciones cuidadosamente antes de utilizar nuestra plataforma ERP.
+          Al acceder o usar el servicio, usted acepta estar sujeto a estos términos.
+          Si no está de acuerdo con alguna parte de los términos, no podrá acceder al servicio.
+        </p>
+      </section>
+
+      <!-- Section 1 -->
+      <section class="mb-8">
+        <h2 class="text-style-title mb-3">1. Aceptación de los Términos</h2>
+        <p class="text-surface-700 leading-relaxed mb-3">
+          Al crear una cuenta o utilizar cualquier parte de la plataforma, usted reconoce que ha leído,
+          entendido y acepta estar sujeto a estos Términos y Condiciones, así como a nuestra Política de Privacidad,
+          que se incorpora aquí por referencia.
+        </p>
+        <p class="text-surface-700 leading-relaxed">
+          Nos reservamos el derecho de actualizar o modificar estos Términos en cualquier momento sin previo aviso.
+          Su uso continuado del servicio después de los cambios constituye su aceptación de los nuevos términos.
+        </p>
+      </section>
+
+      <!-- Section 2 -->
+      <section class="mb-8">
+        <h2 class="text-style-title mb-3">2. Uso del Servicio</h2>
+        <p class="text-surface-700 leading-relaxed mb-3">
+          Usted acepta usar el servicio solo para fines legales y de una manera que no infrinja
+          los derechos de otros ni restrinja su uso y disfrute del servicio.
+        </p>
+        <ul class="list-disc list-inside space-y-2 text-surface-700">
+          <li>No debe utilizar la plataforma para transmitir publicidad no solicitada o no autorizada.</li>
+          <li>No debe intentar obtener acceso no autorizado a ninguna parte del servicio.</li>
+          <li>No debe usar el servicio de ninguna manera que pueda dañarlo, deshabilitarlo o impedir su funcionamiento.</li>
+          <li>Usted es responsable de mantener la confidencialidad de sus credenciales de cuenta.</li>
+        </ul>
+      </section>
+
+      <!-- Section 3 -->
+      <section class="mb-8">
+        <h2 class="text-style-title mb-3">3. Propiedad Intelectual</h2>
+        <p class="text-surface-700 leading-relaxed">
+          El servicio y su contenido original, características y funcionalidad son y seguirán siendo
+          propiedad exclusiva de la empresa y sus licenciantes. Nuestras marcas comerciales y el diseño
+          no pueden utilizarse en relación con ningún producto o servicio sin el consentimiento previo por escrito de la empresa.
+        </p>
+      </section>
+
+      <!-- Section 4 -->
+      <section class="mb-8">
+        <h2 class="text-style-title mb-3">4. Datos y Privacidad</h2>
+        <p class="text-surface-700 leading-relaxed mb-3">
+          Nos comprometemos a proteger su información personal. Todos los datos recopilados a través de la
+          plataforma se tratan de acuerdo con nuestra Política de Privacidad y las leyes de protección de datos aplicables,
+          incluyendo el RGPD cuando proceda.
+        </p>
+        <p class="text-surface-700 leading-relaxed">
+          Usted conserva la propiedad de cualquier dato que introduzca en la plataforma. Tratamos estos datos
+          únicamente para proporcionarle el servicio y no los venderemos ni compartiremos con terceros sin su consentimiento.
+        </p>
+      </section>
+
+      <!-- Section 5 -->
+      <section class="mb-8">
+        <h2 class="text-style-title mb-3">5. Limitación de Responsabilidad</h2>
+        <p class="text-surface-700 leading-relaxed">
+          En ningún caso la empresa, sus directores, empleados, socios, agentes, proveedores o
+          afiliados serán responsables de ningún daño indirecto, incidental, especial,
+          consecuente o punitivo, incluyendo, sin limitación, pérdida de beneficios, datos,
+          uso, buena voluntad u otras pérdidas intangibles, resultantes de su acceso a
+          o uso (o incapacidad para acceder o usar) el servicio.
+        </p>
+      </section>
+
+      <!-- Section 6 -->
+      <section class="mb-8">
+        <h2 class="text-style-title mb-3">6. Terminación</h2>
+        <p class="text-surface-700 leading-relaxed">
+          Podemos terminar o suspender su cuenta y acceso al servicio de inmediato, sin previo
+          aviso ni responsabilidad, por cualquier motivo, incluyendo si usted incumple estos Términos.
+          Tras la terminación, su derecho a usar el servicio cesará inmediatamente.
+        </p>
+      </section>
+
+      <!-- Section 7 -->
+      <section class="mb-8">
+        <h2 class="text-style-title mb-3">7. Ley Aplicable</h2>
+        <p class="text-surface-700 leading-relaxed">
+          Estos Términos se regirán e interpretarán de acuerdo con las leyes de España,
+          sin tener en cuenta sus disposiciones sobre conflictos de leyes. Cualquier disputa
+          que surja bajo estos Términos estará sujeta a la jurisdicción exclusiva de los tribunales
+          ubicados en España.
+        </p>
+      </section>
+
+      <!-- Section 8 -->
+      <section class="mb-10">
+        <h2 class="text-style-title mb-3">8. Contacto</h2>
+        <p class="text-surface-700 leading-relaxed">
+          Si tiene alguna pregunta sobre estos Términos y Condiciones, por favor contáctenos en:
+        </p>
+        <address class="not-italic mt-3 text-surface-700 space-y-1">
+          <p class="font-medium text-surface-900">Soporte Plataforma ERP</p>
+          <p>Correo: <a href="mailto:legal@erp.example.com" class="text-primary hover:underline">legal&#64;erp.example.com</a></p>
+          <p>Dirección: Calle Gran Vía 1, 28013 Madrid, España</p>
+        </address>
+      </section>
+
+      <!-- Footer action -->
+      <div class="border-t border-surface-200 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <p class="text-surface-400 text-xs text-center sm:text-left">
+          Al usar nuestro servicio usted acepta estos términos.
+        </p>
+        <ui-button
+          label="Volver a la App"
+          variant="default"
+          icon="pi pi-home"
+          iconPos="left"
+          (clicked)="goBack()"
+        />
+      </div>
+
+    </article>
+
+  </div>
+</main>

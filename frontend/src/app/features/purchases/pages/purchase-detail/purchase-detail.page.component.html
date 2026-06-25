@@ -1,0 +1,232 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Detalle de compra</h1>
+    <div class="flex flex-wrap items-center gap-2">
+      @if (store.purchase(); as purchase) {
+        @if (canEditPurchase(purchase.status)) {
+          <ui-button
+            label="Editar compra"
+            icon="pi pi-pencil"
+            variant="secondary"
+            (clicked)="onEditPurchase(purchase.purchaseId)"
+          />
+        }
+      }
+
+      <ui-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        variant="outline"
+        (clicked)="onBack()"
+      />
+    </div>
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (store.purchase(); as purchase) {
+    <ui-card styleClass="shadow-sm">
+      <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div class="flex gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-surface-100 text-surface-700">
+              <i class="pi pi-shopping-cart text-xl" aria-hidden="true"></i>
+            </div>
+
+            <div class="min-w-0">
+              <h2 class="text-xl font-semibold text-surface-900">{{ purchase.purchaseNumber }}</h2>
+              <p class="mt-1 text-sm leading-6 text-surface-600">
+                {{ purchase.supplierName }} · {{ purchase.deliveryAddress }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <ui-purchase-status-badge [status]="purchase.status" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Proveedor</span>
+            <p class="mt-2 font-medium text-surface-900">{{ purchase.supplierName }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Fecha de creacion</span>
+            <p class="mt-2 font-medium text-surface-900">{{ purchase.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Usuario creador</span>
+            <p class="mt-2 font-medium text-surface-900">{{ purchase.createdByName }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4 md:col-span-2">
+            <span class="dialog-field-label">Direccion de entrega</span>
+            <p class="mt-2 leading-6 text-surface-800">{{ purchase.deliveryAddress }}</p>
+          </div>
+
+          <div class="rounded-md border border-surface-200 bg-surface-0 p-4">
+            <span class="dialog-field-label">Total</span>
+            <p class="mt-2 text-2xl font-semibold text-surface-900">
+              {{ store.total() | currency: 'EUR':'symbol':'1.2-2' }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </ui-card>
+
+    <p-tabs value="detail">
+      <p-tablist>
+        <p-tab value="detail">Detalle</p-tab>
+        <p-tab value="lines">Lineas</p-tab>
+        <p-tab value="history">Historial</p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <p-tabpanel value="detail">
+          <div class="grid gap-4 md:grid-cols-2">
+            <ui-card header="Datos de la compra">
+              <div class="grid gap-3 text-sm">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Nº de compra</span>
+                  <span class="font-medium text-surface-900">{{ purchase.purchaseNumber }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Estado</span>
+                  <span class="font-medium text-surface-900">{{ getStatusLabel(purchase.status) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Ultima actualizacion</span>
+                  <span class="font-medium text-surface-900">{{ purchase.updatedAt ? (purchase.updatedAt | date: 'dd/MM/yyyy HH:mm') : '-' }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Cancelada</span>
+                  <span class="font-medium text-surface-900">{{ purchase.cancelledAt ? 'Si' : 'No' }}</span>
+                </div>
+                @if (purchase.cancelledByName) {
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-surface-600">Cancelada por</span>
+                    <span class="font-medium text-surface-900">{{ purchase.cancelledByName }}</span>
+                  </div>
+                }
+              </div>
+            </ui-card>
+
+            <ui-card header="Resumen economico">
+              <div class="grid gap-3 text-sm">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">Subtotal</span>
+                  <span class="font-medium">{{ store.subtotal() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-surface-600">IVA</span>
+                  <span class="font-medium">{{ store.vatTotal() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 border-t border-surface-200 pt-3 text-base">
+                  <span class="font-semibold">Total</span>
+                  <span class="font-semibold">{{ store.total() | currency: 'EUR':'symbol':'1.2-2' }}</span>
+                </div>
+              </div>
+            </ui-card>
+          </div>
+        </p-tabpanel>
+
+        <p-tabpanel value="lines">
+          <ui-table
+            [value]="purchase.lines"
+            [loading]="store.loading()"
+            tableClass="ui-table-base ui-table-compact ui-table-bordered mt-4"
+            dataKey="lineId"
+          >
+            <ng-template #header>
+              <tr>
+                <th>Producto</th>
+                <th class="text-center">Cant.</th>
+                <th class="text-right">Precio</th>
+                <th class="text-center">IVA</th>
+                <th class="text-right">Subtotal</th>
+                <th class="text-right">Importe IVA</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </ng-template>
+
+            <ng-template #body let-line>
+              <tr>
+                <td class="min-w-56 pl-2">
+                  <span class="text-sm text-surface-700">{{ line.productName || ('#' + line.productId) }}</span>
+                </td>
+                <td class="min-w-20 text-center">{{ line.quantity }}</td>
+                <td class="whitespace-nowrap text-right text-surface-700">
+                  {{ line.unitPrice | currency: 'EUR':'symbol':'1.2-2' }}
+                </td>
+                <td class="min-w-24 text-center">
+                  {{ getVatPercent(line.vatRate) | number: '1.0-2' }}%
+                </td>
+                <td class="whitespace-nowrap text-right text-surface-700">
+                  {{ line.subtotal | currency: 'EUR':'symbol':'1.2-2' }}
+                </td>
+                <td class="whitespace-nowrap text-right text-surface-700">
+                  {{ line.vatAmount | currency: 'EUR':'symbol':'1.2-2' }}
+                </td>
+                <td class="whitespace-nowrap text-right font-medium text-surface-900">
+                  {{ line.total | currency: 'EUR':'symbol':'1.2-2' }}
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="7" class="empty-state">
+                  No hay lineas registradas.
+                </td>
+              </tr>
+            </ng-template>
+          </ui-table>
+        </p-tabpanel>
+
+        <p-tabpanel value="history">
+          <ui-table
+            [value]="store.statusHistory()"
+            [loading]="store.loading()"
+            tableClass="ui-table-base ui-table-compact ui-table-bordered mt-4"
+            dataKey="changedAt"
+          >
+            <ng-template #header>
+              <tr>
+                <th>De</th>
+                <th>A</th>
+                <th>Fecha</th>
+                <th>Usuario</th>
+              </tr>
+            </ng-template>
+
+            <ng-template #body let-item>
+              <tr>
+                <td>{{ getStatusLabel(item.fromStatus) }}</td>
+                <td>{{ getStatusLabel(item.toStatus) }}</td>
+                <td>{{ item.changedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>{{ item.changedByName }}</td>
+              </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="4" class="empty-state">
+                  No hay cambios de estado registrados.
+                </td>
+              </tr>
+            </ng-template>
+          </ui-table>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  } @else if (!store.loading()) {
+    <p class="empty-state">No se ha podido mostrar la compra solicitada.</p>
+  }
+</section>
+
+<app-purchase-form-dialog />

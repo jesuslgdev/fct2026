@@ -1,0 +1,164 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Usuarios</h1>
+    @if (store.canEdit()) {
+      <ui-button
+        label="Nuevo usuario"
+        icon="pi pi-plus"
+        (clicked)="store.openCreateDialog()"
+      />
+    }
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  <div class="filters-row">
+    <ui-input
+      type="text"
+      placeholder="Buscar por nombre o correo..."
+      styleClass="flex-1 min-w-64"
+      [ngModel]="store.searchQuery()"
+      (valueChange)="store.onSearch($event)"
+    />
+    <p-select
+      [options]="roleOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los roles"
+      class="min-w-40"
+      [ngModel]="store.roleFilter()"
+      (ngModelChange)="store.onRoleFilterChange($event)"
+    />
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los estados"
+      class="min-w-44"
+      [ngModel]="store.statusFilter()"
+      (ngModelChange)="store.onStatusFilterChange($event)"
+    />
+  </div>
+
+  <ui-table
+    [value]="store.usersView()"
+    [loading]="store.loading()"
+    [paginator]="true"
+    [lazy]="true"
+    [rows]="store.pageSize()"
+    [totalRecords]="store.total()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="id"
+    (page)="store.onPageChange($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Nombre completo</th>
+        <th>Correo</th>
+        <th>Rol</th>
+        <th>Departamento</th>
+        <th>Estado</th>
+        @if (store.canEdit()) {
+          <th>Acciones</th>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-user>
+      <tr>
+        <td>{{ user.fullName }}</td>
+        <td>{{ user.emailDisplay }}</td>
+        <td>{{ getRoleLabel(user.role) }}</td>
+        <td>{{ user.departmentName }}</td>
+        <td>
+          <ui-user-status-badge
+            [active]="user.active"
+            [pendingFirstLogin]="user.pendingFirstLogin"
+          />
+        </td>
+        @if (store.canEdit()) {
+          <td>
+            <div class="flex items-center gap-2">
+              <ui-button
+                icon="pi pi-pencil"
+                variant="ghost"
+                size="sm"
+                (clicked)="store.openEditDialog(user)"
+              />
+              <ui-button
+                [icon]="user.active ? 'pi pi-ban' : 'pi pi-check-circle'"
+                [variant]="user.active ? 'destructive' : 'secondary'"
+                size="sm"
+                (clicked)="store.requestToggleStatus(user)"
+              />
+              <ui-button
+                icon="pi pi-trash"
+                variant="destructive"
+                size="sm"
+                (clicked)="store.requestDeleteUser(user)"
+              />
+            </div>
+          </td>
+        }
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td [attr.colspan]="store.canEdit() ? 6 : 5" class="empty-state">
+          No se encontraron usuarios.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+</section>
+
+<app-user-form-dialog />
+
+<ui-dialog
+  [(visible)]="store.confirmDialogVisible"
+  [header]="store.userToToggle()?.active ? 'Desactivar usuario' : 'Activar usuario'"
+  variant="warning"
+  size="sm"
+  [confirmLabel]="store.userToToggle()?.active ? 'Desactivar' : 'Activar'"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmToggleStatus()"
+  (cancelled)="store.cancelToggleStatus()"
+>
+  @if (store.userToToggle(); as user) {
+    <p class="warning-text">
+      @if (user.active) {
+        Esta accion desactiva el acceso de
+        <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>.
+        Sus datos personales se conservan.
+      } @else {
+        Esta accion reactiva el acceso de
+        <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>.
+      }
+    </p>
+  }
+</ui-dialog>
+
+<ui-dialog
+  [(visible)]="store.deleteDialogVisible"
+  header="Eliminar usuario"
+  variant="warning"
+  size="sm"
+  confirmLabel="Eliminar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="store.confirmDeleteUser()"
+  (cancelled)="store.cancelDeleteUser()"
+>
+  @if (store.userToDelete(); as user) {
+    <p class="warning-text">
+      Esta accion eliminara
+      <strong>{{ user.firstName }} {{ user.lastName ?? '' }}</strong>.
+      Si tiene registros asociados, el backend conservara la trazabilidad y anonimizara sus datos.
+    </p>
+  }
+</ui-dialog>

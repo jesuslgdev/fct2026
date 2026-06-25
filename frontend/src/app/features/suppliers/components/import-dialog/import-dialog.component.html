@@ -1,0 +1,224 @@
+﻿<ui-dialog
+  [(visible)]="visible"
+  [header]="getStepTitle()"
+  size="lg"
+  variant="info"
+  [closable]="true"
+  (cancelled)="close()"
+>
+
+  <!-- Step 1: Upload -->
+  @if (currentStep() === 'upload') {
+    <div class="space-y-6">
+      <!-- Información inicial -->
+      <ui-card class="border-info-subtle bg-info-subtle">
+        <div class="space-y-3">
+          <h3 class="text-lg font-semibold text-info">Importación masiva de proveedores</h3>
+          <p class="text-neutral-muted">
+            Importa múltiples proveedores desde un archivo Excel o CSV.
+            Primero comprobaremos todos los datos en un resumen y,
+            cuando todo esté correcto, podras lanzar la importacion masiva.
+          </p>
+          
+          <div class="bg-info-subtle border border-info-subtle rounded-lg p-4">
+            <h4 class="font-medium text-info mb-2">Columnas requeridas:</h4>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div><strong>Nombre*</strong> - Razón social del proveedor</div>
+              <div><strong>CIF*</strong> - Identificador fiscal</div>
+              <div><strong>Email*</strong> - Correo electrónico</div>
+              <div><strong>Teléfono</strong> - Teléfono de contacto</div>
+              <div><strong>Dirección</strong> - Dirección postal</div>
+              <div><strong>Ciudad</strong> - Ciudad</div>
+              <div><strong>Provincia</strong> - Provincia</div>
+              <div><strong>Código postal</strong> - Código postal de 5 dígitos</div>
+            </div>
+          </div>
+        </div>
+      </ui-card>
+
+      <!-- Download template -->
+      <div class="flex justify-center">
+        <ui-button
+          label="Descargar plantilla de Excel"
+          variant="outline"
+          [loading]="loading()"
+          (clicked)="downloadTemplate()"
+        />
+      </div>
+
+      <!-- File upload -->
+      <ui-card>
+        <div class="space-y-4">
+          <h4 class="font-medium">Seleccionar Archivo</h4>
+          
+          <div class="file-dropzone"
+               (dragover)="onDragOver($event)"
+               (dragleave)="onDragLeave($event)"
+               (drop)="onDrop($event)">
+            <div class="space-y-2">
+              <div class="text-2xl">Archivo</div>
+              <p class="text-neutral-muted">
+                Arrastra un archivo aquí o
+                <label for="file-upload" class="text-info cursor-pointer underline">
+                  haz clic para seleccionarlo
+                </label>
+              </p>
+              <p class="text-sm text-neutral-subtle">
+                Formatos admitidos: Excel (.xlsx, .xls) y CSV (.csv)
+              </p>
+              <input
+                id="file-upload"
+                type="file"
+                class="hidden"
+                accept=".xlsx,.xls,.csv"
+                (change)="onFileSelect($event)"
+              />
+            </div>
+          </div>
+
+          @if (inlineError(); as inlineMessage) {
+            <p class="dialog-error-banner" role="alert">{{ inlineMessage }}</p>
+          }
+
+          <!-- Selected file -->
+          @if (selectedFile()) {
+            <div class="bg-success-subtle border border-success-subtle rounded-lg p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="text-2xl">Documento</div>
+                  <div>
+                    <div class="font-medium">{{ getFileName() }}</div>
+                    <div class="text-sm text-neutral-muted">{{ getFileSize() }}</div>
+                  </div>
+                </div>
+                <ui-button
+                  label="Comprobar archivo"
+                  variant="default"
+                  [loading]="loading()"
+                  [disabled]="!canValidate()"
+                  (clicked)="validateFile()"
+                />
+              </div>
+            </div>
+          }
+        </div>
+      </ui-card>
+    </div>
+  }
+
+  <!-- Step 2: Validation -->
+  @if (currentStep() === 'validation') {
+    @if (importResult(); as result) {
+      <div class="space-y-6">
+        @if (inlineError(); as inlineMessage) {
+          <p class="dialog-error-banner" role="alert">{{ inlineMessage }}</p>
+        }
+
+        <ui-card class="border-success-subtle bg-success-subtle">
+          <div class="space-y-4">
+            <h4 class="font-semibold text-lg">Resumen de validacion</h4>
+
+            <div class="grid grid-cols-3 gap-4 text-center">
+              <div class="bg-neutral-subtle rounded-lg p-4">
+                <div class="text-2xl font-bold text-neutral-strong">{{ result.totalRecords }}</div>
+                <div class="text-sm text-neutral-muted">Total registros</div>
+              </div>
+              <div class="bg-success-subtle rounded-lg p-4">
+                <div class="text-2xl font-bold text-success">{{ result.validRecords }}</div>
+                <div class="text-sm text-success">Validos</div>
+              </div>
+              <div class="bg-danger-subtle rounded-lg p-4">
+                <div class="text-2xl font-bold text-danger">{{ result.invalidRecords }}</div>
+                <div class="text-sm text-danger">Con errores</div>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <div class="text-lg font-medium">{{ getValidationSummary() }}</div>
+              @if (result.success === true) {
+                <p class="text-success mt-2">Todo correcto. Ya puedes pulsar Importar proveedores.</p>
+              } @else {
+                <p class="text-warning mt-2">Hay errores que debes corregir antes de importar.</p>
+              }
+            </div>
+          </div>
+        </ui-card>
+
+        @if (result.errors.length > 0) {
+          <ui-card class="border-danger-subtle bg-danger-subtle">
+            <div class="space-y-4">
+              <h4 class="font-semibold text-danger">Errores encontrados</h4>
+
+              <div class="max-h-64 overflow-y-auto space-y-2">
+                @for (error of result.errors; track $index) {
+                  <div class="bg-danger-subtle border border-danger-subtle rounded p-3 text-sm">
+                    <div class="font-medium text-danger">
+                      {{ getErrorMessage(error) }}
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="bg-warning-subtle border border-warning-subtle rounded p-4">
+                <p class="text-warning">
+                  Corrige estos datos en el archivo y vuelve a ejecutar la comprobacion.
+                </p>
+              </div>
+            </div>
+          </ui-card>
+        }
+
+        <div class="flex justify-between">
+          <ui-button
+            label="Volver"
+            variant="outline"
+            (clicked)="goBack()"
+          />
+          <ui-button
+            label="Importar proveedores"
+            variant="default"
+            [loading]="loading()"
+            [disabled]="!canImport()"
+            (clicked)="importSuppliers()"
+          />
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Step 3: Success -->
+  @if (currentStep() === 'success') {
+    <div class="space-y-6">
+      <ui-card class="border-success-subtle bg-success-subtle">
+        <div class="text-center space-y-4">
+          <div class="text-5xl">Completado</div>
+          <h3 class="text-xl font-bold text-success">Importación completada</h3>
+          
+          <div class="bg-success-subtle border border-success-subtle rounded-lg p-4">
+            <div class="text-lg font-medium text-success">
+              {{ getSuccessMessage() }}
+            </div>
+            <p class="text-success mt-2">
+              Los proveedores han sido creados en estado <strong>activo</strong> y ya están disponibles en el sistema.
+            </p>
+          </div>
+
+          <div class="text-sm text-neutral-muted">
+            <p>Importación realizada por: Administrador</p>
+            <p>Fecha: {{ getCurrentDate() }}</p>
+          </div>
+        </div>
+      </ui-card>
+
+      <div class="flex justify-center">
+        <ui-button
+          label="Cerrar"
+          variant="default"
+          (clicked)="close()"
+        />
+      </div>
+    </div>
+  }
+
+</ui-dialog>
+

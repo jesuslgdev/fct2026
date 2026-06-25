@@ -1,0 +1,32 @@
+<!-- Input field with optional left/right icons and state-based styling -->
+<p-iconfield [iconPosition]="iconLeft() ? 'left' : iconRight() ? 'right' : 'left'">
+  <!-- Left icon -->
+  @if (iconLeft()) {
+    <p-inputicon [styleClass]="iconLeft() + ' ' + iconColorClass()" />
+  }
+
+  <!-- Main input -->
+  <input
+    pInputText
+    [type]="type()"
+    [attr.step]="step()"
+    [attr.min]="min()"
+    [attr.max]="max()"
+    [placeholder]="placeholder()"
+    [disabled]="isDisabled()"
+    [variant]="options().variant"
+    [pSize]="resolvedSize()"
+    [fluid]="fluid()"
+    [class]="inputClass()"
+    [value]="value()"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+    [attr.aria-invalid]="state() === 'error' ? 'true' : null"
+    [attr.aria-disabled]="isDisabled() ? 'true' : null"
+  />
+
+  <!-- Right icon -->
+  @if (iconRight()) {
+    <p-inputicon [styleClass]="iconRight() + ' ' + iconColorClass()" />
+  }
+</p-iconfield>

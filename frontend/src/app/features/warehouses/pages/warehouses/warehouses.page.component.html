@@ -1,0 +1,112 @@
+<section class="page">
+
+  <div class="page-header">
+    <h1 class="text-style-title">Almacenes</h1>
+    @if (store.canEdit()) {
+      <ui-button
+        label="Nuevo almacen"
+        icon="pi pi-plus"
+        (clicked)="store.openCreateDialog()"
+      />
+    }
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  <div class="filters-row">
+    <ui-input
+      type="text"
+      placeholder="Buscar por nombre o direccion..."
+      styleClass="flex-1 min-w-64"
+      [ngModel]="store.searchQuery()"
+      (valueChange)="store.onSearch($event)"
+    />
+  </div>
+
+  <ui-table
+    [value]="store.filteredWarehouses()"
+    [loading]="store.loading()"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="warehouseId"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Nombre</th>
+        <th>Direccion</th>
+        <th>Stock total</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-warehouse>
+      <tr class="cursor-pointer" (click)="openWarehouseDetail(warehouse)">
+        <td>{{ warehouse.name }}</td>
+        <td>{{ warehouse.address }}</td>
+        <td>{{ warehouse.totalStock }}</td>
+        <td>
+          <div>
+            <ui-button
+              icon="pi pi-eye"
+              ariaLabel="Ver detalle de almacen"
+              variant="ghost"
+              size="sm"
+              (clicked)="openWarehouseDetail(warehouse); $event.stopPropagation()"
+            />
+            @if (store.canEdit()) {
+              <ui-button
+                icon="pi pi-pencil"
+                ariaLabel="Editar almacen"
+                variant="ghost"
+                size="sm"
+                (clicked)="store.openEditDialog(warehouse); $event.stopPropagation()"
+              />
+              <ui-button
+                icon="pi pi-trash"
+                ariaLabel="Eliminar almacen"
+                variant="destructive"
+                size="sm"
+                (clicked)="store.requestDeleteWarehouse(warehouse); $event.stopPropagation()"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="4" class="empty-state">
+          No se encontraron almacenes.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+
+</section>
+
+<app-warehouse-form-dialog />
+
+<ui-dialog
+  [(visible)]="store.confirmDialogVisible"
+  [header]="'Eliminar almacen'"
+  variant="warning"
+  size="sm"
+  confirmLabel="Confirmar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  [confirmDisabled]="store.loading() || (store.warehouseToDelete()?.totalStock ?? 0) > 0"
+  (confirmed)="store.confirmDeleteWarehouse()"
+  (cancelled)="store.cancelDeleteWarehouse()"
+>
+  @if (store.warehouseToDelete(); as warehouse) {
+    <p class="warning-text">
+      @if (warehouse.totalStock > 0) {
+        No se puede eliminar <strong>{{ warehouse.name }}</strong> porque tiene stock asociado ({{ warehouse.totalStock }}).
+      } @else {
+        Esta seguro de que desea eliminar <strong>{{ warehouse.name }}</strong>?
+      }
+    </p>
+  }
+</ui-dialog>

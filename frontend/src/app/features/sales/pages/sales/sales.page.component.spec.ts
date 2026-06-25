@@ -1,0 +1,464 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
+import { By } from '@angular/platform-browser';
+import { Router } from '@angular/router';
+import { vi, type Mock } from 'vitest';
+import { SaleStatus } from '@domain/enums/sale-status.enum';
+import { Client } from '@domain/models/client.model';
+import { Sale } from '@domain/models/sale.model';
+import { SalesStore } from '@features/sales/state/sales.store';
+import { BadgeComponent } from '@shared/ui';
+import { SalesPageComponent } from './sales.page.component';
+
+interface MockSalesStore {
+  sales: WritableSignal<Sale[]>;
+  salesView: WritableSignal<{
+    saleId: number;
+    saleNumber: string;
+    clientName: string;
+    status: SaleStatus;
+    deliveryAddress: string;
+    createdAt: Date;
+    total: number;
+  }[]>;
+  clients: WritableSignal<Client[]>;
+  total: WritableSignal<number>;
+  page: WritableSignal<number>;
+  pageSize: WritableSignal<number>;
+  loading: WritableSignal<boolean>;
+  cancellingSaleId: WritableSignal<number | null>;
+  deletingSaleId: WritableSignal<number | null>;
+  error: WritableSignal<string | null>;
+  successMessage: WritableSignal<string | null>;
+  clientsLoading: WritableSignal<boolean>;
+  clientsError: WritableSignal<string | null>;
+  statusFilter: WritableSignal<SaleStatus | null>;
+  clientFilter: WritableSignal<number | null>;
+  dateFromFilter: WritableSignal<Date | null>;
+  dateToFilter: WritableSignal<Date | null>;
+  emptyMessage: WritableSignal<string | null>;
+  loadSales: Mock<() => Promise<void>>;
+  loadClientsForFilter: Mock<() => Promise<void>>;
+  onStatusFilterChange: Mock<(status: SaleStatus | null) => void>;
+  onClientFilterChange: Mock<(clientId: number | null) => void>;
+  onDateFromFilterChange: Mock<(dateFrom: Date | null) => void>;
+  onDateToFilterChange: Mock<(dateTo: Date | null) => void>;
+  clearFilters: Mock<() => void>;
+  onPageChange: Mock<(event: { first: number; rows: number }) => void>;
+  canManageSales: WritableSignal<boolean>;
+  canEditSale: Mock<(saleId: number) => boolean>;
+  canChangeStatus: Mock<(saleId: number) => boolean>;
+  canAdvanceSaleStatus: Mock<(saleId: number) => boolean>;
+  canCancelSale: Mock<(saleId: number) => boolean>;
+  canDeleteSale: Mock<(saleId: number) => boolean>;
+  isChangingStatusSale: Mock<(saleId: number) => boolean>;
+  isDeletingSale: Mock<(saleId: number) => boolean>;
+  changeSaleStatus: Mock<(saleId: number, status: SaleStatus) => Promise<void>>;
+  deleteSale: Mock<(saleId: number) => Promise<void>>;
+  getNextLifecycleStatus: Mock<(saleId: number) => SaleStatus | null>;
+}
+
+const CLIENT_A: Client = {
+  clientId: 1,
+  name: 'Cliente A',
+  taxId: '12345678A',
+  city: 'Madrid',
+  isActive: true,
+};
+
+const SALE_A: Sale = {
+  saleId: 1,
+  saleNumber: 'VEN-2026-0001',
+  clientId: 1,
+  warehouseId: 1,
+  clientName: 'Cliente A',
+  creatorName: 'Vendedor A',
+  status: SaleStatus.PENDING,
+  allowedTransitions: [SaleStatus.APPROVED, SaleStatus.CANCELLED],
+  deliveryAddress: 'Calle Mayor 1, Madrid',
+  saleDate: new Date('2026-04-01T10:00:00.000Z'),
+  createdAt: new Date('2026-04-01T10:01:00.000Z'),
+  total: 100,
+};
+
+describe('SalesPageComponent', () => {
+  let fixture: ComponentFixture<SalesPageComponent>;
+  let component: SalesPageComponent;
+  let store: MockSalesStore;
+  let router: { navigate: ReturnType<typeof vi.fn> };
+
+  beforeEach(async () => {
+    router = {
+      navigate: vi.fn().mockResolvedValue(true),
+    };
+
+    store = {
+      sales: signal<Sale[]>([SALE_A]),
+      salesView: signal([
+        {
+          saleId: 1,
+          saleNumber: 'VEN-2026-0001',
+          clientName: 'Cliente A',
+          status: SaleStatus.PENDING,
+          deliveryAddress: 'Calle Mayor 1, Madrid',
+          createdAt: SALE_A.createdAt,
+          total: 100,
+        },
+      ]),
+      clients: signal<Client[]>([CLIENT_A]),
+      total: signal(1),
+      page: signal(1),
+      pageSize: signal(20),
+      loading: signal(false),
+      cancellingSaleId: signal<number | null>(null),
+      deletingSaleId: signal<number | null>(null),
+      error: signal<string | null>(null),
+      successMessage: signal<string | null>(null),
+      clientsLoading: signal(false),
+      clientsError: signal<string | null>(null),
+      statusFilter: signal<SaleStatus | null>(null),
+      clientFilter: signal<number | null>(null),
+      dateFromFilter: signal<Date | null>(null),
+      dateToFilter: signal<Date | null>(null),
+      emptyMessage: signal<string | null>(null),
+      loadSales: vi.fn().mockResolvedValue(undefined),
+      loadClientsForFilter: vi.fn().mockResolvedValue(undefined),
+      onStatusFilterChange: vi.fn(),
+      onClientFilterChange: vi.fn(),
+      onDateFromFilterChange: vi.fn(),
+      onDateToFilterChange: vi.fn(),
+      clearFilters: vi.fn(),
+      onPageChange: vi.fn(),
+      canManageSales: signal(true),
+      canEditSale: vi.fn((saleId: number) => saleId === 1),
+      canChangeStatus: vi.fn((saleId: number) => saleId === 1),
+      canAdvanceSaleStatus: vi.fn((saleId: number) => saleId === 1),
+      canCancelSale: vi.fn((saleId: number) => saleId === 1),
+      canDeleteSale: vi.fn((saleId: number) => saleId === 1),
+      isChangingStatusSale: vi.fn(() => false),
+      isDeletingSale: vi.fn(() => false),
+      changeSaleStatus: vi.fn().mockResolvedValue(undefined),
+      deleteSale: vi.fn().mockResolvedValue(undefined),
+      getNextLifecycleStatus: vi.fn((saleId: number) =>
+        saleId === 1 ? SaleStatus.APPROVED : null,
+      ),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [SalesPageComponent],
+      providers: [
+        {
+          provide: Router,
+          useValue: router,
+        },
+      ],
+    })
+      .overrideComponent(SalesPageComponent, {
+        set: {
+          providers: [{ provide: SalesStore, useValue: store }],
+        },
+      })
+      .compileComponents();
+
+    fixture = TestBed.createComponent(SalesPageComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('loads sales and clients for filter on init', () => {
+    expect(store.loadSales).toHaveBeenCalledOnce();
+    expect(store.loadClientsForFilter).toHaveBeenCalledOnce();
+  });
+
+  it('defines status options for the sales filters', () => {
+    expect(component.statusOptions).toEqual([
+      { label: 'Todos los estados', value: null },
+      { label: 'Pendiente', value: SaleStatus.PENDING },
+      { label: 'Aprobada', value: SaleStatus.APPROVED },
+      { label: 'En proceso', value: SaleStatus.IN_PROCESS },
+      { label: 'Enviada', value: SaleStatus.SHIPPED },
+      { label: 'Entregada', value: SaleStatus.DELIVERED },
+      { label: 'Cancelada', value: SaleStatus.CANCELLED },
+    ]);
+  });
+
+  it('forwards status filter changes to the store', () => {
+    component.onStatusChange(SaleStatus.APPROVED);
+
+    expect(store.onStatusFilterChange).toHaveBeenCalledWith(SaleStatus.APPROVED);
+  });
+
+  it('forwards client filter changes to the store', () => {
+    component.onClientChange(1);
+
+    expect(store.onClientFilterChange).toHaveBeenCalledWith(1);
+  });
+
+  it('forwards null client filter changes to the store for all clients', () => {
+    component.onClientChange(null);
+
+    expect(store.onClientFilterChange).toHaveBeenCalledWith(null);
+  });
+
+  it('forwards date from changes to the store', () => {
+    const dateFrom = new Date('2026-04-01T00:00:00.000Z');
+
+    component.onDateFromChange(dateFrom);
+
+    expect(store.onDateFromFilterChange).toHaveBeenCalledWith(dateFrom);
+  });
+
+  it('forwards date to changes to the store', () => {
+    const dateTo = new Date('2026-04-30T00:00:00.000Z');
+
+    component.onDateToChange(dateTo);
+
+    expect(store.onDateToFilterChange).toHaveBeenCalledWith(dateTo);
+  });
+
+  it('builds client options with an all-clients entry first', () => {
+    expect(component.clientOptions()).toEqual([
+      { label: 'Todos los clientes', value: null },
+      { label: 'Cliente A', value: 1 },
+    ]);
+  });
+
+  it('clears filters through the store', () => {
+    component.onClearFilters();
+
+    expect(store.clearFilters).toHaveBeenCalledOnce();
+  });
+
+  it('forwards page changes with safe defaults', () => {
+    component.onPageChange({ first: 20, rows: 20 });
+
+    expect(store.onPageChange).toHaveBeenCalledWith({ first: 20, rows: 20 });
+  });
+
+  it('uses the store page size when page event rows are missing', () => {
+    component.onPageChange({ first: 0 } as never);
+
+    expect(store.onPageChange).toHaveBeenCalledWith({ first: 0, rows: 20 });
+  });
+
+  it('renders the sales title', () => {
+    const title = fixture.debugElement.query(By.css('h1'));
+
+    expect(title.nativeElement.textContent.trim()).toBe('Ventas');
+  });
+
+  it('renders the created-to date filter', () => {
+    expect(fixture.debugElement.query(By.css('#sales-date-to'))).toBeTruthy();
+  });
+
+  it('shows the new sale action when sales can be managed', () => {
+    const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
+
+    expect(
+      buttons.some(
+        (button: { nativeElement: { textContent: string } }) =>
+          button.nativeElement.textContent.includes('Nueva venta'),
+      ),
+    ).toBe(true);
+  });
+
+  it('navigates to the sale creation page', () => {
+    component.onCreateSale();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales/new']);
+  });
+
+  it('navigates to a sale detail page', () => {
+    component.onViewSale(1);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
+  });
+  it('navigates to the sale edit page', () => {
+    component.onEditSale(1);
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 1, 'edit']);
+  });
+
+  it('navigates to the detail page when clicking the row', () => {
+    const row = fixture.debugElement.query(By.css('tbody tr'));
+
+    row.triggerEventHandler('click');
+
+    expect(router.navigate).toHaveBeenCalledWith(['/sales', 1]);
+  });
+
+  it('renders the detail action as an icon-only button', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Ver detalle de venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-eye');
+    expect(actionButton.attributes['variant']).toBe('ghost');
+  });
+  it('renders the edit action as an icon-only button for pending sales with permissions', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-pencil');
+    expect(actionButton.attributes['variant']).toBe('ghost');
+  });
+
+  it('hides management actions when the store does not grant permissions', () => {
+    store.canManageSales.set(false);
+    store.canEditSale.mockReturnValue(false);
+    store.canChangeStatus.mockReturnValue(false);
+    store.canAdvanceSaleStatus.mockReturnValue(false);
+    store.canCancelSale.mockReturnValue(false);
+    store.canDeleteSale.mockReturnValue(false);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Avanzar estado de venta"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Cancelar venta"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('ui-button[ariaLabel="Eliminar venta"]'))).toBeNull();
+
+    const buttons = fixture.debugElement.queryAll(By.css('ui-button'));
+    expect(
+      buttons.some(
+        (button: { nativeElement: { textContent: string } }) =>
+          button.nativeElement.textContent.includes('Nueva venta'),
+      ),
+    ).toBe(false);
+  });
+
+  it('renders the advance status action as an icon-only button when applicable', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Avanzar estado de venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-arrow-right');
+    expect(actionButton.attributes['title']).toBe('Aprobar');
+  });
+
+  it('renders the cancel action as an icon-only button when applicable', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Cancelar venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-times-circle');
+  });
+
+  it('renders the delete action as an icon-only button when applicable', () => {
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Eliminar venta"]'));
+
+    expect(actionButton).toBeTruthy();
+    expect(actionButton.attributes['icon']).toBe('pi pi-trash');
+  });
+  it('hides the edit action when the sale is not pending', () => {
+    store.salesView.set([
+      {
+        saleId: 1,
+        saleNumber: 'VEN-2026-0001',
+        clientName: 'Cliente A',
+        status: SaleStatus.APPROVED,
+        deliveryAddress: 'Calle Mayor 1, Madrid',
+        createdAt: SALE_A.createdAt,
+        total: 100,
+      },
+    ]);
+    store.canEditSale.mockReturnValue(false);
+    fixture.detectChanges();
+
+    const actionButton = fixture.debugElement.query(By.css('ui-button[ariaLabel="Editar venta"]'));
+
+    expect(actionButton).toBeNull();
+  });
+
+  it('opens the advance status dialog and delegates to the store', () => {
+    component.onRequestAdvanceStatus(1);
+
+    expect(component.advanceStatusDialogVisible()).toBe(true);
+    expect(component.selectedSaleId()).toBe(1);
+    expect(component.getCurrentSaleStatusLabel()).toBe('Pendiente');
+    expect(component.getAdvanceStatusLabel()).toBe('Aprobada');
+    expect(component.getAdvanceStatusImpact()).toContain('reservara el stock');
+
+    component.onConfirmAdvanceStatus();
+
+    expect(component.advanceStatusDialogVisible()).toBe(false);
+    expect(store.changeSaleStatus).toHaveBeenCalledWith(1, SaleStatus.APPROVED);
+  });
+
+  it('opens the cancel dialog and delegates to the store', () => {
+    component.onRequestCancelSale(1);
+
+    expect(component.cancelDialogVisible()).toBe(true);
+    expect(component.selectedSaleId()).toBe(1);
+    expect(component.getCancelStatusImpact()).toContain('quedara cancelada');
+
+    component.onConfirmCancelSale();
+
+    expect(component.cancelDialogVisible()).toBe(false);
+    expect(store.changeSaleStatus).toHaveBeenCalledWith(1, SaleStatus.CANCELLED);
+  });
+
+  it('opens the delete dialog and delegates to the store', () => {
+    component.onRequestDeleteSale(1);
+
+    expect(component.deleteDialogVisible()).toBe(true);
+    expect(component.selectedSaleId()).toBe(1);
+
+    component.onConfirmDeleteSale();
+
+    expect(component.deleteDialogVisible()).toBe(false);
+    expect(store.deleteSale).toHaveBeenCalledWith(1);
+  });
+
+  it('builds the next advance action label from the selected sale', () => {
+    expect(component.getAdvanceActionLabel(1)).toBe('Aprobar');
+  });
+
+  it('renders the filtered empty message when provided by the store', () => {
+    store.salesView.set([]);
+    store.emptyMessage.set('No se encontraron ventas con los filtros aplicados');
+    fixture.detectChanges();
+
+    const emptyState = fixture.debugElement.query(By.css('.empty-state'));
+
+    expect(emptyState.nativeElement.textContent).toContain(
+      'No se encontraron ventas con los filtros aplicados',
+    );
+  });
+
+  it('renders a fallback empty message when the store has no filtered message', () => {
+    store.salesView.set([]);
+    store.emptyMessage.set(null);
+    fixture.detectChanges();
+
+    const emptyState = fixture.debugElement.query(By.css('.empty-state'));
+
+    expect(emptyState.nativeElement.textContent).toContain('No hay ventas registradas.');
+  });
+
+  it('translates the status for the UI', () => {
+    expect(component.getStatusLabel(SaleStatus.PENDING)).toBe('Pendiente');
+    expect(component.getStatusLabel(SaleStatus.APPROVED)).toBe('Aprobada');
+  });
+
+  it('assigns the correct variant and icon to the status badge', () => {
+    expect(component.getStatusBadgeVariant(SaleStatus.PENDING)).toBe('warning');
+    expect(component.getStatusBadgeIcon(SaleStatus.PENDING)).toBe('pi pi-clock');
+    expect(component.getStatusBadgeVariant(SaleStatus.APPROVED)).toBe('info');
+    expect(component.getStatusBadgeVariant(SaleStatus.IN_PROCESS)).toBe('secondary');
+    expect(component.getStatusBadgeVariant(SaleStatus.SHIPPED)).toBe('contrast');
+    expect(component.getStatusBadgeVariant(SaleStatus.DELIVERED)).toBe('success');
+    expect(component.getStatusBadgeVariant(SaleStatus.CANCELLED)).toBe('danger');
+    expect(component.getStatusBadgeIcon(SaleStatus.DELIVERED)).toBe('pi pi-check-circle');
+  });
+
+  it('renders the sales row with the fields required by the listing', () => {
+    const cells = fixture.debugElement.queryAll(By.css('tbody tr td'));
+    const badge = fixture.debugElement.query(By.directive(BadgeComponent));
+
+    expect(cells[0].nativeElement.textContent.trim()).toBe('VEN-2026-0001');
+    expect(cells[1].nativeElement.textContent.trim()).toBe('Cliente A');
+    expect(cells[2].nativeElement.textContent.trim()).toContain('Pendiente');
+    expect(badge).toBeTruthy();
+    expect((badge.componentInstance as BadgeComponent).icon()).toBe('pi pi-clock');
+    expect((badge.componentInstance as BadgeComponent).variant()).toBe('warning');
+    expect(cells[3].nativeElement.textContent.trim()).toBe('Calle Mayor 1, Madrid');
+    expect(cells[5].nativeElement.textContent.trim()).toContain('€');
+  });
+});

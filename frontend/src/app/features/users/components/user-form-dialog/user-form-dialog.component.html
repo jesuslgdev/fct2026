@@ -1,0 +1,102 @@
+<ui-dialog
+  [(visible)]="store.dialogVisible"
+  [header]="store.dialogMode() === 'create' ? 'Nuevo usuario' : 'Editar usuario'"
+  confirmLabel="Guardar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  [confirmDisabled]="form.invalid"
+  (confirmed)="onConfirm()"
+  (cancelled)="onCancel()"
+>
+  <form [formGroup]="form" class="dialog-form">
+
+ 
+    @if (store.dialogError(); as err) {
+      <p class="dialog-error-banner" role="alert">{{ err }}</p>
+    }
+
+    <div class="dialog-form-grid">
+      <label class="dialog-field">
+        <span class="dialog-field-label">Nombre</span>
+        <ui-input
+          formControlName="firstName"
+          placeholder="Nombre"
+          [state]="firstName.invalid && firstName.touched ? 'error' : 'default'"
+        />
+        @if (firstName.invalid && firstName.touched) {
+          <span class="dialog-field-error">El nombre es obligatorio.</span>
+        }
+      </label>
+      <label class="dialog-field">
+        <span class="dialog-field-label">Apellidos</span>
+        <ui-input
+          formControlName="lastName"
+          placeholder="Apellidos"
+          [state]="lastName.invalid && lastName.touched ? 'error' : 'default'"
+        />
+        @if (lastName.invalid && lastName.touched) {
+          <span class="dialog-field-error">Los apellidos son obligatorios.</span>
+        }
+      </label>
+    </div>
+
+  
+    @if (store.dialogMode() === 'create') {
+      <label class="dialog-field">
+        <span class="dialog-field-label">Correo electrónico</span>
+        <ui-input
+          formControlName="email"
+          type="email"
+          placeholder="usuario@empresa.com"
+          [state]="email.invalid && email.touched ? 'error' : 'default'"
+        />
+        @if (email.invalid && email.touched) {
+          <span class="dialog-field-error">
+            @if (email.hasError('required')) { El correo es obligatorio. }
+            @else { Introduce un correo electrónico válido. }
+          </span>
+        }
+      </label>
+    }
+
+    <!-- Rol -->
+    <div class="dialog-field">
+      <span class="dialog-field-label">Rol</span>
+      @if (renderSelects()) {
+        <p-select
+          formControlName="role"
+          [options]="roleOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Selecciona un rol"
+          styleClass="w-full"
+          appendTo="body"
+        />
+      }
+      @if (role.invalid && role.touched) {
+        <span class="dialog-field-error">El rol es obligatorio.</span>
+      }
+    </div>
+
+
+    <div class="dialog-field">
+      <span class="dialog-field-label">Departamento</span>
+      @if (renderSelects()) {
+        <p-select
+          formControlName="departmentId"
+          [options]="store.departments()"
+          optionLabel="name"
+          optionValue="id"
+          [placeholder]="departmentPlaceholder()"
+          [showClear]="!isDepartmentRequired()"
+          styleClass="w-full"
+          appendTo="body"
+        />
+      }
+      @if (departmentId.invalid && departmentId.touched && isDepartmentRequired()) {
+        <span class="dialog-field-error">El departamento es obligatorio para este rol.</span>
+      }
+    </div>
+
+  </form>
+</ui-dialog>

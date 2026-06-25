@@ -1,0 +1,155 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="text-style-title">Productos</h1>
+    @if (store.canEdit()) {
+      <ui-button
+        label="Nuevo producto"
+        icon="pi pi-plus"
+        (clicked)="store.openCreateDialog()"
+      />
+    }
+  </div>
+
+  @if (store.error(); as errorMessage) {
+    <p class="warning-text" role="alert">{{ errorMessage }}</p>
+  }
+
+  <div class="filters-row">
+    <ui-input
+      type="text"
+      placeholder="Buscar por codigo o nombre..."
+      styleClass="flex-1 min-w-64"
+      [ngModel]="store.searchQuery()"
+      (valueChange)="onSearch($event)"
+    />
+
+    <p-select
+      [options]="categoryFilterOptions()"
+      optionLabel="name"
+      optionValue="categoryId"
+      placeholder="Todas las categorias"
+      class="min-w-44"
+      [ngModel]="store.categoryFilter()"
+      (ngModelChange)="onCategoryChange($event)"
+    />
+
+    <p-select
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Todos los estados"
+      class="min-w-44"
+      [ngModel]="store.statusFilter()"
+      (ngModelChange)="onStatusChange($event)"
+    />
+  </div>
+
+  @if (store.hasLowStockProducts()) {
+    <p class="warning-text">
+      Hay {{ store.lowStockProducts().length }} producto(s) con stock bajo.
+    </p>
+  }
+
+  <ui-table
+    [value]="store.productsView()"
+    [loading]="store.loading()"
+    [paginator]="true"
+    [lazy]="true"
+    [first]="(store.page() - 1) * store.pageSize()"
+    [rows]="store.pageSize()"
+    [totalRecords]="store.total()"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    tableClass="ui-table-base ui-table-compact ui-table-bordered"
+    dataKey="productId"
+    (page)="onPageChange($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Codigo</th>
+        <th>Nombre</th>
+        <th>Categoria</th>
+        <th>Precio</th>
+        <th>Stock</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-product>
+      <tr>
+        <td>{{ product.code }}</td>
+        <td>{{ product.name }}</td>
+        <td>{{ product.categoryName }}</td>
+        <td>{{ product.price | currency: 'EUR' }}</td>
+        <td>
+          {{ product.stock }}
+          @if (product.isLowStock) {
+            <span class="text-warning">(min: {{ product.minStock }})</span>
+          }
+        </td>
+        <td>
+          <ui-product-status-badge
+            [active]="product.isActive"
+            [lowStock]="product.isLowStock"
+          />
+        </td>
+        <td>
+          <div class="flex flex-wrap gap-2">
+            <ui-button
+              icon="pi pi-eye"
+              variant="ghost"
+              size="sm"
+              (clicked)="onView(product)"
+            />
+            @if (store.canEdit()) {
+              <ui-button
+                icon="pi pi-pencil"
+                variant="ghost"
+                size="sm"
+                (clicked)="onEdit(product)"
+              />
+              <ui-button
+                [icon]="product.isActive ? 'pi pi-ban' : 'pi pi-check-circle'"
+                [variant]="product.isActive ? 'destructive' : 'secondary'"
+                size="sm"
+                (clicked)="onToggleStatus(product)"
+              />
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="7" class="empty-state">
+          No se encontraron productos.
+        </td>
+      </tr>
+    </ng-template>
+  </ui-table>
+</section>
+
+<app-product-form-dialog />
+
+<ui-dialog
+  [(visible)]="store.confirmDialogVisible"
+  [header]="store.productToToggle()?.isActive ? 'Desactivar producto' : 'Activar producto'"
+  variant="warning"
+  size="sm"
+  confirmLabel="Confirmar"
+  cancelLabel="Cancelar"
+  [confirmLoading]="store.loading()"
+  (confirmed)="onConfirmToggle()"
+  (cancelled)="store.closeConfirmDialog()"
+>
+  @if (store.productToToggle(); as product) {
+    <p class="warning-text">
+      @if (product.isActive) {
+        Vas a desactivar <strong>{{ product.name }}</strong>.
+      } @else {
+        Vas a activar <strong>{{ product.name }}</strong>.
+      }
+    </p>
+  }
+</ui-dialog>
