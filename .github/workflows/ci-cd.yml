@@ -155,7 +155,7 @@ jobs:
           cat > src/environments/environment.ts << 'EOF'
           export const environment = {
             production: false,
-            apiUrl: 'https://fct2026.onrender.com',
+            apiUrl: 'https://fct2026-api-prod.onrender.com',
             firebase: {
               apiKey: '${{ secrets.FIREBASE_API_KEY_PROD }}',
               authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN_PROD }}',
@@ -171,7 +171,7 @@ jobs:
           cat > src/environments/environment.prod.ts << 'EOF'
           export const environment = {
             production: true,
-            apiUrl: 'https://fct2026.onrender.com',
+            apiUrl: 'https://fct2026-api-prod.onrender.com',
             firebase: {
               apiKey: '${{ secrets.FIREBASE_API_KEY_PROD }}',
               authDomain: '${{ secrets.FIREBASE_AUTH_DOMAIN_PROD }}',
