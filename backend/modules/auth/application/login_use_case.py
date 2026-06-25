@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import HTTPException, status
 
 from modules.auth.domain.dtos.login_result import LoginResult
@@ -8,6 +10,8 @@ from modules.auth.domain.interfaces.use_cases.i_login_use_case import ILoginUseC
 from shared.domain.dtos.user_session import UserSession
 from shared.domain.interfaces.i_department_reader import IDepartmentReader
 from shared.infrastructure.security.firebase_auth_provider import verify_firebase_token
+
+logger = logging.getLogger(__name__)
 
 
 def _compute_permissions(role: str, department_name: str | None) -> list[str]:
@@ -43,7 +47,8 @@ class LoginUseCase(ILoginUseCase):
     async def login(self, firebase_id_token: str) -> LoginResult:
         try:
             claims = verify_firebase_token(firebase_id_token)
-        except Exception:
+        except Exception as exc:
+            logger.warning("Firebase token verification failed: %s", exc)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired token",
