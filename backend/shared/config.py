@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     database_url: str
     # Firebase service account credentials as a JSON string
     firebase_credentials_json: str
+    # Firebase Web API key used as a fallback for ID token validation.
+    firebase_web_api_key: str | None = None
     # Runtime environment: "development", "staging", or "production"
     environment: str = "development"
     # Email address used to seed the initial superadmin account
